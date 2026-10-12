@@ -1,0 +1,388 @@
+{
+  "version": "2026-10",
+  "note": "Submit every template in English (en) and Hindi (hi) under the same name, category UTILITY. Variables are filled by the app in the order shown.",
+  "templates": [
+    {
+      "name": "carelink_consent_request_v2",
+      "category": "MARKETING",
+      "sent_to": "parent",
+      "purpose": "Asks the parent to agree before we send anything",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 {{2}} has set up medicine reminders and a daily check-in for you on Chhaon. To start receiving these WhatsApp messages, please confirm below. You can stop them at any time by replying STOP.",
+          "buttons": [
+            "Yes, start",
+            "No thanks"
+          ],
+          "examples": [
+            "Papa",
+            "Ananya"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 {{2}} ने आपके लिए छाँव पर दवा के रिमाइंडर और रोज़ का चेक-इन शुरू किया है। ये WhatsApp संदेश पाना शुरू करने के लिए कृपया नीचे पुष्टि करें। आप कभी भी STOP लिखकर इन्हें बंद कर सकते हैं।",
+          "buttons": [
+            "हाँ, शुरू करें",
+            "नहीं, धन्यवाद"
+          ],
+          "examples": [
+            "पापा",
+            "अनन्या"
+          ]
+        }
+      },
+      "category_note": "Meta treats a message that asks for permission as Marketing (it rejects it as Utility). Submit it as Marketing."
+    },
+    {
+      "name": "carelink_dose_reminder_photo",
+      "category": "UTILITY",
+      "sent_to": "parent",
+      "purpose": "Medicine reminder with the strip or bottle photo",
+      "header": "IMAGE",
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 Good day! It is time for your medicine. Please take {{2}} ({{3}}), {{4}}. When you have taken it, please tap the Taken button below so your family knows. Thank you.",
+          "buttons": [
+            "Taken"
+          ],
+          "examples": [
+            "Papa",
+            "Metformin",
+            "500 mg",
+            "After food"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 आपकी दवा का समय हो गया है। कृपया {{2}} ({{3}}) लें, {{4}}। दवा लेने के बाद नीचे दिया गया “ले ली” बटन दबाइए, ताकि आपके परिवार को पता चल जाए। धन्यवाद।",
+          "buttons": [
+            "ले ली"
+          ],
+          "examples": [
+            "पापा",
+            "Metformin",
+            "500 mg",
+            "खाने के बाद"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_dose_reminder",
+      "category": "UTILITY",
+      "sent_to": "parent",
+      "purpose": "Medicine reminder without a photo",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 Good day! It is time for your medicine. Please take {{2}} ({{3}}), {{4}}. When you have taken it, please tap the Taken button below so your family knows. Thank you.",
+          "buttons": [
+            "Taken"
+          ],
+          "examples": [
+            "Papa",
+            "Metformin",
+            "500 mg",
+            "After food"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 आपकी दवा का समय हो गया है। कृपया {{2}} ({{3}}) लें, {{4}}। दवा लेने के बाद नीचे दिया गया “ले ली” बटन दबाइए, ताकि आपके परिवार को पता चल जाए। धन्यवाद।",
+          "buttons": [
+            "ले ली"
+          ],
+          "examples": [
+            "पापा",
+            "Metformin",
+            "500 mg",
+            "खाने के बाद"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_daily_checkin",
+      "category": "UTILITY",
+      "sent_to": "parent",
+      "purpose": "Good-morning check-in with one-tap replies",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Good morning {{1}}! ☀️ This is your daily check-in that your family set up on Chhaon. Are you feeling okay today? Please tap one of the buttons below.",
+          "buttons": [
+            "I'm okay",
+            "Call me"
+          ],
+          "examples": [
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "सुप्रभात {{1}}! ☀️ यह छाँव सेवा से आपका रोज़ का चेक-इन संदेश है, जिसे आपके परिवार ने आपके लिए शुरू किया है। आज आपकी तबीयत कैसी है, यह बताने के लिए कृपया नीचे दिए गए बटनों में से एक दबाइए।",
+          "buttons": [
+            "मैं ठीक हूँ",
+            "मुझे फ़ोन करें"
+          ],
+          "examples": [
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_appointment_reminder",
+      "category": "UTILITY",
+      "sent_to": "parent",
+      "purpose": "Reminds the parent of a doctor visit (evening before and that morning)",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 This is a gentle reminder from your family. Your appointment with {{2}} is {{3}}. Please keep your reports and medicines ready. Take care.",
+          "buttons": [],
+          "examples": [
+            "Papa",
+            "Dr. Mehta",
+            "tomorrow at 11:00 AM"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 आपके परिवार की ओर से एक छोटी सी याद। {{2}} के साथ आपकी अपॉइंटमेंट {{3}} है। कृपया अपनी रिपोर्ट और दवाइयाँ साथ रखिए। अपना ध्यान रखिए।",
+          "buttons": [],
+          "examples": [
+            "पापा",
+            "Dr. Mehta",
+            "कल सुबह 11:00"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_optin",
+      "category": "MARKETING",
+      "sent_to": "caregiver",
+      "purpose": "Asks the caregiver to confirm WhatsApp alerts to their own number",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Hi {{1}}, you asked to get Chhaon alerts on this WhatsApp number. These are messages about missed doses, check-ins with no reply and low medicine stock. Please confirm below to start receiving them.",
+          "buttons": [
+            "Yes, start",
+            "No thanks"
+          ],
+          "examples": [
+            "Ananya"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}}, आपने इस WhatsApp नंबर पर छाँव के अलर्ट माँगे थे। ये छूटी हुई दवा, बिना जवाब वाले चेक-इन और कम होती दवा के संदेश हैं। इन्हें पाना शुरू करने के लिए कृपया नीचे पुष्टि करें।",
+          "buttons": [
+            "हाँ, शुरू करें",
+            "नहीं, धन्यवाद"
+          ],
+          "examples": [
+            "अनन्या"
+          ]
+        }
+      },
+      "category_note": "Meta treats a message that asks for permission as Marketing (it rejects it as Utility). Submit it as Marketing."
+    },
+    {
+      "name": "carelink_alert_dose_missed",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "A dose was not confirmed",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: {{1}} has not confirmed {{2}}, which was due at {{3}}. Please call them to check that everything is all right.",
+          "buttons": [],
+          "examples": [
+            "Papa",
+            "Metformin",
+            "8:00 AM"
+          ]
+        },
+        "hi": {
+          "body": "अलर्ट: {{1}} ने {{2}} की पुष्टि नहीं की, जिसका समय {{3}} था। कृपया उन्हें फ़ोन करके पूछ लें कि सब ठीक है।",
+          "buttons": [],
+          "examples": [
+            "पापा",
+            "Metformin",
+            "सुबह 8:00"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_checkin_missed",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "The daily check-in got no reply",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: {{1}} has not replied to the morning check-in. Please call to make sure they are okay.",
+          "buttons": [],
+          "examples": [
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "अलर्ट: {{1}} ने सुबह के चेक-इन का जवाब नहीं दिया। कृपया फ़ोन करके पूछ लें।",
+          "buttons": [],
+          "examples": [
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_call_requested",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "The parent tapped Call me",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: {{1}} asked you to call them (from the daily check-in).",
+          "buttons": [],
+          "examples": [
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "सेवा सूचना: आपके द्वारा शुरू किए गए छाँव चेक-इन में {{1}} ने “मुझे फ़ोन करें” बटन दबाया है। कृपया उन्हें फ़ोन करके हाल पूछ लें।",
+          "buttons": [],
+          "examples": [
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_low_stock",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "A medicine is running low",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Reminder: the medicine {{1}} is running low for {{2}}. Please arrange a refill soon so that no dose is missed.",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "याद दिलाना: दवा {{1}} कम हो रही है, जो {{2}} के लिए है। कृपया जल्दी रिफ़िल का इंतज़ाम कर लें, ताकि कोई खुराक न छूटे।",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_out_of_stock",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "A medicine has run out",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: the medicine {{1}} has run out for {{2}}. Please arrange it today so that no dose is missed.",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "अलर्ट: दवा {{1}} खत्म हो गई है, जो {{2}} के लिए है। कृपया आज ही इंतज़ाम कर लें, ताकि कोई खुराक न छूटे।",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_not_sent",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "A reminder could not be sent",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: we could not send the reminder for {{1}} to {{2}}. Please remind them yourself or give them a call.",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "अलर्ट: {{1}} का रिमाइंडर {{2}} को नहीं भेजा जा सका। कृपया उन्हें खुद याद दिला दें या फ़ोन कर लें।",
+          "buttons": [],
+          "examples": [
+            "Metformin",
+            "पापा"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_appointment",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "Tells the caregiver a doctor-visit reminder was sent",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "We have reminded {{1}} about the appointment with {{2}} ({{3}}). You can see all doctor visits in the app, under Doctor visits.",
+          "buttons": [],
+          "examples": [
+            "Papa",
+            "Dr. Mehta",
+            "tomorrow at 11:00 AM"
+          ]
+        },
+        "hi": {
+          "body": "हमने {{1}} को {{2}} के साथ अपॉइंटमेंट ({{3}}) की याद दिलाई है। सभी डॉक्टर मुलाक़ातें आप ऐप में “डॉक्टर से मुलाक़ात” में देख सकते हैं।",
+          "buttons": [],
+          "examples": [
+            "पापा",
+            "Dr. Mehta",
+            "कल सुबह 11:00"
+          ]
+        }
+      }
+    },
+    {
+      "name": "carelink_alert_parent_stopped",
+      "category": "UTILITY",
+      "sent_to": "caregiver",
+      "purpose": "The parent chose to stop messages",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Alert: {{1}} chose to stop reminder messages on WhatsApp. Reminders and check-ins are paused.",
+          "buttons": [],
+          "examples": [
+            "Papa"
+          ]
+        },
+        "hi": {
+          "body": "सेवा सूचना: आपके द्वारा जोड़े गए {{1}} ने छाँव के WhatsApp संदेश बंद करवा दिए हैं। इसलिए दवा के रिमाइंडर और रोज़ का चेक-इन अभी रुके हुए हैं।",
+          "buttons": [],
+          "examples": [
+            "पापा"
+          ]
+        }
+      }
+    }
+  ]
+}

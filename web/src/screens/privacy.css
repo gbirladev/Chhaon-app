@@ -1,0 +1,24 @@
+/* Privacy & data, legal pages, consent sheet, offline banner. Colours follow the app's existing teal palette. */
+.legal-page h2 { font-size: 1.0625rem; margin: 22px 0 8px; color: #173d3a; }
+.legal-page p, .legal-page li { font-size: 1rem; line-height: 1.6; color: #2f4743; overflow-wrap: anywhere; }
+.legal-page ul { padding-left: 20px; margin: 8px 0; }
+.legal-page li { margin-bottom: 6px; }
+.legal-page .secondary-button { margin-top: 24px; }
+.draft-banner { background: #fff4de; border: 1px solid #f0d9a5; color: #6b4b0a !important; border-radius: 12px; padding: 12px 14px; font-weight: 600; }
+.legal-line { margin: 14px 0 0; text-align: center; font-size: max(0.875rem, 12px); color: #566966; line-height: 1.6; }
+.inline-link { border: 0; background: transparent; padding: 10px 4px; margin: -10px 0; min-height: 44px; color: #247c72; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.privacy-icon { background: #e3f3ef; color: #247c72; }
+.privacy-card { margin-top: 14px; }
+.privacy-card h2 { margin: 0 0 6px; font-size: 1.0625rem; }
+.privacy-card p { margin: 0 0 14px; color: #566966; line-height: 1.5; font-size: max(0.9375rem, 12px); overflow-wrap: anywhere; }
+.confirm-label { display: block; font-weight: 700; margin: 4px 0 8px; }
+.confirm-input { width: 100%; min-height: 48px; border: 1px solid #cfe0dc; border-radius: 12px; padding: 0 14px; font-size: 1rem; margin-bottom: 14px; box-sizing: border-box; }
+.consent-check { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 16px; line-height: 1.5; font-size: max(0.9375rem, 12px); }
+.consent-check input { width: 24px; height: 24px; flex: none; margin-top: 2px; accent-color: #247c72; }
+.goodbye { align-items: center; text-align: center; gap: 12px; margin: auto 0; color: #247c72; }
+.goodbye strong { font-size: 1.375rem; color: #173d3a; }
+.offline-banner { pointer-events: none; position: absolute; z-index: 70; bottom: calc(8px + env(safe-area-inset-bottom)); left: 12px; right: 12px; border-radius: 12px; padding: 8px 14px; background: #fff4de; color: #6b4b0a; font-size: max(0.875rem, 12px); line-height: 1.4; text-align: center; border: 1px solid #f0d9a5; box-shadow: 0 4px 14px rgba(23,61,58,.12); }
+.bottom-nav ~ .offline-banner { bottom: calc(92px + env(safe-area-inset-bottom)); }
+.first-run-extras { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px; padding-bottom: 8px; }
+.login-hint { margin: 6px 2px 0; font-size: max(0.8125rem, 12px); line-height: 1.4; color: #4d6b67; }
+.agree-button { margin-top: 24px; min-height: 52px; } .legal-page .agree-button + .secondary-button { margin-top: 12px; }

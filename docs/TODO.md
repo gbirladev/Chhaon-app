@@ -1,0 +1,70 @@
+# TODO (things outside the code, or decisions parked)
+
+## Before real families use it
+- [ ] **Meta WhatsApp Business setup + template approval.** Free to set up; messages are charged per delivered template
+      (rough pilot estimate: ~₹400–500/month for 30 families; confirm on Meta's rate card). Approval takes days, so submit early.
+      Steps and exact template text: `docs/whatsapp-setup.md`.
+- [ ] **Opt-in policy / legal check.** Our consent template is a business-initiated first message. Verify against Meta's current
+      policy, and have a health-tech lawyer review consent + privacy wording (DPDP Act 2023) before public launch.
+- [ ] **Hindi copy review by a native speaker** (consent and medical wording first). Files: `web/src/messages/hi.json`,
+      `api/app/whatsapp/templates.py`, `api/app/services/messaging.py`.
+- [ ] **Real SMS provider for phone OTP** (Twilio / MessageBird). Local dev uses a test number (`+91 99999 99999`, code `123456`).
+- [ ] **Production hosting:** Supabase project in a Mumbai region, a Python host for `api/` (preferably India), static host for `web/`.
+- [x] Privacy policy + terms pages, consent, export, delete (step 11). **Still needed:** lawyer review of `web/src/content/legal.ts` (placeholders in [brackets]), Hindi review, grievance officer details.
+
+## Parked decisions
+- [ ] Caregiver alert channel beyond the in-app bell (missed dose / no check-in): WhatsApp message to the caregiver, web push, or email.
+- [ ] Real PWA install test over `https://` (needs a tunnel or a preview deploy; an ngrok tunnel was blocked, so the user runs it or approves a deploy).
+- [ ] Country-code picker for the caregiver login (NRIs). A version exists in `docs/wip-supabase-ui/`.
+- [ ] Replace the `age` column with date of birth when refactoring the profile form.
+- [ ] Capacitor wrapper for Android/iOS stores, only if the pilot asks for it.
+
+## Found by the QA round (2026-10-10), not fixed yet
+Security / launch hardening
+- [ ] **Email confirmation is off and the minimum password length is 6** (local Supabase config). Turn confirmations on and raise the minimum before launch.
+- [ ] **OTP errors leak details:** unknown emails reveal that no account exists, and the phone error names the SMS provider. Use one generic message.
+- [ ] **Production headers / CSP:** `web/vite.config.ts` carries the recommended header block as a comment. Apply it at the real host (CSP, nosniff, referrer policy, frame denial, permissions policy).
+- [ ] **Production secrets:** `ENVIRONMENT=production` (closes `/docs`, narrows CORS), a real `WHATSAPP_APP_SECRET` and `CRON_SECRET`.
+- [ ] **Storage:** uploads only check the declared content type; add server-side file sniffing. Signed-URL lifetime is chosen by the client.
+- [ ] **Reports / appointments** tables are not used by the UI yet; re-run the security review when steps 7-8 land.
+
+Product / reliability
+- [ ] **Scheduler heartbeat:** nothing alerts the team when the 5-minute tick stops running (doses are then silently not sent). Add a heartbeat row + an external monitor.
+- [ ] **Send timeout duplicates:** a WhatsApp send that succeeds at Meta but times out on our side is retried, so the parent may get a duplicate reminder.
+- [ ] **Offline app shell:** a logged-in user who reloads offline sees "try again" after the retry delay; a proper offline screen would be nicer.
+- [ ] **Text size in `rem`:** sizes are now rem with a 12px floor; a full pass to rem for every unit would honour system font scaling everywhere.
+- [x] **Code splitting:** done. The JS is split into index (about 70 KB gzip), App (about 101 KB gzip), the Hindi texts (about 31 KB gzip) and the tiny public emergency page; only what the screen needs loads.
+- [ ] **Dark mode** is not designed (the app forces a light colour scheme).
+- [ ] **Doctor and emergency contacts** are in the schema but the Figma profile form does not collect them, so the emergency card shows caregivers' phones instead.
+- [ ] **Real family invites** (step 9): the Invite button says "coming soon"; roles are owner + member.
+- [ ] **Medicine editing** (name, times, dose): only stock, pause and delete exist today.
+
+Open items from the second backend review
+- [ ] **Consent-request denial of service:** someone can enrol a victim's number and keep the legitimate family's request in "too soon" (10 per caregiver per day, several accounts). Mitigate before launch: verify caregiver identity (phone OTP) before the first send, let a parent's own reply or a verified owner override, and watch the `consent_requests` log for numbers hit by many accounts.
+- [ ] **Migration 0010** dedupes schedules by deleting the later duplicates (their dose history cascades) and its NOT VALID constraints are enforced on later updates of any legacy row that violates them. Local data had no violators; check production data before applying.
+- [ ] **Scheduler tests that call the whole-database `run_tick`** can pass because of other data in the database. Move to a scoped tick (recipient ids) so tests stay isolated.
+- [ ] An exception between claiming a dose and the send `try` (template building) would leave it `sent` with nothing sent. No reachable trigger today; wrap it when touching that code.
+
+Found by the journey and verification agents (round 3), still open
+- [ ] **Archive instead of delete for medicines:** deleting a medicine also deletes its dose history (cascade). For health records, prefer "archive" (hidden, history kept) and keep delete for mistakes.
+- [ ] **Offline app shell** and the ~8 s "Loading…" before the retry notice when the backend is down.
+- [ ] **Reload on `#/profile`** goes to Today (by design); a parent deleted mid-edit drops the user on a blank add-parent form without a message.
+- [ ] **WhatsApp preview** shows the parent's first real medicine; a fuller preview (real reminder + check-in templates exactly as approved by Meta) once templates are approved.
+
+- Caregiver WhatsApp alerts: no quiet hours / caregiver-timezone handling yet; Hindi alert copy needs native review; alert templates need Meta approval (see whatsapp-setup.md).
+- Medicine edit: removing a reminder time deletes that time's dose history (cascade). Consider ending the schedule instead.
+- **Report reading (step 7) is built but OFF for v1** (`VITE_REPORTS_ENABLED=false`: the Reports tab shows "coming soon"). Backend `POST /reports/{id}/analyze` is ready (needs `ANTHROPIC_API_KEY`). Turn on after pilot signals: set the flag, add the key, have a doctor/lawyer review the summary wording, and recompute flags when a value is corrected.
+- **Before the pilot starts:** fill the [bracket] placeholders in `web/src/content/legal.ts` (company/operator name, grievance contact email, backup period, governing law), have any native Hindi speaker read the Hindi text, and publish the same privacy text at a public web address (Meta asks for a privacy-policy URL). Lawyer review can wait until public launch or charging, except the WhatsApp opt-in flow.
+- **Today style picker:** 10 styles in `web/src/screens/DoseLayouts.tsx` (route, curvy, timeline, arc, focus, ring, pillbox, ladder, clock, chat), saved per caregiver in `profiles.today_layout`. Once real users choose, remove the styles nobody uses. Hindi screenshots of the newer styles still need a visual check.
+- **Sample data on the owner's test account (+91 99999 99999):** extra medicines (Thyroxine, Calcium, Atorvastatin, Omega-3, Vitamin D3), appointments, notifications, two fake family members (Priya, Rohan), sample reports and an emergency link. Remove before any real use.
+- **Privacy is ON for v1, in short plain words** (`web/src/content/legal.ts`, no placeholders, not reviewed by a lawyer or a Hindi reader by choice). Switch: `VITE_PRIVACY_ENABLED`. Before a public launch: Meta wants a public privacy-policy URL, and a lawyer should check the opt-in flow.
+- **If the product is renamed later:** the name "CareLink" is inside these WhatsApp templates: `carelink_consent_request_v2`, `carelink_alert_optin`, `carelink_daily_checkin` (en + hi), and the Hindi `carelink_alert_call_requested` and `carelink_alert_parent_stopped`. Edit their text in WhatsApp Manager (each goes back for review), update `docs/whatsapp-templates.*`, the app texts, and the WhatsApp business display name.
+- WhatsApp templates were created in WhatsApp Manager on 2026-10-12 (14 templates, en + hi; the two permission-asking ones as Marketing). Texts live in `docs/whatsapp-templates.md/json`, checked against the code by `api/tests/test_template_pack.py`.
+
+## Where we paused (2026-10-12)
+- **Done:** v1 app built and tested (226 API + 129 database tests). Privacy ON (short plain text). Reports OFF. Name stays CareLink.
+- **WhatsApp:** 14 templates submitted in WhatsApp Manager (en + hi), all "in review". Meta developer app created (use case "Connect with customers through WhatsApp"). Texts: `docs/whatsapp-templates.md`.
+- **Next, in order:** (1) Meta "Step 2 Production setup": register a real phone number (spare SIM, display name CareLink) and add a payment method. (2) Host `web/public/legal/*.html` (e.g. Netlify Drop) and put the two URLs in Meta App settings > Basic, with category and icon. (3) Deploy the API + scheduler + web over HTTPS (see `docs/deploy.md`). (4) Webhook: callback `https://<api-host>/webhooks/whatsapp`, verify token = `WHATSAPP_VERIFY_TOKEN`; publish the Meta app. (5) Put the 4 WhatsApp values in `api/.env` (never paste them in chat). (6) First real test with your own number. (7) Remove the sample data on the owner's test account. (8) Pilot with 20 to 30 families.
+- Note: with the real token set, the local API/scheduler really sends WhatsApp messages; use a test parent with your own number.
+
+- **Renamed to Chhaon (2026-10-12).** The app, install name, privacy pages and the app's own WhatsApp replies now say Chhaon / छाँव. Still to do: edit the 5 WhatsApp templates in WhatsApp Manager after approval (see the note at the top of `docs/whatsapp-templates.md`); choose "Chhaon" as the WhatsApp display name; check the domain; a trademark attorney opinion before a public launch (the registered mark CHHAON FOUNDATION, class 45, expires 07/11/2026 unless renewed). Internal names stay `carelink_*`.

@@ -1,0 +1,201 @@
+"""The 5-minute tick: creates dose events, sends due reminders, marks unanswered ones missed,
+sends daily check-ins and alerts caregivers.
+
+Every step is idempotent and claims rows in the database before acting (status transitions with a
+`where status = ...` guard), so overlapping ticks or retries never double-send or double-alert.
+One failing item never stops the rest of the tick, and one failing step never stops the other steps.
+"""
+
+import logging
+from collections import Counter
+from collections.abc import Callable, Iterable
+from contextvars import ContextVar
+from datetime import UTC, datetime, time, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from supabase import Client
+
+from app.config import Settings
+from app.services import alerts, appointments, messaging
+from app.services.notify import notify_circle
+from app.whatsapp.client import Messenger
+
+log = logging.getLogger("carelink.scheduler")
+
+# medicine id + parent's circle and opt-out state, for alerts
+DOSE_CONTEXT = "id, sent_at, medicine_schedules(medicines(id, recipient_id, care_recipients(circle_id, opted_out_at)))"
+PAGE = 1000  # PostgREST returns at most 1000 rows per request
+
+
+# Tests set this so a tick can never touch anyone else's data on a shared database. Production leaves it None.
+DEFAULT_SCOPE: set[str] | None = None
+_scope: ContextVar[set[str] | None] = ContextVar("scheduler_scope", default=None)
+
+
+def _in_scope(recipient_id: str) -> bool:
+    scope = _scope.get()
+    return scope is None or recipient_id in scope
+
+
+def run_tick(
+    db: Client, wa: Messenger, settings: Settings, now: datetime | None = None, only_recipients: Iterable[str] | None = None
+) -> dict[str, int]:
+    """Runs all scheduler steps once. Returns counters, e.g. {'generated': 4, 'reminders_sent': 1, ...}.
+    `only_recipients` limits every step to those parents (None = everyone)."""
+    now = (now or datetime.now(UTC)).astimezone(UTC)
+    scope = set(only_recipients) if only_recipients is not None else DEFAULT_SCOPE
+    token = _scope.set(scope)
+    try:
+        return _run_steps(db, wa, settings, now)
+    finally:
+        _scope.reset(token)
+
+
+def _run_steps(db: Client, wa: Messenger, settings: Settings, now: datetime) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    steps = (_generate, _send_due_doses, _expire_unsent_doses, _mark_missed_doses, _send_checkins, _mark_missed_checkins, _remind_appointments, _deliver_alerts)
+    for step in steps:
+        try:
+            step(db, wa, settings, now, counts)
+        except Exception as exc:  # noqa: BLE001
+            log.error("scheduler step %s failed (%s)", step.__name__, type(exc).__name__)
+            counts["step_errors"] += 1
+    return dict(counts)
+
+
+def _iso(value: datetime) -> str:
+    return value.isoformat()
+
+
+def _all(build_query: Callable[[], object]) -> list[dict]:
+    """Every row of a query, page by page (a plain select silently stops at 1000 rows)."""
+    rows: list[dict] = []
+    start = 0
+    while True:
+        batch = build_query().order("id").range(start, start + PAGE - 1).execute().data  # type: ignore[attr-defined]
+        rows.extend(batch)
+        if len(batch) < PAGE:
+            return rows
+        start += PAGE
+
+
+# ---------------------------------------------------------------- 1. dose events
+def _generate(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    # The grace period equals the reminder window: after downtime, doses that can still be reminded are created.
+    params: dict = {"p_now": _iso(now), "p_grace": f"{settings.dose_missed_minutes} minutes"}
+    scope = _scope.get()
+    if scope is not None:
+        params["p_recipients"] = sorted(scope)
+    counts["generated"] = db.rpc("generate_dose_events", params).execute().data or 0
+
+
+# ---------------------------------------------------------------- 2. reminders
+def _send_due_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    window_start = now - timedelta(minutes=settings.dose_missed_minutes)
+    due = _all(lambda: db.table("dose_events").select("id, medicine_schedules(medicines(recipient_id))").eq("status", "pending")
+               .lte("scheduled_at", _iso(now)).gt("scheduled_at", _iso(window_start)))
+    for row in due:
+        if not _in_scope(row["medicine_schedules"]["medicines"]["recipient_id"]):
+            continue
+        try:
+            result = messaging.send_dose_reminder(db, wa, row["id"], now=now)
+        except Exception as exc:  # noqa: BLE001
+            log.error("reminder failed for dose %s (%s)", row["id"], type(exc).__name__)
+            counts["send_errors"] += 1  # stays pending: retried next tick until the window closes
+            continue
+        if result == "sent":
+            counts["reminders_sent"] += 1
+        elif result == "not_allowed":
+            # Parent has not agreed (or said STOP): nothing is sent and it is not a "missed" dose.
+            db.table("dose_events").update({"status": "skipped"}).eq("id", row["id"]).eq("status", "pending").execute()
+            counts["doses_skipped"] += 1
+
+
+def _expire_unsent_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    """A reminder we kept failing to send. Too late to send now; tell the caregiver so they can phone."""
+    cutoff = now - timedelta(minutes=settings.dose_missed_minutes)
+    stale = _all(lambda: db.table("dose_events").select(DOSE_CONTEXT).eq("status", "pending").lte("scheduled_at", _iso(cutoff)))
+    for row in stale:
+        if not _in_scope(row["medicine_schedules"]["medicines"]["recipient_id"]):
+            continue
+        claimed = db.table("dose_events").update({"status": "skipped"}).eq("id", row["id"]).eq("status", "pending").execute().data
+        if claimed:
+            medicine = row["medicine_schedules"]["medicines"]
+            notify_circle(db, medicine["care_recipients"]["circle_id"], "reminder_not_sent",
+                          {"recipient_id": medicine["recipient_id"], "medicine_id": medicine["id"], "dose_event_id": row["id"]})
+            counts["reminders_not_sent"] += 1
+
+
+# ---------------------------------------------------------------- 3. missed doses
+def _mark_missed_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    cutoff = now - timedelta(minutes=settings.dose_missed_minutes)
+    waiting = _all(lambda: db.table("dose_events").select(DOSE_CONTEXT).eq("status", "sent").lte("sent_at", _iso(cutoff)))
+    for row in waiting:
+        if not _in_scope(row["medicine_schedules"]["medicines"]["recipient_id"]):
+            continue
+        claimed = db.table("dose_events").update({"status": "missed"}).eq("id", row["id"]).eq("status", "sent").execute().data
+        if not claimed:
+            continue
+        counts["doses_missed"] += 1
+        medicine = row["medicine_schedules"]["medicines"]
+        parent = medicine["care_recipients"]
+        if not parent["opted_out_at"]:  # a parent who said STOP is not "ignoring" us
+            notify_circle(db, parent["circle_id"], "dose_missed",
+                          {"recipient_id": medicine["recipient_id"], "medicine_id": medicine["id"], "dose_event_id": row["id"]})
+
+
+# ---------------------------------------------------------------- 4. daily check-in
+def _local(tz_name: str, now: datetime) -> datetime:
+    try:
+        return now.astimezone(ZoneInfo(tz_name))
+    except ZoneInfoNotFoundError:
+        return now.astimezone(ZoneInfo("Asia/Kolkata"))
+
+
+def _send_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    parents = _all(lambda: db.table("care_recipients").select("id, timezone, checkin_time")
+                   .not_.is_("consent_at", "null").is_("opted_out_at", "null").not_.is_("whatsapp_phone", "null"))
+    for parent in parents:
+        if not _in_scope(parent["id"]):
+            continue
+        local_now = _local(parent["timezone"], now)
+        start = datetime.combine(local_now.date(), time.fromisoformat(parent["checkin_time"]), tzinfo=local_now.tzinfo)
+        if not start <= local_now < start + timedelta(minutes=settings.checkin_start_window_minutes):
+            continue
+        try:
+            if messaging.send_checkin(db, wa, parent["id"], local_now.date(), now=now) == "sent":
+                counts["checkins_sent"] += 1
+        except Exception as exc:  # noqa: BLE001
+            log.error("check-in failed for parent %s (%s)", parent["id"], type(exc).__name__)
+            counts["send_errors"] += 1
+
+
+def _mark_missed_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    cutoff = now - timedelta(minutes=settings.checkin_missed_minutes)
+    waiting = _all(lambda: db.table("checkins").select("id, care_recipients(id, circle_id, opted_out_at)")
+                   .eq("status", "sent").lte("sent_at", _iso(cutoff)))
+    for row in waiting:
+        if not _in_scope(row["care_recipients"]["id"]):
+            continue
+        claimed = db.table("checkins").update({"status": "missed"}).eq("id", row["id"]).eq("status", "sent").execute().data
+        if not claimed:
+            continue
+        counts["checkins_missed"] += 1
+        parent = row["care_recipients"]
+        if not parent["opted_out_at"]:
+            notify_circle(db, parent["circle_id"], "checkin_missed", {"recipient_id": parent["id"], "checkin_id": row["id"]})
+
+
+# ---------------------------------------------------------------- 5. appointment reminders
+def _remind_appointments(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    for key, value in appointments.remind_due(db, wa, now, _all, _in_scope).items():
+        if value:
+            counts["send_errors" if key == "appointment_errors" else key] += value
+
+
+# ---------------------------------------------------------------- 6. WhatsApp alerts to the caregiver
+def _deliver_alerts(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    """Runs LAST so alerts created earlier in this same tick go out in this tick."""
+    for key, value in alerts.deliver_pending_alerts(db, wa, settings, now=now, in_scope=lambda rid: rid is None or _in_scope(rid)).items():
+        if value:
+            counts[key] += value

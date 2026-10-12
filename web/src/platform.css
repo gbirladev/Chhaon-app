@@ -1,0 +1,441 @@
+/* Platform fixes for iOS Safari / Android Chrome. Visual design stays as in the Figma export. */
+:root { color-scheme: light; font-family: "DM Sans Variable", "Noto Sans Devanagari", system-ui, sans-serif; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body { min-height: 100vh; min-height: 100dvh; -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+button, a, label, select, summary { touch-action: manipulation; }
+:focus-visible { outline: 3px solid #2a8478; outline-offset: 2px; }
+
+/* iOS zooms the page when an input under 16px is focused. */
+input, select, textarea { font-size: 1rem !important; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea { -webkit-appearance: none; appearance: none; }
+input[type="time"], input[type="date"] { min-height: 48px; }
+select { padding-right: 34px; background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23587570' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+
+/* Comfortable tap targets (>= 44px) for older hands and small phones. */
+.icon-button { min-width: 44px; min-height: 44px; }
+.choice-chips button { min-height: 44px; }
+.text-button, .demo-link, .account-link { min-height: 44px; }
+.language-button { min-width: 38px; min-height: 38px; width: 38px; height: 38px; font-size: 12px; }
+.bottom-nav button { min-height: 56px; }
+.med-card > button, .contact-row button { min-width: 44px; min-height: 44px; }
+
+/* Safe areas: notch, home indicator, rounded corners. */
+.scroll-page, .onboarding { padding-top: max(24px, env(safe-area-inset-top)); padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+.scroll-page { padding-bottom: calc(108px + env(safe-area-inset-bottom)); }
+.scroll-page.no-nav { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+.bottom-nav { height: calc(84px + env(safe-area-inset-bottom)); padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+.fab { bottom: calc(100px + env(safe-area-inset-bottom)); }
+.wa-input { bottom: calc(10px + env(safe-area-inset-bottom)); }
+
+/* On phones the app fills the screen: the page scrolls inside the frame so the bottom nav stays pinned.
+   (The design already does this for the desktop preview.) */
+@media (max-width: 430px) {
+  .app-shell { background: #f8faf8; }
+  .phone-frame { height: 100vh; height: 100dvh; min-height: 0; box-shadow: none; }
+  .scroll-page, .onboarding, .whatsapp-page { height: 100%; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+}
+@media (min-width: 431px) {
+  .scroll-page, .onboarding, .whatsapp-page { overscroll-behavior: contain; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* Small additions for real-data states (errors, notes, avatar). */
+.form-error { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: #fde8e5; color: #9a2f27; font-size: max(0.875rem, 12px); font-weight: 600; }
+.form-note { margin: 12px 0 0; color: #566966; font-size: max(0.875rem, 12px); line-height: 1.45; }
+.initials-avatar { width: 50px; height: 50px; border-radius: 16px; background: #2d7a70; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 1.25rem; flex: 0 0 auto; }
+.phone-input:has(+ .form-error) { margin-bottom: 0; }
+.dose-row { grid-template-columns: 1.4fr 1fr; align-items: center; }
+
+/* The design's `.field select { background: ... }` shorthand wipes the arrow; re-apply it with higher specificity. */
+.field select, .invite-form select {
+  padding-right: 34px;
+  background-color: #fbfcfb;
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23587570' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Devanagari looks smaller than Latin at the same size; give the Figma's tiny labels a readable floor in Hindi. */
+html[lang="hi"] :is(.medicine-info p, .time small, .status, .section-title p, .wellbeing-card span, .wellbeing-card p,
+  .alert-card p, .appointment-card span, .appointment-card p, .med-copy p, .med-copy small, .bottom-nav span,
+  .stock-summary p, .report-card p, .report-card span, .value-row small, .tag, .explanation-card p, .family-hero p,
+  .member p, .member h3 em, .feature-link p, .emergency-id small, .emergency-section li span, .emergency-section > div span,
+  .contact-row span, .contact-row p, .privacy-note, .emergency-title small, .report-summary p, .disclaimer-card p,
+  .chart-labels, .range-label, .calendar-tile small, .wa-message > small, .wa-reply small, .wa-helper, .page-header p,
+  .parent-profile small, .parent-profile em, .toggle-row small, .photo-upload small, .upload-card p) {
+  font-size: max(0.78125rem, 12px);
+}
+
+/* WhatsApp consent status */
+.consent-card { margin-bottom: 16px; padding: 14px 16px; border-radius: 16px; background: #eaf4fb; border: 1px solid #cfe3f3; color: #1d4a6b; }
+.consent-card.stopped { background: #fff4e5; border-color: #f2dcb8; color: #7a4a12; }
+.consent-card strong { display: block; font-size: 0.9375rem; margin-bottom: 4px; }
+.consent-card p { margin: 0; font-size: max(0.875rem, 12px); line-height: 1.45; }
+.consent-card button { margin-top: 10px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #a9cbe6; background: #fff; color: #1d4a6b; font-weight: 700; }
+.consent-card .consent-note { margin-top: 8px; font-weight: 600; }
+
+/* Notification sheet (bell on Today) */
+.sheet-backdrop { position: absolute; inset: 0; z-index: 50; background: rgba(15,35,32,.45); display: flex; align-items: flex-end; animation: sheetFade .18s ease-out; }
+.sheet { width: 100%; max-height: 80%; overflow-y: auto; background: #fff; border-radius: 24px 24px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); animation: sheetUp .26s cubic-bezier(.2,.8,.2,1); }
+.sheet h3 { margin: 0 0 12px; font-size: 1.25rem; }
+.sheet-empty { color: #566966; padding: 12px 0 20px; }
+.notif-list { list-style: none; margin: 0 0 16px; padding: 0; }
+.notif-list li { display: flex; flex-direction: column; gap: 4px; padding: 12px 0 12px 14px; border-bottom: 1px solid #edf1ef; position: relative; line-height: 1.4; }
+.notif-list li.unread { font-weight: 700; }
+.notif-list li.unread:before { content: ""; position: absolute; left: 0; top: 19px; width: 7px; height: 7px; border-radius: 50%; background: #ef7c4d; }
+.notif-list small { color: #566966; font-weight: 400; font-size: max(0.8125rem, 12px); }
+@keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Medicine details, toast, tappable cards */
+.appointment-card[role="button"], .member[role="button"], .med-card[role="button"] { cursor: pointer; }
+.chevron-hint { color: #566966; padding: 8px 0 8px 8px; display: grid; place-items: center; }
+.med-card.paused { opacity: .65; }
+.meta-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #edf1ef; }
+.meta-row > span:first-child { color: #566966; font-size: max(0.875rem, 12px); }
+.meta-row strong { text-align: right; }
+.stepper { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 14px 0 4px; }
+.stepper button { width: 56px; height: 56px; border-radius: 16px; border: 1px solid #cfe0dc; background: #fff; color: #247c72; font-size: 1.75rem; font-weight: 700; }
+.stepper output { min-width: 80px; text-align: center; font-size: 2.25rem; font-weight: 700; }
+.secondary-button { width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid #cfe0dc; background: #fff; color: #247c72; font-weight: 700; }
+.danger-button { width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid #efc4be; background: #fff; color: #b14137; font-weight: 700; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.photo-thumb { width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; margin-bottom: 14px; }
+.tag-low { display: inline-block; padding: 3px 8px; border-radius: 8px; background: #fff0e5; color: #a8481f; font-size: max(0.75rem, 12px); font-weight: 700; }
+.toast { position: absolute; z-index: 60; left: 18px; right: 18px; bottom: calc(100px + env(safe-area-inset-bottom)); padding: 14px 16px; border-radius: 14px; background: #173d3a; color: #fff; font-weight: 600; box-shadow: 0 10px 30px rgba(23,61,58,.3); animation: sheetFade .2s ease-out; }
+.wa-helper.preview-note { background: #fff4e5; color: #7a4a12; font-weight: 600; }
+
+/* ===== QA styling fixes ===== */
+:root { --fs-min: max(0.75rem, 12px); }
+body { min-width: 0; }
+html, body { overflow-wrap: break-word; }
+
+/* Small-text floor (all languages): the Figma export used 7-10px. rem keeps user font-size settings working. */
+.wellbeing-card p, .bottom-nav small, .emergency-title small, .wa-header small { opacity: 1; }
+
+.status.upcoming, .status.notsent { color: #4a5d5a; background: #eaeff0; }
+.status { white-space: nowrap; }
+.upcoming { color: #566966; }
+html[lang="hi"] .status, html[lang="hi"] .tag { font-size: max(0.78rem, 12.5px); }
+
+/* Contrast helpers */
+.attention-dot { color: #a8481f; }
+.normal-dot { color: #1d6b4b; }
+.stock-summary, .stock-summary p, .stock-summary > svg { color: #1f6f66; }
+.stock-summary p { color: #1d5d56; }
+.med-copy small { color: #1d6b4b; }
+.med-copy small.low-stock { color: #a8481f; }
+.tag.high { background: #ffebe4; color: #a8481f; }
+.tag.normal { background: #e6f4ec; color: #1d6b4b; }
+.choice-chips button { color: #4a5d5a; }
+.choice-chips button.selected { color: #17615a; }
+.alert-card p { color: #7a4a3a; }
+.report-summary p { color: #7a4a3a; }
+.status.taken { color: #1d6b4b; }
+.status.pending { color: #a8481f; }
+.status.missed { color: #a3362d; }
+.upload-card p, .photo-upload small { color: #566966; }
+.member h3 em { color: #1d6259; }
+.demo-link { color: #566966; }
+.wa-input span { color: #566966; }
+.wa-date { color: #4a5d5a; }
+
+/* Fluid layout, no sideways scroll when zoomed */
+.bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-left: 4px; padding-right: 4px; gap: 2px; align-items: center; }
+.bottom-nav button { height: 60px; min-height: 60px; min-width: 0; justify-content: center; align-self: center; padding: 0 2px; }
+.bottom-nav span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bottom-nav button.active { background: #e4f3ef; }
+.scroll-page, .onboarding, .whatsapp-page { overflow-x: hidden; }
+.med-copy, .member > div, .appointment-card > div, .report-card > div, .medicine-info, .wellbeing-card > div, .alert-card > div, .page-header > div, .contact-row > div, .feature-link > div { min-width: 0; }
+.med-copy h3, .med-copy p, .member h3, .report-card h3, .page-header h1, .page-header p, .notif-list li, .medicine-info h3, .appointment-card h3, .meta-row strong, .family-hero h2 { overflow-wrap: anywhere; }
+.page-header { align-items: flex-start; }
+.page-header h1 { padding-top: 7px; }
+.page-header > div { flex: 1; }
+.medicine-list { padding-bottom: 76px; }
+.two-col { align-items: end; }
+.two-col > * { min-width: 0; }
+.stepper { gap: 12px; flex-wrap: nowrap; }
+.stepper button { flex: 0 0 auto; }
+.stepper output { flex: 0 1 auto; min-width: 0; font-size: clamp(1.4rem, 9vw, 2.25rem); overflow-wrap: anywhere; line-height: 1.1; }
+.wa-input button { transform: none; }
+.initials-avatar.large { width: 64px; height: 64px; border-radius: 20px; font-size: 1.5rem; font-weight: 700; }
+
+/* Tap targets >= 44px */
+.wellbeing-card > button, .section-title > button, .alert-card button, .family-hero button, .emergency-title button, .wa-header button,
+.wa-buttons button, .icon-button, .language-button, .choice-chips button, .contact-row button, .med-card > button, .stepper button
+  { min-width: 44px; min-height: 44px; }
+.wellbeing-card > button, .emergency-title button, .wa-header button { display: inline-grid; place-items: center; }
+.section-title > button { display: inline-flex; align-items: center; justify-content: flex-end; padding: 0 4px; margin: -14px -4px -14px 0; }
+.alert-card button { padding: 0 14px; }
+.family-hero button { height: auto; padding: 0 16px; }
+.wa-buttons button { padding: 8px 6px; }
+.wa-header button { padding: 0; }
+.member { min-height: 67px; }
+.member-list .member, .appointment-card[role="button"] { min-height: 56px; }
+
+/* Toggle: the real checkbox sits over the visible switch */
+.toggle-row i { flex: 0 0 auto; }
+.toggle-row input { position: absolute; right: 0; top: 50%; transform: translateY(-50%); left: auto; width: 46px; height: 44px; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.toggle-row input:focus-visible + i { outline: 3px solid #58a298; outline-offset: 2px; box-shadow: 0 0 0 6px #fff; }
+.toggle-row input:focus-visible + i { outline-color: #2a8478; }
+.toggle-row i.off { background: #6f827f; }
+
+/* Visible focus on form controls (ring 3:1 vs page) */
+.field input:focus, .field select:focus, .invite-form input:focus, .invite-form select:focus, textarea:focus
+  { border-color: #1f6f66; box-shadow: 0 0 0 3px #2a8478; outline: none; }
+.phone-input:focus-within { border-color: #1f6f66; box-shadow: 0 0 0 3px #2a8478; }
+.otp-input:focus { border-color: #1f6f66; box-shadow: 0 0 0 4px #2a8478; }
+.field input::placeholder, .phone-input input::placeholder, .invite-form input::placeholder { color: #66797a; opacity: 1; }
+
+/* Frame sizing: never taller than the viewport */
+@media (min-width: 431px) {
+  .phone-frame { height: min(800px, calc(100vh - 40px)); height: min(800px, calc(100dvh - 40px)); min-height: 0; }
+  .scroll-page, .onboarding, .whatsapp-page { height: 100%; min-height: 0; }
+}
+@media (min-width: 431px) and (max-height: 640px) {
+  .phone-frame { height: 100vh; height: 100dvh; margin: 0; border-radius: 0; }
+}
+.sheet-backdrop { z-index: 50; }
+.sheet { max-height: 78%; }
+@media (max-height: 520px) {
+  .sheet { max-height: 92%; padding-top: 16px; }
+  .bottom-nav { height: calc(68px + env(safe-area-inset-bottom)); padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+  .bottom-nav button { height: 56px; min-height: 56px; }
+  .fab { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .scroll-page { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+}
+
+/* Welcome illustration */
+.logo-hero { height: 190px; position: relative; margin-bottom: 6px; }
+.big-heart { position: absolute; right: 12px; top: 6px; width: 150px; height: 170px; border-radius: 75px 75px 28px 28px;
+  background: linear-gradient(160deg, #d6eee8 0%, #a9d8cf 100%); border: 6px solid rgba(255,255,255,.85); box-shadow: 0 15px 35px rgba(37,91,82,.18);
+  display: grid; place-items: center; color: #247c72; }
+.big-heart > svg { width: 64px; height: 64px; }
+.logo-hero .floating-chip { position: absolute; white-space: normal; max-width: 128px; line-height: 1.25; z-index: 2; }
+.logo-hero .chip-one { left: -78px; right: auto; bottom: 22px; top: auto; }
+.logo-hero .chip-two { right: -4px; left: auto; top: 14px; bottom: auto; }
+
+/* Small utility classes */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.field-error { margin: 6px 0 0; font-size: 0.875rem; font-weight: 700; color: #9a2f27; line-height: 1.35; }
+.sample-note { margin: 0 0 14px; padding: 12px 14px; border: 1px solid #ecc88f; border-radius: 14px; background: #fff4e5; color: #7a4a12; font-size: 0.875rem; line-height: 1.45; }
+.empty-note { text-align: center; color: #566966; padding: 20px; font-size: 0.9375rem; }
+
+/* Windows high-contrast / forced colours: keep shapes and states visible */
+@media (forced-colors: active) {
+  .status, .tag, .tag-low, .choice-chips button, .bottom-nav button, .member h3 em { border: 1px solid CanvasText; }
+  .bottom-nav button.active, .choice-chips button.selected { outline: 2px solid Highlight; outline-offset: -2px; font-weight: 700; }
+  .toggle-row i { border: 2px solid CanvasText; forced-color-adjust: none; background: Canvas; }
+  .toggle-row i:after { background: CanvasText; }
+  .toggle-row i.off:after { background: GrayText; }
+}
+.bottom-nav button.active { color: #17615a; }
+.bottom-nav button.active span, .bottom-nav button.active svg { color: #17615a; }
+.done .line i { background: #2a7d58; border-color: #2a7d58; }
+.current .line i { background: #b8531f; border-color: #b8531f; }
+.missed-dot i { background: #c0392f; border-color: #c0392f; }
+.wa-message button { min-height: 44px; color: #0b6b5f; }
+.wa-helper { color: #4a5d5a; }
+
+/* Extreme zoom (200-400%): stack instead of overflowing */
+.home-header { flex-wrap: nowrap; gap: 8px; margin-bottom: 14px; }
+.header-actions { flex-shrink: 0; gap: 6px; }
+.header-actions .icon-button, .header-actions .language-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.parent-profile { flex: 1 1 auto; }
+.parent-profile { min-width: 0; }
+.emergency-section > div { flex-wrap: wrap; }
+.emergency-grid > div, .emergency-id, .download-button { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 300px) {
+  .emergency-grid, .emergency-actions, .invite-form { grid-template-columns: minmax(0, 1fr); }
+  .emergency-grid div:first-child { border-right: 0; border-bottom: 1px solid #edf1ef; }
+  .two-col { grid-template-columns: minmax(0, 1fr); }
+  .scroll-page, .onboarding { padding-left: 12px; padding-right: 12px; }
+  .emergency-title { margin-left: -12px; margin-right: -12px; padding-left: 12px; padding-right: 12px; }
+}
+.onboarding > * { flex-shrink: 0; }
+.logo-hero { flex: 0 0 190px; margin-bottom: 14px; }
+.logo-hero .floating-chip { max-width: 150px; }
+
+/* A caption for a group of controls (chips); looks like a field label but is not tied to one input. */
+.field .field-label { display: block; margin: 0 0 7px; color: #405c58; font-size: .8125rem; font-weight: 700; }
+
+/* The WhatsApp preview is a picture of what the parent receives: nothing in it responds to taps. */
+.whatsapp-page .wa-message button:disabled,
+.whatsapp-page .wa-input button:disabled { opacity: 1; cursor: default; pointer-events: none; }
+.whatsapp-page .wa-input { pointer-events: none; }
+
+/* Optional welcome photo inside the arch (see Welcome in App.tsx). The chips stay on top of it. */
+.big-heart .welcome-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; border-radius: inherit; }
+.big-heart .floating-chip { z-index: 1; }
+
+/* Unread dot on the Today tab (alerts live on the bell on Today) and the Paused tag in the medicines list. */
+.bottom-nav button { position: relative; }
+.bottom-nav .nav-dot { position: absolute; top: 6px; left: calc(50% + 6px); width: 11px; height: 11px; border-radius: 50%; background: #c0392b; border: 2px solid #fff; }
+.med-copy h3 .paused-tag { margin-left: 8px; vertical-align: middle; }
+
+/* ---- QA round 3 ---- */
+/* Family avatars: the first one has no photo any more, so every avatar needs its own fill. */
+.avatar-stack span { color: #fff; }
+.avatar-stack span:nth-child(1) { background: #2d7a70; }
+.avatar-stack span:nth-child(2) { background: #a9562a; }
+.avatar-stack span:nth-child(3) { background: #4d7388; }
+/* Times must not break in the middle at large text sizes. */
+.time { width: auto; min-width: 3.5rem; white-space: nowrap; }
+/* Long words (a long city, a name) wrap instead of clipping the header. */
+.parent-profile span, .home-header { min-width: 0; }
+.parent-profile em, .parent-profile strong { overflow-wrap: anywhere; }
+/* Chart labels and the info bulb in the sample report: readable contrast. */
+.chart-labels, .range-label { color: #566966; }
+.bulb { background: #8a5a00; color: #fff; }
+/* Very narrow screens (200% zoom): the alert card stacks instead of wrapping letter by letter. */
+@media (max-width: 300px) {
+  .alert-card { flex-wrap: wrap; }
+  .alert-card > div:not(.alert-icon) { flex: 1 1 100%; min-width: 0; }
+}
+/* Forced colours (high-contrast mode): buttons and cards keep a visible shape. */
+@media (forced-colors: active) {
+  .primary-button, .secondary-button, .danger-button, .form-card, .initials-avatar, .hero-card, .wellbeing-card, .alert-card,
+  .med-card, .family-hero, .member-avatar, .avatar-stack span, .stock-summary, .consent-card { border: 1px solid CanvasText; }
+}
+
+/* Parent switcher (tap the name on Today) */
+.parent-profile strong { display: inline-flex; align-items: center; gap: 4px; }
+.parent-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.parent-option { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; border: 1px solid #d9e4e1; background: #fff; text-align: left; color: inherit; min-height: 64px; }
+.parent-option.selected { border-color: #2a8478; background: #eef7f4; }
+.parent-option span:nth-child(2) { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.parent-option small { color: #566966; }
+.parent-check { color: #1d6b4b; font-weight: 700; font-size: 1.25rem; }
+
+.notif-list li.swipe-li { padding: 0; display: block; position: relative; overflow: hidden; border-bottom: 1px solid #edf1ef; transition: opacity .18s, max-height .18s; max-height: 200px; }
+.swipe-li.gone { opacity: 0; max-height: 0; }
+.swipe-row { touch-action: pan-y; user-select: none; background: white; display: flex; flex-direction: column; gap: 4px; padding: 12px 0 12px 14px; position: relative; line-height: 1.4; }
+.swipe-row.unread { font-weight: 700; }
+.swipe-row.unread:before { content: ""; position: absolute; left: 0; top: 19px; width: 7px; height: 7px; border-radius: 50%; background: #ef7c4d; }
+.swipe-row small { color: #566966; font-weight: 400; font-size: max(0.8125rem, 12px); }
+.swipe-trash { position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; border: 0; border-radius: 50%; background: #fdecea; color: #d64545; display: grid; place-items: center; }
+.swipe-trash:active { background: #f9d3ce; }
+.swipe-trash.left { left: 16px; } .swipe-trash.right { right: 16px; }
+.sheet-hint { color: #566966; font-size: 12px; margin: -4px 0 8px; }
+.sheet-head { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -22px -18px 8px; padding: 22px 12px 6px 18px; background: #fff; }
+.sheet-head h3 { margin: 0; }
+.sheet-x { flex: 0 0 auto; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #eef3f1; color: #173d3a; font-size: 24px; line-height: 1; }
+@media (max-height: 520px) { .sheet-head { margin-top: -16px; padding-top: 16px; } }
+
+.alerts-card { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 14px 16px; border-radius: 16px; background: #e9f6f2; border: 1px solid #c8e6de; color: #1d4a44; }
+.alerts-card strong { display: block; font-size: 0.9375rem; margin-bottom: 2px; }
+.alerts-card p { margin: 0; font-size: max(0.8125rem, 12px); line-height: 1.4; overflow-wrap: anywhere; }
+.alerts-card > div { flex: 1; min-width: 0; }
+.alerts-card button { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #247c72; background: #247c72; color: #fff; font-weight: 700; }
+.alerts-card.on { background: #f4f8f7; border-color: #dce7e4; }
+.alerts-card.on button { background: #fff; color: #247c72; }
+@media (forced-colors: active) { .alerts-card { border: 1px solid CanvasText; } }
+
+/* Focusing a field (phone keyboard) must never scroll the frame itself: that shifted the whole app up and left it stuck. */
+.phone-frame { overflow: hidden; overflow: clip; }
+.sheet-backdrop { overscroll-behavior: contain; }
+
+.tag.low { background: #e7f0fb; color: #1d4a6b; }
+.tag.critical { background: #fbe0e0; color: #a12626; }
+.reading-dot { color: #1d4a6b; }
+.upload-card.busy { opacity: .7; pointer-events: none; }
+.report-summary.calm { background: #eaf6ef; border-color: #cfe8d8; }
+.report-summary.calm > span { background: #1d6b4b; }
+.report-summary.calm p { color: #1d4a3a; }
+button.value-row { width: 100%; text-align: left; border: 0; background: transparent; color: inherit; font: inherit; min-height: 44px; }
+.value-row .verified { color: #1d6b4b; display: block; }
+.summary-text { white-space: pre-line; }
+.chart-card .chart:before { display: none; }
+.chart-card .choice-chips { margin: 4px 0 10px; }
+button.value-row { padding: 10px 14px; gap: 12px; }
+button.value-row > div { min-width: 0; overflow-wrap: anywhere; }
+
+/* Toasts: a floating card at the top, below the status bar, tap to dismiss */
+.toast { top: calc(12px + env(safe-area-inset-top)); bottom: auto; left: 14px; right: 14px; display: flex; align-items: center; gap: 12px; padding: 12px 16px 12px 12px; border-radius: 18px; background: rgba(255,255,255,.96); color: #173d3a; font-weight: 600; line-height: 1.35; border: 1px solid #dcebe7; box-shadow: 0 14px 34px rgba(23,61,58,.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: toastIn .32s cubic-bezier(.2,.9,.3,1.2); cursor: pointer; }
+.toast:before { content: "✓"; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #2f9e8f, #1d6b5f); color: #fff; font-weight: 800; font-size: 16px; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-24px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: sheetFade .2s ease-out; } }
+@media (forced-colors: active) { .toast { border: 1px solid CanvasText; } }
+
+/* Compact toast: about three quarters of the width, centred, small */
+.toast { left: 50%; right: auto; width: max-content; max-width: 78%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top)); gap: 9px; padding: 8px 14px 8px 8px; border-radius: 999px; font-size: 13px; font-weight: 600; line-height: 1.3; box-shadow: 0 8px 22px rgba(23,61,58,.2); animation: toastIn2 .28s cubic-bezier(.2,.9,.3,1.1); }
+.toast:before { width: 22px; height: 22px; font-size: 12px; }
+@keyframes toastIn2 { from { opacity: 0; transform: translate(-50%, -16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: sheetFade .2s ease-out; } }
+
+/* Toast sits at the top right */
+.toast { left: auto; right: 14px; transform: none; animation: toastIn3 .28s cubic-bezier(.2,.9,.3,1.1); }
+@keyframes toastIn3 { from { opacity: 0; transform: translate(24px, -10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: sheetFade .2s ease-out; } }
+.toast.leaving { animation: toastOut .3s ease-in forwards; }
+@keyframes toastOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate(24px, -8px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .toast.leaving { animation: sheetFadeOut .2s forwards; } @keyframes sheetFadeOut { to { opacity: 0; } } }
+
+/* Today's medicines: the path turns green as doses are taken, with a small progress bar */
+.dose-progress { height: 6px; border-radius: 3px; background: #e3ece9; margin: -4px 0 12px; overflow: hidden; }
+.dose-progress i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3a9d72, #2f8a63); transition: width .5s ease; }
+.medicine-row.done .line:before, .medicine-row.done + .medicine-row.done .line:before, .medicine-row.done + .medicine-row.current .line:before { background: #3a9d72; width: 2px; left: 10px; }
+.medicine-row.done:has(+ .medicine-row.done) .line:after, .medicine-row.done:has(+ .medicine-row.current) .line:after { background: #3a9d72; width: 2px; left: 10px; }
+.medicine-row.done .medicine-info h3 { color: #1d6b4b; }
+.medicine-row .line i { transition: background .3s, border-color .3s; }
+.medicine-row.done .line i { box-shadow: 0 0 0 4px rgba(58,157,114,.15); }
+
+/* Today header area: slim rows instead of big cards, so the medicines come first */
+.checkin-line { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 10px; padding: 8px 12px; min-height: 52px; border: 1px solid #cfe8d8; border-radius: 14px; background: #eef8f2; color: #173d3a; text-align: left; }
+.checkin-line.sent, .checkin-line.none { background: #f4f8f7; border-color: #dce7e4; }
+.checkin-line .okay-icon { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #3a9d72; color: #fff; font-weight: 800; font-size: 14px; }
+.checkin-line.sent .okay-icon, .checkin-line.none .okay-icon { background: #b9cdc7; }
+.checkin-text { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; overflow-wrap: anywhere; }
+.checkin-text strong { font-size: .875rem; }
+.checkin-text small { color: #566966; font-size: .8125rem; }
+.alerts-slim { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 4px 4px 4px 12px; min-height: 48px; border-radius: 14px; background: #e9f6f2; border: 1px solid #c8e6de; color: #1d4a44; font-size: .8125rem; font-weight: 600; }
+.alerts-slim > span { flex: 1; min-width: 0; line-height: 1.3; }
+.alerts-slim .slim-action { flex: 0 0 auto; min-height: 36px; padding: 0 14px; border-radius: 10px; border: 0; background: #247c72; color: #fff; font-weight: 700; font-size: .8125rem; }
+.alerts-slim .slim-x { flex: 0 0 auto; width: 40px; height: 40px; border: 0; background: transparent; color: #566966; font-size: 22px; border-radius: 10px; }
+
+/* Even lighter and smaller rows on Today */
+.checkin-line, .next-visit, .alerts-slim { min-height: 40px; margin-bottom: 8px; padding-top: 5px; padding-bottom: 5px; border-radius: 12px; box-shadow: none; }
+.checkin-line { padding-left: 10px; padding-right: 10px; background: #f1f8f4; border-color: #dcefe4; gap: 8px; }
+.checkin-line.sent, .checkin-line.none { background: #f6f9f8; border-color: #e6eeeb; }
+.checkin-line .okay-icon { width: 22px; height: 22px; font-size: 12px; }
+.checkin-text { flex-wrap: nowrap; align-items: center; gap: 6px; }
+.checkin-text strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.checkin-text small { font-size: 12px; white-space: nowrap; color: #6b7d79; flex: 0 0 auto; }
+.checkin-text small:before { content: "· "; }
+.checkin-line svg, .next-visit > svg { width: 16px; height: 16px; color: #8a9895; flex: 0 0 auto; }
+.next-visit { background: #fff; border-color: #e8f0ed; gap: 8px; padding-left: 10px; padding-right: 10px; }
+.next-visit-icon { width: 24px; height: 24px; border-radius: 8px; }
+.next-visit-icon svg { width: 14px; height: 14px; }
+.next-visit-text { flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.next-visit-text strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.next-visit-text em { font-size: 12px; font-weight: 500; white-space: nowrap; color: #4f8a80; flex: 0 0 auto; }
+.alerts-slim { font-size: 12.5px; font-weight: 500; padding-left: 10px; background: #f0f8f5; border-color: #d6ebe4; gap: 6px; }
+.alerts-slim .slim-action { min-height: 30px; padding: 0 12px; font-size: 12.5px; border-radius: 9px; }
+.alerts-slim .slim-x { width: 36px; height: 36px; font-size: 20px; }
+.alerts-slim .slim-action, .alerts-slim .slim-x { position: relative; }
+.alerts-slim .slim-action:after { content: ""; position: absolute; inset: -8px -2px; }
+.alerts-slim .slim-x:after { content: ""; position: absolute; inset: -4px; }
+.toast { max-width: 70%; }
+.toast-text { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.checkin-text { flex-wrap: wrap; row-gap: 0; }
+.checkin-text strong { white-space: normal; overflow: visible; }
+.checkin-text small:before { content: none; }
+button.next-visit { min-height: 40px; padding: 5px 10px; gap: 8px; margin-bottom: 8px; border-radius: 12px; box-shadow: none; }
+button.next-visit .next-visit-icon { width: 24px; height: 24px; border-radius: 8px; }
+button.next-visit .next-visit-text { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+button.next-visit .next-visit-text strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+button.next-visit .next-visit-text em { font-size: 12px; font-weight: 500; white-space: nowrap; color: #4f8a80; flex: 0 0 auto; }
+
+/* Slightly larger text for the parent's status and the doctor's name */
+.checkin-text strong { font-size: 15px; font-weight: 700; }
+.checkin-text small { font-size: 12.5px; }
+.checkin-line { min-height: 48px; padding-top: 7px; padding-bottom: 7px; }
+.checkin-line .okay-icon { width: 26px; height: 26px; font-size: 13px; }
+button.next-visit { min-height: 48px; padding-top: 7px; padding-bottom: 7px; }
+button.next-visit .next-visit-text strong { font-size: 15px; font-weight: 700; }
+button.next-visit .next-visit-text em { font-size: 12.5px; }
+button.next-visit .next-visit-icon { width: 28px; height: 28px; }
+
+.section-actions { display: flex; align-items: center; gap: 4px; }

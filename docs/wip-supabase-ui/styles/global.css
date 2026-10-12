@@ -1,0 +1,19 @@
+@import "./carelink.css";
+@import "./app.css";
+
+:root {
+  --font-body: "DM Sans Variable", "Noto Sans Devanagari", system-ui, sans-serif;
+  font-family: var(--font-body);
+  color: #173d3a;
+  background: #e8efed;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; font-family: var(--font-body); }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 3px solid #58a298; outline-offset: 2px; }
+a.primary-button { display: flex; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
