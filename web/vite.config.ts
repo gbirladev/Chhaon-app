@@ -65,7 +65,7 @@ export default defineConfig({
       workbox: {
         // App shell is cached; Supabase / API calls always go to the network (health data is never cached offline).
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/emergency\//, /^\/about\.html$/, /^\/privacy\.html$/, /^\/legal\//],
+        navigateFallbackDenylist: [/^\/emergency\//, /^\/about\.html$/, /^\/privacy\.html$/, /^\/legal\//, /^\/home\.html$/, /^\/landing\//],
       },
     }),
   ],
