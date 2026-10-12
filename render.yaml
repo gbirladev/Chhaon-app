@@ -1,0 +1,57 @@
+# Render blueprint for the Chhaon API and its scheduler.
+# Render dashboard > New > Blueprint > pick this repo. Secrets marked `sync: false` are asked for once during setup.
+# Step by step: docs/GO_LIVE.md
+services:
+  - type: web
+    name: chhaon-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    plan: starter            # the free plan sleeps, which would miss reminders and webhooks
+    region: singapore        # closest Render region to India
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false          # the web app address, e.g. https://chhaon.netlify.app (no trailing slash)
+      - key: CRON_SECRET
+        generateValue: true
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false          # only needed when report reading is switched on
+
+  # Calls the API's scheduler endpoint every minute (reminders, check-ins, missed doses, alerts).
+  - type: cron
+    name: chhaon-tick
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    region: singapore
+    schedule: "* * * * *"
+    dockerCommand: >-
+      /app/.venv/bin/python -c "import os, urllib.request as u;
+      r = u.Request(os.environ['API_URL'] + '/cron/tick', method='POST', headers={'X-Cron-Secret': os.environ['CRON_SECRET']});
+      print(u.urlopen(r, timeout=50).read().decode())"
+    envVars:
+      - key: API_URL
+        sync: false          # the API address from Render, e.g. https://chhaon-api.onrender.com
+      - key: CRON_SECRET
+        fromService:
+          type: web
+          name: chhaon-api
+          envVarKey: CRON_SECRET
