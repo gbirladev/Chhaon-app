@@ -52,6 +52,9 @@ const useSessionExpired = () => useContext(SessionContext);
 /** The privacy pages, the first-login consent sheet, data export and account deletion are built but switched off for v1. Set VITE_PRIVACY_ENABLED=true to turn them on. */
 const PRIVACY_ENABLED = import.meta.env.VITE_PRIVACY_ENABLED === "true";
 
+/** Login by phone text message needs an SMS provider. Set VITE_PHONE_LOGIN=false to offer email only (the production pilot). */
+const PHONE_LOGIN = import.meta.env.VITE_PHONE_LOGIN !== "false";
+
 const MAX_NUMBER = 100000;  // stock, dose and refill numbers: far above anything real, far below database limits
 
 /** A form field whose label is tied to its control and whose error is announced to screen readers. */
@@ -284,7 +287,7 @@ const isNetworkFailure = (err: { name?: string; status?: number } | null | undef
 
 function Welcome({ go }: { go: (screen: Screen) => void }) {
   const t = useTranslations("welcome");
-  const [method, setMethod] = useState<"phone" | "email">("phone");
+  const [method, setMethod] = useState<"phone" | "email">(PHONE_LOGIN ? "phone" : "email");
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -333,9 +336,11 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
         {method === "phone" && <p id="login-hint" className="login-hint">{t("outsideIndia")}</p>}
         {error && <p role="alert" className="form-error">{error}</p>}
         <button className="primary-button" onClick={continueLogin} disabled={busy}>{busy ? t("sending") : t("continue")}</button>
-        <button className="text-button" onClick={() => { setMethod(method === "phone" ? "email" : "phone"); setValue(""); setError(""); }}>
-          {method === "phone" ? t("useEmail") : t("usePhone")}
-        </button>
+        {PHONE_LOGIN && (
+          <button className="text-button" onClick={() => { setMethod(method === "phone" ? "email" : "phone"); setValue(""); setError(""); }}>
+            {method === "phone" ? t("useEmail") : t("usePhone")}
+          </button>
+        )}
         {PRIVACY_ENABLED && <LegalLinks go={go} />}
       </div>
     </main>
