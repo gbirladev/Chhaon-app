@@ -58,9 +58,23 @@ def _run_steps(db: Client, wa: Messenger, settings: Settings, now: datetime) -> 
         try:
             step(db, wa, settings, now, counts)
         except Exception as exc:  # noqa: BLE001
-            log.error("scheduler step %s failed (%s)", step.__name__, type(exc).__name__)
+            log.error("scheduler step %s failed (%s)", step.__name__, _reason(exc))
             counts["step_errors"] += 1
     return dict(counts)
+
+
+def _reason(exc: Exception) -> str:
+    """Error type plus the database error code and, for setup problems only, its message.
+    Messages of other errors can contain row values (health data), so they are never logged."""
+    code = str(getattr(exc, "code", "") or "")
+    message = str(getattr(exc, "message", "") or "")
+    setup_problem = not code or code.startswith(("PGRST", "42")) or "jwt" in message.lower() or "api key" in message.lower()
+    parts = [type(exc).__name__]
+    if code:
+        parts.append(f"code={code}")
+    if setup_problem and message:
+        parts.append(message[:200])
+    return " ".join(parts)
 
 
 def _iso(value: datetime) -> str:
