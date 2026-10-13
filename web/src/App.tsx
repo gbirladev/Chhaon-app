@@ -366,7 +366,7 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
     if (verifying.current) return;
     setError("");
     if (!pending) return go("welcome", { replace: true });
-    if (otp.length !== 6) return setError(t("invalidCode"));
+    if (otp.length < 6 || otp.length > 8) return setError(t("invalidCode"));  // Supabase sends 6 or 8 digits depending on the project setting
     verifying.current = true;
     setBusy(true);
     try {
@@ -395,7 +395,7 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
       <div className="otp-icon"><Icon name="shield" size={30} /></div>
       <h2>{t("heading")}</h2>
       {import.meta.env.DEV && <p>{t("devHint")}</p>}
-      <input className="otp-input" aria-label={t("heading")} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="• • • • • •" autoFocus />
+      <input className="otp-input" aria-label={t("heading")} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="one-time-code" placeholder="• • • • • •" autoFocus />
       {error && <p role="alert" className="form-error">{error}</p>}
       {notice && <p role="status" style={{ textAlign: "center", color: "#247c72" }}>{notice}</p>}
       <button className="primary-button" onClick={verify} disabled={busy}>{busy ? t("checking") : t("verify")}</button>
