@@ -1,4 +1,4 @@
-# Render blueprint for the Chhaon API and its scheduler.
+# Render blueprint for the Chhaon API (FREE plan to start; see the paid-plan notes below).
 # Render dashboard > New > Blueprint > pick this repo. Secrets marked `sync: false` are asked for once during setup.
 # Step by step: docs/GO_LIVE.md
 services:
@@ -7,7 +7,8 @@ services:
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: ./api
-    plan: starter            # the free plan sleeps, which would miss reminders and webhooks
+    plan: free               # sleeps after ~15 min without calls. An outside timer (cron-job.org) calls /cron/tick every minute, which also keeps it awake.
+                             # Move to `starter` (about $7 a month) before real families rely on it.
     region: singapore        # closest Render region to India
     healthCheckPath: /health
     autoDeploy: true
@@ -35,23 +36,25 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false          # only needed when report reading is switched on
 
-  # Calls the API's scheduler endpoint every minute (reminders, check-ins, missed doses, alerts).
-  - type: cron
-    name: chhaon-tick
-    runtime: docker
-    dockerfilePath: ./api/Dockerfile
-    dockerContext: ./api
-    region: singapore
-    schedule: "* * * * *"
-    dockerCommand: >-
-      /app/.venv/bin/python -c "import os, urllib.request as u;
-      r = u.Request(os.environ['API_URL'] + '/cron/tick', method='POST', headers={'X-Cron-Secret': os.environ['CRON_SECRET']});
-      print(u.urlopen(r, timeout=50).read().decode())"
-    envVars:
-      - key: API_URL
-        sync: false          # the API address from Render, e.g. https://chhaon-api.onrender.com
-      - key: CRON_SECRET
-        fromService:
-          type: web
-          name: chhaon-api
-          envVarKey: CRON_SECRET
+  # PAID PLAN ONLY: Render's own one-minute timer. On the free plan use cron-job.org instead (docs/GO_LIVE.md).
+  # To switch: set `plan: starter` above and uncomment this block.
+  #   # Calls the API's scheduler endpoint every minute (reminders, check-ins, missed doses, alerts).
+  #   - type: cron
+  #     name: chhaon-tick
+  #     runtime: docker
+  #     dockerfilePath: ./api/Dockerfile
+  #     dockerContext: ./api
+  #     region: singapore
+  #     schedule: "* * * * *"
+  #     dockerCommand: >-
+  #       /app/.venv/bin/python -c "import os, urllib.request as u;
+  #       r = u.Request(os.environ['API_URL'] + '/cron/tick', method='POST', headers={'X-Cron-Secret': os.environ['CRON_SECRET']});
+  #       print(u.urlopen(r, timeout=50).read().decode())"
+  #     envVars:
+  #       - key: API_URL
+  #         sync: false          # the API address from Render, e.g. https://chhaon-api.onrender.com
+  #       - key: CRON_SECRET
+  #         fromService:
+  #           type: web
+  #           name: chhaon-api
+  #           envVarKey: CRON_SECRET
