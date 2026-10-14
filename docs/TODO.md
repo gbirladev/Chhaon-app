@@ -77,7 +77,8 @@ Found by the journey and verification agents (round 3), still open
 ## Plans, trial and pausing: open gaps (2026-10-14)
 Built and tested locally (166 database + 235 API tests, browser checks in English and Hindi). Details: `docs/plans.md`. **Not on the live database or site yet.**
 
-- [ ] **Go live with plans, in this order:** (1) back up the live database (or note its backup state in Supabase); (2) `npx supabase@2.120.0 db push` (use that version: 2.121.0 had no Mac build; never `config push`); (3) `git push` so Netlify and Render redeploy; (4) put the owner's own account on `ultra` (`update public.profiles set plan = 'ultra' where email = '...'`), otherwise it is on Free after its 30-day trial.
+- [x] **Went live 2026-10-14:** migration 0027 applied with `db push` (dry run first), owner account `gbirla.dev.rnd@gmail.com` put on `ultra`, code pushed (commit f2e6ea1), Plans screen confirmed on the live site. The original order was:
+  (Go live with plans, in this order: (1) back up the live database (or note its backup state in Supabase); (2) `npx supabase@2.120.0 db push` (use that version: 2.121.0 had no Mac build; never `config push`); (3) `git push` so Netlify and Render redeploy; (4) put the owner's own account on `ultra` (`update public.profiles set plan = 'ultra' where email = '...'`), otherwise it is on Free after its 30-day trial.
 - [ ] **Run the migration against real data once:** it was tested from the live database's state on a scratch copy, not on the live data itself. Check afterwards that existing accounts show a 30-day trial and that Today, Medicines and Plans load.
 - [ ] **Look at it on a real phone** (only a phone-sized browser window was used).
 - [ ] **"Invite a family member" message for a Free user** (the circle limit): refused by the database (tested) but the on-screen message was not looked at.
