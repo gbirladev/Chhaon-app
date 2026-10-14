@@ -28,3 +28,7 @@
 .picked-files li > span { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
 .picked-files small { color: #566966; }
 .picked-files .file-icon { width: 44px; height: 44px; flex: none; font-size: 0.75rem; }
+.wallet-page .wallet-count { margin: 0 !important; font-size: max(0.875rem, 12px); color: #566966; }
+.wallet-page .wallet-count.near { color: #7a4a12; font-weight: 700; }
+.wallet-page .wallet-full { margin-top: 14px; padding: 16px; border-radius: 16px; background: #fff4de; border: 1px solid #f0d9a5; color: #6b4b0a; line-height: 1.5; }
+.wallet-page .wallet-full p { margin: 6px 0 12px; font-size: max(0.9375rem, 12px); }

@@ -2172,7 +2172,7 @@ export default function App() {
           {screen === "medicineDetail" && <MedicineDetail go={go} medicine={medicines.find((m) => m.id === selectedMedicineId)} onChanged={async () => { await refreshMedicines(); refreshNotifications(); }} />}
           {screen === "reports" && (REPORTS_ENABLED
             ? <Reports recipient={recipient} onOpen={(id) => { setSelectedReportId(id); go("reportDetail"); }} />
-            : <WalletScreen recipient={recipient} onOpen={(id) => { setSelectedDocumentId(id); go("documentDetail"); }} />)}
+            : <WalletScreen recipient={recipient} onOpen={(id) => { setSelectedDocumentId(id); go("documentDetail"); }} onUpgrade={() => go("plans")} />)}
           {screen === "documentDetail" && <WalletDetail go={go} documentId={selectedDocumentId} />}
           {screen === "appointments" && <AppointmentsScreen go={go} recipient={recipient} />}
           {screen === "reportDetail" && <ReportDetail go={go} recipient={recipient} reportId={selectedReportId} />}

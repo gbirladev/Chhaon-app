@@ -355,14 +355,14 @@ isOneToOne: false
                   ]
                 },"plans": {
                   Row: {
-                    "key": string,"max_medicines": number | null,"max_members": number | null,"max_parents": number | null,"name": string,"sort_order": number
+                    "key": string,"max_documents": number | null,"max_medicines": number | null,"max_members": number | null,"max_parents": number | null,"name": string,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "key": string,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name": string,"sort_order"?: number
+                    "key": string,"max_documents"?: number | null,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name": string,"sort_order"?: number
                   }
                   Update: {
-                    "key"?: string,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name"?: string,"sort_order"?: number
+                    "key"?: string,"max_documents"?: number | null,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name"?: string,"sort_order"?: number
                   }
                   Relationships: [
                     
@@ -547,6 +547,7 @@ isOneToOne: false
 "plan_for_circle":
 { Args: { "p_circle": string }; Returns: {
               "key": string,
+"max_documents": number | null,
 "max_medicines": number | null,
 "max_members": number | null,
 "max_parents": number | null,
@@ -562,6 +563,7 @@ isOneToOne: false
 "plan_of_user":
 { Args: { "p_user": string }; Returns: {
               "key": string,
+"max_documents": number | null,
 "max_medicines": number | null,
 "max_members": number | null,
 "max_parents": number | null,
@@ -626,6 +628,9 @@ isOneToOne: false
                            },
 "update_medicine":
 { Args: { "p_dosage": string,"p_instructions": string,"p_medicine": string,"p_name": string,"p_photo_url": string,"p_refill_threshold": number,"p_times": (string)[] }; Returns: undefined
+                           },
+"wallet_usage":
+{ Args: { "p_recipient": string }; Returns: Json
                            }
           }
           Enums: {

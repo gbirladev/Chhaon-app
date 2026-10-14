@@ -2,8 +2,8 @@ import { supabase } from "./supabase";
 
 /** Pricing plans and the free trial (migration 0027). The limits are enforced in the database; this only reads them to show them. */
 /** A null limit means unlimited. */
-export type PlanInfo = { key: string; name: string; maxParents: number | null; maxMembers: number | null; maxMedicines: number | null };
-export type PlanOverview = PlanInfo & {
+export type PlanInfo = { key: string; name: string; maxParents: number | null; maxMembers: number | null; maxMedicines: number | null; maxDocuments: number | null };
+export type PlanOverview = Omit<PlanInfo, "maxDocuments"> & {
   plan: string;          // what the account is on (free / plus / family)
   effective: string;     // what applies right now: a Free account on trial counts as Plus
   onTrial: boolean;
@@ -14,9 +14,9 @@ export type PlanOverview = PlanInfo & {
 };
 
 export async function loadPlans(): Promise<PlanInfo[]> {
-  const { data, error } = await supabase.from("plans").select("key, name, max_parents, max_members, max_medicines").order("sort_order");
+  const { data, error } = await supabase.from("plans").select("key, name, max_parents, max_members, max_medicines, max_documents").order("sort_order");
   if (error) throw error;
-  return data.map((p) => ({ key: p.key, name: p.name, maxParents: p.max_parents, maxMembers: p.max_members, maxMedicines: p.max_medicines }));
+  return data.map((p) => ({ key: p.key, name: p.name, maxParents: p.max_parents, maxMembers: p.max_members, maxMedicines: p.max_medicines, maxDocuments: p.max_documents }));
 }
 
 export async function loadPlanOverview(): Promise<PlanOverview> {

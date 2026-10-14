@@ -53,6 +53,7 @@ export function PlansScreen({ go }: { go: (screen: "family") => void }) {
                   <li><span>{t("parents")}</span><strong>{p.maxParents ?? t("unlimited")}</strong></li>
                   <li><span>{t("members")}</span><strong>{p.maxMembers ?? t("unlimited")}</strong></li>
                   <li><span>{t("medicines")}</span><strong>{p.maxMedicines ?? t("unlimited")}</strong></li>
+                  <li><span>{t("documents")}</span><strong>{p.maxDocuments ?? t("unlimited")}</strong></li>
                 </ul>
                 {(current || trialPlan) && <p className="plan-usage">{state.mine.maxParents === null ? t("usageUnlimited", { used: state.mine.parentsUsed }) : t("usage", { used: state.mine.parentsUsed, max: state.mine.maxParents })}</p>}
               </section>

@@ -4,7 +4,7 @@ import { AppHeader, Field, Icon, parentCall, useDialog, useSessionExpired, useTo
 import type { Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
 import {
-  CATEGORIES, MAX_PAGES, addPages, createDocument, deleteDocument, loadDocument, loadDocuments, removePage, signedUrls, updateDocument, uploadFiles,
+  CATEGORIES, MAX_PAGES, addPages, createDocument, deleteDocument, loadDocument, loadDocuments, loadWalletUsage, removePage, signedUrls, updateDocument, uploadFiles,
   type Category, type DocFields, type WalletDoc,
 } from "../lib/wallet";
 import { ConfirmSheet } from "./Invites";
@@ -96,7 +96,7 @@ function DocumentSheet(props: SheetProps) {
     }
     const saved = await createDocument(props.recipientId, fields, up.items);
     setBusy(false); setProgress(null);
-    if (!saved.ok) return setErrors({ form: t(saved.reason === "limit" ? "errLimit" : "errSave") });
+    if (!saved.ok) return setErrors({ form: t(saved.reason === "plan" ? "errPlan" : saved.reason === "limit" ? "errLimit" : saved.reason === "storage" ? "errStorage" : "errSave") });
     toast(t("added"));
     props.onSaved(saved.id);
   };
@@ -159,7 +159,7 @@ const Thumb = ({ doc, url }: { doc: WalletDoc; url?: string }) => {
 };
 
 /** The Reports tab: a wallet of the parent's papers. Search, filter by type, open, add. */
-export function WalletScreen({ recipient, onOpen }: { recipient: Recipient | null; onOpen: (id: string) => void }) {
+export function WalletScreen({ recipient, onOpen, onUpgrade }: { recipient: Recipient | null; onOpen: (id: string) => void; onUpgrade: () => void }) {
   const t = useTranslations("wallet");
   const language = useLocale() as Language;
   const dateLabel = useDateLabel();
@@ -169,6 +169,7 @@ export function WalletScreen({ recipient, onOpen }: { recipient: Recipient | nul
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Category | "all">("all");
   const [adding, setAdding] = useState<File[] | null>(null);
+  const [usage, setUsage] = useState<{ used: number; max: number | null } | null>(null);
   const recipientId = recipient?.id;
   const call = parentCall(recipient, language);
 
@@ -178,9 +179,10 @@ export function WalletScreen({ recipient, onOpen }: { recipient: Recipient | nul
       const list = await loadDocuments(recipientId);
       setDocs(list); setError(false);
       setThumbs(await signedUrls(list.map((d) => d.files[0]?.thumbPath ?? "").filter(Boolean)));
+      setUsage(await loadWalletUsage(recipientId));
     } catch { setError(true); }
   };
-  useEffect(() => { setDocs(null); setThumbs({}); void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recipientId]);
+  useEffect(() => { setDocs(null); setThumbs({}); setUsage(null); void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recipientId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -195,10 +197,19 @@ export function WalletScreen({ recipient, onOpen }: { recipient: Recipient | nul
   return (
     <main className="scroll-page wallet-page">
       <AppHeader title={t("title")} subtitle={t("subtitle", { call })} />
-      <section className="upload-card wallet-add">
-        <div><strong>{t("add")}</strong><p>{t("addHint")}</p></div>
-        <FilePickers onPick={(files) => setAdding(files)} />
-      </section>
+      {usage && usage.max !== null && usage.used >= usage.max ? (
+        <section className="wallet-full" role="status">
+          <strong>{usage.used > usage.max ? t("overTitle") : t("fullTitle")}</strong>
+          <p>{usage.used > usage.max ? t("overBody", { max: usage.max, used: usage.used }) : t("fullBody", { max: usage.max })}</p>
+          <button className="primary-button" onClick={onUpgrade}>{t("seePlans")}</button>
+        </section>
+      ) : (
+        <section className="upload-card wallet-add">
+          <div><strong>{t("add")}</strong><p>{t("addHint")}</p></div>
+          <FilePickers onPick={(files) => setAdding(files)} />
+          {usage && usage.max !== null && <p className={`wallet-count${usage.max - usage.used <= 1 ? " near" : ""}`}>{t("usage", { used: usage.used, max: usage.max })}</p>}
+        </section>
+      )}
 
       {docs && docs.length > 0 && (
         <>
@@ -286,7 +297,7 @@ export function WalletDetail({ go, documentId }: { go: (screen: "reports", optio
     }
     const saved = await addPages(doc.id, doc.files.length, up.items);
     setBusy(false);
-    if (!saved.ok) return toast(t(saved.reason === "pages" ? "errPages" : "errSave"));
+    if (!saved.ok) return toast(t(saved.reason === "pages" ? "errPages" : saved.reason === "storage" ? "errStorage" : "errSave"));
     toast(t("added"));
     void load();
   };

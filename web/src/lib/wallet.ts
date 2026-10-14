@@ -90,7 +90,7 @@ export async function uploadFiles(recipientId: string, files: File[], onProgress
   return { ok: true, items };
 }
 
-export type SaveResult = { ok: true; id: string } | { ok: false; reason: "limit" | "pages" | "save" };
+export type SaveResult = { ok: true; id: string } | { ok: false; reason: "plan" | "limit" | "storage" | "pages" | "save" };
 
 const removeObjects = async (items: { path: string; thumbPath: string | null }[]) => {
   const paths = items.flatMap((i) => [i.path, ...(i.thumbPath ? [i.thumbPath] : [])]);
@@ -101,10 +101,18 @@ export async function createDocument(recipientId: string, fields: DocFields, ite
   const { data: doc, error } = await supabase.from("documents")
     .insert({ recipient_id: recipientId, title: fields.title, category: fields.category, doc_date: fields.docDate, doctor: fields.doctor, notes: fields.notes })
     .select("id").single();
-  if (error || !doc) { await removeObjects(items); return { ok: false, reason: (error as { hint?: string } | null)?.hint === "too_many_documents" ? "limit" : "save" }; }
+  if (error || !doc) {
+    await removeObjects(items);
+    const hint = (error as { hint?: string } | null)?.hint;
+    return { ok: false, reason: hint === "plan_documents" ? "plan" : hint === "too_many_documents" ? "limit" : "save" };
+  }
   const { error: filesError } = await supabase.from("document_files")
     .insert(items.map((i, position) => ({ document_id: doc.id, path: i.path, thumb_path: i.thumbPath, mime: i.mime, size_bytes: i.sizeBytes, position })));
-  if (filesError) { await supabase.from("documents").delete().eq("id", doc.id); await removeObjects(items); return { ok: false, reason: "save" }; }
+  if (filesError) {
+    await supabase.from("documents").delete().eq("id", doc.id);
+    await removeObjects(items);
+    return { ok: false, reason: (filesError as { hint?: string }).hint === "storage_full" ? "storage" : "save" };
+  }
   return { ok: true, id: doc.id };
 }
 
@@ -112,7 +120,11 @@ export async function addPages(documentId: string, existing: number, items: Uplo
   if (existing + items.length > MAX_PAGES) { await removeObjects(items); return { ok: false, reason: "pages" }; }
   const { error } = await supabase.from("document_files")
     .insert(items.map((i, k) => ({ document_id: documentId, path: i.path, thumb_path: i.thumbPath, mime: i.mime, size_bytes: i.sizeBytes, position: existing + k })));
-  if (error) { await removeObjects(items); return { ok: false, reason: (error as { hint?: string }).hint === "too_many_files" ? "pages" : "save" }; }
+  if (error) {
+    await removeObjects(items);
+    const hint = (error as { hint?: string }).hint;
+    return { ok: false, reason: hint === "too_many_files" ? "pages" : hint === "storage_full" ? "storage" : "save" };
+  }
   return { ok: true, id: documentId };
 }
 
@@ -135,4 +147,12 @@ export async function deleteDocument(doc: WalletDoc): Promise<boolean> {
   if (error || !data?.length) return false;
   await removeObjects(doc.files);
   return true;
+}
+
+/** How many reports this parent has and how many the plan allows (max null = no plan limit). */
+export async function loadWalletUsage(recipientId: string): Promise<{ used: number; max: number | null } | null> {
+  const { data, error } = await supabase.rpc("wallet_usage", { p_recipient: recipientId });
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) return null;
+  const d = data as { used: number; max: number | null };
+  return { used: d.used, max: d.max };
 }

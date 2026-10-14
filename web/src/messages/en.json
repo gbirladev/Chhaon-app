@@ -797,7 +797,8 @@
     "unlimited": "Unlimited",
     "usageUnlimited": "You have added {used} {used, plural, one {parent} other {parents}}.",
     "trialBodyPause": "You have the Plus plan, free, until {date}. If you do not upgrade by then, reminders for {items} will pause. Nothing is deleted.",
-    "pausedNow": "Paused right now: {items}. No reminders are sent for them."
+    "pausedNow": "Paused right now: {items}. No reminders are sent for them.",
+    "documents": "Reports you can keep per parent"
   },
   "stats": {
     "title": "Pilot stats",
@@ -909,6 +910,14 @@
       "insurance": "Insurance",
       "bill": "Bill",
       "other": "Other"
-    }
+    },
+    "usage": "{used} of {max} reports used",
+    "fullTitle": "Your plan's reports are full",
+    "fullBody": "Your plan keeps up to {max} reports for each parent. You can still open and download all of them. To add more, upgrade your plan or delete an old report.",
+    "overTitle": "Over your plan's reports",
+    "overBody": "Your plan keeps {max} reports for each parent and you have {used}. Nothing was removed and you can open and download all of them, but you cannot add new ones until you upgrade or delete some.",
+    "seePlans": "See Plans",
+    "errPlan": "You have reached the number of reports your plan allows. See Plans to add more.",
+    "errStorage": "This parent's report storage is full. Please delete an old report to add a new one."
   }
 }
