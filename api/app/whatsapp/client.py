@@ -53,7 +53,11 @@ class WhatsAppClient:
                 code = response.json().get("error", {}).get("code")
             except (ValueError, AttributeError):
                 code = None
-            log.warning("WhatsApp API error status=%s code=%s", response.status_code, code)
+            template = payload.get("template") or {}
+            log.warning(
+                "WhatsApp API error status=%s code=%s template=%s lang=%s",
+                response.status_code, code, template.get("name"), (template.get("language") or {}).get("code"),
+            )
             raise WhatsAppError(f"WhatsApp API error {response.status_code}")
         try:
             return response.json()["messages"][0]["id"]

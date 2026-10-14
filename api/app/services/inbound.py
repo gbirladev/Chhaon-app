@@ -110,6 +110,10 @@ def process_webhook(db: Client, wa: Messenger, body) -> None:
                 _once(db, _str(message.get("id")), lambda m=message: _handle_message(db, wa, m))
             for status in _list(value.get("statuses")):
                 status = _dict(status)
+                if status.get("status") == "failed":
+                    # Only the numeric error codes are logged: Meta's texts can echo phone numbers.
+                    codes = [_dict(e).get("code") for e in _list(status.get("errors"))]
+                    log.warning("WhatsApp delivery failed, error codes=%s", codes)
                 if status.get("status") == "failed" and _str(status.get("id")):
                     _once(db, f"{status['id']}:failed", lambda s=status: _handle_failed(db, s))
 
