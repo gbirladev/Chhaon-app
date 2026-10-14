@@ -70,7 +70,8 @@ def test_consent_request_then_parent_agrees(client, db, family, messenger, as_ca
     yes_payload = template.components[1]["parameters"][0]["payload"]
 
     # asking again right away must not spam the parent
-    assert client.post(f"/recipients/{family.recipient_id}/consent-request").json() == {"status": "too_soon"}
+    too_soon = client.post(f"/recipients/{family.recipient_id}/consent-request").json()
+    assert too_soon["status"] == "too_soon" and 1 <= too_soon["retry_after"] <= 600
     assert len(messenger.templates) == 1
 
     message_id = wamid()

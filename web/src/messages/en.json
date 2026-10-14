@@ -199,6 +199,7 @@
     "consentResend": "Send again",
     "consentSent": "Message sent to {call}.",
     "consentTooSoon": "Already sent a moment ago. Please wait a few minutes.",
+    "consentWait": "Already sent. You can send again in {time}.",
     "consentFailed": "Could not send right now. Please try again shortly.",
     "consentStoppedTitle": "Messages are paused",
     "consentStopped": "{call} stopped WhatsApp messages. Ask them to reply START on WhatsApp to turn them back on.",
@@ -539,11 +540,18 @@
       "goodMorning": "Good morning {call}! ☀️",
       "areYouOkay": "Are you feeling okay today?",
       "okay": "👍 I'm okay",
-      "callMe": "📞 Call me"
+      "callMe": "📞 Call me",
+      "medicineTimeNow": "Time for your medicine:"
     },
     "back": "Go back",
     "sentIn": "{call} receives these messages in {language}. You can change this in the parent's details.",
-    "demoNote": "Preview only. This is a picture of what the parent receives. The buttons here are not active."
+    "demoNote": "Preview only. This is a picture of what the parent receives. The buttons here are not active.",
+    "yesterday": "YESTERDAY",
+    "realNote": "Last 3 days of what was sent to {call}. Message wording is shown as {call} receives it.",
+    "sampleNote": "Nothing has been sent yet. Here is a sample of what {call} will receive.",
+    "noReply": "No reply from {call}",
+    "waiting": "Waiting for {call}'s reply",
+    "replied": "{call} replied"
   },
   "notif": {
     "title": "Notifications",

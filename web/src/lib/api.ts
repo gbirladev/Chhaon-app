@@ -86,19 +86,20 @@ export const isLowStock = (m: Medicine) => m.threshold !== null && m.stock <= m.
 export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_soon" | "no_phone" | "error";
 
 /** Asks the backend to send the parent a WhatsApp message requesting their agreement. Never throws. */
-export async function requestConsent(recipientId: string): Promise<ConsentResult> {
+export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number }> {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
-    if (!token) return "error";
+    if (!token) return { result: "error" };
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/recipients/${recipientId}/consent-request`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) return "error";
-    return ((await response.json()) as { status: ConsentResult }).status;
+    if (!response.ok) return { result: "error" };
+    const body = (await response.json()) as { status: ConsentResult; retry_after?: number };
+    return { result: body.status, retryAfter: body.retry_after };
   } catch {
-    return "error";
+    return { result: "error" };
   }
 }
 
@@ -339,6 +340,31 @@ export async function loadCheckin(recipient: Recipient): Promise<TodayCheckin> {
     .eq("recipient_id", recipient.id).eq("date", localDate(new Date(), recipient.timezone)).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export type Activity =
+  | { kind: "dose"; id: string; at: string; status: DoseStatus; respondedAt: string | null; name: string; dosage: string | null }
+  | { kind: "checkin"; id: string; at: string; status: Database["public"]["Enums"]["checkin_status"]; respondedAt: string | null };
+
+/** What was really sent to the parent in the last few days, oldest first. Message text is not stored, only these records. */
+export async function loadRecentActivity(recipient: Recipient, days = 3): Promise<Activity[]> {
+  const from = new Date(Date.now() - days * 24 * 3600_000).toISOString();
+  const [doses, checkins] = await Promise.all([
+    supabase.from("dose_events")
+      .select("id, status, sent_at, responded_at, medicine_schedules(medicines(recipient_id, name, dosage))")
+      .not("sent_at", "is", null).gte("sent_at", from).order("sent_at", { ascending: false }).limit(300),
+    supabase.from("checkins").select("id, status, sent_at, responded_at")
+      .eq("recipient_id", recipient.id).not("sent_at", "is", null).gte("sent_at", from).order("sent_at", { ascending: false }).limit(50),
+  ]);
+  if (doses.error) throw doses.error;
+  if (checkins.error) throw checkins.error;
+  const items: Activity[] = [
+    ...doses.data
+      .filter((d) => d.medicine_schedules.medicines.recipient_id === recipient.id && d.sent_at)
+      .map((d): Activity => ({ kind: "dose", id: d.id, at: d.sent_at as string, status: d.status, respondedAt: d.responded_at, name: d.medicine_schedules.medicines.name, dosage: d.medicine_schedules.medicines.dosage })),
+    ...checkins.data.map((c): Activity => ({ kind: "checkin", id: c.id, at: c.sent_at as string, status: c.status, respondedAt: c.responded_at })),
+  ];
+  return items.sort((a, b) => a.at.localeCompare(b.at));
 }
 
 export type CircleMember = { userId: string; role: "owner" | "member"; name: string | null; email: string | null; phone: string | null };

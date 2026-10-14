@@ -3,12 +3,12 @@ import { createTranslator, useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
 import { compressImage } from "./lib/image";
 import {
-  PRESET_TIMES, isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
+  PRESET_TIMES, isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockLabel, clockParts, describeTimes, formatClock, formatDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { clockLabel, clockParts, describeTimes, formatClock, formatDate, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -658,20 +658,45 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   const t = useTranslations("today");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // When the server says to wait, the button counts down to the moment it may be pressed again.
+  const [waitUntil, setWaitUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (waitUntil === null) return;
+    const id = window.setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= waitUntil) { setWaitUntil(null); setNote(""); }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [waitUntil]);
   if (recipient.consent_at && !recipient.opted_out_at) return null;
   const stopped = !!recipient.opted_out_at;
+  const secondsLeft = waitUntil === null ? 0 : Math.max(0, Math.ceil((waitUntil - now) / 1000));
+  const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const resend = async () => {
     setBusy(true);
-    const result = await requestConsent(recipient.id);
+    const { result, retryAfter } = await requestConsent(recipient.id);
     setBusy(false);
-    setNote(t(result === "sent" ? "consentSent" : result === "too_soon" ? "consentTooSoon" : "consentFailed", { call }));
+    if (result === "too_soon" && retryAfter) {
+      setNow(Date.now());
+      setWaitUntil(Date.now() + retryAfter * 1000);
+      setNote("");
+      return;
+    }
+    if (result === "sent") {
+      // The server allows the next message after its wait window; the first refusal tells us the exact time.
+      setNote(t("consentSent", { call }));
+      return;
+    }
+    setNote(t(result === "too_soon" ? "consentTooSoon" : "consentFailed", { call }));
   };
   return (
     <section className={`consent-card${stopped ? " stopped" : ""}`} role="status">
       <strong>{stopped ? t("consentStoppedTitle") : t("consentPendingTitle", { call })}</strong>
       <p>{stopped ? t("consentStopped", { call }) : t("consentPending", { call })}</p>
-      {!stopped && <button onClick={resend} disabled={busy}>{t("consentResend")}</button>}
-      {note && <p className="consent-note">{note}</p>}
+      {!stopped && <button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button>}
+      {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
+      {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
     </section>
   );
 }
@@ -791,7 +816,18 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     };
     void load();
     const id = window.setInterval(load, 30000);
-    return () => { cancelled = true; window.clearInterval(id); };
+    // Phone browsers pause timers while the app is in the background (e.g. while on WhatsApp): refresh on return.
+    const onReturn = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onReturn);
+    window.addEventListener("focus", onReturn);
+    window.addEventListener("online", onReturn);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onReturn);
+      window.removeEventListener("focus", onReturn);
+      window.removeEventListener("online", onReturn);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipient?.id, recipient?.timezone]);
 
@@ -1640,25 +1676,91 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
   const sampleName = sample ? sample.name : "Metformin";
   const sampleDose = sample?.dose ? localizeDose(sample.dose, tParent) : "500 mg";
   const sampleTime = sample?.times[0] ? clockLabel(sample.times[0], parentLanguage) : clockLabel("08:30", parentLanguage);
+  const tz = recipient?.timezone ?? "Asia/Kolkata";
+
+  // The real history: what was sent in the last 3 days and how the parent answered (null = still loading).
+  const [activity, setActivity] = useState<Activity[] | null>(null);
+  useEffect(() => {
+    if (!recipient) return;
+    let cancelled = false;
+    const load = () => { loadRecentActivity(recipient).then((a) => { if (!cancelled) setActivity(a); }).catch(() => { if (!cancelled) setActivity([]); }); };
+    load();
+    const onReturn = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onReturn);
+    return () => { cancelled = true; document.removeEventListener("visibilitychange", onReturn); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipient?.id]);
+
+  const time = (iso: string) => formatClock(new Date(iso), tz, parentLanguage);
+  const dayLabel = (iso: string) => {
+    const day = localDate(new Date(iso), tz);
+    if (day === localDate(new Date(), tz)) return t("today");
+    if (day === localDate(new Date(Date.now() - 24 * 3600_000), tz)) return t("yesterday");
+    return new Intl.DateTimeFormat(uiLanguage === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short", timeZone: tz }).format(new Date(iso));
+  };
+  const real = activity && activity.length > 0 ? activity : null;
+  const waitingForData = recipient && activity === null;
+
+  const realItems = (items: Activity[]) => {
+    let lastDay = "";
+    return items.map((a) => {
+      const day = localDate(new Date(a.at), tz);
+      const heading = day !== lastDay ? <div key={`d-${a.id}`} className="wa-date next-day">{dayLabel(a.at)}</div> : null;
+      lastDay = day;
+      if (a.kind === "dose") {
+        return (
+          <div key={a.id}>
+            {heading}
+            <div className="wa-message medicine-message">
+              <p>{msg("hello", { call: parentName })}</p><p>{msg("medicineTimeNow")}</p>
+              <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{a.name}{a.dosage ? ` ${localizeDose(a.dosage, tParent)}` : ""}</strong></span></div>
+              <small>{time(a.at)} ✓✓</small>
+            </div>
+            {a.status === "taken" && <div className="wa-reply"><p>{msg("taken")}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
+            {a.status === "missed" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("noReply", { call: callUi })}</div>}
+            {a.status === "sent" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("waiting", { call: callUi })}</div>}
+          </div>
+        );
+      }
+      return (
+        <div key={a.id}>
+          {heading}
+          <div className="wa-message">
+            <p>{msg("goodMorning", { call: parentName })}</p><p>{msg("areYouOkay")}</p><small>{time(a.at)} ✓✓</small>
+            <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
+          </div>
+          {a.status === "replied" && <div className="wa-reply"><p>{t("replied", { call: callUi })}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
+          {a.status === "missed" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("noReply", { call: callUi })}</div>}
+          {a.status === "sent" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("waiting", { call: callUi })}</div>}
+        </div>
+      );
+    });
+  };
+
   return (
     <main className="whatsapp-page">
       <h1 className="sr-only">{t("title")}</h1>
       <header className="wa-header"><button onClick={() => go("family")} aria-label={t("back")}><Icon name="back" /></button><span className="wa-logo"><Icon name="heart" size={19} /></span><div><strong>Chhaon</strong><small>{t("title")}</small></div></header>
       <div className="wa-chat">
-        <div className="wa-helper preview-note" style={{ marginTop: 0, marginBottom: 8 }}>{t("demoNote")}</div>
+        {!waitingForData && <div className={`wa-helper${real ? "" : " preview-note"}`} style={{ marginTop: 0, marginBottom: 8 }}>{real ? t("realNote", { call: callUi }) : t("sampleNote", { call: callUi })}</div>}
         <div className="wa-helper" style={{ marginTop: 0, marginBottom: 14 }}>{t("sentIn", { call: callUi, language: tProfile(parentLanguage === "en" ? "langEnglish" : "langHindi") })}</div>
-        <div className="wa-date">{t("today")}</div>
-        <div className="wa-message medicine-message">
-          <p>{msg("hello", { call: parentName })}</p><p>{msg("medicineTime")}</p>
-          <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{sampleName} {sampleDose}</strong><small>{sample ? "" : msg("medicineDose")}</small></span></div>
-          <small>{sampleTime} ✓✓</small>
-          <button type="button" disabled>{msg("taken")}</button>
-        </div>
-        <div className="wa-date next-day">{t("tomorrow")}</div>
-        <div className="wa-message">
-          <p>{msg("goodMorning", { call: parentName })}</p><p>{msg("areYouOkay")}</p><small>{clockLabel("08:00", parentLanguage)} ✓✓</small>
-          <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
-        </div>
+        {real && realItems(real)}
+        {!real && !waitingForData && (
+          <>
+            <div className="wa-date">{t("today")}</div>
+            <div className="wa-message medicine-message">
+              <p>{msg("hello", { call: parentName })}</p><p>{msg("medicineTime")}</p>
+              <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{sampleName} {sampleDose}</strong><small>{sample ? "" : msg("medicineDose")}</small></span></div>
+              <small>{sampleTime} ✓✓</small>
+              <button type="button" disabled>{msg("taken")}</button>
+            </div>
+            <div className="wa-date next-day">{t("tomorrow")}</div>
+            <div className="wa-message">
+              <p>{msg("goodMorning", { call: parentName })}</p><p>{msg("areYouOkay")}</p><small>{clockLabel("08:00", parentLanguage)} ✓✓</small>
+              <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
+            </div>
+          </>
+        )}
         <div className="wa-helper">{t("helper", { call: callUi })}</div>
       </div>
       <div className="wa-input" aria-hidden="true"><span>{t("inputPlaceholder")}</span><button type="button" tabIndex={-1} disabled aria-hidden="true" aria-label={t("inputPlaceholder")}><Icon name="send" /></button></div>

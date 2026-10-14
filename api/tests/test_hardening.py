@@ -136,7 +136,8 @@ def test_adjust_stock_is_a_delta_and_never_negative(db, family):
 def test_one_phone_number_cannot_be_asked_repeatedly_through_several_accounts(client, db, family, messenger, as_caregiver, real_db_dep):
     other = db.table("care_recipients").insert({"circle_id": family.circle_id, "name": "Duplicate", "whatsapp_phone": PARENT_PHONE}).execute().data[0]
     assert client.post(f"/recipients/{family.recipient_id}/consent-request").json() == {"status": "sent"}
-    assert client.post(f"/recipients/{other['id']}/consent-request").json() == {"status": "too_soon"}  # same number, different parent record
+    too_soon = client.post(f"/recipients/{other['id']}/consent-request").json()
+    assert too_soon["status"] == "too_soon" and 1 <= too_soon["retry_after"] <= 600  # same number, different parent record
     assert len(messenger.templates) == 1
 
 

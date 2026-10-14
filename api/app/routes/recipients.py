@@ -5,7 +5,7 @@ from supabase import Client
 
 from app.config import Settings, get_settings
 from app.deps import current_user_id, get_db, get_messenger
-from app.services.messaging import send_consent_request
+from app.services.messaging import consent_retry_after, send_consent_request
 from app.whatsapp.client import Messenger, WhatsAppError
 
 router = APIRouter(prefix="/recipients", tags=["recipients"])
@@ -31,11 +31,13 @@ def request_consent(
     db: Client = Depends(get_db),
     wa: Messenger = Depends(get_messenger),
     settings: Settings = Depends(get_settings),
-) -> dict[str, str]:
+) -> dict[str, str | int]:
     """Asks the parent, on WhatsApp, to agree to receive Chhaon messages."""
     _require_member(db, str(recipient_id), user_id)
     try:
         status = send_consent_request(db, wa, settings, str(recipient_id), user_id)
     except WhatsAppError as exc:
         raise HTTPException(status_code=502, detail="WhatsApp is unavailable. Try again shortly.") from exc
+    if status == "too_soon":
+        return {"status": status, "retry_after": consent_retry_after(db, settings, str(recipient_id))}
     return {"status": status}

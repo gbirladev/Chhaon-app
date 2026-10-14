@@ -107,6 +107,23 @@ def send_consent_request(db: Client, wa: Messenger, settings: Settings, recipien
     return "sent"
 
 
+def consent_retry_after(db: Client, settings: Settings, recipient_id: str) -> int:
+    """Seconds until a refused consent request may be sent again (at least 1, at most the whole window)."""
+    window = settings.consent_resend_minutes * 60
+    try:
+        phone = db.table("care_recipients").select("whatsapp_phone").eq("id", recipient_id).single().execute().data["whatsapp_phone"]
+        last = (
+            db.table("consent_requests").select("requested_at").eq("phone", phone)
+            .order("requested_at", desc=True).limit(1).execute().data
+        )
+        if not last:
+            return window
+        elapsed = (_now() - datetime.fromisoformat(last[0]["requested_at"])).total_seconds()
+        return max(1, min(window, int(window - elapsed) + 1))
+    except Exception:  # noqa: BLE001  # a countdown is a convenience; never fail the request for it
+        return window
+
+
 # ---------------------------------------------------------------- dose reminder
 def _signed_photo_url(db: Client, path: str | None, recipient_id: str) -> str | None:
     # The path is caregiver-supplied and signed with elevated rights: only this parent's own folder is allowed.
