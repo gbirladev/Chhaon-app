@@ -8,6 +8,9 @@ insert into auth.users (id, email, instance_id, aud, role) values
   ('b2000000-0000-0000-0000-000000000002', 'qa-sib@test.dev',   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
   ('c2000000-0000-0000-0000-000000000003', 'qa-third@test.dev', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
 
+-- these tests exercise the hard limits of the biggest plan
+update public.profiles set plan = 'family' where id = 'a2000000-0000-0000-0000-000000000001';
+
 create temp table t_tok (k text primary key, v text);
 grant all on t_tok to authenticated;
 
@@ -38,8 +41,8 @@ insert into t_tok select 'med', public.create_medicine('d2000000-0000-0000-0000-
 select is((select name from public.medicines where id = (select v::uuid from t_tok where k = 'med')), 'Metformin', 'name is trimmed');
 select throws_ok($$select public.update_medicine((select v::uuid from t_tok where k = 'med'), '', '500 mg', null, null, 2, array['08:00']::time[])$$, '22023', null, 'update refuses a blank name');
 select throws_ok($$select public.update_medicine((select v::uuid from t_tok where k = 'med'), 'Metformin', '500 mg', null, 'x/y.jpg', 2, array['08:00']::time[])$$, '22023', null, 'update refuses a foreign photo path');
-select lives_ok($$select public.create_medicine('d2000000-0000-0000-0000-0000000000d1', 'M' || i, null, null, null, 10, 2, array['08:00']::time[]) from generate_series(2, 30) i$$, 'up to 30 medicines');
-select throws_ok($$select public.create_medicine('d2000000-0000-0000-0000-0000000000d1', 'One too many', null, null, null, 10, 2, array['08:00']::time[])$$, 'P0001', null, 'the 31st medicine is refused');
+select lives_ok($$select public.create_medicine('d2000000-0000-0000-0000-0000000000d1', 'M' || i, null, null, null, 10, 2, array['08:00']::time[]) from generate_series(2, 20) i$$, 'up to 20 medicines (the Family plan)');
+select throws_ok($$select public.create_medicine('d2000000-0000-0000-0000-0000000000d1', 'One too many', null, null, null, 10, 2, array['08:00']::time[])$$, 'P0001', null, 'the 21st medicine is refused');
 
 -- adjust_stock
 select throws_ok($$select public.adjust_stock((select v::uuid from t_tok where k = 'med'), null)$$, '22004', null, 'adjust_stock refuses NULL');

@@ -8,6 +8,9 @@ insert into auth.users (id, email, instance_id, aud, role) values
   ('b1000000-0000-0000-0000-000000000002', 'inv-sib@test.dev',   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
   ('c1000000-0000-0000-0000-000000000003', 'inv-other@test.dev', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
 
+-- the invite tests fill circles up to the biggest plan's size
+update public.profiles set plan = 'family' where id in ('a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000002');
+
 create temp table t_tok (k text primary key, v text);
 grant all on t_tok to authenticated;
 

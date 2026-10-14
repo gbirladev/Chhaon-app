@@ -76,6 +76,8 @@ link (10), privacy pages + polish (11). See `docs/TODO.md`.
 Step 7 (report reading with AI) is built but switched off for v1 (`VITE_REPORTS_ENABLED=false`, Reports tab shows "coming soon").
 Step 8 (appointments + WhatsApp reminders) is built. A QA round with 6 agents found and fixed security, time-zone, invite and UI bugs. The Today screen has a per-user style picker (10 styles). All suites pass (226 API tests, 129 database tests).
 
+**Update (plans):** pricing plans with enforced limits are built (Free / Family, migration 0027, `docs/plans.md`). Nothing is charged; plans are switched by hand in the Supabase SQL editor. Reports and payments are still off.
+
 ## Data model (starting point)
 
 - `profiles` — caregiver users (id, name, email, phone, country, timezone, language)

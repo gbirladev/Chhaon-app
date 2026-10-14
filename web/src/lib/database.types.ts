@@ -307,19 +307,39 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"profiles": {
+                },"plans": {
                   Row: {
-                    "alert_confirmed_at": string | null,"alert_consent_at": string | null,"alert_phone": string | null,"alert_requested_at": string | null,"country": string | null,"created_at": string,"email": string | null,"id": string,"language": string,"name": string | null,"phone": string | null,"policy_version": string | null,"privacy_accepted_at": string | null,"timezone": string,"today_layout": string | null,"updated_at": string
+                    "key": string,"max_medicines": number | null,"max_members": number | null,"max_parents": number | null,"name": string,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id": string,"language"?: string,"name"?: string | null,"phone"?: string | null,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"updated_at"?: string
+                    "key": string,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name": string,"sort_order"?: number
                   }
                   Update: {
-                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"language"?: string,"name"?: string | null,"phone"?: string | null,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"updated_at"?: string
+                    "key"?: string,"max_medicines"?: number | null,"max_members"?: number | null,"max_parents"?: number | null,"name"?: string,"sort_order"?: number
                   }
                   Relationships: [
                     
+                  ]
+                },"profiles": {
+                  Row: {
+                    "alert_confirmed_at": string | null,"alert_consent_at": string | null,"alert_phone": string | null,"alert_requested_at": string | null,"country": string | null,"created_at": string,"email": string | null,"id": string,"language": string,"name": string | null,"phone": string | null,"plan": string,"policy_version": string | null,"privacy_accepted_at": string | null,"timezone": string,"today_layout": string | null,"trial_ends_at": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id": string,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profiles_plan_fkey"
+      columns: ["plan"]
+isOneToOne: false
+      referencedRelation: "plans"
+      referencedColumns: ["key"]
+    }
                   ]
                 },"report_values": {
                   Row: {
@@ -461,6 +481,52 @@ isOneToOne: false
                            },
 "leave_circle":
 { Args: { "p_circle": string }; Returns: undefined
+                           },
+"paused_medicines":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "medicine_id": string
+            }[]
+                           },
+"paused_recipients":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "recipient_id": string
+            }[]
+                           },
+"plan_for_circle":
+{ Args: { "p_circle": string }; Returns: {
+              "key": string,
+"max_medicines": number | null,
+"max_members": number | null,
+"max_parents": number | null,
+"name": string,
+"sort_order": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "plans"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"plan_of_user":
+{ Args: { "p_user": string }; Returns: {
+              "key": string,
+"max_medicines": number | null,
+"max_members": number | null,
+"max_parents": number | null,
+"name": string,
+"sort_order": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "plans"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"plan_overview":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"plan_pauses":
+{ Args: Record<PropertyKey, never>; Returns: Json
                            },
 "preview_family_invite":
 { Args: { "p_token": string }; Returns: Json

@@ -256,3 +256,11 @@ button { cursor: pointer; }
 .invite-form { margin-top: 12px; padding: 13px; border-radius: 15px; background: white; box-shadow: 0 4px 18px rgba(30,68,63,.08); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .invite-form input, .invite-form select { min-width: 0; height: 42px; border: 1px solid #dbe5e2; border-radius: 10px; padding: 0 9px; color: #34534f; background: #fbfcfb; font-size: max(0.625rem, 12px); }
 .invite-form button { grid-column: 1 / -1; height: 40px; border: 0; border-radius: 10px; background: #247c72; color: white; font-size: max(0.6875rem, 12px); font-weight: 700; }
+
+.trial-banner { display: block; width: 100%; margin: 0 0 12px; padding: 12px 14px; border: 1px solid #f0d9a5; border-radius: 12px; background: #fff4de; color: #6b4b0a; font: inherit; font-weight: 600; line-height: 1.4; text-align: left; min-height: 44px; cursor: pointer; }
+
+.pause-card { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 14px; padding: 14px; border-radius: 14px; background: #fdecea; border: 1.5px solid #e9a39b; color: #7a1f17; line-height: 1.5; }
+.pause-card strong { display: block; font-size: 1.0625rem; margin-bottom: 4px; }
+.pause-card p { margin: 0 0 10px; font-size: max(0.9375rem, 12px); }
+.pause-card button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #7a1f17; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.pause-icon { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #7a1f17; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; }

@@ -17,6 +17,8 @@ import { EmergencyLinkPanel } from "./screens/EmergencyLink";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
+import { PlansScreen } from "./screens/Plans";
+import { daysLeft, loadPlanOverview, loadPlanPauses, type PlanOverview, type PlanPauses } from "./lib/plans";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
@@ -41,7 +43,8 @@ type Screen =
   | "terms"
   | "goodbye"
   | "join"
-  | "appointments";
+  | "appointments"
+  | "plans";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -83,6 +86,7 @@ const focusFirstError = (errors: Record<string, string>) => {
 const friendlyError = (err: { code?: string; hint?: string } | null | undefined, t: T) =>
   err?.code === "22003" ? t("add.errStock")
   : err?.hint === "too_many_medicines" ? t("add.errTooManyMedicines")
+  : err?.hint === "plan_parents" ? t("plans.errParents")
   : err?.hint === "too_many_times" ? t("add.errTooManyTimes")
   : err?.hint === "bad_name" ? t("add.errName")
   : err?.hint === "bad_dosage" ? t("add.errDose")
@@ -240,7 +244,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || (screen === "reportDetail" && target === "reports") || (["emergency", "whatsapp"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || (screen === "reportDetail" && target === "reports") || (["emergency", "whatsapp", "plans"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -654,6 +658,63 @@ function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd
   );
 }
 
+/** What is paused because of the plan limits. Refreshed when the screen opens and when the app comes back to the front. */
+export function usePlanPauses(): PlanPauses | null {
+  const [pauses, setPauses] = useState<PlanPauses | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => { loadPlanPauses().then((p) => { if (!cancelled) setPauses(p); }).catch(() => {}); };
+    load();
+    const onReturn = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onReturn);
+    return () => { cancelled = true; document.removeEventListener("visibilitychange", onReturn); };
+  }, []);
+  return pauses;
+}
+
+/** A loud, plain warning: reminders that are NOT being sent because of the plan limits. Visible to the whole family circle. */
+function PauseWarning({ recipient, call, go }: { recipient: Recipient; call: string; go: (screen: Screen) => void }) {
+  const t = useTranslations("today");
+  const pauses = usePlanPauses();
+  if (!pauses) return null;
+  const parentPaused = pauses.parentIds.includes(recipient.id);
+  const names = pauses.medicines.filter((m) => m.recipientId === recipient.id).map((m) => m.name);
+  if (!parentPaused && names.length === 0) return null;
+  const shown = names.slice(0, 5).join(", ") + (names.length > 5 ? ` +${names.length - 5}` : "");
+  return (
+    <section className="pause-card" role="alert">
+      <div className="pause-icon" aria-hidden="true">!</div>
+      <div>
+        <strong>{parentPaused ? t("pauseParentTitle", { call }) : t("pauseMedicinesTitle")}</strong>
+        <p>{parentPaused ? t("pauseParentBody", { call }) : t("pauseMedicinesBody", { call, names: shown })}</p>
+        <button onClick={() => go("plans")}>{t("pauseButton")}</button>
+      </div>
+    </section>
+  );
+}
+
+/** Tells the caregiver when the free trial is about to end (last 7 days) or has ended. Quiet otherwise. */
+function TrialBanner({ go }: { go: (screen: Screen) => void }) {
+  const t = useTranslations("today");
+  const [plan, setPlan] = useState<PlanOverview | null>(null);
+  const pauses = usePlanPauses();
+  useEffect(() => {
+    let cancelled = false;
+    loadPlanOverview().then((p) => { if (!cancelled) setPlan(p); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  if (!plan) return null;
+  const days = daysLeft(plan.trialEndsAt);
+  const items = [
+    plan.wouldPauseParents > 0 ? t("pauseItemParents", { count: plan.wouldPauseParents }) : "",
+    plan.wouldPauseMedicines > 0 ? t("pauseItemMedicines", { count: plan.wouldPauseMedicines }) : "",
+  ].filter(Boolean).join(` ${t("and")} `);
+  const soon = items ? t("bannerSoonPause", { days, items }) : days <= 1 ? t("bannerSoonOne") : t("bannerSoon", { days });
+  const text = plan.onTrial ? (days <= 7 ? soon : null) : plan.plan === "free" && !(pauses && (pauses.parentIds.length > 0 || pauses.medicines.length > 0)) ? t("bannerEnded") : null;   // the red warning already says it
+  if (!text) return null;
+  return <button className="trial-banner" onClick={() => go("plans")}>{text}</button>;
+}
+
 function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string }) {
   const t = useTranslations("today");
   const [note, setNote] = useState("");
@@ -895,6 +956,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         </div>
       </header>
 
+      <TrialBanner go={go} />
+      {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
@@ -939,6 +1002,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
 function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void }) {
   const t = useTranslations();
+  const pausedByPlan = new Set((usePlanPauses()?.medicines ?? []).map((m) => m.id));
   const language = useLocale() as Language;
   const active = medicines.filter((medicine) => medicine.active);
   const outCount = active.filter((m) => m.stock === 0).length;
@@ -959,7 +1023,7 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           return (
           <article className={`med-card${medicine.active ? "" : " paused"}`} key={medicine.id} {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
             <div className={`med-visual ${color}`}><span /><span /><span /></div>
-            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
+            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
             <span className="chevron-hint" aria-hidden="true"><Icon name="chevron" size={19} /></span>
           </article>
         )})}
@@ -1588,6 +1652,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
@@ -1770,7 +1835,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp", "plans", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2102,6 +2167,7 @@ export default function App() {
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}
           {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
           {screen === "whatsapp" && <WhatsApp go={go} recipient={recipient} medicines={medicines} />}
+          {screen === "plans" && <PlansScreen go={go} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}

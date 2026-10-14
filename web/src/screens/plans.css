@@ -1,0 +1,16 @@
+/* Plans screen: the current plan and what each plan allows. */
+.plans-page .plan-card { background: #fff; border: 1px solid #dfe8e5; border-radius: 16px; padding: 16px; margin-top: 14px; }
+.plans-page .plan-card.current { border: 2px solid #247c72; }
+.plans-page .plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.plans-page .plan-head h2 { margin: 0; font-size: 1.1875rem; color: #173d3a; }
+.plans-page .plan-tag { background: #e3f3ef; color: #1a5f57; border-radius: 999px; padding: 4px 12px; font-size: max(0.8125rem, 12px); font-weight: 700; }
+.plans-page .plan-list { list-style: none; margin: 0; padding: 0; }
+.plans-page .plan-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid #edf2f0; font-size: max(0.9375rem, 12px); color: #2f4743; }
+.plans-page .plan-list li:first-child { border-top: 0; }
+.plans-page .plan-list strong { color: #173d3a; white-space: nowrap; }
+.plans-page .plan-usage { margin: 10px 0 0; color: #566966; font-size: max(0.9375rem, 12px); line-height: 1.5; }
+.plans-page .plan-note { margin: 18px 2px 0; padding: 14px; border-radius: 14px; background: #fff4de; border: 1px solid #f0d9a5; color: #6b4b0a; line-height: 1.55; font-size: max(0.9375rem, 12px); }
+.plans-page .plan-note a { display: inline-block; margin-top: 8px; min-height: 44px; line-height: 44px; font-weight: 700; color: #247c72; }
+.plans-page .plan-trial { margin-top: 14px; padding: 14px; border-radius: 14px; background: #e3f3ef; border: 1px solid #b9dcd4; color: #173d3a; line-height: 1.5; }
+.plans-page .plan-trial p { margin: 6px 0 0; font-size: max(0.9375rem, 12px); }
+.plans-page .plan-trial.ended { background: #fff4de; border-color: #f0d9a5; color: #6b4b0a; }

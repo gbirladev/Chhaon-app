@@ -217,7 +217,19 @@
     "notSent": "Not sent",
     "loadFailed": "Could not load today's information. Please check your connection.",
     "theirTime": "their time",
-    "doseMissedMany": "{count} doses weren't confirmed today. Call {call}?"
+    "doseMissedMany": "{count} doses weren't confirmed today. Call {call}?",
+    "bannerSoon": "Your free trial ends in {days, plural, one {# day} other {# days}}. See Plans.",
+    "bannerSoonOne": "Your free trial ends tomorrow. See Plans.",
+    "bannerEnded": "Your free trial has ended. See Plans.",
+    "pauseParentTitle": "Reminders for {call} are paused",
+    "pauseParentBody": "{call} is above the number of parents your family's plan covers, so NO medicine reminders, check-ins or appointment reminders are being sent. Nothing was deleted: upgrading brings them back.",
+    "pauseMedicinesTitle": "Some reminders are paused",
+    "pauseMedicinesBody": "{call} will NOT get reminders for: {names}. These are above the number of medicines your family's plan covers. Nothing was deleted: upgrading brings them back.",
+    "pauseButton": "See Plans",
+    "pauseItemParents": "{count, plural, one {# parent} other {# parents}}",
+    "pauseItemMedicines": "{count, plural, one {# medicine} other {# medicines}}",
+    "and": "and",
+    "bannerSoonPause": "Your free trial ends in {days, plural, one {# day} other {# days}}. If you do not upgrade, reminders for {items} will pause. See Plans."
   },
   "medicines": {
     "title": "Medicines",
@@ -238,7 +250,8 @@
     "summaryLow": "Some medicines are running low",
     "summaryPaused": "All medicines are paused",
     "summaryPausedHint": "Resume one to restart reminders.",
-    "paused": "Paused"
+    "paused": "Paused",
+    "pausedByPlan": "Paused: plan limit"
   },
   "add": {
     "title": "Add medicine",
@@ -267,7 +280,7 @@
     "save": "Save medicine",
     "saving": "Saving…",
     "errTimes": "Choose at least one time.",
-    "errTooManyMedicines": "This parent already has the maximum number of medicines (30).",
+    "errTooManyMedicines": "You have reached the number of medicines your plan allows for this parent. See Plans in the Family tab.",
     "errTooManyTimes": "A medicine can have at most 12 reminder times.",
     "errDose": "Enter the dose amount, e.g. 500.",
     "errStock": "Enter the tablets in stock as a whole number.",
@@ -382,7 +395,9 @@
     "inviteSoon": "Inviting family is coming soon.",
     "unnamed": "No name",
     "roleOwner": "Owner • Full access",
-    "roleMember": "Member • Can view & update"
+    "roleMember": "Member • Can view & update",
+    "plansLink": "Plans",
+    "plansSub": "See what your plan includes"
   },
   "invites": {
     "sheetTitle": "Invite a family member",
@@ -399,7 +414,7 @@
     "close": "Close",
     "cancel": "Cancel",
     "errGeneric": "Something went wrong. Please try again.",
-    "errFull": "This family circle already has the most people it can hold.",
+    "errFull": "This family circle has reached the number of people your plan allows. See Plans in the Family tab.",
     "errTooMany": "There are already 10 invites waiting. Cancel one to make a new link.",
     "pendingTitle": "Waiting to join",
     "pendingItem": "Invite made by {by}",
@@ -750,5 +765,36 @@
     "previewLabel": "Preview with sample medicines",
     "use": "Use this style",
     "cancel": "Cancel"
+  },
+  "plans": {
+    "title": "Plans",
+    "subtitle": "What each plan includes",
+    "loading": "Loading…",
+    "loadError": "Could not load the plans. Please try again shortly.",
+    "yourPlan": "Your plan",
+    "parents": "Parents you can add",
+    "members": "People in a family circle",
+    "medicines": "Medicines for each parent",
+    "usage": "You have added {used} of {max} {max, plural, one {parent} other {parents}}.",
+    "names": {
+      "free": "Free",
+      "plus": "Plus",
+      "family": "Family",
+      "ultra": "Ultra"
+    },
+    "noteTitle": "Nothing is charged during the pilot",
+    "noteBody": "Plans are set up by us for now. If you need the Family plan, write to us and we will switch it on for you.",
+    "contact": "Write to us",
+    "mailSubject": "Chhaon Family plan",
+    "errParents": "You have reached the number of parents your plan allows. See Plans in the Family tab.",
+    "trialTag": "Free trial",
+    "trialTitle": "Free trial: {days, plural, one {# day} other {# days}} left",
+    "trialBody": "You have the Plus plan, free, until {date}. After that you move to the Free plan unless you upgrade. Nothing you added is deleted.",
+    "trialEndedTitle": "Your free trial has ended",
+    "trialEndedBody": "You are on the Free plan now. Anything above its limits is paused: no reminders are sent for it, but nothing is deleted. Write to us to switch on a bigger plan and bring it back.",
+    "unlimited": "Unlimited",
+    "usageUnlimited": "You have added {used} {used, plural, one {parent} other {parents}}.",
+    "trialBodyPause": "You have the Plus plan, free, until {date}. If you do not upgrade by then, reminders for {items} will pause. Nothing is deleted.",
+    "pausedNow": "Paused right now: {items}. No reminders are sent for them."
   }
 }

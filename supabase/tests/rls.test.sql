@@ -10,6 +10,8 @@ insert into auth.users (id, email, instance_id, aud, role) values
 
 select is((select count(*)::int from public.profiles where id in ('aaaaaaaa-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-000000000002')), 2, 'signup trigger creates profiles');
 
+update public.profiles set plan = 'family' where id = 'aaaaaaaa-0000-0000-0000-000000000001';  -- Alice makes several parents below
+
 -- ---- Alice builds a circle with a parent, a medicine, a schedule
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","role":"authenticated"}', true);
@@ -103,7 +105,7 @@ select is((select whatsapp_phone from public.care_recipients where id = (select 
 -- ---- step 4: dose generation (acts as the backend; Mummy lives in Asia/Kolkata = UTC+5:30)
 -- Assertions count only THIS test's medicine, so other data in the database cannot affect them.
 update public.care_recipients set timezone = 'Asia/Kolkata' where id = (select v from t_ids where k = 'parent');
-update public.medicine_schedules set created_at = now() - interval '3 days', start_date = '2026-01-01' where medicine_id = (select v from t_ids where k = 'med');   -- create_medicine starts 'today'; these tests use a fixed October clock
+update public.medicine_schedules set created_at = '2026-10-01 00:00:00+00', start_date = '2026-01-01' where medicine_id = (select v from t_ids where k = 'med');   -- create_medicine starts 'today'; these tests use a fixed October clock
 -- the 'med' fixture has two schedules: 08:00 and 20:00 IST, every day
 
 select public.generate_dose_events('2026-10-10 02:00:00+00', interval '1 hour');

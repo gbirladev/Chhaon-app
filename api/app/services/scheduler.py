@@ -77,6 +77,11 @@ def _reason(exc: Exception) -> str:
     return " ".join(parts)
 
 
+def _paused_recipient_ids(db: Client) -> set[str]:
+    """Parents whose reminders are paused because they are above their owner's plan limit (migration 0027)."""
+    return {row["recipient_id"] for row in (db.rpc("paused_recipients").execute().data or [])}
+
+
 def _iso(value: datetime) -> str:
     return value.isoformat()
 
@@ -169,8 +174,9 @@ def _local(tz_name: str, now: datetime) -> datetime:
 def _send_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
     parents = _all(lambda: db.table("care_recipients").select("id, timezone, checkin_time")
                    .not_.is_("consent_at", "null").is_("opted_out_at", "null").not_.is_("whatsapp_phone", "null"))
+    paused = _paused_recipient_ids(db)
     for parent in parents:
-        if not _in_scope(parent["id"]):
+        if not _in_scope(parent["id"]) or parent["id"] in paused:   # above the plan's parent limit: no check-in
             continue
         local_now = _local(parent["timezone"], now)
         start = datetime.combine(local_now.date(), time.fromisoformat(parent["checkin_time"]), tzinfo=local_now.tzinfo)
@@ -202,7 +208,8 @@ def _mark_missed_checkins(db: Client, wa: Messenger, settings: Settings, now: da
 
 # ---------------------------------------------------------------- 5. appointment reminders
 def _remind_appointments(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
-    for key, value in appointments.remind_due(db, wa, now, _all, _in_scope).items():
+    paused = _paused_recipient_ids(db)
+    for key, value in appointments.remind_due(db, wa, now, _all, lambda rid: _in_scope(rid) and rid not in paused).items():
         if value:
             counts["send_errors" if key == "appointment_errors" else key] += value
 

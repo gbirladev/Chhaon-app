@@ -88,6 +88,7 @@ def family(db):
     db.table("phone_opt_outs").delete().eq("phone", PARENT_PHONE).execute()   # STOP outlives parent records: reset between tests
     user = db.auth.admin.create_user({"email": f"cg-{tag}@test.dev", "email_confirm": True, "user_metadata": {"name": "Ananya"}})
     user_id = user.user.id
+    db.table("profiles").update({"plan": "family"}).eq("id", user_id).execute()  # these tests are not about plan limits (see test_plans / pgTAP)
     circle_id = db.table("care_circles").insert({"created_by": user_id}).execute().data[0]["id"]  # trigger adds owner
     recipient_id = db.table("care_recipients").insert({
         "circle_id": circle_id, "name": "Rajesh", "call_name": "पापा", "relation": "father", "language": "hi", "whatsapp_phone": PARENT_PHONE,

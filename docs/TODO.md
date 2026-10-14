@@ -73,3 +73,28 @@ Found by the journey and verification agents (round 3), still open
 - **Done:** Supabase project created in Mumbai; all 25 migrations pushed with `npx supabase db push` (never run `supabase config push`: local config has test login codes). Phone login is disabled in the dashboard (email login for the pilot). Repo is on GitHub with `render.yaml` (API + one-minute cron) and `web/netlify.toml`.
 - **Next:** (1) Render: New > Blueprint > repo `gbirladev/Chhaon-app`, fill the secrets listed in `render.yaml`; leave the WhatsApp token and number id empty (practice mode); set `API_URL` on the cron job to the API address; check `/health`. (2) Netlify: connect the repo, base directory `web`, set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`, `VITE_REPORTS_ENABLED=false`, `VITE_PRIVACY_ENABLED=true`. (3) Supabase Auth: Site URL + redirect URL = the web address, Confirm email on, password length 8, custom SMTP (Brevo/Resend). (4) Change the first screen to lead with email login (phone login is off). (5) Meta: webhook callback `https://<api>/webhooks/whatsapp`, verify token = `WHATSAPP_VERIFY_TOKEN`, privacy/terms URLs, publish the app, then put the 4 WhatsApp values into Render.
 - Render could not be opened on the Mac (Bitdefender blocked it); continue from another computer.
+
+## Plans, trial and pausing: open gaps (2026-10-14)
+Built and tested locally (166 database + 235 API tests, browser checks in English and Hindi). Details: `docs/plans.md`. **Not on the live database or site yet.**
+
+- [ ] **Go live with plans, in this order:** (1) back up the live database (or note its backup state in Supabase); (2) `npx supabase@2.120.0 db push` (use that version: 2.121.0 had no Mac build; never `config push`); (3) `git push` so Netlify and Render redeploy; (4) put the owner's own account on `ultra` (`update public.profiles set plan = 'ultra' where email = '...'`), otherwise it is on Free after its 30-day trial.
+- [ ] **Run the migration against real data once:** it was tested from the live database's state on a scratch copy, not on the live data itself. Check afterwards that existing accounts show a 30-day trial and that Today, Medicines and Plans load.
+- [ ] **Look at it on a real phone** (only a phone-sized browser window was used).
+- [ ] **"Invite a family member" message for a Free user** (the circle limit): refused by the database (tested) but the on-screen message was not looked at.
+- [ ] **Hindi wording for plans, trial and the pause warning** has not been read by a native speaker (also covers the older Hindi texts).
+- [ ] **Speed at scale:** the pause check (`paused_recipients`, `paused_medicines`) runs on every scheduler tick over all parents and medicines. Fine for a pilot; measure before thousands of families.
+- [ ] **WhatsApp message to caregivers when the trial ends / reminders pause:** needs a new Meta template and approval. For now the warning is only inside the app (red card on Today, medicine tags, Plans screen, banner in the last 7 days of the trial).
+- [ ] **People in a circle are not paused** when a plan shrinks (only new invites are blocked). Decide later whether over-limit members should lose access.
+- [ ] **Prices are not set.** Working guesses to test in the pilot: Plus about Rs 199 a month, Family about Rs 399, higher for NRIs. Ultra should be priced above its worst case (20 parents at about Rs 40 each, about Rs 800 a month in WhatsApp fees). Nothing is charged yet and there is no payment code.
+- [ ] **Cost numbers are estimates** from third-party pages (Utility about Rs 0.115 per message, Marketing about Rs 0.86, GST extra; a Utility template inside an open 24-hour window is free per Meta). Check Meta's India rate card and current hosting prices and the exchange rate before setting prices.
+
+## Meta and WhatsApp: state and open items (2026-10-14)
+- **Working end to end:** consent message, medicine reminder with the Taken tap, Hindi templates, replies reaching the server. The missing step that blocked replies was subscribing the WhatsApp account to the app (`POST /v21.0/<waba-id>/subscribed_apps`).
+- [ ] **Render `CONSENT_RESEND_MINUTES` is 5** (default 10). Fine for the pilot; reset to 10 if parents get annoyed by repeat requests.
+- [ ] **Meta app is still in Development mode:** "Publish" is blocked until business verification. Replies work without it for the pilot. If Meta ever stops delivering replies, business verification (registered business) is the way out. Alternatives looked at: SMS (needs DLT and entity documents), automated voice calls (possible fallback), unofficial WhatsApp tools (not allowed, ban risk), a WhatsApp provider (still uses Meta).
+- [ ] **Edit the 5 templates that still say "CareLink"** and set the WhatsApp display name to Chhaon (it already shows Chhaon).
+- [ ] **Retest the consent message with the 24-hour window closed** (no message from the test number to the business number for a day), so we know it also arrives without an open window.
+- [ ] **Test the daily check-in** (it sends in the morning, in the parent's time zone) and a **reminder with a medicine photo**.
+- [ ] **Watch the payment balance** in WhatsApp Manager (prepaid funds); sending stops when it runs out.
+- [ ] **Hosting:** Render free plan sleeps (cron-job.org wakes it every minute); move to a paid plan and a real domain before the pilot grows. Supabase free plan has no backups: consider Pro.
+- [ ] **Pilot invite message** (English and Hindi) was drafted in chat, not saved here.

@@ -56,6 +56,7 @@ def test_bad_medicine_names_are_refused(db, family, name):
 
 
 def test_medicine_limits(db, family):
+    db.table("profiles").update({"plan": "family"}).eq("id", family.user_id).execute()  # 20 is the Family plan's limit
     with pytest.raises(APIError) as e:
         make_medicine(db, family, times=[f"{h:02d}:00" for h in range(13)])
     assert e.value.code == "P0001"
@@ -65,8 +66,8 @@ def test_medicine_limits(db, family):
             make_medicine(db, family, "Photo", p_photo_url=photo)
         assert e.value.code == "22023"
     assert make_medicine(db, family, "Photo", p_photo_url=f"{family.recipient_id}/a.jpg")
-    # 1 (fixture) + 12-times one + photo one = 3 so far; fill up to 30
-    for i in range(27):
+    # 1 (fixture) + 12-times one + photo one = 3 so far; fill up to 20 (the Family plan)
+    for i in range(17):
         make_medicine(db, family, f"Drug {i}")
     with pytest.raises(APIError) as e:
         make_medicine(db, family, "One too many")
