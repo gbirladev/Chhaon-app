@@ -60,7 +60,11 @@ class WhatsAppClient:
             )
             raise WhatsAppError(f"WhatsApp API error {response.status_code}")
         try:
-            return response.json()["messages"][0]["id"]
+            message = response.json()["messages"][0]
+            # "held_for_quality_assessment" means Meta accepted it but delays delivery (new templates, pacing).
+            if message.get("message_status") not in (None, "accepted"):
+                log.warning("WhatsApp message_status=%s", message.get("message_status"))
+            return message["id"]
         except (ValueError, KeyError, IndexError, TypeError) as exc:
             raise WhatsAppError("WhatsApp API returned an unexpected response") from exc
 
