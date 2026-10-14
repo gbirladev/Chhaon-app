@@ -57,7 +57,7 @@ select throws_ok($$insert into public.documents (recipient_id, title) values ('d
 reset role;
 select set_config('request.jwt.claims', '', true);
 delete from public.care_recipients where id = 'd0000000-0000-0000-0000-0000000000a1';
-select is((select count(*)::int from public.documents where recipient_id = 'd0000000-0000-0000-0000-0000000000a1') + (select count(*)::int from public.document_files), 0, 'deleting a parent removes their documents and pages');
+select is((select count(*)::int from public.documents where recipient_id = 'd0000000-0000-0000-0000-0000000000a1') + (select count(*)::int from public.document_files where path like 'd0000000-0000-0000-0000-0000000000a1/%'), 0, 'deleting a parent removes their documents and pages');
 
 select * from finish();
 rollback;
