@@ -107,8 +107,8 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [ ] The Meta fee figure uses third-party rates (Utility about Rs 0.115, Marketing about Rs 0.86): confirm on Meta's rate card.
 
 ## Reports wallet (built 2026-10-14, see `docs/wallet.md`)
-- [ ] **Go live with it:** `npx supabase@2.120.0 db push < /dev/null` (migration 0029), then `git push`. No admin step needed.
-- [ ] **Look at it on a real phone:** the camera button (`capture`), picking several photos from the gallery, and a real PDF. Only a browser window was used; HEIC photos from some phones need checking.
+- [x] **Live since 2026-10-14:** migration 0029 applied, code pushed (a97a4b8), and the owner confirmed on a phone that the Reports wallet works.
+- [x] **Tried on a real phone** (owner: "it works"). Still unchecked: photos in unusual formats (HEIC from some Android phones), a large PDF, a slow network.
 - [x] **Plan limits for the wallet decided 2026-10-14:** Free 5, Plus 25, Family 100, Ultra unlimited (ceiling 200), plus a hidden 300 MB per parent. Existing reports are never hidden or deleted over a limit. Revisit once real usage is known.
 - [ ] **Hindi wording** has not been read by a native speaker.
 - [ ] **Storage cost check:** photos are about 100 to 400 KB after shrinking, PDFs up to 15 MB. Watch the Supabase storage size in the dashboard once families start uploading (the free plan includes 1 GB).
