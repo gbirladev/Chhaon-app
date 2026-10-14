@@ -71,6 +71,8 @@ def test_export_has_my_data_only_and_no_secrets(client, db, family, as_caregiver
     other = make_user(db, "other")
     other_circle, _ = make_circle(db, other)
     db.table("emergency_links").insert({"recipient_id": family.recipient_id}).execute()
+    doc = db.table("documents").insert({"recipient_id": family.recipient_id, "title": "Blood test", "category": "lab"}).execute().data[0]["id"]
+    db.table("document_files").insert({"document_id": doc, "path": f"{family.recipient_id}/page1.jpg", "mime": "image/jpeg", "size_bytes": 1000}).execute()
     try:
         response = client.get("/privacy/export")
         assert response.status_code == 200
@@ -81,6 +83,7 @@ def test_export_has_my_data_only_and_no_secrets(client, db, family, as_caregiver
         assert [p["id"] for p in data["parents"]] == [family.recipient_id]
         assert [m["id"] for m in data["medicines"]] == [family.medicine_id]
         assert len(data["medicine_schedules"]) == 1
+        assert [d["title"] for d in data["documents"]] == ["Blood test"] and len(data["document_files"]) == 1   # the wallet is exported too
         assert other_circle not in [c["id"] for c in data["circles"]]
         text = response.text
         assert '"token"' not in text and "whatsapp_message_id" not in text
@@ -109,12 +112,14 @@ def test_sole_member_circle_files_and_login_are_erased(client, db, cleanup, real
     medicine = db.table("medicines").insert({"recipient_id": rid, "name": "Metformin"}).execute().data[0]["id"]
     upload(db, "medicine-photos", rid)
     upload(db, "reports", rid)
+    doc = db.table("documents").insert({"recipient_id": rid, "title": "Prescription", "category": "prescription"}).execute().data[0]["id"]
     db.table("phone_opt_outs").upsert({"phone": OPT_OUT_PHONE}).execute()
     as_user(u)
     assert client.post("/privacy/delete-account", json={"confirm": " delete "}).json() == {"status": "deleted"}
     assert not user_exists(db, u)
     assert not db.table("care_circles").select("id").eq("id", circle).execute().data
     assert not db.table("medicines").select("id").eq("id", medicine).execute().data
+    assert not db.table("documents").select("id").eq("id", doc).execute().data
     assert stored(db, "medicine-photos", rid) == [] and stored(db, "reports", rid) == []
     assert db.table("phone_opt_outs").select("phone").eq("phone", OPT_OUT_PHONE).execute().data  # STOP outlives records
 

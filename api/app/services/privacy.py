@@ -64,6 +64,8 @@ def build_export(db: Client, user_id: str) -> dict:
     sids = [s["id"] for s in schedules]
     doses = _fetch(db, "dose_events", "schedule_id", sids, "scheduled_at")
     checkins = _fetch(db, "checkins", "recipient_id", rids, "date")
+    documents = _fetch(db, "documents", "recipient_id", rids, "created_at")
+    document_files = _fetch(db, "document_files", "document_id", [d["id"] for d in documents])
     reports = _fetch(db, "reports", "recipient_id", rids, "created_at")
     values = _fetch(db, "report_values", "report_id", [r["id"] for r in reports])
     appointments = _fetch(db, "appointments", "recipient_id", rids, "datetime")
@@ -73,7 +75,7 @@ def build_export(db: Client, user_id: str) -> dict:
 
     return {
         "exported_at": datetime.now(UTC).isoformat(),
-        "about": "Everything Chhaon holds that you can see. Uploaded files (report photos/PDFs, medicine photos) are not included here; "
+        "about": "Everything Chhaon holds that you can see. Uploaded files (wallet documents, report photos/PDFs, medicine photos) are not included here; "
                  "their storage paths are. Secret links and sign-in tokens are never exported.",
         "profile": _clean(profile.data) if profile and profile.data else None,
         "circles": circles,
@@ -83,6 +85,8 @@ def build_export(db: Client, user_id: str) -> dict:
         "medicine_schedules": schedules,
         "dose_events": doses,
         "checkins": checkins,
+        "documents": documents,
+        "document_files": document_files,
         "reports": reports,
         "report_values": values,
         "appointments": appointments,

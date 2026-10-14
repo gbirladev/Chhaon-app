@@ -19,6 +19,7 @@ import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
 import { StatsScreen } from "./screens/Stats";
+import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
 import { daysLeft, loadPlanOverview, loadPlanPauses, type PlanOverview, type PlanPauses } from "./lib/plans";
 import { type RouteStop } from "./screens/DoseRoute";
@@ -37,6 +38,7 @@ type Screen =
   | "medicineDetail"
   | "reports"
   | "reportDetail"
+  | "documentDetail"
   | "family"
   | "emergency"
   | "whatsapp"
@@ -53,7 +55,7 @@ const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
 const SessionContext = createContext<() => void>(() => {});
 /** Call when the backend says our login no longer works: signs out and explains. */
-const useSessionExpired = () => useContext(SessionContext);
+export const useSessionExpired = () => useContext(SessionContext);
 
 /** The privacy pages, the first-login consent sheet, data export and account deletion are built but switched off for v1. Set VITE_PRIVACY_ENABLED=true to turn them on. */
 const PRIVACY_ENABLED = import.meta.env.VITE_PRIVACY_ENABLED === "true";
@@ -248,7 +250,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || (screen === "reportDetail" && target === "reports") || (["emergency", "whatsapp", "plans", "stats"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -1840,9 +1842,9 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
   );
 }
 
-const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp"];
+const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp", "plans", "stats", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -1893,6 +1895,7 @@ export default function App() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [selectedMedicineId, setSelectedMedicineId] = useState<string | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const [toastLeaving, setToastLeaving] = useState(false);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -2167,7 +2170,10 @@ export default function App() {
               : medicinesLoading ? null : <GoneRedirect onGone={medicineGone} />;
           })()}
           {screen === "medicineDetail" && <MedicineDetail go={go} medicine={medicines.find((m) => m.id === selectedMedicineId)} onChanged={async () => { await refreshMedicines(); refreshNotifications(); }} />}
-          {screen === "reports" && <Reports recipient={recipient} onOpen={(id) => { setSelectedReportId(id); go("reportDetail"); }} />}
+          {screen === "reports" && (REPORTS_ENABLED
+            ? <Reports recipient={recipient} onOpen={(id) => { setSelectedReportId(id); go("reportDetail"); }} />
+            : <WalletScreen recipient={recipient} onOpen={(id) => { setSelectedDocumentId(id); go("documentDetail"); }} />)}
+          {screen === "documentDetail" && <WalletDetail go={go} documentId={selectedDocumentId} />}
           {screen === "appointments" && <AppointmentsScreen go={go} recipient={recipient} />}
           {screen === "reportDetail" && <ReportDetail go={go} recipient={recipient} reportId={selectedReportId} />}
           {screen === "join" && pendingInvite() && <JoinScreen token={pendingInvite() as string} onDone={afterInvite} />}

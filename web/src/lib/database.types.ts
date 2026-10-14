@@ -155,6 +155,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"document_files": {
+                  Row: {
+                    "created_at": string,"document_id": string,"id": string,"mime": string,"path": string,"position": number,"size_bytes": number,"thumb_path": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"document_id": string,"id"?: string,"mime": string,"path": string,"position"?: number,"size_bytes": number,"thumb_path"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"document_id"?: string,"id"?: string,"mime"?: string,"path"?: string,"position"?: number,"size_bytes"?: number,"thumb_path"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "document_files_document_id_fkey"
+      columns: ["document_id"]
+isOneToOne: false
+      referencedRelation: "documents"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"documents": {
+                  Row: {
+                    "category": string,"created_at": string,"doc_date": string | null,"doctor": string | null,"id": string,"notes": string | null,"recipient_id": string,"title": string,"updated_at": string,"uploaded_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category"?: string,"created_at"?: string,"doc_date"?: string | null,"doctor"?: string | null,"id"?: string,"notes"?: string | null,"recipient_id": string,"title": string,"updated_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Update: {
+                    "category"?: string,"created_at"?: string,"doc_date"?: string | null,"doctor"?: string | null,"id"?: string,"notes"?: string | null,"recipient_id"?: string,"title"?: string,"updated_at"?: string,"uploaded_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "documents_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: false
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "documents_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"dose_events": {
                   Row: {
                     "id": string,"responded_at": string | null,"schedule_id": string,"scheduled_at": string,"sent_at": string | null,"status": Database["public"]['Enums']["dose_status"],"whatsapp_message_id": string | null
@@ -415,6 +461,9 @@ isOneToOne: false
                            },
 "admin_stats":
 { Args: { "p_days"?: number }; Returns: Json
+                           },
+"can_access_document":
+{ Args: { "p_document": string }; Returns: boolean
                            },
 "can_access_medicine":
 { Args: { "p_medicine": string }; Returns: boolean

@@ -105,3 +105,11 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [ ] **Look at it on a real phone**, and read the Hindi wording (not read by a native speaker).
 - [ ] "Active this week" is a proxy (last login or last session refresh). Replace it with a real usage signal if it proves too rough.
 - [ ] The Meta fee figure uses third-party rates (Utility about Rs 0.115, Marketing about Rs 0.86): confirm on Meta's rate card.
+
+## Reports wallet (built 2026-10-14, see `docs/wallet.md`)
+- [ ] **Go live with it:** `npx supabase@2.120.0 db push < /dev/null` (migration 0029), then `git push`. No admin step needed.
+- [ ] **Look at it on a real phone:** the camera button (`capture`), picking several photos from the gallery, and a real PDF. Only a browser window was used; HEIC photos from some phones need checking.
+- [ ] **Decide plan limits for the wallet** (storage costs money): for example Free 3 reports, Plus 30, Family 100, Ultra the 200 ceiling. Today every plan gets 200.
+- [ ] **Hindi wording** has not been read by a native speaker.
+- [ ] **Storage cost check:** photos are about 100 to 400 KB after shrinking, PDFs up to 15 MB. Watch the Supabase storage size in the dashboard once families start uploading (the free plan includes 1 GB).
+- [ ] **Old AI report reading** (reports, report_values, the analyze endpoint) is still in the code, switched off. Decide later whether to remove it or build "read values" on top of the wallet.
