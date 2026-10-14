@@ -108,8 +108,17 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 
 ## Reports wallet (built 2026-10-14, see `docs/wallet.md`)
 - [x] **Live since 2026-10-14:** migration 0029 applied, code pushed (a97a4b8), and the owner confirmed on a phone that the Reports wallet works.
-- [x] **Tried on a real phone** (owner: "it works"). Still unchecked: photos in unusual formats (HEIC from some Android phones), a large PDF, a slow network.
+- [x] **Tried on a real phone** (owner: "it works"). Then stress-tested in a browser (2026-10-14), all passing: a 14.5 MB PDF saves and a 15.5 MB one is refused with a clear message; an 8000x6000 photo is shrunk from 3.3 MB to 0.5 MB; a photo with a blank file type is accepted by its name (this was a bug, fixed); a double-tap on Save makes one report; a 3G-speed connection works (about 16 s for a 1 MB photo, button shows "Uploading…" and is disabled); a cut connection during the upload or the save shows a clear error, keeps the form, and a retry works.
+- [ ] **HEIC photos** (iPhone "High Efficiency" format): a browser that cannot read them gets a clear message with the fix (iPhone: Settings > Camera > Formats > Most Compatible). iPhone Safari normally converts them to JPEG by itself, but that was NOT tested on a real iPhone. Supporting HEIC properly needs a converter library (about 1 MB); only worth it if families hit this.
+- [ ] **Known small gap:** if the phone is offline at the exact moment a save fails AND the clean-up of the just-uploaded files also fails, those 1 to 2 files stay in storage unreferenced (invisible; removed when the parent or account is deleted). Idea: a daily job that deletes `reports` files older than a day that no record points to.
 - [x] **Plan limits for the wallet decided 2026-10-14:** Free 5, Plus 25, Family 100, Ultra unlimited (ceiling 200), plus a hidden 300 MB per parent. Existing reports are never hidden or deleted over a limit. Revisit once real usage is known.
 - [ ] **Hindi wording** has not been read by a native speaker.
 - [ ] **Storage cost check:** photos are about 100 to 400 KB after shrinking, PDFs up to 15 MB. Watch the Supabase storage size in the dashboard once families start uploading (the free plan includes 1 GB).
 - [ ] **Old AI report reading** (reports, report_values, the analyze endpoint) is still in the code, switched off. Decide later whether to remove it or build "read values" on top of the wallet.
+
+## Netlify credits (2026-10-14)
+- Netlify's free plan has **300 credits a month** (a hard limit: the site pauses when they run out). A production deploy costs **15**, 10,000 web requests cost 2, 1 GB of traffic costs 20 (rates from Netlify's docs).
+- By 2026-10-14 half the credits were gone, almost all from deploys: every `git push` to `main` built and published the site, including pushes that only changed the API, database, tests or docs (about 7 of the 14 pushes since 12 Oct, roughly 100 credits).
+- [x] **Fixed in `web/netlify.toml`:** an `ignore` rule skips the build when nothing in `web/` changed. Checked against the last 10 pushes: 6 would have been skipped.
+- [ ] **Batch website changes** into fewer pushes (each real website push is still 15 credits, so about 20 a month fit).
+- [ ] **Watch the balance** (Netlify > Team settings > Billing) and decide before the pilot: stay on Netlify (Personal plan about $9 a month at the time of writing, check), or move the website to a host with free unlimited requests (Cloudflare Pages is the usual choice). Traffic itself is tiny: 1,000 visits is only a few credits.

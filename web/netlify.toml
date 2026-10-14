@@ -3,6 +3,10 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Netlify's free plan has 300 credits a month and every production deploy costs 15. Skip the build (exit 0) when nothing inside
+  # this folder changed since the last deploy: pushes that only touch the API, the database, the docs or the tests cost nothing.
+  # If the previous deploy is unknown the command fails (non-zero) and the site is built, which is the safe default.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- ."
 
 [build.environment]
   NODE_VERSION = "20"

@@ -52,9 +52,14 @@ export async function signedUrls(paths: string[], seconds = 300): Promise<Record
 }
 
 const randomName = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
-const kindOf = (file: File) => file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "");
+const BY_EXTENSION: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" };
+/** The file's type; some phones and browsers leave it empty or say "octet-stream", so the extension is the fallback. */
+const kindOf = (file: File) => {
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+  return BY_EXTENSION[file.name.toLowerCase().split(".").pop() ?? ""] ?? "";
+};
 
-export type UploadResult = { ok: true; items: Uploaded[] } | { ok: false; reason: "type" | "size" | "upload" | "auth" };
+export type UploadResult = { ok: true; items: Uploaded[] } | { ok: false; reason: "type" | "heic" | "size" | "upload" | "auth" };
 
 /** Uploads the chosen photos / PDFs. Photos are shrunk first (and get a small preview); a failure removes whatever was already uploaded. */
 export async function uploadFiles(recipientId: string, files: File[], onProgress?: (done: number) => void): Promise<UploadResult> {
@@ -64,11 +69,13 @@ export async function uploadFiles(recipientId: string, files: File[], onProgress
   const cleanup = async () => { await supabase.storage.from(BUCKET).remove(items.flatMap((i) => [i.path, ...(i.thumbPath ? [i.thumbPath] : [])])); };
   for (const [index, file] of files.entries()) {
     const kind = kindOf(file);
-    if (!kind.startsWith("image/") && kind !== "application/pdf") { await cleanup(); return { ok: false, reason: "type" }; }
+    if (file.size === 0 || (!kind.startsWith("image/") && kind !== "application/pdf")) { await cleanup(); return { ok: false, reason: "type" }; }
     const isPdf = kind === "application/pdf";
-    const body: Blob = isPdf ? file : await compressImage(file, 2000, 0.85);
+    // compressImage only touches files whose own type says "image/*": give it the type we worked out (some phones leave it empty)
+    const typed = file.type === kind ? file : new File([file], file.name, { type: kind });
+    const body: Blob = isPdf ? file : await compressImage(typed, 2000, 0.85);
     const mime = isPdf ? "application/pdf" : body.type;
-    if (!ALLOWED.includes(mime)) { await cleanup(); return { ok: false, reason: "type" }; }   // e.g. a photo format this browser cannot shrink
+    if (!ALLOWED.includes(mime)) { await cleanup(); return { ok: false, reason: /hei[cf]/i.test(`${mime} ${kind} ${file.name}`) ? "heic" : "type" }; }   // a photo format this browser cannot shrink (HEIC from some phones)
     if (body.size > MAX_FILE_BYTES) { await cleanup(); return { ok: false, reason: "size" }; }
     const name = randomName();
     const ext = isPdf ? "pdf" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
@@ -78,7 +85,7 @@ export async function uploadFiles(recipientId: string, files: File[], onProgress
     let thumbPath: string | null = null;
     if (!isPdf) {
       try {
-        const thumb = await compressImage(file, 360, 0.7);
+        const thumb = await compressImage(typed, 360, 0.7);
         const candidate = `${recipientId}/${name}-t.jpg`;
         const up = await supabase.storage.from(BUCKET).upload(candidate, thumb, { contentType: "image/jpeg" });
         if (!up.error) thumbPath = candidate;

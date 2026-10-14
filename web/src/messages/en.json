@@ -918,6 +918,7 @@
     "overBody": "Your plan keeps {max} reports for each parent and you have {used}. Nothing was removed and you can open and download all of them, but you cannot add new ones until you upgrade or delete some.",
     "seePlans": "See Plans",
     "errPlan": "You have reached the number of reports your plan allows. See Plans to add more.",
-    "errStorage": "This parent's report storage is full. Please delete an old report to add a new one."
+    "errStorage": "This parent's report storage is full. Please delete an old report to add a new one.",
+    "errHeic": "This photo is in a format we cannot use (HEIC). Please take the photo again, or choose it as a JPEG. On an iPhone, Settings > Camera > Formats > Most Compatible."
   }
 }

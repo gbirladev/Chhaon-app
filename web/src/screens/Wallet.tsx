@@ -92,7 +92,7 @@ function DocumentSheet(props: SheetProps) {
     if (!up.ok) {
       setBusy(false); setProgress(null);
       if (up.reason === "auth") return expireSession();
-      return setErrors({ form: t(up.reason === "type" ? "errType" : up.reason === "size" ? "errSize" : "errUpload") });
+      return setErrors({ form: t(up.reason === "type" ? "errType" : up.reason === "heic" ? "errHeic" : up.reason === "size" ? "errSize" : "errUpload") });
     }
     const saved = await createDocument(props.recipientId, fields, up.items);
     setBusy(false); setProgress(null);
@@ -293,7 +293,7 @@ export function WalletDetail({ go, documentId }: { go: (screen: "reports", optio
     if (!up.ok) {
       setBusy(false);
       if (up.reason === "auth") return expireSession();
-      return toast(t(up.reason === "type" ? "errType" : up.reason === "size" ? "errSize" : "errUpload"));
+      return toast(t(up.reason === "type" ? "errType" : up.reason === "heic" ? "errHeic" : up.reason === "size" ? "errSize" : "errUpload"));
     }
     const saved = await addPages(doc.id, doc.files.length, up.items);
     setBusy(false);
