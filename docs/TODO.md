@@ -101,7 +101,7 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [ ] **Pilot invite message** (English and Hindi) was drafted in chat, not saved here.
 
 ## Pilot stats page (built 2026-10-14, see `docs/stats.md`)
-- [ ] **Go live with it:** `npx supabase@2.120.0 db push < /dev/null` (migration 0028), `git push`, then `update public.profiles set is_admin = true where email = 'gbirla.dev.rnd@gmail.com'`.
+- [x] **Live since 2026-10-14:** migration 0028 applied, code pushed (d0f8bc2), `gbirla.dev.rnd@gmail.com` is the admin, and the owner confirmed Pilot stats shows in the app.
 - [ ] **Look at it on a real phone**, and read the Hindi wording (not read by a native speaker).
 - [ ] "Active this week" is a proxy (last login or last session refresh). Replace it with a real usage signal if it proves too rough.
 - [ ] The Meta fee figure uses third-party rates (Utility about Rs 0.115, Marketing about Rs 0.86): confirm on Meta's rate card.
