@@ -18,6 +18,8 @@ import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
+import { StatsScreen } from "./screens/Stats";
+import { loadIsAdmin } from "./lib/stats";
 import { daysLeft, loadPlanOverview, loadPlanPauses, type PlanOverview, type PlanPauses } from "./lib/plans";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
@@ -44,7 +46,8 @@ type Screen =
   | "goodbye"
   | "join"
   | "appointments"
-  | "plans";
+  | "plans"
+  | "stats";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -191,6 +194,7 @@ export function Icon({
     report: <><path d="M6 3h9l3 3v15H6z" /><path d="M14 3v4h4M9 12h6M9 16h6" /></>,
     users: <><path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 20v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
+    chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
     chevron: <path d="m9 18 6-6-6-6" />,
     back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h10" /></>,
     plus: <><path d="M12 5v14M5 12h14" /></>,
@@ -244,7 +248,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || (screen === "reportDetail" && target === "reports") || (["emergency", "whatsapp", "plans"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || (screen === "reportDetail" && target === "reports") || (["emergency", "whatsapp", "plans", "stats"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -1602,6 +1606,8 @@ const plusPhone = (phone: string) => (phone.startsWith("+") ? phone : `+${phone}
 function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, onLeft }: { go: (screen: Screen) => void; members: CircleMember[]; userId: string | null; recipient: Recipient | null; onSignOut: () => void; onMembersChanged: () => void; onLeft: () => void }) {
   const t = useTranslations("family");
   const ti = useTranslations("invites");
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { let cancelled = false; loadIsAdmin().then((v) => { if (!cancelled) setIsAdmin(v); }).catch(() => {}); return () => { cancelled = true; }; }, []);
   const language = useLocale() as Language;
   const toast = useToast();
   const call = parentCall(recipient, language);
@@ -1652,6 +1658,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
+      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
@@ -1835,7 +1842,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp", "plans", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "family", "emergency", "whatsapp", "plans", "stats", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2168,6 +2175,7 @@ export default function App() {
           {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
           {screen === "whatsapp" && <WhatsApp go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
+          {screen === "stats" && <StatsScreen go={go} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}

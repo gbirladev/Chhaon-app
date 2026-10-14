@@ -323,14 +323,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "alert_confirmed_at": string | null,"alert_consent_at": string | null,"alert_phone": string | null,"alert_requested_at": string | null,"country": string | null,"created_at": string,"email": string | null,"id": string,"language": string,"name": string | null,"phone": string | null,"plan": string,"policy_version": string | null,"privacy_accepted_at": string | null,"timezone": string,"today_layout": string | null,"trial_ends_at": string,"updated_at": string
+                    "alert_confirmed_at": string | null,"alert_consent_at": string | null,"alert_phone": string | null,"alert_requested_at": string | null,"country": string | null,"created_at": string,"email": string | null,"id": string,"is_admin": boolean,"language": string,"name": string | null,"phone": string | null,"plan": string,"policy_version": string | null,"privacy_accepted_at": string | null,"timezone": string,"today_layout": string | null,"trial_ends_at": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id": string,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
+                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id": string,"is_admin"?: boolean,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
+                    "alert_confirmed_at"?: string | null,"alert_consent_at"?: string | null,"alert_phone"?: string | null,"alert_requested_at"?: string | null,"country"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"is_admin"?: boolean,"language"?: string,"name"?: string | null,"phone"?: string | null,"plan"?: string,"policy_version"?: string | null,"privacy_accepted_at"?: string | null,"timezone"?: string,"today_layout"?: string | null,"trial_ends_at"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -412,6 +412,9 @@ isOneToOne: false
                            },
 "adjust_stock":
 { Args: { "p_delta": number,"p_medicine": string }; Returns: number
+                           },
+"admin_stats":
+{ Args: { "p_days"?: number }; Returns: Json
                            },
 "can_access_medicine":
 { Args: { "p_medicine": string }; Returns: boolean

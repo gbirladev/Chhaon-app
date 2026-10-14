@@ -1,0 +1,30 @@
+/* Pilot stats: stat tiles (single numbers), one column chart, one table. Text stays in ink colours; only the bars use the teal. */
+.stats-page .stats-hero { margin-top: 14px; padding: 18px; border-radius: 16px; background: #fff; border: 1px solid #dfe8e5; }
+.stats-page .stats-hero .big { display: block; font-size: 3rem; line-height: 1.05; font-weight: 800; color: #173d3a; font-variant-numeric: tabular-nums; }
+.stats-page .stats-hero p { margin: 6px 0 0; color: #566966; font-size: max(0.9375rem, 12px); line-height: 1.45; }
+.stats-page h2 { margin: 22px 2px 8px; font-size: 1.0625rem; color: #173d3a; }
+.stats-page .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stats-page .tile { background: #fff; border: 1px solid #dfe8e5; border-radius: 14px; padding: 14px; min-width: 0; }
+.stats-page .tile .label { display: block; color: #566966; font-size: max(0.8125rem, 12px); line-height: 1.3; }
+.stats-page .tile .value { display: block; margin-top: 4px; font-size: 1.75rem; line-height: 1.1; font-weight: 800; color: #173d3a; font-variant-numeric: tabular-nums; }
+.stats-page .tile .sub { display: block; margin-top: 4px; color: #566966; font-size: max(0.8125rem, 12px); line-height: 1.35; }
+.stats-page .tile.wide { grid-column: 1 / -1; }
+.stats-page .chart-card { background: #fff; border: 1px solid #dfe8e5; border-radius: 14px; padding: 14px; }
+.stats-page .chart-title { margin: 0 0 2px; font-weight: 700; color: #173d3a; }
+.stats-page .chart-sub { margin: 0 0 12px; color: #566966; font-size: max(0.8125rem, 12px); }
+.stats-page .bars { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 3px; height: 140px; padding-top: 18px; border-bottom: 1px solid #b9c9c5; }
+.stats-page .bar-slot { flex: 1 1 0; display: flex; align-items: flex-end; justify-content: center; height: 100%; min-width: 0; border: 0; padding: 0; background: transparent; cursor: default; position: relative; }
+.stats-page .bar { width: 100%; max-width: 24px; min-height: 2px; background: #247c72; border-radius: 4px 4px 0 0; }
+.stats-page .bar-slot:hover .bar, .stats-page .bar-slot:focus-visible .bar, .stats-page .bar-slot.on .bar { background: #1a5f57; }
+.stats-page .bar-slot:focus-visible { outline: 2px solid #173d3a; outline-offset: 1px; }
+.stats-page .bar-value { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: max(0.75rem, 12px); color: #173d3a; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats-page .axis { display: flex; justify-content: space-between; margin-top: 6px; color: #566966; font-size: max(0.75rem, 12px); }
+.stats-page .readout { min-height: 1.5em; margin: 8px 0 0; color: #173d3a; font-size: max(0.9375rem, 12px); font-variant-numeric: tabular-nums; }
+.stats-page details { margin-top: 10px; }
+.stats-page summary { cursor: pointer; color: #247c72; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+.stats-page table { width: 100%; border-collapse: collapse; font-size: max(0.875rem, 12px); font-variant-numeric: tabular-nums; }
+.stats-page th, .stats-page td { padding: 7px 4px; text-align: right; border-top: 1px solid #edf2f0; color: #2f4743; }
+.stats-page th:first-child, .stats-page td:first-child { text-align: left; }
+.stats-page thead th { color: #566966; font-weight: 600; border-top: 0; }
+.stats-page .note { margin: 16px 2px 0; color: #566966; font-size: max(0.8125rem, 12px); line-height: 1.5; }
+@media (prefers-reduced-motion: no-preference) { .stats-page .bar { transition: background .12s; } }

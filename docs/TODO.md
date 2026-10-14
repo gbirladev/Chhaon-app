@@ -99,3 +99,9 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [ ] **Watch the payment balance** in WhatsApp Manager (prepaid funds); sending stops when it runs out.
 - [ ] **Hosting:** Render free plan sleeps (cron-job.org wakes it every minute); move to a paid plan and a real domain before the pilot grows. Supabase free plan has no backups: consider Pro.
 - [ ] **Pilot invite message** (English and Hindi) was drafted in chat, not saved here.
+
+## Pilot stats page (built 2026-10-14, see `docs/stats.md`)
+- [ ] **Go live with it:** `npx supabase@2.120.0 db push < /dev/null` (migration 0028), `git push`, then `update public.profiles set is_admin = true where email = 'gbirla.dev.rnd@gmail.com'`.
+- [ ] **Look at it on a real phone**, and read the Hindi wording (not read by a native speaker).
+- [ ] "Active this week" is a proxy (last login or last session refresh). Replace it with a real usage signal if it proves too rough.
+- [ ] The Meta fee figure uses third-party rates (Utility about Rs 0.115, Marketing about Rs 0.86): confirm on Meta's rate card.
