@@ -17,8 +17,16 @@ When a parent does not answer, Chhaon should escalate in steps and only bother t
 - Web: Today shows "Taken late" (counted as done in the progress), the WhatsApp history shows the reply.
 - Tests: `supabase/tests/escalation.test.sql` (17), `supabase/tests/slot_reminders.test.sql` (8), API tests updated (252 pass), 230 database tests pass.
 
+## Built in step 2 (server logic, 2026-10-15)
+- `api/app/services/escalation.py`, run as a scheduler step after the check-ins. It follows every unanswered prompt (a medicine time slot or the daily check-in) from the moment the reminder was sent: **nudge** (15 / 60 min), **decide** (45 / 120 min: mark missed; alert the family only if the unanswered run reaches the parent's number or a critical medicine is involved), **resolve** on any reply (the family is told only if it had been alerted).
+- Steps are claimed with guarded updates (no duplicates, safe to run twice or late). A nudge never goes out after the alert time; nothing at all is sent for a prompt older than 24 hours (the record is still marked missed).
+- A parent who has answered nothing for `silent_stop_days` days stops being nudged and alerted about; the family gets one summary (in the app and on WhatsApp). Reminders and check-ins to the parent continue (they are the core product; roughly the cost of a silent parent, about Rs 40 a month).
+- Parents with the ladder on are skipped by the old "missed after 60 minutes" rule. Everyone else is unchanged. Server switch: `ESCALATION_ENABLED` (default off) AND the parent's own policy.
+- Four new templates in the pack (sections 16 to 19): parent dose nudge, parent check-in nudge, "parent replied" alert, "parent silent" alert. New notices in the app for "replied", "silent" and "N medicines".
+- Tests: `api/tests/test_escalation.py` (30), 282 API tests and 230 database tests pass.
+
 ## Still to build
-1. **Backend (step 2):** the scheduler step that creates an escalation per unanswered prompt, sends the nudge, applies the "unanswered in a row" and critical rules, marks missed at the alert time, alerts the family, resolves on a reply (and tells those already alerted), the silent-parent stop, and the server switch.
+1. ~~**Backend (step 2):**~~ done, see above. Original list: the scheduler step that creates an escalation per unanswered prompt, sends the nudge, applies the "unanswered in a row" and critical rules, marks missed at the alert time, alerts the family, resolves on a reply (and tells those already alerted), the silent-parent stop, and the server switch.
 2. **Templates (step 3):** `carelink_parent_dose_nudge`, `carelink_parent_checkin_nudge`, and a caregiver "parent replied" alert, in English and Hindi, plus the pack and tests.
 3. **Screens (step 4):** per-parent Safety net settings (presets, switch, unanswered count), a critical toggle on each medicine, escalation progress on Today with "I've handled it".
 4. **Phase 2:** helper onboarding, consent, requests and replies, quiet hours, daily cap, parent consent, expiring emergency link.

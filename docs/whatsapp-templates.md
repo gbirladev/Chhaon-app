@@ -8,7 +8,7 @@ Copy each block into **WhatsApp Manager > Message templates > Create template** 
 
 The app fills the variables automatically, in the order shown. Parent-facing templates go to the parent's number, caregiver templates to the caregiver's own number.
 
-There are 15 templates, so 30 submissions (each in two languages).
+There are 19 templates, so 38 submissions (each in two languages).
 
 ## 1. `carelink_consent_request_v2`
 *Asks the parent to agree before we send anything. Sent to the parent. Category: **Marketing** (Meta rejects permission-asking messages as Utility), type: Default.*
@@ -218,3 +218,63 @@ There are 15 templates, so 30 submissions (each in two languages).
 - **Body:** नमस्ते {{1}} 🙏 आपकी दवाओं का समय हो गया है: {{2}}। दवाएँ लेने के बाद नीचे दिया गया बटन दबाइए, ताकि आपके परिवार को पता चल जाए। धन्यवाद।
 - **Buttons (Quick reply):** `सब ले ली`
 - **Samples:** {{1}} = पापा, {{2}} = Metformin (500 mg), Amlodipine (5 mg), Atorvastatin (10 mg)
+
+## 16. `carelink_parent_dose_nudge`
+*One gentle nudge when a medicine reminder was not answered. Sent to the parent. Category: Utility, type: Default, no header.*
+
+**English (en)**
+
+- **Body:** Namaste {{1}} 🙏 A gentle reminder: these medicines are still pending: {{2}}. Please tap the button below once you have taken them. Thank you.
+- **Buttons (Quick reply):** `Taken`
+- **Samples:** {{1}} = Papa, {{2}} = Metformin (500 mg), Amlodipine (5 mg)
+
+**Hindi (hi)**
+
+- **Body:** नमस्ते {{1}} 🙏 एक छोटी सी याद: ये दवाएँ अभी बाकी हैं: {{2}}। लेने के बाद नीचे दिया गया बटन दबाइए। धन्यवाद।
+- **Buttons (Quick reply):** `ले ली`
+- **Samples:** {{1}} = पापा, {{2}} = Metformin (500 mg), Amlodipine (5 mg)
+
+## 17. `carelink_parent_checkin_nudge`
+*One gentle nudge when the daily check-in was not answered. Sent to the parent. Category: Utility, type: Default, no header.*
+
+**English (en)**
+
+- **Body:** Namaste {{1}} 🙏 We have not heard from you today. Are you okay? Please tap one of the buttons below.
+- **Buttons (Quick reply):** `I'm okay`, `Call me`
+- **Samples:** {{1}} = Papa
+
+**Hindi (hi)**
+
+- **Body:** नमस्ते {{1}} 🙏 आज आपका कोई जवाब नहीं आया। क्या आप ठीक हैं? कृपया नीचे दिए गए बटनों में से एक दबाइए।
+- **Buttons (Quick reply):** `मैं ठीक हूँ`, `मुझे फ़ोन करें`
+- **Samples:** {{1}} = पापा
+
+## 18. `carelink_alert_parent_replied`
+*Tells the family a parent has now answered after they were alerted. Sent to the caregiver. Category: Utility, type: Default, no header.*
+
+**English (en)**
+
+- **Body:** Update: {{1}} has now replied to Chhaon. You may not need to act on the earlier alert.
+- **Buttons:** none
+- **Samples:** {{1}} = Papa
+
+**Hindi (hi)**
+
+- **Body:** अपडेट: {{1}} ने अब छाँव को जवाब दे दिया है। पहले वाले अलर्ट पर शायद कुछ करने की ज़रूरत नहीं।
+- **Buttons:** none
+- **Samples:** {{1}} = पापा
+
+## 19. `carelink_alert_parent_silent`
+*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: Utility, type: Default, no header.*
+
+**English (en)**
+
+- **Body:** Alert: {{1}} has not replied to any Chhaon message for {{2}} days. We have paused the extra nudges and alerts until they reply. Please call them.
+- **Buttons:** none
+- **Samples:** {{1}} = Papa, {{2}} = 3
+
+**Hindi (hi)**
+
+- **Body:** अलर्ट: {{1}} ने {{2}} दिन से छाँव के किसी संदेश का जवाब नहीं दिया। जवाब आने तक हमने अतिरिक्त याद और अलर्ट रोक दिए हैं। कृपया उन्हें फ़ोन कीजिए।
+- **Buttons:** none
+- **Samples:** {{1}} = पापा, {{2}} = 3

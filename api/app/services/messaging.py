@@ -218,6 +218,29 @@ def send_slot_reminder(db: Client, wa: Messenger, dose_event_ids: list[str], now
     return "sent"
 
 
+def send_dose_nudge(db: Client, wa: Messenger, recipient: dict, doses: list[dict]) -> str:
+    """One gentle nudge for the doses of a time slot that are still unanswered. `doses` carry the medicine name and dosage.
+    Returns: sent | not_allowed. Whoever calls this has already claimed the step, so a failed send is handed back there."""
+    if not allowed(db, recipient) or not doses:
+        return "not_allowed"
+    language = recipient["language"]
+    entries = []
+    for d in sorted(doses, key=lambda x: (x["name"].lower(), x["id"])):
+        name = clean(d["name"], 40)
+        entries.append(f"{name} ({clean(localize_dose(d['dosage'], language), 20)})" if d.get("dosage") else name)
+    first = min(doses, key=lambda x: (x["name"].lower(), x["id"]))["id"]
+    wa.send_template(recipient["whatsapp_phone"], templates.dose_nudge(language, clean(call_name(recipient, language)), entries, first, whole_slot=len(doses) > 1))
+    return "sent"
+
+
+def send_checkin_nudge(db: Client, wa: Messenger, recipient: dict, checkin_id: str) -> str:
+    if not allowed(db, recipient):
+        return "not_allowed"
+    language = recipient["language"]
+    wa.send_template(recipient["whatsapp_phone"], templates.checkin_nudge(language, clean(call_name(recipient, language)), checkin_id))
+    return "sent"
+
+
 # ---------------------------------------------------------------- daily check-in
 def send_checkin(db: Client, wa: Messenger, recipient_id: str, local_date: date, now: datetime | None = None) -> str:
     """Sends the 'are you okay?' check-in for the parent's local date. Returns: sent | skipped | not_allowed."""

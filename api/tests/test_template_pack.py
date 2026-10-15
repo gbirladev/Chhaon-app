@@ -18,7 +18,7 @@ def sent(template) -> tuple[int, int]:
 
 
 def test_pack_covers_exactly_the_templates_the_code_uses():
-    in_code = {templates.CONSENT_REQUEST, templates.DOSE_REMINDER, templates.DOSE_REMINDER_PHOTO, templates.DOSE_REMINDER_MULTI, templates.DAILY_CHECKIN,
+    in_code = {templates.CONSENT_REQUEST, templates.DOSE_REMINDER, templates.DOSE_REMINDER_PHOTO, templates.DOSE_REMINDER_MULTI, templates.PARENT_DOSE_NUDGE, templates.PARENT_CHECKIN_NUDGE, templates.DAILY_CHECKIN,
                templates.APPOINTMENT_REMINDER, templates.ALERT_OPTIN, *templates.ALERT_TEMPLATES.values()}
     assert set(BY_NAME) == in_code
 
@@ -44,12 +44,14 @@ def test_pack_variables_and_buttons_match_what_the_code_sends():
         templates.DOSE_REMINDER: templates.dose_reminder("en", "Papa", "Metformin", "500 mg", "After food", some),
         templates.DOSE_REMINDER_PHOTO: templates.dose_reminder("en", "Papa", "Metformin", "500 mg", "After food", some, photo_url="https://x/y.jpg"),
         templates.DOSE_REMINDER_MULTI: templates.dose_reminder_multi("en", "Papa", ["Metformin (500 mg)", "Amlodipine (5 mg)"], some),
+        templates.PARENT_DOSE_NUDGE: templates.dose_nudge("en", "Papa", ["Metformin (500 mg)"], some, False),
+        templates.PARENT_CHECKIN_NUDGE: templates.checkin_nudge("en", "Papa", some),
         templates.DAILY_CHECKIN: templates.daily_checkin("en", "Papa", some),
         templates.APPOINTMENT_REMINDER: templates.appointment_reminder("en", "Papa", "Dr. Mehta", "tomorrow at 11:00 AM"),
         templates.ALERT_OPTIN: templates.alert_optin("en", "Ananya", some),
     }
     params = {"dose_missed": 3, "checkin_missed": 1, "checkin_call_requested": 1, "refill_needed": 2, "out_of_stock": 2,
-              "reminder_not_sent": 2, "appointment_reminder": 3, "parent_stopped": 1, "parent_declined": 1}
+              "reminder_not_sent": 2, "appointment_reminder": 3, "parent_stopped": 1, "parent_declined": 1, "parent_responded": 1, "parent_silent": 2}
     for kind, count in params.items():
         built[templates.ALERT_TEMPLATES[kind]] = templates.caregiver_alert(kind, "en", ["x"] * count)
     for name, template in built.items():

@@ -166,6 +166,9 @@ def _params(db: Client, type_: str, payload: dict, language: str, now: datetime 
                 doctor = clean(a.data["doctor_name"])
                 visit_text = when_text(datetime.fromisoformat(a.data["datetime"]), (now or _now()).astimezone(parent_zone(tz)), language)
         return [parent, doctor, visit_text]
+    if type_ == "parent_silent":
+        days = payload.get("days")
+        return [parent, str(days if isinstance(days, int) and 0 < days <= 60 else 3)]
     if type_ in {"refill_needed", "out_of_stock", "reminder_not_sent"}:
         return [medicine, parent]
     return [parent]

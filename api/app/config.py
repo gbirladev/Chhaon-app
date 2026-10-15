@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # carelink_dose_reminder_multi approved by Meta). Off until then: every dose is reminded on its own.
     slot_reminders_enabled: bool = False
 
+    # Escalation ladder (nudge the parent, then alert the family only when it matters). Off until switched on here AND per parent.
+    escalation_enabled: bool = False
+
     # WhatsApp alerts to the caregiver
     alerts_per_hour: int = 6
     alerts_max_attempts: int = 3

@@ -34,6 +34,7 @@ create table public.escalations (
   base_at       timestamptz not null,           -- when the reminder / check-in was sent: every step is measured from here
   nudged_at     timestamptz,
   alerted_at    timestamptz,
+  decided_at    timestamptz,                    -- when the alert decision was made (alerted_at stays empty if the family was not alerted)
   resolved_at   timestamptz,
   resolved_by   text check (resolved_by in ('parent', 'caregiver', 'silent')),
   handled_by    uuid references public.profiles (id) on delete set null,

@@ -608,11 +608,13 @@ function NotificationSheet({ notifications, medicineNames, callFor, onDelete, on
   const language = useLocale() as Language;
   const dialog = useDialog(onClose);
   const text = (n: AppNotification) => {
-    const payload = (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string };
+    const payload = (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string; count?: number; days?: number };
     const call = callFor(payload.recipient_id);  // the parent THIS alert is about, not necessarily the one on screen
     const name = payload.medicine_id ? medicineNames[payload.medicine_id] : undefined;
     if (n.type === "refill_needed") return name ? t("refill_needed", { name }) : t("refill_needed_generic");
     if (n.type === "out_of_stock") return name ? t("out_of_stock", { name }) : t("out_of_stock_generic");
+    if (n.type === "dose_missed" && typeof payload.count === "number" && payload.count > 1) return t("dose_missed_many", { call, count: payload.count });
+    if (n.type === "parent_silent") return t("parent_silent", { call, days: payload.days ?? 3 });
     if (n.type === "dose_missed") return name ? t("dose_missed_named", { call, name }) : t("dose_missed", { call });
     if (n.type === "reminder_not_sent") return name ? t("reminder_not_sent_named", { call, name }) : t("reminder_not_sent", { call });
     return t.has(n.type) ? t(n.type, { call }) : t("unknown");

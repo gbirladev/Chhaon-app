@@ -16,6 +16,8 @@ DOSE_REMINDER = "carelink_dose_reminder"
 DOSE_REMINDER_PHOTO = "carelink_dose_reminder_photo"
 DOSE_REMINDER_MULTI = "carelink_dose_reminder_multi"   # one reminder for every medicine due at the same time
 DAILY_CHECKIN = "carelink_daily_checkin"
+PARENT_DOSE_NUDGE = "carelink_parent_dose_nudge"        # one gentle nudge when a dose reminder was not answered
+PARENT_CHECKIN_NUDGE = "carelink_parent_checkin_nudge"  # one gentle nudge when the daily check-in was not answered
 APPOINTMENT_REMINDER = "carelink_appointment_reminder"
 
 ALERT_OPTIN = "carelink_alert_optin"
@@ -30,6 +32,8 @@ ALERT_TEMPLATES = {
     "appointment_reminder": "carelink_alert_appointment",       # {{1}} parent, {{2}} doctor, {{3}} when
     "parent_stopped": "carelink_alert_parent_stopped",          # {{1}} parent
     "parent_declined": "carelink_alert_parent_stopped",         # {{1}} parent
+    "parent_responded": "carelink_alert_parent_replied",        # {{1}} parent (they answered after the family was alerted)
+    "parent_silent": "carelink_alert_parent_silent",            # {{1}} parent, {{2}} number of days
 }
 
 LANGUAGES = {"en": "en", "hi": "hi"}  # app language -> WhatsApp template language code
@@ -122,6 +126,25 @@ def dose_reminder_multi(language: str, parent_name: str, medicines: list[str], f
         DOSE_REMINDER_MULTI,
         language_code(language),
         [_body(parent_name, medicine_list(language, medicines)), *_buttons([encode_payload("dose", first_dose_event_id, "all")])],
+    )
+
+
+def dose_nudge(language: str, parent_name: str, medicines: list[str], dose_event_id: UUID | str, whole_slot: bool) -> Template:
+    """Body: {{1}} parent, {{2}} the medicines still pending ("Name (dose)", comma separated). One button, "Taken": for a time slot
+    its payload is "dose:<id>:all" (every dose of that moment), for a single dose "dose:<id>:taken"."""
+    return Template(
+        PARENT_DOSE_NUDGE,
+        language_code(language),
+        [_body(parent_name, medicine_list(language, medicines)), *_buttons([encode_payload("dose", dose_event_id, "all" if whole_slot else "taken")])],
+    )
+
+
+def checkin_nudge(language: str, parent_name: str, checkin_id: UUID | str) -> Template:
+    """Body: {{1}} parent. Two buttons, the same replies as the morning check-in."""
+    return Template(
+        PARENT_CHECKIN_NUDGE,
+        language_code(language),
+        [_body(parent_name), *_buttons([encode_payload("checkin", checkin_id, "ok"), encode_payload("checkin", checkin_id, "call")])],
     )
 
 

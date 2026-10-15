@@ -595,7 +595,10 @@
     "member_joined": "Someone new joined the family circle for {call}.",
     "appointment_reminder": "A reminder about {call}'s doctor visit was sent on WhatsApp.",
     "delete": "Delete notification",
-    "swipeHint": "Swipe a notification left or right to delete it"
+    "swipeHint": "Swipe a notification left or right to delete it",
+    "dose_missed_many": "{call} hasn't confirmed {count} medicines. You may want to call.",
+    "parent_responded": "Good news: {call} has now replied. You may not need to act on the earlier alert.",
+    "parent_silent": "{call} has not replied to any message for {days} days. We paused the extra nudges and alerts until they reply. Please call."
   },
   "medicine": {
     "title": "Medicine details",
