@@ -123,8 +123,10 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [ ] **Batch website changes** into fewer pushes (each real website push is still 15 credits, so about 20 a month fit).
 - [ ] **Watch the balance** (Netlify > Team settings > Billing) and decide before the pilot: stay on Netlify (Personal plan about $9 a month at the time of writing, check), or move the website to a host with free unlimited requests (Cloudflare Pages is the usual choice). Traffic itself is tiny: 1,000 visits is only a few credits.
 
-## Android app wrapper (discussed 2026-10-15, on hold)
-Decided to wait. Nothing was built. What we found, so we can pick it up later:
+## Android app wrapper and Play Store (discussed 2026-10-15, DROPPED for now)
+Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The app stays a web app that can be added to the home screen (PWA). Nothing was built. What we found, in case it is revisited:
+- Google Play lists **health apps as needing an organization account** (registered business, usually a D-U-N-S number), which also shows the developer's name publicly.
+- Needed for a listing: an .aab file, store assets, a privacy policy link, the Data safety form, a health apps declaration, in-app and web account deletion, and (personal accounts) a 12-tester, 14-day closed test.
 - The web app's manifest is already wrapper-ready (name, standalone, portrait, 192/512 icons, a maskable icon). No Java, Android SDK, adb or Bubblewrap is installed on the Mac.
 - **Easiest route:** PWABuilder (pwabuilder.com, enter https://chhaon.netlify.app, package for Android). It returns an installable file plus a Play Store bundle and shows the signing key's SHA-256 fingerprint.
 - **Then:** add that fingerprint to `web/public/.well-known/assetlinks.json` so the app opens full screen without an address bar (needs one website deploy; batch it with other web changes, Netlify credits).
