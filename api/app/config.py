@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     checkin_missed_minutes: int = 180
     checkin_start_window_minutes: int = 120  # if the scheduler was down, do not send a "good morning" at 3 pm
 
+    # One reminder per time slot: all medicines due at the same moment go in ONE message (needs the template
+    # carelink_dose_reminder_multi approved by Meta). Off until then: every dose is reminded on its own.
+    slot_reminders_enabled: bool = False
+
     # WhatsApp alerts to the caregiver
     alerts_per_hour: int = 6
     alerts_max_attempts: int = 3

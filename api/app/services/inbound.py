@@ -232,7 +232,7 @@ def _units_per_dose(dosage: str | None) -> int:
 
 
 def _handle_dose(db: Client, sender: str, dose_event_id: str, action: str) -> None:
-    if action != "taken":
+    if action not in {"taken", "all"}:
         return
     ev = (
         db.table("dose_events")
@@ -242,6 +242,12 @@ def _handle_dose(db: Client, sender: str, dose_event_id: str, action: str) -> No
     row = ev.data if ev else None
     medicine = row["medicine_schedules"]["medicines"] if row else None
     if not row or medicine["care_recipients"]["whatsapp_phone"] != sender:
+        return
+    if action == "all":
+        # "Taken all" on a time-slot reminder: every dose of this parent due at that same moment, in one atomic step.
+        # Stock is used up once per medicine that was newly confirmed (a repeated tap confirms nothing new).
+        for confirmed in db.rpc("confirm_dose_slot", {"p_dose_event": row["id"]}).execute().data or []:
+            db.rpc("consume_stock", {"p_medicine": confirmed["medicine_id"], "p_units": _units_per_dose(confirmed["dosage"])}).execute()
         return
     # Only a reminder we actually SENT can be confirmed (a late tap after 'missed' still counts), and only the
     # FIRST confirmation uses up stock: taps can repeat.
@@ -314,8 +320,15 @@ def _opt_in_again(db: Client, wa: Messenger, sender: str) -> None:
 
 # ---------------------------------------------------------------- delivery failures
 def _handle_failed(db: Client, status: dict) -> None:
-    ev = db.table("dose_events").select("id, medicine_schedules(medicines(care_recipients(id, circle_id)))").eq("whatsapp_message_id", status["id"]).maybe_single().execute()
-    row = ev.data if ev else None
-    if row:
+    # One message can cover several doses (a time slot): tell the family once per parent, not once per dose.
+    rows = (
+        db.table("dose_events").select("id, medicine_schedules(medicines(care_recipients(id, circle_id)))")
+        .eq("whatsapp_message_id", status["id"]).execute().data or []
+    )
+    told: set[str] = set()
+    for row in rows:
         recipient = row["medicine_schedules"]["medicines"]["care_recipients"]
+        if recipient["id"] in told:
+            continue
+        told.add(recipient["id"])
         notify_circle(db, recipient["circle_id"], "whatsapp_failed", {"recipient_id": recipient["id"], "dose_event_id": row["id"]})

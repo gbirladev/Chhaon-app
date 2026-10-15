@@ -173,6 +173,51 @@ def send_dose_reminder(db: Client, wa: Messenger, dose_event_id: str, now: datet
     return "sent"
 
 
+def send_slot_reminder(db: Client, wa: Messenger, dose_event_ids: list[str], now: datetime | None = None) -> str:
+    """One reminder for several doses of the SAME parent due at the SAME moment ("time slot").
+    Returns: sent | skipped | not_allowed. A slot with a single dose keeps its own reminder (with the medicine photo).
+    All doses are claimed together (pending -> sent) before anything is sent, and handed back if the send fails, so a second
+    worker or a retry can never send the slot twice."""
+    events = (
+        db.table("dose_events")
+        .select("id, status, medicine_schedules(medicines(name, dosage, recipient_id, care_recipients(*)))")
+        .in_("id", dose_event_ids).execute().data
+    )
+    pending = [e for e in events if e["status"] == "pending"]
+    if not pending:
+        return "skipped"
+    if len({e["medicine_schedules"]["medicines"]["recipient_id"] for e in pending}) != 1:
+        raise ValueError("a time slot belongs to one parent")
+    r = pending[0]["medicine_schedules"]["medicines"]["care_recipients"]
+    if not allowed(db, r):
+        return "not_allowed"
+    if len(pending) == 1:
+        return send_dose_reminder(db, wa, pending[0]["id"], now=now)
+
+    claimed = (
+        db.table("dose_events").update({"status": "sent", "sent_at": (now or _now()).isoformat()})
+        .in_("id", [e["id"] for e in pending]).eq("status", "pending").execute().data
+    )
+    if not claimed:
+        return "skipped"
+    claimed_ids = [c["id"] for c in claimed]
+    rows = sorted((e for e in pending if e["id"] in claimed_ids), key=lambda e: (e["medicine_schedules"]["medicines"]["name"].lower(), e["id"]))
+    language = r["language"]
+    entries = []
+    for e in rows:
+        medicine = e["medicine_schedules"]["medicines"]
+        name = clean(medicine["name"], 40)
+        entries.append(f"{name} ({clean(localize_dose(medicine['dosage'], language), 20)})" if medicine["dosage"] else name)
+    try:
+        message_id = wa.send_template(r["whatsapp_phone"], templates.dose_reminder_multi(language, clean(call_name(r, language)), entries, rows[0]["id"]))
+    except Exception:
+        db.table("dose_events").update({"status": "pending", "sent_at": None}).in_("id", claimed_ids).execute()
+        raise
+    db.table("dose_events").update({"whatsapp_message_id": message_id}).in_("id", claimed_ids).execute()
+    log.info("slot reminder for %s doses sent to %s", len(claimed_ids), mask_phone(r["whatsapp_phone"]))
+    return "sent"
+
+
 # ---------------------------------------------------------------- daily check-in
 def send_checkin(db: Client, wa: Messenger, recipient_id: str, local_date: date, now: datetime | None = None) -> str:
     """Sends the 'are you okay?' check-in for the parent's local date. Returns: sent | skipped | not_allowed."""

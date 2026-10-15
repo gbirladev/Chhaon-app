@@ -139,3 +139,9 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [x] **Add to home screen help** built (`web/src/lib/install.ts`, `screens/Install.tsx`): a dismissible card on Today for Android and iPhone browsers (one-tap Add where Chrome allows it, steps otherwise; English and Hindi), hidden for 14 days after "Not now", hidden once installed or on a desktop; plus an "Add to home screen" entry in the Family tab. Tested with an Android and an iPhone browser identity, and with "installed" simulated. NOT tested on a real phone.
 - [ ] **Netlify badge** ("Powered by Netlify", bottom-right on the live site): it is a Netlify setting, not our code. Turn it off at Netlify > the site > Project configuration > General > Powered by Netlify badge (no redeploy needed). Netlify shows it on new Free-plan projects (created on or after 19 Aug 2026).
 - [ ] **Real-phone check** of pull to refresh and the install card on Android Chrome and on an iPhone (Safari).
+
+## One reminder per time slot (built 2026-10-15, see `docs/slot-reminders.md`)
+- [ ] **Meta:** submit `carelink_dose_reminder_multi` in English and Hindi (wording in `docs/whatsapp-templates.md`, section 15) and wait for approval.
+- [ ] **Roll out in order:** `db push` (0030) first, then push the API, then set `SLOT_REMINDERS_ENABLED=true` in Render after the template is approved. Test one real slot on your own number.
+- [ ] The Today screen and the Pilot stats page still count doses one by one (they do not need to change). Check on a real phone that "Taken all" turns every dose of the slot to taken.
+- Next big feature (designed, waiting): the escalation ladder with a nearby helper; it builds on slots. Decisions pending: parent consent for a helper, quiet hours behaviour, which plans, the expiring helper link, the "two unanswered in a row" rule and the 3-day silent stop.

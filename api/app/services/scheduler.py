@@ -23,7 +23,7 @@ from app.whatsapp.client import Messenger
 log = logging.getLogger("carelink.scheduler")
 
 # medicine id + parent's circle and opt-out state, for alerts
-DOSE_CONTEXT = "id, sent_at, medicine_schedules(medicines(id, recipient_id, care_recipients(circle_id, opted_out_at)))"
+DOSE_CONTEXT = "id, sent_at, scheduled_at, medicine_schedules(medicines(id, recipient_id, care_recipients(circle_id, opted_out_at)))"
 PAGE = 1000  # PostgREST returns at most 1000 rows per request
 
 
@@ -111,23 +111,31 @@ def _generate(db: Client, wa: Messenger, settings: Settings, now: datetime, coun
 # ---------------------------------------------------------------- 2. reminders
 def _send_due_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
     window_start = now - timedelta(minutes=settings.dose_missed_minutes)
-    due = _all(lambda: db.table("dose_events").select("id, medicine_schedules(medicines(recipient_id))").eq("status", "pending")
+    due = _all(lambda: db.table("dose_events").select("id, scheduled_at, medicine_schedules(medicines(recipient_id))").eq("status", "pending")
                .lte("scheduled_at", _iso(now)).gt("scheduled_at", _iso(window_start)))
+    # A time slot = one parent, one exact moment. With slot reminders on, a slot is ONE message; otherwise every dose is its own.
+    slots: dict[tuple, list[str]] = {}
     for row in due:
-        if not _in_scope(row["medicine_schedules"]["medicines"]["recipient_id"]):
+        parent_id = row["medicine_schedules"]["medicines"]["recipient_id"]
+        if not _in_scope(parent_id):
             continue
+        key = (parent_id, row["scheduled_at"]) if settings.slot_reminders_enabled else (parent_id, row["scheduled_at"], row["id"])
+        slots.setdefault(key, []).append(row["id"])
+    for ids in slots.values():
         try:
-            result = messaging.send_dose_reminder(db, wa, row["id"], now=now)
+            result = messaging.send_slot_reminder(db, wa, ids, now=now) if len(ids) > 1 else messaging.send_dose_reminder(db, wa, ids[0], now=now)
         except Exception as exc:  # noqa: BLE001
-            log.error("reminder failed for dose %s (%s)", row["id"], type(exc).__name__)
+            log.error("reminder failed for %s dose(s) (%s)", len(ids), type(exc).__name__)
             counts["send_errors"] += 1  # stays pending: retried next tick until the window closes
             continue
         if result == "sent":
             counts["reminders_sent"] += 1
+            if len(ids) > 1:
+                counts["slot_reminders"] += 1
         elif result == "not_allowed":
             # Parent has not agreed (or said STOP): nothing is sent and it is not a "missed" dose.
-            db.table("dose_events").update({"status": "skipped"}).eq("id", row["id"]).eq("status", "pending").execute()
-            counts["doses_skipped"] += 1
+            db.table("dose_events").update({"status": "skipped"}).in_("id", ids).eq("status", "pending").execute()
+            counts["doses_skipped"] += len(ids)
 
 
 def _expire_unsent_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
@@ -149,6 +157,7 @@ def _expire_unsent_doses(db: Client, wa: Messenger, settings: Settings, now: dat
 def _mark_missed_doses(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
     cutoff = now - timedelta(minutes=settings.dose_missed_minutes)
     waiting = _all(lambda: db.table("dose_events").select(DOSE_CONTEXT).eq("status", "sent").lte("sent_at", _iso(cutoff)))
+    slots: dict[tuple, list[dict]] = {}   # doses that went missed at the same moment for the same parent are ONE alert
     for row in waiting:
         if not _in_scope(row["medicine_schedules"]["medicines"]["recipient_id"]):
             continue
@@ -157,10 +166,16 @@ def _mark_missed_doses(db: Client, wa: Messenger, settings: Settings, now: datet
             continue
         counts["doses_missed"] += 1
         medicine = row["medicine_schedules"]["medicines"]
+        slots.setdefault((medicine["recipient_id"], row["scheduled_at"]), []).append(row)
+    for (recipient_id, _at), rows in slots.items():
+        medicine = rows[0]["medicine_schedules"]["medicines"]
         parent = medicine["care_recipients"]
-        if not parent["opted_out_at"]:  # a parent who said STOP is not "ignoring" us
-            notify_circle(db, parent["circle_id"], "dose_missed",
-                          {"recipient_id": medicine["recipient_id"], "medicine_id": medicine["id"], "dose_event_id": row["id"]})
+        if parent["opted_out_at"]:  # a parent who said STOP is not "ignoring" us
+            continue
+        payload = {"recipient_id": recipient_id, "medicine_id": medicine["id"], "dose_event_id": rows[0]["id"]}
+        if len(rows) > 1:
+            payload["count"] = len(rows)
+        notify_circle(db, parent["circle_id"], "dose_missed", payload)
 
 
 # ---------------------------------------------------------------- 4. daily check-in

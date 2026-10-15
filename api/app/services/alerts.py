@@ -144,6 +144,9 @@ def _params(db: Client, type_: str, payload: dict, language: str, now: datetime 
             when = _clock(datetime.fromisoformat(d.data["scheduled_at"]), tz, language)
 
     if type_ == "dose_missed":
+        count = payload.get("count")
+        if isinstance(count, int) and 1 < count <= 50:   # several medicines due together: say how many, not which
+            medicine = f"{count} दवाइयाँ" if language == "hi" else f"{count} medicines"
         return [parent, medicine, when]
     if type_ == "appointment_reminder":
         from app.services.appointments import (  # late import: appointments imports this module
