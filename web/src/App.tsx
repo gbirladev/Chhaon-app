@@ -19,6 +19,8 @@ import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
 import { StatsScreen } from "./screens/Stats";
+import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
+import { usePullToRefresh } from "./lib/pullToRefresh";
 import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
 import { daysLeft, loadPlanOverview, loadPlanPauses, type PlanOverview, type PlanPauses } from "./lib/plans";
@@ -197,6 +199,7 @@ export function Icon({
     users: <><path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 20v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
     chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+    refresh: <><path d="M20 11a8 8 0 0 0-14.3-4.6L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16" /><path d="M20 20v-4h-4" /></>,
     chevron: <path d="m9 18 6-6-6-6" />,
     back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h10" /></>,
     plus: <><path d="M12 5v14M5 12h14" /></>,
@@ -964,6 +967,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
       <TrialBanner go={go} />
       {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
+      <InstallBanner />
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
@@ -1661,6 +1665,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
+      <InstallLink />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
@@ -2144,17 +2149,31 @@ export default function App() {
 
   useEffect(() => { document.documentElement.lang = language; }, [language]);
 
+  // Pull down at the top of a screen to refresh it: reload the shared data, then reopen the screen so it fetches its own.
+  const [pullTick, setPullTick] = useState(0);
+  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats"];
+  const { pull, refreshing: pullRefreshing } = usePullToRefresh(ready && !loadFailed && PULL_SCREENS.includes(screen), async () => {
+    await Promise.allSettled([
+      refreshRecipient(recipientRef.current?.id),
+      refreshMedicines(recipientRef.current?.id, true),
+      loadNotifications().then((list) => { if (list) setNotifications(list); }),
+      recipientRef.current?.circle_id ? loadMembers(recipientRef.current.circle_id).then(setMembers) : Promise.resolve(),
+    ]);
+    setPullTick((n) => n + 1);
+  });
+
   const hasNav = ["today", "medicines", "reports", "family"].includes(screen);
   return (
     <AppIntl language={language}>
     <ToastContext.Provider value={showToast}>
     <SessionContext.Provider value={() => void expireSession()}>
     <div className="app-shell">
+      <PullIndicator pull={pull} refreshing={pullRefreshing} />
       <div className="phone-frame">
         {!ready && <main className="onboarding"><p className="form-note" role="status">{MESSAGES[language].common.loading}</p></main>}
         {ready && loadFailed && <LoadFailedNotice onRetry={() => void boot()} />}
         {ready && !loadFailed && (
-          <ErrorBoundary key={screen} fallback={<CrashNotice />}>
+          <ErrorBoundary key={`${screen}-${pullTick}`} fallback={<CrashNotice />}>
           {screen === "welcome" && <Welcome go={go} />}
           {screen === "otp" && <OtpScreen go={go} onVerified={afterLogin} />}
           {screen === "profile" && <ProfileForm go={go} recipient={recipient} onSaved={afterProfileSaved} onSignOut={() => void signOut()} />}

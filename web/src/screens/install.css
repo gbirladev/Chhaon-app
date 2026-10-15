@@ -1,0 +1,16 @@
+/* "Add to home screen" banner and sheet, and the pull-to-refresh indicator. */
+.install-banner { display: flex; gap: 12px; align-items: flex-start; margin: 0 0 14px; padding: 14px; border-radius: 14px; background: #e3f3ef; border: 1px solid #b9dcd4; color: #173d3a; line-height: 1.45; }
+.install-banner strong { display: block; margin-bottom: 2px; }
+.install-banner p { margin: 0 0 10px; font-size: max(0.9375rem, 12px); color: #2f4743; }
+.install-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; background: #247c72; color: #fff; display: flex; align-items: center; justify-content: center; }
+.install-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.install-primary { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #247c72; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.install-quiet { min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: transparent; color: #1a5f57; font: inherit; font-weight: 600; cursor: pointer; }
+.install-steps { list-style: decimal outside; margin: 14px 0 6px; padding-left: 28px; color: #2f4743; line-height: 1.6; font-size: max(1rem, 12px); }
+.install-steps li { margin-bottom: 8px; padding-left: 4px; }
+.install-steps li::marker { color: #247c72; font-weight: 700; }
+.pull-indicator { position: fixed; z-index: 90; top: env(safe-area-inset-top); left: 50%; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #247c72; box-shadow: 0 2px 10px rgba(23,61,58,.22); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.pull-indicator > span { display: flex; }
+.pull-indicator .spin { animation: pull-spin .8s linear infinite; }
+@keyframes pull-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pull-indicator .spin { animation: none; } }

@@ -920,5 +920,27 @@
     "errPlan": "You have reached the number of reports your plan allows. See Plans to add more.",
     "errStorage": "This parent's report storage is full. Please delete an old report to add a new one.",
     "errHeic": "This photo is in a format we cannot use (HEIC). Please take the photo again, or choose it as a JPEG. On an iPhone, Settings > Camera > Formats > Most Compatible."
+  },
+  "install": {
+    "bannerTitle": "Add Chhaon to your home screen",
+    "bannerBody": "Open it in one tap, like an app.",
+    "add": "Add",
+    "how": "Show me how",
+    "notNow": "Not now",
+    "sheetTitle": "Add to home screen",
+    "sheetBody": "Chhaon opens like an app, with its own icon, and you do not need to type the address again.",
+    "androidStep1": "Tap the ⋮ menu at the top right of Chrome.",
+    "androidStep2": "Tap “Install app” or “Add to Home screen”.",
+    "androidStep3": "Tap “Install” or “Add”.",
+    "iosStep1": "Tap the Share button (a square with an arrow) in Safari.",
+    "iosStep2": "Scroll down and tap “Add to Home Screen”.",
+    "iosStep3": "Tap “Add” at the top right.",
+    "otherStep1": "Open the browser menu.",
+    "otherStep2": "Choose “Install app” or “Add to Home screen”.",
+    "otherStep3": "Confirm.",
+    "done": "Done",
+    "linkTitle": "Add to home screen",
+    "linkSub": "Open Chhaon in one tap, like an app",
+    "refreshing": "Refreshing"
   }
 }
