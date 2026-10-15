@@ -122,3 +122,12 @@ Built and tested locally (166 database + 235 API tests, browser checks in Englis
 - [x] **Fixed in `web/netlify.toml`:** an `ignore` rule skips the build when nothing in `web/` changed. Checked against the last 10 pushes: 6 would have been skipped.
 - [ ] **Batch website changes** into fewer pushes (each real website push is still 15 credits, so about 20 a month fit).
 - [ ] **Watch the balance** (Netlify > Team settings > Billing) and decide before the pilot: stay on Netlify (Personal plan about $9 a month at the time of writing, check), or move the website to a host with free unlimited requests (Cloudflare Pages is the usual choice). Traffic itself is tiny: 1,000 visits is only a few credits.
+
+## Android app wrapper (discussed 2026-10-15, on hold)
+Decided to wait. Nothing was built. What we found, so we can pick it up later:
+- The web app's manifest is already wrapper-ready (name, standalone, portrait, 192/512 icons, a maskable icon). No Java, Android SDK, adb or Bubblewrap is installed on the Mac.
+- **Easiest route:** PWABuilder (pwabuilder.com, enter https://chhaon.netlify.app, package for Android). It returns an installable file plus a Play Store bundle and shows the signing key's SHA-256 fingerprint.
+- **Then:** add that fingerprint to `web/public/.well-known/assetlinks.json` so the app opens full screen without an address bar (needs one website deploy; batch it with other web changes, Netlify credits).
+- **Sideloading** (sharing the file directly) is fine for a few people you know; Android shows an "unknown app" warning.
+- **Play Store:** developer account fee, a closed test with 12 testers for 14 days for a new personal account (organizations are exempt), a health-app declaration, the privacy page and the data-safety form. The developer's name is shown publicly. Do this only after Vengage's written permission and the business registration.
+- **Apple App Store** is harder (Apple's guideline 4.2 rejects thin web wrappers) and costs about $99 a year; not planned.
