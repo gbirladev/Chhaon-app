@@ -383,6 +383,35 @@
           ]
         }
       }
+    },
+    {
+      "name": "carelink_dose_reminder_multi",
+      "category": "UTILITY",
+      "sent_to": "parent",
+      "purpose": "One medicine reminder for every medicine due at the same time",
+      "header": null,
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 Good day! It is time for your medicines: {{2}}. When you have taken them, please tap the button below so your family knows. Thank you.",
+          "buttons": [
+            "Taken all"
+          ],
+          "examples": [
+            "Papa",
+            "Metformin (500 mg), Amlodipine (5 mg), Atorvastatin (10 mg)"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 आपकी दवाओं का समय हो गया है: {{2}}। दवाएँ लेने के बाद नीचे दिया गया बटन दबाइए, ताकि आपके परिवार को पता चल जाए। धन्यवाद।",
+          "buttons": [
+            "सब ले ली"
+          ],
+          "examples": [
+            "पापा",
+            "Metformin (500 mg), Amlodipine (5 mg), Atorvastatin (10 mg)"
+          ]
+        }
+      }
     }
   ]
 }

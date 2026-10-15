@@ -18,7 +18,7 @@ def sent(template) -> tuple[int, int]:
 
 
 def test_pack_covers_exactly_the_templates_the_code_uses():
-    in_code = {templates.CONSENT_REQUEST, templates.DOSE_REMINDER, templates.DOSE_REMINDER_PHOTO, templates.DAILY_CHECKIN,
+    in_code = {templates.CONSENT_REQUEST, templates.DOSE_REMINDER, templates.DOSE_REMINDER_PHOTO, templates.DOSE_REMINDER_MULTI, templates.DAILY_CHECKIN,
                templates.APPOINTMENT_REMINDER, templates.ALERT_OPTIN, *templates.ALERT_TEMPLATES.values()}
     assert set(BY_NAME) == in_code
 
@@ -43,6 +43,7 @@ def test_pack_variables_and_buttons_match_what_the_code_sends():
         templates.CONSENT_REQUEST: templates.consent_request("en", "Papa", "Ananya", some),
         templates.DOSE_REMINDER: templates.dose_reminder("en", "Papa", "Metformin", "500 mg", "After food", some),
         templates.DOSE_REMINDER_PHOTO: templates.dose_reminder("en", "Papa", "Metformin", "500 mg", "After food", some, photo_url="https://x/y.jpg"),
+        templates.DOSE_REMINDER_MULTI: templates.dose_reminder_multi("en", "Papa", ["Metformin (500 mg)", "Amlodipine (5 mg)"], some),
         templates.DAILY_CHECKIN: templates.daily_checkin("en", "Papa", some),
         templates.APPOINTMENT_REMINDER: templates.appointment_reminder("en", "Papa", "Dr. Mehta", "tomorrow at 11:00 AM"),
         templates.ALERT_OPTIN: templates.alert_optin("en", "Ananya", some),

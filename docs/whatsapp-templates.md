@@ -8,7 +8,7 @@ Copy each block into **WhatsApp Manager > Message templates > Create template** 
 
 The app fills the variables automatically, in the order shown. Parent-facing templates go to the parent's number, caregiver templates to the caregiver's own number.
 
-There are 14 templates, so 28 submissions (each in two languages).
+There are 15 templates, so 30 submissions (each in two languages).
 
 ## 1. `carelink_consent_request_v2`
 *Asks the parent to agree before we send anything. Sent to the parent. Category: **Marketing** (Meta rejects permission-asking messages as Utility), type: Default.*
@@ -203,3 +203,18 @@ There are 14 templates, so 28 submissions (each in two languages).
 - **Body:** सेवा सूचना: आपके द्वारा जोड़े गए {{1}} ने छाँव के WhatsApp संदेश बंद करवा दिए हैं। इसलिए दवा के रिमाइंडर और रोज़ का चेक-इन अभी रुके हुए हैं।
 - **Samples:** {{1}} = पापा
 
+## 15. `carelink_dose_reminder_multi`
+*One reminder for every medicine due at the same time (replaces several single reminders). Sent to the parent. Category: Utility, type: Default, no header.*
+*The app writes each medicine as "Name (dose)", separated by commas; a very long list is cut and ends with "and 3 more" (Hindi: "और 3 दवाएँ"). One tap on the button marks all of them taken.*
+
+**English (en)**
+
+- **Body:** Namaste {{1}} 🙏 Good day! It is time for your medicines: {{2}}. When you have taken them, please tap the button below so your family knows. Thank you.
+- **Buttons (Quick reply):** `Taken all`
+- **Samples:** {{1}} = Papa, {{2}} = Metformin (500 mg), Amlodipine (5 mg), Atorvastatin (10 mg)
+
+**Hindi (hi)**
+
+- **Body:** नमस्ते {{1}} 🙏 आपकी दवाओं का समय हो गया है: {{2}}। दवाएँ लेने के बाद नीचे दिया गया बटन दबाइए, ताकि आपके परिवार को पता चल जाए। धन्यवाद।
+- **Buttons (Quick reply):** `सब ले ली`
+- **Samples:** {{1}} = पापा, {{2}} = Metformin (500 mg), Amlodipine (5 mg), Atorvastatin (10 mg)

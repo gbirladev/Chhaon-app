@@ -7,12 +7,14 @@ language picks which one is sent.
 Quick-reply buttons carry a payload that comes back in the webhook: "<kind>:<id>:<action>".
 """
 
+import re
 from dataclasses import dataclass
 from uuid import UUID
 
 CONSENT_REQUEST = "carelink_consent_request_v2"
 DOSE_REMINDER = "carelink_dose_reminder"
 DOSE_REMINDER_PHOTO = "carelink_dose_reminder_photo"
+DOSE_REMINDER_MULTI = "carelink_dose_reminder_multi"   # one reminder for every medicine due at the same time
 DAILY_CHECKIN = "carelink_daily_checkin"
 APPOINTMENT_REMINDER = "carelink_appointment_reminder"
 
@@ -93,6 +95,34 @@ def dose_reminder(
     components.append(_body(parent_name, medicine, dose, instruction))
     components += _buttons([encode_payload("dose", dose_event_id, "taken")])
     return Template(DOSE_REMINDER_PHOTO if photo_url else DOSE_REMINDER, language_code(language), components)
+
+
+MAX_LISTED_MEDICINES = 6
+MAX_LIST_CHARS = 400   # the whole body must stay well inside WhatsApp's 1024 characters
+MORE = {"en": "and {n} more", "hi": "और {n} दवाएँ"}
+
+
+def medicine_list(language: str, entries: list[str]) -> str:
+    """"Metformin (500 mg), Amlodipine (5 mg)" for the multi-medicine reminder. Long lists are cut to fit and end with "and 3 more".
+    Entries are cleaned like every other template value (no line breaks, no runs of spaces)."""
+    cleaned = [re.sub(r"[\x00-\x1f\x7f\u2028\u2029]+", " ", e or "").strip()[:60] or "-" for e in entries]
+    cleaned = [re.sub(r" {2,}", " ", e) for e in cleaned]
+    more = MORE["hi" if language == "hi" else "en"]
+    shown = cleaned[:MAX_LISTED_MEDICINES]
+    while len(shown) > 1 and len(", ".join(shown)) > MAX_LIST_CHARS:
+        shown.pop()
+    hidden = len(cleaned) - len(shown)
+    return ", ".join(shown) + (f", {more.format(n=hidden)}" if hidden else "")
+
+
+def dose_reminder_multi(language: str, parent_name: str, medicines: list[str], first_dose_event_id: UUID | str) -> Template:
+    """Body: {{1}} parent, {{2}} the medicines due now, written as "Name (dose)" each, comma separated.
+    One button, "Taken all": its payload "dose:<id>:all" marks every dose due at that same time as taken."""
+    return Template(
+        DOSE_REMINDER_MULTI,
+        language_code(language),
+        [_body(parent_name, medicine_list(language, medicines)), *_buttons([encode_payload("dose", first_dose_event_id, "all")])],
+    )
 
 
 def daily_checkin(language: str, parent_name: str, checkin_id: UUID | str) -> Template:
