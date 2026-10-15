@@ -229,7 +229,8 @@
     "pauseItemParents": "{count} माता-पिता",
     "pauseItemMedicines": "{count, plural, one {# दवा} other {# दवाइयाँ}}",
     "and": "और",
-    "bannerSoonPause": "आपका मुफ़्त ट्रायल {days} दिन में खत्म होगा। अपग्रेड न करने पर {items} के रिमाइंडर रुक जाएँगे। प्लान देखिए।"
+    "bannerSoonPause": "आपका मुफ़्त ट्रायल {days} दिन में खत्म होगा। अपग्रेड न करने पर {items} के रिमाइंडर रुक जाएँगे। प्लान देखिए।",
+    "takenLate": "देर से ली"
   },
   "medicines": {
     "title": "दवाइयाँ",

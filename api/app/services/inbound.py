@@ -252,8 +252,9 @@ def _handle_dose(db: Client, sender: str, dose_event_id: str, action: str) -> No
     # Only a reminder we actually SENT can be confirmed (a late tap after 'missed' still counts), and only the
     # FIRST confirmation uses up stock: taps can repeat.
     first_time = (
-        db.table("dose_events").update({"status": "taken", "responded_at": _now()})
-        .eq("id", row["id"]).in_("status", ["sent", "missed"]).execute().data
+        db.table("dose_events").update({"status": "taken", "responded_at": _now()}).eq("id", row["id"]).eq("status", "sent").execute().data
+        # a confirmation after the dose was already marked missed is kept apart: taken_late
+        or db.table("dose_events").update({"status": "taken_late", "responded_at": _now()}).eq("id", row["id"]).eq("status", "missed").execute().data
     )
     if first_time:
         # The database raises a refill alert by itself when this drops stock to the refill level.

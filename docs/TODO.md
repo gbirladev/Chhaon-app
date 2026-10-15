@@ -145,3 +145,8 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [ ] **Roll out in order:** `db push` (0030) first, then push the API, then set `SLOT_REMINDERS_ENABLED=true` in Render after the template is approved. Test one real slot on your own number.
 - [ ] The Today screen and the Pilot stats page still count doses one by one (they do not need to change). Check on a real phone that "Taken all" turns every dose of the slot to taken.
 - Next big feature (designed, waiting): the escalation ladder with a nearby helper; it builds on slots. Decisions pending: parent consent for a helper, quiet hours behaviour, which plans, the expiring helper link, the "two unanswered in a row" rule and the 3-day silent stop.
+
+## Escalation ladder (started 2026-10-15, see `docs/escalation.md`)
+- [x] Step 1: database (`taken_late`, policies, escalations, critical flag, handle_escalation) and late-confirmation handling in the API, Today and stats. NOT on the live database yet: migrations 0030, 0031, 0032 must be pushed in order (`db push`), then the API and website.
+- [ ] Steps 2 to 4 and Phase 2 as listed in `docs/escalation.md`.
+- [ ] Before switching any of it on for families: a reliable timer (paid hosting plus a warning when ticks stop), privacy text, and the "not an emergency service" wording.

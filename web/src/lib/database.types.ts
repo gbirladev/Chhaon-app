@@ -247,6 +247,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"escalation_policies": {
+                  Row: {
+                    "alert_after_unanswered": number,"checkin_alert_min": number,"checkin_nudge_min": number,"dose_alert_min": number,"dose_nudge_min": number,"enabled": boolean,"recipient_id": string,"silent_stop_days": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alert_after_unanswered"?: number,"checkin_alert_min"?: number,"checkin_nudge_min"?: number,"dose_alert_min"?: number,"dose_nudge_min"?: number,"enabled"?: boolean,"recipient_id": string,"silent_stop_days"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "alert_after_unanswered"?: number,"checkin_alert_min"?: number,"checkin_nudge_min"?: number,"dose_alert_min"?: number,"dose_nudge_min"?: number,"enabled"?: boolean,"recipient_id"?: string,"silent_stop_days"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "escalation_policies_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: true
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"escalations": {
+                  Row: {
+                    "alerted_at": string | null,"base_at": string,"created_at": string,"handled_by": string | null,"id": string,"kind": string,"nudged_at": string | null,"recipient_id": string,"resolved_at": string | null,"resolved_by": string | null,"slot_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alerted_at"?: string | null,"base_at": string,"created_at"?: string,"handled_by"?: string | null,"id"?: string,"kind": string,"nudged_at"?: string | null,"recipient_id": string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key": string
+                  }
+                  Update: {
+                    "alerted_at"?: string | null,"base_at"?: string,"created_at"?: string,"handled_by"?: string | null,"id"?: string,"kind"?: string,"nudged_at"?: string | null,"recipient_id"?: string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "escalations_handled_by_fkey"
+      columns: ["handled_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "escalations_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: false
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"family_invites": {
                   Row: {
                     "accepted_at": string | null,"accepted_by": string | null,"circle_id": string,"created_at": string,"created_by": string | null,"expires_at": string,"id": string,"revoked_at": string | null,"token_hash": string
@@ -301,14 +347,14 @@ isOneToOne: false
                   ]
                 },"medicines": {
                   Row: {
-                    "active": boolean,"created_at": string,"dosage": string | null,"id": string,"instructions": string | null,"name": string,"photo_url": string | null,"recipient_id": string,"refill_threshold": number | null,"stock_count": number | null,"updated_at": string
+                    "active": boolean,"created_at": string,"critical": boolean,"dosage": string | null,"id": string,"instructions": string | null,"name": string,"photo_url": string | null,"recipient_id": string,"refill_threshold": number | null,"stock_count": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name": string,"photo_url"?: string | null,"recipient_id": string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name": string,"photo_url"?: string | null,"recipient_id": string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name"?: string,"photo_url"?: string | null,"recipient_id"?: string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name"?: string,"photo_url"?: string | null,"recipient_id"?: string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -483,6 +529,11 @@ isOneToOne: false
 "claim_consent_request":
 { Args: { "p_daily_cap": number,"p_phone": string,"p_user": string,"p_window": string }; Returns: Json
                            },
+"confirm_dose_slot":
+{ Args: { "p_dose_event": string }; Returns: {
+              "dosage": string,"medicine_id": string
+            }[]
+                           },
 "consume_stock":
 { Args: { "p_medicine": string,"p_units"?: number }; Returns: undefined
                            },
@@ -518,6 +569,9 @@ isOneToOne: false
                            },
 "generate_dose_events":
 { Args: { "p_grace"?: string,"p_horizon"?: string,"p_now"?: string,"p_recipients"?: (string)[] }; Returns: number
+                           },
+"handle_escalation":
+{ Args: { "p_escalation": string }; Returns: boolean
                            },
 "has_control_chars":
 { Args: { "p": string }; Returns: boolean
@@ -615,6 +669,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"set_medicine_critical":
+{ Args: { "p_critical": boolean,"p_medicine": string }; Returns: undefined
+                           },
 "sole_member_recipients":
 { Args: { "p_user": string }; Returns: {
               "recipient_id": string
@@ -634,7 +691,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "checkin_status": "pending"|"sent"|"replied"|"missed","dose_status": "pending"|"sent"|"taken"|"missed"|"skipped","member_role": "owner"|"member","report_ai_status": "pending"|"processing"|"done"|"failed","value_flag": "normal"|"low"|"high"|"critical"
+            "checkin_status": "pending"|"sent"|"replied"|"missed","dose_status": "pending"|"sent"|"taken"|"missed"|"skipped"|"taken_late","member_role": "owner"|"member","report_ai_status": "pending"|"processing"|"done"|"failed","value_flag": "normal"|"low"|"high"|"critical"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -754,7 +811,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "checkin_status": ["pending", "sent", "replied", "missed"],"dose_status": ["pending", "sent", "taken", "missed", "skipped"],"member_role": ["owner", "member"],"report_ai_status": ["pending", "processing", "done", "failed"],"value_flag": ["normal", "low", "high", "critical"]
+            "checkin_status": ["pending", "sent", "replied", "missed"],"dose_status": ["pending", "sent", "taken", "missed", "skipped", "taken_late"],"member_role": ["owner", "member"],"report_ai_status": ["pending", "processing", "done", "failed"],"value_flag": ["normal", "low", "high", "critical"]
           }
         }
 } as const

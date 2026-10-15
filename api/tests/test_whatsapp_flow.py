@@ -168,7 +168,7 @@ def test_late_tap_after_missed_still_counts(client, db, family):
     consent(db, family)
     dose = new_dose(db, family, status="missed")
     post_webhook(client, inbound(button(wamid(), templates.encode_payload("dose", dose, "taken"))))
-    assert db.table("dose_events").select("status").eq("id", dose).single().execute().data["status"] == "taken"
+    assert db.table("dose_events").select("status").eq("id", dose).single().execute().data["status"] == "taken_late"   # counted, but kept apart
 
 
 def test_taken_from_someone_elses_number_is_ignored(client, db, family):

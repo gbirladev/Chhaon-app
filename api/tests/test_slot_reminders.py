@@ -137,7 +137,20 @@ def test_a_late_taken_all_after_the_doses_were_marked_missed_still_counts(db, fa
     run_tick(db, messenger, settings, NOW + timedelta(minutes=61))
     assert [r["status"] for r in doses(db, family)] == ["missed"] * 3
     post_webhook(client, inbound(button(wamid(), f"dose:{doses(db, family)[0]['id']}:all")))
-    assert [r["status"] for r in doses(db, family)] == ["taken"] * 3
+    assert [r["status"] for r in doses(db, family)] == ["taken_late"] * 3   # confirmed, but after the missed mark
+
+
+def test_a_late_tap_on_the_old_taken_button_is_taken_late(db, family, messenger, settings, client):
+    setup(db, family)
+    run_tick(db, messenger, settings, NOW)
+    run_tick(db, messenger, settings, NOW + timedelta(minutes=61))
+    one = doses(db, family)[0]["id"]
+    before = stock(db, family)
+    post_webhook(client, inbound(button(wamid(), f"dose:{one}:taken")))
+    assert sorted(r["status"] for r in doses(db, family)) == ["missed", "missed", "taken_late"]
+    assert sum(before.values()) - sum(stock(db, family).values()) == 1   # stock is used up once
+    post_webhook(client, inbound(button(wamid(), f"dose:{one}:taken")))
+    assert sum(before.values()) - sum(stock(db, family).values()) == 1   # and not again
 
 
 def test_the_old_taken_button_still_confirms_only_its_own_dose(db, family, messenger, settings, client):

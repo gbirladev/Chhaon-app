@@ -1,7 +1,7 @@
 -- One reminder per time slot (migration 0030). Run with: npx supabase test db  (not alongside pytest)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email, instance_id, aud, role) values
   ('a3000000-0000-0000-0000-000000000001', 'slot-owner@test.dev', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
@@ -33,11 +33,13 @@ select throws_ok($$select * from public.confirm_dose_slot('a4000000-0000-0000-00
 reset role;
 select set_config('request.jwt.claims', '', true);
 
--- the backend confirms the whole slot of THAT parent and nothing else
+-- the backend confirms the whole slot of THAT parent and nothing else (a dose already marked missed becomes taken_late)
+update public.dose_events set status = 'missed' where id = 'a4000000-0000-0000-0000-0000000000a2';
 set local role service_role;
 select is((select count(*)::int from public.confirm_dose_slot('a4000000-0000-0000-0000-0000000000a1')), 2, 'both doses of the slot are confirmed');
 reset role;
-select is((select status::text from public.dose_events where id = 'a4000000-0000-0000-0000-0000000000a2'), 'taken', 'the other dose of the same slot is taken too');
+select is((select status::text from public.dose_events where id = 'a4000000-0000-0000-0000-0000000000a1'), 'taken', 'a dose that was waiting becomes taken');
+select is((select status::text from public.dose_events where id = 'a4000000-0000-0000-0000-0000000000a2'), 'taken_late', 'a dose already marked missed becomes taken_late');
 select is((select status::text from public.dose_events where id = 'a4000000-0000-0000-0000-0000000000a3'), 'sent', 'another parent''s dose at the same moment is untouched');
 set local role service_role;
 select is((select count(*)::int from public.confirm_dose_slot('a4000000-0000-0000-0000-0000000000a1')), 0, 'a second tap confirms nothing new');

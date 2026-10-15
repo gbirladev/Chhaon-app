@@ -229,7 +229,8 @@
     "pauseItemParents": "{count, plural, one {# parent} other {# parents}}",
     "pauseItemMedicines": "{count, plural, one {# medicine} other {# medicines}}",
     "and": "and",
-    "bannerSoonPause": "Your free trial ends in {days, plural, one {# day} other {# days}}. If you do not upgrade, reminders for {items} will pause. See Plans."
+    "bannerSoonPause": "Your free trial ends in {days, plural, one {# day} other {# days}}. If you do not upgrade, reminders for {items} will pause. See Plans.",
+    "takenLate": "Taken late"
   },
   "medicines": {
     "title": "Medicines",

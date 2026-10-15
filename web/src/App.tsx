@@ -939,14 +939,15 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     const future = new Date(d.scheduledAt).getTime() > Date.now();
     const pill =
       d.status === "taken" ? (["taken", "today.taken"] as const)
+      : d.status === "taken_late" ? (["taken", "today.takenLate"] as const)
       : d.status === "missed" ? (["missed", "today.missed"] as const)
       : d.status === "skipped" ? (["notsent", "today.notSent"] as const)
       : d.status === "sent" ? (["pending", "today.pending"] as const)
       : future ? (["upcoming", "today.upcoming"] as const) : (["pending", "today.due"] as const);
     return {
       id: d.id, at: new Date(d.scheduledAt).getTime(), tod: localMinutes(new Date(d.scheduledAt), tz), time: parts.time, suffix: parts.suffix, name: d.name, dose: d.dosage ? localizeDose(d.dosage, t) : "",
-      state: d.status === "taken" ? "done" : d.status === "missed" ? "missed" : d.status === "sent" ? "current" : d.status === "skipped" ? "skipped" : "todo",
-      icon: d.status === "taken" ? "✓" : d.status === "missed" ? "!" : d.status === "sent" ? <Icon name="pill" size={16} /> : <Icon name="pill" size={15} />,
+      state: d.status === "taken" || d.status === "taken_late" ? "done" : d.status === "missed" ? "missed" : d.status === "sent" ? "current" : d.status === "skipped" ? "skipped" : "todo",
+      icon: d.status === "taken" || d.status === "taken_late" ? "✓" : d.status === "missed" ? "!" : d.status === "sent" ? <Icon name="pill" size={16} /> : <Icon name="pill" size={15} />,
       pill: <StatusPill type={pill[0] as "taken"}>{t(pill[1])}</StatusPill>,
     };
   };
@@ -988,8 +989,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       <AlertsCard compact />
 
       <section className="section">
-        <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
-        {visibleDoses.length > 0 && <div className="dose-progress" role="progressbar" aria-valuemin={0} aria-valuemax={visibleDoses.length} aria-valuenow={visibleDoses.filter((d) => d.status === "taken").length} aria-label={t("today.medicinesTitle")}><i style={{ width: `${(visibleDoses.filter((d) => d.status === "taken").length / visibleDoses.length) * 100}%` }} /></div>}
+        <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
+        {visibleDoses.length > 0 && <div className="dose-progress" role="progressbar" aria-valuemin={0} aria-valuemax={visibleDoses.length} aria-valuenow={visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length} aria-label={t("today.medicinesTitle")}><i style={{ width: `${(visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length / visibleDoses.length) * 100}%` }} /></div>}
         {dataError && <p role="alert" className="form-error">{t("today.loadFailed")}</p>}
         {doses === null && !dataError && <div className="skeleton card" aria-busy="true" />}
         {doses !== null && visibleDoses.length > 0 && (
@@ -1795,7 +1796,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
               <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{a.name}{a.dosage ? ` ${localizeDose(a.dosage, tParent)}` : ""}</strong></span></div>
               <small>{time(a.at)} ✓✓</small>
             </div>
-            {a.status === "taken" && <div className="wa-reply"><p>{msg("taken")}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
+            {(a.status === "taken" || a.status === "taken_late") && <div className="wa-reply"><p>{msg("taken")}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
             {a.status === "missed" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("noReply", { call: callUi })}</div>}
             {a.status === "sent" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("waiting", { call: callUi })}</div>}
           </div>
