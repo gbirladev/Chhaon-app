@@ -17,6 +17,7 @@ export type Medicine = {
   instructions: string | null;
   active: boolean;
   photoUrl: string | null;
+  critical: boolean;   // an unanswered reminder for this medicine alerts the family on the first miss (escalation ladder)
 };
 
 export const PRESET_TIMES = { Morning: "08:00", Afternoon: "13:00", Night: "20:00" } as const;
@@ -64,7 +65,7 @@ export async function loadMedicineNames(): Promise<Record<string, string>> {
 export async function loadMedicines(recipientId: string): Promise<Medicine[]> {
   const { data, error } = await supabase
     .from("medicines")
-    .select("id, name, dosage, instructions, stock_count, refill_threshold, active, photo_url, created_at, medicine_schedules(time_of_day)")
+    .select("id, name, dosage, instructions, stock_count, refill_threshold, active, photo_url, critical, created_at, medicine_schedules(time_of_day)")
     .eq("recipient_id", recipientId)
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -78,6 +79,7 @@ export async function loadMedicines(recipientId: string): Promise<Medicine[]> {
     instructions: m.instructions,
     active: m.active,
     photoUrl: m.photo_url,
+    critical: m.critical,
   }));
 }
 

@@ -148,6 +148,7 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 
 ## Escalation ladder (started 2026-10-15, see `docs/escalation.md`)
 - [x] Step 1: database (`taken_late`, policies, escalations, critical flag, handle_escalation) and late-confirmation handling in the API, Today and stats. NOT on the live database yet: migrations 0030, 0031, 0032 must be pushed in order (`db push`), then the API and website.
-- [ ] Steps 2 to 4 and Phase 2 as listed in `docs/escalation.md`.
+- [x] Step 4 (screens) built 2026-10-15, NOT pushed. Safety net screen, critical toggle, progress card on Today.
+- [ ] Phase 2 as listed in `docs/escalation.md`; alert-detail screen; templates 15 to 19 need Meta approval.
 - [ ] Before switching any of it on for families: a reliable timer (paid hosting plus a warning when ticks stop), privacy text, and the "not an emergency service" wording.
 - [x] Step 2 (server logic) built 2026-10-15; see `docs/escalation.md`. NOT pushed. To use it: submit the four new templates (sections 16 to 19 of `docs/whatsapp-templates.md`) and wait for approval, push migrations 0030 to 0032 (`db push`) and the API, set `ESCALATION_ENABLED=true`, then switch a parent's policy on. There is no screen for the policy yet (step 4); until then it is switched on in the database.

@@ -1,0 +1,15 @@
+/* Safety net settings and the progress card on Today. */
+.safety-page .safety-intro { margin: 14px 2px; color: #2f4743; line-height: 1.55; font-size: max(1rem, 12px); }
+.safety-page .safety-section { margin-top: 22px; }
+.safety-page .safety-section h2 { margin: 0 0 8px; font-size: 1.0625rem; color: #173d3a; }
+.safety-page .safety-note { margin: 8px 2px 0; color: #566966; line-height: 1.5; font-size: max(0.9375rem, 12px); }
+.safety-page .safety-warning { margin-top: 24px; padding: 14px; border-radius: 14px; background: #fdecea; border: 1.5px solid #e9a39b; color: #7a1f17; line-height: 1.5; }
+.safety-page .safety-warning p { margin: 4px 0 0; font-size: max(0.9375rem, 12px); }
+.safety-page .stack { margin: 18px 0 24px; }
+.escalation-card { margin: 0 0 14px; padding: 14px; border-radius: 14px; background: #fff; border: 1px solid #dfe8e5; color: #173d3a; }
+.escalation-card strong { display: block; margin-bottom: 6px; }
+.escalation-row { display: flex; gap: 10px; align-items: flex-end; justify-content: space-between; padding-top: 8px; border-top: 1px solid #edf2f0; margin-top: 8px; }
+.escalation-row ul { margin: 0; padding-left: 18px; color: #2f4743; line-height: 1.5; font-size: max(0.9375rem, 12px); }
+.escalation-row li.alerted { color: #7a4a12; font-weight: 700; }
+.escalation-row .secondary-button { flex: none; width: auto; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; }
+.tag-critical { display: inline-block; margin-left: 8px; padding: 3px 8px; border-radius: 8px; background: #fdecea; color: #7a1f17; font-size: max(0.75rem, 12px); font-weight: 700; vertical-align: middle; }

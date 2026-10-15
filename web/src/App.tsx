@@ -20,6 +20,7 @@ import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
 import { StatsScreen } from "./screens/Stats";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
+import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/SafetyNet";
 import { usePullToRefresh } from "./lib/pullToRefresh";
 import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
@@ -51,7 +52,8 @@ type Screen =
   | "join"
   | "appointments"
   | "plans"
-  | "stats";
+  | "stats"
+  | "safety";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -199,6 +201,7 @@ export function Icon({
     users: <><path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 20v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
     chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+    check: <path d="m5 12 5 5 9-10" />,
     refresh: <><path d="M20 11a8 8 0 0 0-14.3-4.6L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16" /><path d="M20 20v-4h-4" /></>,
     chevron: <path d="m9 18 6-6-6-6" />,
     back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h10" /></>,
@@ -253,7 +256,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -971,6 +974,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       <TrialBanner go={go} />
       {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
       <InstallBanner />
+      {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
@@ -1036,7 +1040,7 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           return (
           <article className={`med-card${medicine.active ? "" : " paused"}`} key={medicine.id} {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
             <div className={`med-visual ${color}`}><span /><span /><span /></div>
-            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
+            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}{medicine.critical && <span className="tag-critical">{t("medicines.critical")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
             <span className="chevron-hint" aria-hidden="true"><Icon name="chevron" size={19} /></span>
           </article>
         )})}
@@ -1669,6 +1673,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
+      <SafetyNetLink go={go} />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
@@ -1852,7 +1857,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2204,6 +2209,7 @@ export default function App() {
           {screen === "whatsapp" && <WhatsApp go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
+          {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}

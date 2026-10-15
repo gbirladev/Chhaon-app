@@ -25,6 +25,11 @@ When a parent does not answer, Chhaon should escalate in steps and only bother t
 - Four new templates in the pack (sections 16 to 19): parent dose nudge, parent check-in nudge, "parent replied" alert, "parent silent" alert. New notices in the app for "replied", "silent" and "N medicines".
 - Tests: `api/tests/test_escalation.py` (30), 282 API tests and 230 database tests pass.
 
+## Built in step 4 (screens, 2026-10-15)
+- Family tab > **Safety net** (shown only when the server's `/features` says the ladder is on): per-parent switch, speed presets (Gentle / Standard / Fast), "alert me after" (1, 2 or 3 unanswered), silent-parent days (2, 3, 5, 7), a critical toggle per medicine, and a plain "not an emergency service (112)" notice.
+- Medicines list shows a "Critical" tag. Today shows a "Waiting for {name}'s reply" card (sent, nudged, alerted) with **I've handled it**.
+- English and Hindi. Browser-tested end to end (settings saved to the database, card resolved, nothing shown when the server switch is off).
+
 ## Still to build
 1. ~~**Backend (step 2):**~~ done, see above. Original list: the scheduler step that creates an escalation per unanswered prompt, sends the nudge, applies the "unanswered in a row" and critical rules, marks missed at the alert time, alerts the family, resolves on a reply (and tells those already alerted), the silent-parent stop, and the server switch.
 2. **Templates (step 3):** `carelink_parent_dose_nudge`, `carelink_parent_checkin_nudge`, and a caregiver "parent replied" alert, in English and Hindi, plus the pack and tests.

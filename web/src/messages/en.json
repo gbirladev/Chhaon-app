@@ -252,7 +252,8 @@
     "summaryPaused": "All medicines are paused",
     "summaryPausedHint": "Resume one to restart reminders.",
     "paused": "Paused",
-    "pausedByPlan": "Paused: plan limit"
+    "pausedByPlan": "Paused: plan limit",
+    "critical": "Critical"
   },
   "add": {
     "title": "Add medicine",
@@ -946,5 +947,52 @@
     "linkTitle": "Add to home screen",
     "linkSub": "Open Chhaon in one tap, like an app",
     "refreshing": "Refreshing"
+  },
+  "safety": {
+    "title": "Safety net",
+    "subtitle": "What happens when {call} does not reply",
+    "linkTitle": "Safety net",
+    "linkSub": "Gentle nudges first, alerts only when it matters",
+    "intro": "If {call} does not answer a reminder, we send one gentle nudge first and tell you only when it matters. A reply at any point stops everything.",
+    "toggleLabel": "Use the safety net for {call}",
+    "toggleOn": "On",
+    "toggleOff": "Off: you are alerted as before, after 60 minutes",
+    "speedTitle": "How quickly should we step in?",
+    "preset": {
+      "gentle": "Gentle",
+      "standard": "Standard",
+      "fast": "Fast"
+    },
+    "speedLine": "Medicines: nudge after {a} min, alert after {b} min. Daily check-in: nudge after {c} min, alert after {d} min.",
+    "alertTitle": "Alert me after",
+    "alertAfter": {
+      "1": "1 unanswered",
+      "2": "2 in a row",
+      "3": "3 in a row"
+    },
+    "alertHint": "One forgotten tap is usually not an emergency, so we record it without alerting you. Critical medicines always alert on the first miss. A silent daily check-in plus an unanswered reminder counts as 2.",
+    "criticalTitle": "Critical medicines",
+    "criticalHint": "Medicines that must not be missed, such as insulin. An unanswered reminder for one of these alerts you right away.",
+    "criticalEmpty": "No active medicines yet.",
+    "criticalOn": "Alerts on the first miss",
+    "silentTitle": "If {call} says nothing for days",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "silentHint": "After {days} days without any reply we stop the extra nudges and alerts and send you one summary. Reminders and check-ins continue.",
+    "emergencyTitle": "Not an emergency service",
+    "emergencyBody": "Chhaon cannot call for help or send anyone to {call}. In an emergency, call your local emergency number (112 in India).",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "errSave": "Could not save. Please try again.",
+    "loadFailed": "Could not load the settings. Please try again shortly.",
+    "progressTitle": "Waiting for {call}'s reply",
+    "sentDose": "Medicine reminder sent {time}",
+    "sentCheckin": "Check-in sent {time}",
+    "nudged": "Nudged {call} · {time}",
+    "alerted": "Alerted you · {time}",
+    "notAlerted": "Marked missed · you were not alerted (first miss)",
+    "handled": "I've handled it",
+    "handledToast": "Marked as handled",
+    "handledAlready": "Already resolved"
   }
 }

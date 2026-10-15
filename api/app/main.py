@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routes import alerts, cron, emergency, privacy, recipients, reports, webhooks
+from app.routes import alerts, cron, emergency, features, privacy, recipients, reports, webhooks
 
 settings = get_settings()
 app = FastAPI(title="Chhaon API", docs_url="/docs" if settings.environment != "production" else None)
@@ -24,6 +24,7 @@ app.include_router(alerts.router)
 app.include_router(reports.router)
 app.include_router(emergency.router)
 app.include_router(privacy.router)
+app.include_router(features.router)
 
 
 @app.get("/health")

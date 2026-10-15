@@ -269,14 +269,14 @@ isOneToOne: true
                   ]
                 },"escalations": {
                   Row: {
-                    "alerted_at": string | null,"base_at": string,"created_at": string,"handled_by": string | null,"id": string,"kind": string,"nudged_at": string | null,"recipient_id": string,"resolved_at": string | null,"resolved_by": string | null,"slot_key": string
+                    "alerted_at": string | null,"base_at": string,"created_at": string,"decided_at": string | null,"handled_by": string | null,"id": string,"kind": string,"nudged_at": string | null,"recipient_id": string,"resolved_at": string | null,"resolved_by": string | null,"slot_key": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "alerted_at"?: string | null,"base_at": string,"created_at"?: string,"handled_by"?: string | null,"id"?: string,"kind": string,"nudged_at"?: string | null,"recipient_id": string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key": string
+                    "alerted_at"?: string | null,"base_at": string,"created_at"?: string,"decided_at"?: string | null,"handled_by"?: string | null,"id"?: string,"kind": string,"nudged_at"?: string | null,"recipient_id": string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key": string
                   }
                   Update: {
-                    "alerted_at"?: string | null,"base_at"?: string,"created_at"?: string,"handled_by"?: string | null,"id"?: string,"kind"?: string,"nudged_at"?: string | null,"recipient_id"?: string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key"?: string
+                    "alerted_at"?: string | null,"base_at"?: string,"created_at"?: string,"decided_at"?: string | null,"handled_by"?: string | null,"id"?: string,"kind"?: string,"nudged_at"?: string | null,"recipient_id"?: string,"resolved_at"?: string | null,"resolved_by"?: string | null,"slot_key"?: string
                   }
                   Relationships: [
                     {
