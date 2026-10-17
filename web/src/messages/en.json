@@ -174,7 +174,15 @@
       "other": "Other"
     },
     "callName": "What do you call them?",
-    "callNameHint": "Used in alerts and in the messages your parent receives, e.g. Mom, Papa, Dadi."
+    "callNameHint": "Used in alerts and in the messages your parent receives, e.g. Mom, Papa, Dadi.",
+    "titleSelfAdd": "Add yourself",
+    "subtitleSelfAdd": "Get reminders for your own medicines",
+    "titleSelfEdit": "Your details",
+    "subtitleSelfEdit": "Keep your information up to date",
+    "nameSelf": "Your name",
+    "whatsappSelf": "Your WhatsApp number",
+    "whatsappHintSelf": "The number where you want your medicine reminders.",
+    "noteSelf": "We will send a message to your WhatsApp to confirm this number. Your medicines stay private: nobody else in your family can see them."
   },
   "today": {
     "morning": "GOOD MORNING",
@@ -230,7 +238,10 @@
     "pauseItemMedicines": "{count, plural, one {# medicine} other {# medicines}}",
     "and": "and",
     "bannerSoonPause": "Your free trial ends in {days, plural, one {# day} other {# days}}. If you do not upgrade, reminders for {items} will pause. See Plans.",
-    "takenLate": "Taken late"
+    "takenLate": "Taken late",
+    "consentPendingTitleSelf": "Confirm your WhatsApp number",
+    "consentPendingSelf": "We sent a message to your WhatsApp. Tap \"Yes, start\" there to begin your medicine reminders.",
+    "consentStoppedSelf": "You stopped WhatsApp messages. Reply START on WhatsApp to turn your reminders back on."
   },
   "medicines": {
     "title": "Medicines",
@@ -403,7 +414,8 @@
     "statsLink": "Pilot stats",
     "statsSub": "How many people use it, and does it work",
     "feedbackLink": "Send feedback",
-    "feedbackSub": "Ideas, problems or thanks for the Chhaon team"
+    "feedbackSub": "Ideas, problems or thanks for the Chhaon team",
+    "selfNote": "This is your own profile. It is private to you, so there is nobody to invite."
   },
   "invites": {
     "sheetTitle": "Invite a family member",
@@ -641,7 +653,9 @@
     "title": "Whose care are you looking at?",
     "edit": "Edit {name}'s details",
     "add": "Add another parent",
-    "switched": "Now showing {call}."
+    "switched": "Now showing {call}.",
+    "addSelf": "Add myself",
+    "selfTag": "You · your own medicines"
   },
   "callDefaults": {
     "father": "Papa",

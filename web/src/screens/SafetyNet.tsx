@@ -170,10 +170,10 @@ export function EscalationProgress({ recipient, call }: { recipient: Recipient; 
 }
 
 /** The Family tab entry, shown only when the server has the ladder switched on. */
-export function SafetyNetLink({ go }: { go: (screen: "safety") => void }) {
+export function SafetyNetLink({ go, hidden = false }: { go: (screen: "safety") => void; hidden?: boolean }) {
   const t = useTranslations("safety");
   const features = useFeatures();
-  if (!features.escalation) return null;
+  if (!features.escalation || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("safety")}>
       <span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span>

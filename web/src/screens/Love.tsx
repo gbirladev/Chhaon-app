@@ -99,7 +99,7 @@ export function LoveCard({ recipient, call }: { recipient: Recipient; call: stri
   }, [recipientId, recipient.timezone]);
 
   useEffect(() => {
-    if (!features.love || !consented) return;
+    if (!features.love || !consented || recipient.is_self) return;
     void load();
     const id = window.setInterval(() => void load(), 30000);
     const onReturn = () => { if (document.visibilityState === "visible") void load(); };
@@ -113,7 +113,7 @@ export function LoveCard({ recipient, call }: { recipient: Recipient; call: stri
     for (const r of mine?.reactions ?? []) map.set(r.sourceId, [...(map.get(r.sourceId) ?? []), r]);
     return map;
   }, [mine]);
-  if (!features.love || !consented || !mine || !mine.settings.enabled) return null;
+  if (!features.love || !consented || recipient.is_self || !mine || !mine.settings.enabled) return null;
 
   const time = (iso: string) => formatClock(new Date(iso), recipient.timezone, language);
   const send = async (moment: Moment, patch: { type: "emoji"; emoji: string } | { type: "preset" | "custom"; text: string }) => {
@@ -172,10 +172,10 @@ export function LoveCard({ recipient, call }: { recipient: Recipient; call: stri
 }
 
 /** The Family tab entry, shown only when the server has the love loop switched on. */
-export function LoveLink({ go }: { go: (screen: "love") => void }) {
+export function LoveLink({ go, hidden = false }: { go: (screen: "love") => void; hidden?: boolean }) {
   const t = useTranslations("love");
   const features = useFeatures();
-  if (!features.love) return null;
+  if (!features.love || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("love")}>
       <span style={{ background: "#fdecea", color: "#b4443a" }} aria-hidden="true">❤️</span>

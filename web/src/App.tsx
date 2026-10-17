@@ -57,7 +57,8 @@ type Screen =
   | "stats"
   | "safety"
   | "feedback"
-  | "love";
+  | "love"
+  | "addSelf";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -437,8 +438,9 @@ const defaultZone = (e164: string) => {
 const splitList = (value: string) => value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
 const phoneForForm = (e164: string | null) => (e164?.startsWith("+91") ? `+91 ${e164.slice(3, 8)} ${e164.slice(8)}` : e164 ?? "");
 
-function ProfileForm({ go, recipient, adding = false, onSaved, onSignOut }: { go: (screen: Screen) => void; recipient: Recipient | null; adding?: boolean; onSaved: (newId?: string) => Promise<void>; onSignOut?: () => void }) {
+function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onSignOut }: { go: (screen: Screen) => void; recipient: Recipient | null; adding?: boolean; self?: boolean; onSaved: (newId?: string) => Promise<void>; onSignOut?: () => void }) {
   const t = useTranslations("profile");
+  const isSelf = self || !!recipient?.is_self;   // the caregiver's own profile ("Me"): reminders for their own medicines
   const submitting = useRef(false);  // synchronous guard: two quick submits must create only one parent
   const [zone, setZone] = useState("");
   const [zoneTouched, setZoneTouched] = useState(false);
@@ -493,8 +495,8 @@ function ProfileForm({ go, recipient, adding = false, onSaved, onSignOut }: { go
 
     const fields = {
       name,
-      relation: (RELATIONS as readonly string[]).includes(data.relation) ? data.relation : "other",
-      call_name: (data.callName ?? "").trim() || null,
+      relation: isSelf ? "self" : (RELATIONS as readonly string[]).includes(data.relation) ? data.relation : "other",
+      call_name: isSelf ? null : (data.callName ?? "").trim() || null,
       age,
       city: data.city?.trim() || null,
       whatsapp_phone: whatsapp,
@@ -513,7 +515,7 @@ function ProfileForm({ go, recipient, adding = false, onSaved, onSignOut }: { go
       err = updated.error;
       if (!err && !updated.data?.length) { setBusy(false); void onSaved(); return setError(tAll("common.unexpected")); }
     } else {
-      const created = await supabase.rpc("create_care_recipient", { p: { ...fields, age: fields.age === null ? "" : String(fields.age) } });
+      const created = await supabase.rpc("create_care_recipient", { p: { ...fields, age: fields.age === null ? "" : String(fields.age), ...(isSelf ? { is_self: true } : {}) } });
       err = created.error;
       recipientId = created.data ?? undefined;
     }
@@ -525,24 +527,24 @@ function ProfileForm({ go, recipient, adding = false, onSaved, onSignOut }: { go
   };
   return (
     <main className="scroll-page no-nav">
-      <AppHeader title={adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
+      <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
       <form id="parent-form" className="form-card" onSubmit={saveProfile} noValidate>
-        <Field id="f-name" label={t("name")} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
-        <div className="two-col">
+        <Field id="f-name" label={t(isSelf ? "nameSelf" : "name")} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
+        {!isSelf && <div className="two-col">
           <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>
           <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); if (!callTouched) setCallName(defaultCallName(event.target.value, language)); }}>{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>
-        </div>
-        <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>
-        <Field id="f-whatsapp" label={t("whatsapp")} error={errors["f-whatsapp"]} hint={t("whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        </div>}
+        {!isSelf && <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
+        <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : "whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {abroad && <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>}
-        <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>
+        {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
         <div className="two-col">
           <Field id="f-bloodGroup" label={t("bloodGroup")}><select id="f-bloodGroup" name="bloodGroup" defaultValue={recipient?.blood_group ?? ""}><option value="">{t("notSure")}</option>{["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => <option key={group}>{group}</option>)}</select></Field>
-          <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient?.language === "en" ? "en" : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
+          <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
         </div>
         <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
-        {!recipient && <p className="form-note">{t("note")}</p>}
+        {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : "note")}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
       <button className="primary-button sticky-action" type="submit" form="parent-form" disabled={busy}>{busy ? t("saving") : recipient ? t("saveEdit") : t("save")}</button>
@@ -649,7 +651,7 @@ function NotificationSheet({ notifications, medicineNames, callFor, onDelete, on
 }
 
 /** Who am I looking after right now? Switch parent, edit the current one, or add another. */
-function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd, onClose }: { recipients: Recipient[]; selectedId: string | null; language: Language; onSelect: (id: string) => void; onEdit: () => void; onAdd: () => void; onClose: () => void }) {
+function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd, onAddSelf, onClose }: { recipients: Recipient[]; selectedId: string | null; language: Language; onSelect: (id: string) => void; onEdit: () => void; onAdd: () => void; onAddSelf: () => void; onClose: () => void }) {
   const t = useTranslations("parents");
   const dialog = useDialog(onClose);
   const current = recipients.find((r) => r.id === selectedId);
@@ -662,7 +664,7 @@ function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd
             <li key={r.id}>
               <button className={`parent-option${r.id === selectedId ? " selected" : ""}`} aria-pressed={r.id === selectedId} onClick={() => onSelect(r.id)}>
                 <span className="initials-avatar" aria-hidden="true">{([...r.name][0] ?? "?").toUpperCase()}</span>
-                <span><strong>{parentCall(r, language)}</strong><small>{[r.name, r.city].filter(Boolean).join(" • ")}</small></span>
+                <span><strong>{parentCall(r, language)}</strong><small>{r.is_self ? t("selfTag") : [r.name, r.city].filter(Boolean).join(" • ")}</small></span>
                 {r.id === selectedId && <span className="parent-check" aria-hidden="true">✓</span>}
               </button>
             </li>
@@ -671,6 +673,7 @@ function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd
         <div className="stack">
           {current && <button className="secondary-button" onClick={onEdit}>{t("edit", { name: parentCall(current, language) })}</button>}
           <button className="primary-button" onClick={onAdd}><Icon name="plus" size={18} /> {t("add")}</button>
+          {!recipients.some((r) => r.is_self) && <button className="secondary-button" onClick={onAddSelf}>{t("addSelf")}</button>}
         </div>
       </section>
     </div>
@@ -772,8 +775,8 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   };
   return (
     <section className={`consent-card${stopped ? " stopped" : ""}`} role="status">
-      <strong>{stopped ? t("consentStoppedTitle") : t("consentPendingTitle", { call })}</strong>
-      <p>{stopped ? t("consentStopped", { call }) : t("consentPending", { call })}</p>
+      <strong>{stopped ? t("consentStoppedTitle") : t(recipient.is_self ? "consentPendingTitleSelf" : "consentPendingTitle", { call })}</strong>
+      <p>{stopped ? t(recipient.is_self ? "consentStoppedSelf" : "consentStopped", { call }) : t(recipient.is_self ? "consentPendingSelf" : "consentPending", { call })}</p>
       {!stopped && <button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button>}
       {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
       {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
@@ -921,7 +924,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   const lastMissed = missed[missed.length - 1];
 
   const checkinCard = () => {
-    if (!consented) return null;
+    if (!consented || recipient?.is_self) return null;   // no "are you okay" check-in for yourself
     if (checkin?.status === "missed") {
       return (
         <section className="alert-card">
@@ -983,9 +986,9 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
-      {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onClose={() => setParentsOpen(false)} />}
+      {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onAddSelf={() => { setParentsOpen(false); go("addSelf"); }} onClose={() => setParentsOpen(false)} />}
 
-      {lastMissed && (
+      {lastMissed && !recipient?.is_self && (
         <section className="alert-card">
           <div className="alert-icon">!</div>
           <div><strong>{missed.length > 1 ? t("today.doseMissedMany", { count: missed.length, call }) : t("today.doseMissedText", { name: lastMissed.name, time: time(lastMissed.scheduledAt), call })}</strong></div>
@@ -1652,13 +1655,14 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   return (
     <main className="scroll-page">
       <AppHeader title={t("title")} subtitle={t("subtitle")} />
-      <section className="family-hero">
+      {!recipient?.is_self && <section className="family-hero">
         <div className="avatar-stack">{members.slice(0, 3).map((m) => <span key={m.userId}>{initials(m)}</span>)}</div>
         <h2>{t("heroTitle", { count: members.length, call })}</h2>
         <p>{t("heroBody")}</p>
         <button onClick={() => setInviteOpen(true)} disabled={!circleId}><Icon name="plus" size={18} /> {t("invite")}</button>
-      </section>
-      {circleId && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
+      </section>}
+      {recipient?.is_self && <p className="form-note">{t("selfNote")}</p>}
+      {circleId && !recipient?.is_self && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
       <div className="section-title members-title"><div><h2>{t("membersTitle")}</h2><p>{t("membersSub")}</p></div></div>
       <AlertsCard />
       <section className="member-list">
@@ -1681,8 +1685,8 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
       <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
-      <SafetyNetLink go={go} />
-      <LoveLink go={go} />
+      <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
+      <LoveLink go={go} hidden={!!recipient?.is_self} />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
@@ -1866,7 +1870,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "addSelf", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2041,7 +2045,7 @@ export default function App() {
     else if (pendingInvite() && screen !== "join") go("join", { replace: true });  // opened a family invite link: ask before anything else
     else if (screen === "join" && !pendingInvite()) go(recipient ? "today" : "profile", { replace: true });
     else if (screen === "welcome" || screen === "otp" || screen === "goodbye") go(recipient ? "today" : "profile", { replace: true });
-    else if (!recipient && (NEEDS_PARENT.includes(screen) || screen === "addParent")) go("profile", { replace: true });
+    else if (!recipient && (NEEDS_PARENT.includes(screen) || screen === "addParent" || screen === "addSelf")) go("profile", { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, loadFailed, signedIn, recipient, screen]);
 
@@ -2195,6 +2199,7 @@ export default function App() {
           {screen === "otp" && <OtpScreen go={go} onVerified={afterLogin} />}
           {screen === "profile" && <ProfileForm go={go} recipient={recipient} onSaved={afterProfileSaved} onSignOut={() => void signOut()} />}
           {screen === "addParent" && <ProfileForm go={go} recipient={null} adding onSaved={afterProfileSaved} />}
+          {screen === "addSelf" && <ProfileForm go={go} recipient={null} adding self onSaved={afterProfileSaved} />}
           {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={medicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
           {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} />}
           {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} onSaved={afterMedicineSaved} />}
