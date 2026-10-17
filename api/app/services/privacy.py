@@ -144,6 +144,9 @@ def delete_account(db: Client, user_id: str) -> None:
     """Order matters: files -> records -> login. Each step is safe to repeat, so a failure can simply be retried."""
     sole = db.rpc("sole_member_recipients", {"p_user": user_id}).execute().data or []
     purge_recipient_files(db, [row["recipient_id"] if isinstance(row, dict) else row for row in sole])
+    # Feedback messages stay (anonymous), but their screenshots may show personal or medical details: they go with the account.
+    db.table("feedback").update({"images": []}).eq("user_id", user_id).execute()
+    _purge_folder(db, "feedback", user_id)
     db.rpc("erase_caregiver", {"p_user": user_id}).execute()
     try:
         db.auth.admin.delete_user(user_id)

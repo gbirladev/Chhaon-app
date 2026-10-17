@@ -167,6 +167,23 @@ def test_erasing_twice_is_harmless(db, cleanup):
     assert not user_exists(db, u)
 
 
+def test_feedback_screenshots_go_with_the_account(db, cleanup):
+    from app.services import privacy
+    users, circles = cleanup
+    u = make_user(db)
+    users.append(u)
+    circle, _ = make_circle(db, u)
+    circles.append(circle)
+    path = upload(db, "feedback", u)
+    db.table("feedback").insert({"user_id": u, "kind": "other", "message": "see picture", "images": [path]}).execute()
+    assert len(stored(db, "feedback", u)) == 1
+    privacy.delete_account(db, u)
+    assert stored(db, "feedback", u) == []
+    remaining = db.table("feedback").select("user_id, images").eq("message", "see picture").execute().data
+    assert remaining == [{"user_id": None, "images": []}]            # the words may stay, anonymously; the pictures do not
+    db.table("feedback").delete().eq("message", "see picture").execute()
+
+
 # ---------------------------------------------------------------- one parent
 def test_only_the_owner_can_erase_a_parent(client, db, cleanup, real_db_dep):
     users, circles = cleanup
