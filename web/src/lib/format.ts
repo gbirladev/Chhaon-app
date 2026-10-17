@@ -1,5 +1,4 @@
 import type { useTranslations } from "use-intl";
-import { PRESET_TIMES, type Preset } from "./api";
 
 export type T = ReturnType<typeof useTranslations>;
 export type Language = "en" | "hi";
@@ -35,16 +34,9 @@ export const formatClock = (date: Date, timeZone: string, language: string) => j
 export const localDate = (date: Date, timeZone: string) =>
   new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 
-/** ["08:00:00","20:00:00"] -> "Morning & Night" / "सुबह और रात" */
+/** ["06:30:00","18:45:00"] -> "6:30 AM & 6:45 PM" (the exact times: there are no fixed "morning" or "night" any more). */
 export function describeTimes(times: string[], t: T, language: string) {
-  const presets = Object.entries(PRESET_TIMES) as [Preset, string][];
-  return [...times]
-    .sort()
-    .map((time) => {
-      const preset = presets.find(([, value]) => value === time.slice(0, 5))?.[0];
-      return preset ? t(`add.${preset.toLowerCase()}`) : clockLabel(time, language);
-    })
-    .join(t("common.and"));
+  return [...times].sort().map((time) => clockLabel(time, language)).join(t("common.and"));
 }
 
 /** Stored dose text is canonical English ("500 mg", "1.5 tablets"); show it in the UI language. */
