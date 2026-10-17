@@ -66,7 +66,7 @@ def _settings_row(db: Client, recipient_id: str) -> dict | None:
 
 def love_active(db: Client, settings: Settings, recipient: dict, row: dict | None = None) -> dict | None:
     """The parent's love settings if reactions may be sent to this parent right now, else None."""
-    if not settings.love_loop_enabled:
+    if not settings.love_loop_enabled or recipient.get("is_self"):
         return None
     row = row or _settings_row(db, recipient["id"])
     if not row or not row["enabled"] or row["parent_opted_out_at"] or row["pilot_group"] == "control":

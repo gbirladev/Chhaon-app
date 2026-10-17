@@ -124,12 +124,12 @@ def run(db: Client, wa: Messenger, settings: Settings, now: datetime, in_scope: 
         return
     parents = {
         r["id"]: r for r in db.table("care_recipients")
-        .select("id, circle_id, language, name, call_name, whatsapp_phone, consent_at, opted_out_at").in_("id", sorted(policies)).execute().data or []
+        .select("id, circle_id, language, name, call_name, whatsapp_phone, consent_at, opted_out_at, is_self").in_("id", sorted(policies)).execute().data or []
     }
     for recipient_id, policy in policies.items():
         parent = parents.get(recipient_id)
-        if not parent:
-            continue
+        if not parent or parent["is_self"]:
+            continue                       # nobody nudges or alerts about the caregiver themselves
         try:
             _process_parent(db, wa, now, parent, policy, counts)
         except Exception as exc:  # noqa: BLE001  one parent's problem never stops the others

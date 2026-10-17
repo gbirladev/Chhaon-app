@@ -97,7 +97,10 @@ def send_consent_request(db: Client, wa: Messenger, settings: Settings, recipien
     profile = db.table("profiles").select("name").eq("id", requested_by).maybe_single().execute()
     caregiver = clean((profile.data or {}).get("name") if profile else None, 40) if profile and profile.data and profile.data.get("name") else "Your family"
     language = r["language"]
-    template = templates.consent_request(language, clean(call_name(r, language)), caregiver, r["id"])
+    if r.get("is_self"):   # the caregiver adding their own number: a different wording ("you added your own medicines")
+        template = templates.self_optin(language, clean(r["name"].split(" ")[0] if r["name"] else None), r["id"])
+    else:
+        template = templates.consent_request(language, clean(call_name(r, language)), caregiver, r["id"])
     try:
         wa.send_template(phone, template)
     except Exception:

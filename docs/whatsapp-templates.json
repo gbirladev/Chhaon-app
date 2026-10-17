@@ -518,6 +518,36 @@
           ]
         }
       }
+    },
+    {
+      "name": "carelink_self_optin",
+      "category": "MARKETING",
+      "sent_to": "caregiver (own number)",
+      "purpose": "Asks the caregiver to confirm their OWN WhatsApp number for reminders about their own medicines",
+      "header": null,
+      "category_note": "Asks for permission, so submit it as Marketing like the parent consent request.",
+      "languages": {
+        "en": {
+          "body": "Namaste {{1}} 🙏 You added your own medicines to Chhaon. To get your medicine reminders on this WhatsApp number, please confirm below. You can stop them at any time by replying STOP.",
+          "buttons": [
+            "Yes, start",
+            "No thanks"
+          ],
+          "examples": [
+            "Ananya"
+          ]
+        },
+        "hi": {
+          "body": "नमस्ते {{1}} 🙏 आपने छाँव में अपनी दवाइयाँ जोड़ी हैं। इस WhatsApp नंबर पर अपनी दवा के रिमाइंडर पाने के लिए कृपया नीचे पुष्टि करें। आप कभी भी STOP लिखकर इन्हें बंद कर सकते हैं।",
+          "buttons": [
+            "हाँ, शुरू करें",
+            "नहीं, धन्यवाद"
+          ],
+          "examples": [
+            "अनन्या"
+          ]
+        }
+      }
     }
   ]
 }

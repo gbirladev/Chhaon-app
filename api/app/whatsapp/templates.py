@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 CONSENT_REQUEST = "carelink_consent_request_v2"
+SELF_OPTIN = "carelink_self_optin"                      # asks the caregiver to confirm their OWN number for their own medicine reminders
 DOSE_REMINDER = "carelink_dose_reminder"
 DOSE_REMINDER_PHOTO = "carelink_dose_reminder_photo"
 DOSE_REMINDER_MULTI = "carelink_dose_reminder_multi"   # one reminder for every medicine due at the same time
@@ -82,6 +83,18 @@ def consent_request(language: str, parent_name: str, caregiver_name: str, recipi
         CONSENT_REQUEST,
         language_code(language),
         [_body(parent_name, caregiver_name), *_buttons([
+            encode_payload("consent", recipient_id, "yes"),
+            encode_payload("consent", recipient_id, "no"),
+        ])],
+    )
+
+
+def self_optin(language: str, name: str, recipient_id: UUID | str) -> Template:
+    """For the caregiver's own profile. Body: {{1}} = their first name. The buttons are the same consent payloads as for a parent."""
+    return Template(
+        SELF_OPTIN,
+        language_code(language),
+        [_body(name), *_buttons([
             encode_payload("consent", recipient_id, "yes"),
             encode_payload("consent", recipient_id, "no"),
         ])],

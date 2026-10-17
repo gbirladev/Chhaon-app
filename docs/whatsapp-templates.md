@@ -8,7 +8,7 @@ Copy each block into **WhatsApp Manager > Message templates > Create template** 
 
 The app fills the variables automatically, in the order shown. Parent-facing templates go to the parent's number, caregiver templates to the caregiver's own number.
 
-There are 19 templates, so 38 submissions (each in two languages).
+There are 20 templates, so 40 submissions (each in two languages).
 
 ## 1. `carelink_consent_request_v2`
 *Asks the parent to agree before we send anything. Sent to the parent. Category: **Marketing** (Meta rejects permission-asking messages as Utility), type: Default.*
@@ -278,3 +278,18 @@ There are 19 templates, so 38 submissions (each in two languages).
 - **Body:** छाँव सेवा सूचना: {{1}} के लिए अतिरिक्त याद और अलर्ट अभी बंद हैं, क्योंकि {{2}} दिन से कोई जवाब नहीं आया है। जवाब आते ही ये अपने आप फिर चालू हो जाएँगे।
 - **Buttons:** none
 - **Samples:** {{1}} = पापा, {{2}} = 3
+
+## 20. `carelink_self_optin`
+*Asks a caregiver to confirm their OWN WhatsApp number for reminders about their own medicines ("Me" profile). Sent to the caregiver's own number. Category: **Marketing** (it asks for permission, like template 1), type: Default, no header.*
+
+**English (en)**
+
+- **Body:** Namaste {{1}} 🙏 You added your own medicines to Chhaon. To get your medicine reminders on this WhatsApp number, please confirm below. You can stop them at any time by replying STOP.
+- **Buttons (Quick reply):** `Yes, start`  |  `No thanks`
+- **Samples:** {{1}} = Ananya
+
+**Hindi (hi)**
+
+- **Body:** नमस्ते {{1}} 🙏 आपने छाँव में अपनी दवाइयाँ जोड़ी हैं। इस WhatsApp नंबर पर अपनी दवा के रिमाइंडर पाने के लिए कृपया नीचे पुष्टि करें। आप कभी भी STOP लिखकर इन्हें बंद कर सकते हैं।
+- **Buttons (Quick reply):** `हाँ, शुरू करें`  |  `नहीं, धन्यवाद`
+- **Samples:** {{1}} = अनन्या

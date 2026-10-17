@@ -189,7 +189,8 @@ def _local(tz_name: str, now: datetime) -> datetime:
 
 def _send_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
     parents = _all(lambda: db.table("care_recipients").select("id, timezone, checkin_time")
-                   .not_.is_("consent_at", "null").is_("opted_out_at", "null").not_.is_("whatsapp_phone", "null"))
+                   .not_.is_("consent_at", "null").is_("opted_out_at", "null").not_.is_("whatsapp_phone", "null")
+                   .eq("is_self", False))   # your own profile gets medicine reminders only, no "are you okay" check-in
     paused = _paused_recipient_ids(db)
     for parent in parents:
         if not _in_scope(parent["id"]) or parent["id"] in paused:   # above the plan's parent limit: no check-in
