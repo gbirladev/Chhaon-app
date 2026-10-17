@@ -264,17 +264,17 @@ There are 19 templates, so 38 submissions (each in two languages).
 - **Buttons:** none
 - **Samples:** {{1}} = पापा
 
-## 19. `carelink_alert_parent_silent`
-*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: **Marketing** (Meta classified it as Marketing on 2026-10-17; accepted because it is rare, at most once per silent parent), type: Default, no header.*
+## 19. `carelink_alert_parent_silent_v2`
+*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: Utility (the first version was classified Marketing; this reworded `_v2` was accepted, 2026-10-17), type: Default, no header.*
 
 **English (en)**
 
-- **Body:** Alert: {{1}} has not replied to any Chhaon message for {{2}} days. We have paused the extra nudges and alerts until they reply. Please call them.
+- **Body:** Chhaon service notice: the extra nudges and alerts for {{1}} are currently off because no reply has come for {{2}} days. They turn on again automatically as soon as a reply arrives.
 - **Buttons:** none
 - **Samples:** {{1}} = Papa, {{2}} = 3
 
 **Hindi (hi)**
 
-- **Body:** अलर्ट: {{1}} ने {{2}} दिन से छाँव के किसी संदेश का जवाब नहीं दिया। जवाब आने तक हमने अतिरिक्त याद और अलर्ट रोक दिए हैं। कृपया उन्हें फ़ोन कीजिए।
+- **Body:** छाँव सेवा सूचना: {{1}} के लिए अतिरिक्त याद और अलर्ट अभी बंद हैं, क्योंकि {{2}} दिन से कोई जवाब नहीं आया है। जवाब आते ही ये अपने आप फिर चालू हो जाएँगे।
 - **Buttons:** none
 - **Samples:** {{1}} = पापा, {{2}} = 3

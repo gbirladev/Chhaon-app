@@ -495,14 +495,14 @@
       }
     },
     {
-      "name": "carelink_alert_parent_silent",
-      "category": "MARKETING",
+      "name": "carelink_alert_parent_silent_v2",
+      "category": "UTILITY",
       "sent_to": "caregiver",
       "purpose": "Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused",
       "header": null,
       "languages": {
         "en": {
-          "body": "Alert: {{1}} has not replied to any Chhaon message for {{2}} days. We have paused the extra nudges and alerts until they reply. Please call them.",
+          "body": "Chhaon service notice: the extra nudges and alerts for {{1}} are currently off because no reply has come for {{2}} days. They turn on again automatically as soon as a reply arrives.",
           "buttons": [],
           "examples": [
             "Papa",
@@ -510,7 +510,7 @@
           ]
         },
         "hi": {
-          "body": "अलर्ट: {{1}} ने {{2}} दिन से छाँव के किसी संदेश का जवाब नहीं दिया। जवाब आने तक हमने अतिरिक्त याद और अलर्ट रोक दिए हैं। कृपया उन्हें फ़ोन कीजिए।",
+          "body": "छाँव सेवा सूचना: {{1}} के लिए अतिरिक्त याद और अलर्ट अभी बंद हैं, क्योंकि {{2}} दिन से कोई जवाब नहीं आया है। जवाब आते ही ये अपने आप फिर चालू हो जाएँगे।",
           "buttons": [],
           "examples": [
             "पापा",
