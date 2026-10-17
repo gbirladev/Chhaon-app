@@ -170,3 +170,5 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [ ] After approval: add yourself on a real phone, tap Yes, check the 08:00 reminder arrives and Taken works.
 - [ ] Pilot stats count own profiles as parents (admin_stats not changed).
 - [ ] Push order now: migrations 0030 to 0036 (0037+ if added), API, web.
+
+- 2026-10-17: new Meta templates (`carelink_self_optin` and the other newly added ones) are **under review** at Meta. Check again later: all must be Active in en AND hi before switching escalation on / using "Me" with a real number.
