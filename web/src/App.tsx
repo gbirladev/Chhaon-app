@@ -3,7 +3,7 @@ import { createTranslator, useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
 import { compressImage } from "./lib/image";
 import {
-  PRESET_TIMES, isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
+  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
@@ -1076,7 +1076,7 @@ function formatDose(amount: number, unit: string) {
 const INSTRUCTION_OPTIONS = [["", "noInstructions"], ["after_food", "afterFood"], ["before_food", "beforeFood"], ["with_food", "withFood"]] as const;
 const DECIMAL_RE = /^\d{1,6}([.,]\d{1,2})?$/;
 const INTEGER_RE = /^\d{1,6}$/;
-const SLOTS = [["morning", "Morning"], ["afternoon", "Afternoon"], ["night", "Night"]] as const;
+const MAX_TIMES = 8;   // reminder times for one medicine
 
 /** "500 mg" -> 500 + "mg"; "2 tablets" -> 2 + "tablet". Doses are always stored by formatDose(), so this reverses it. */
 function parseDose(dose: string): { amount: string; unit: string; unreadable: boolean } {
@@ -1087,6 +1087,12 @@ function parseDose(dose: string): { amount: string; unit: string; unreadable: bo
   return { amount: match[1], unit, unreadable: false };
 }
 const hhmm = (time: string) => time.slice(0, 5);
+/** The times already used by this parent's medicines (most used first, at most 4), so the same time is one tap and medicines due together share one WhatsApp message. */
+const usualTimesOf = (medicines: Medicine[]): string[] => {
+  const count = new Map<string, number>();
+  for (const m of medicines) for (const time of m.times) count.set(hhmm(time), (count.get(hhmm(time)) ?? 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 4).map(([time]) => time).sort();
+};
 
 /** Shown instead of the edit form when the medicine was deleted meanwhile: say so and go back to the list. */
 function GoneRedirect({ onGone }: { onGone: () => void }) {
@@ -1096,18 +1102,16 @@ function GoneRedirect({ onGone }: { onGone: () => void }) {
 }
 
 /** The add form, also used to edit a medicine that already exists (`medicine` given). */
-function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }: { go: (screen: Screen) => void; recipient: Recipient; medicine?: Medicine; onSaved: () => Promise<void>; onMissing?: () => void }) {
+function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMissing = () => {} }: { go: (screen: Screen) => void; recipient: Recipient; medicine?: Medicine; usualTimes?: string[]; onSaved: () => Promise<void>; onMissing?: () => void }) {
   const editing = !!medicine;
   const initialTimes = (medicine?.times ?? []).map(hhmm);
-  const presetOf = (time: string) => SLOTS.find(([, preset]) => PRESET_TIMES[preset] === time)?.[0];
-  const customs = [...new Set(initialTimes.filter((time) => !presetOf(time)))].sort();
   const initialDose = parseDose(medicine?.dose ?? "");
   const t = useTranslations("add");
   const tAll = useTranslations();
   const language = useLocale() as Language;
-  const [timings, setTimings] = useState<string[]>(editing ? [...new Set<string>([...initialTimes.map(presetOf).filter((k): k is NonNullable<typeof k> => !!k), ...(customs.length ? ["custom"] : [])])] : ["morning", "night"]);
-  const [customTime, setCustomTime] = useState(customs[0] ?? "");
-  const [extraTimes, setExtraTimes] = useState<string[]>(customs.slice(1));  // further custom times kept when editing
+  // Every person takes their medicine at their own times: no fixed "morning" or "night", just the times typed (any number, up to MAX_TIMES).
+  const [times, setTimes] = useState<string[]>(editing ? [...new Set(initialTimes)].sort() : [""]);
+  const setTimeAt = (index: number, value: string) => setTimes((list) => list.map((time, i) => (i === index ? value : time)));
   const [photo, setPhoto] = useState<File | null>(null);
   const [refill, setRefill] = useState(medicine ? medicine.threshold !== null : true);
   const [busy, setBusy] = useState(false);
@@ -1129,7 +1133,11 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
     setPhoto(ok ? file : null);
     if (!ok) input.value = "";
   };
-  const toggleTiming = (timing: string) => setTimings((current) => current.includes(timing) ? current.filter((item) => item !== timing) : [...current, timing]);
+  const toggleUsual = (time: string) => setTimes((list) => {
+    if (list.includes(time)) return list.length > 1 ? list.filter((x) => x !== time) : [""];
+    const blank = list.indexOf("");
+    return blank >= 0 ? list.map((x, i) => (i === blank ? time : x)) : list.length < MAX_TIMES ? [...list, time] : list;
+  });
   const save = async (event: FormEvent<HTMLFormElement>) => {
     try {
       await saveMedicine(event);
@@ -1149,21 +1157,16 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
     const keepOldDose = !!medicine && initialDose.unreadable && !doseText;  // old free-text dose we could not read: keep as is
     const doseAmount = Math.round(Number(doseText.replace(",", ".")) * 100) / 100;
     if (!keepOldDose && (!DECIMAL_RE.test(doseText) || !(doseAmount > 0) || doseAmount > MAX_NUMBER)) found["f-dose"] = t("errDose");
-    if (timings.includes("custom") && !customTime) found["f-custom"] = t("errCustom");
     const stockText = String(data.get("stock") ?? "").trim();
     const stock = Number(stockText);
     if (!editing && (!INTEGER_RE.test(stockText) || stock > MAX_NUMBER)) found["f-stock"] = t("errStock");
     const remindText = String(data.get("remind") ?? "").trim();
     const threshold = Number(remindText);
     if (refill && (!INTEGER_RE.test(remindText) || threshold > MAX_NUMBER)) found["f-remind"] = t("errRemind");
-    const times = [...new Set<string>([
-      ...SLOTS.filter(([key]) => timings.includes(key)).map(([, preset]) => PRESET_TIMES[preset] as string),
-      ...(timings.includes("custom") && customTime ? [customTime] : []),
-      ...(timings.includes("custom") ? extraTimes : []),
-    ])];
+    const chosen = [...new Set(times.filter(Boolean))].sort();   // a blank extra row is simply ignored
+    if (!chosen.length) found["f-time-0"] = t("errTimes");
     setErrors(found);
     if (Object.keys(found).length) return focusFirstError(found);
-    if (!times.length) return setError(t("errTimes"));
 
     setBusy(true);
     let photoPath: string | undefined;
@@ -1183,7 +1186,7 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
         p_instructions: orNull(String(data.get("instructions") ?? "") || null) as string,
         p_photo_url: orNull(photoPath),
         p_refill_threshold: orNull(refill ? threshold : null),
-        p_times: times,
+        p_times: chosen,
       })
       : await supabase.rpc("create_medicine", {
         p_recipient: recipient.id,
@@ -1193,7 +1196,7 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
         p_photo_url: orNull(photoPath),
         p_stock: stock,
         p_refill_threshold: orNull(refill ? threshold : null),
-        p_times: times,
+        p_times: chosen,
       });
     if (err) {
       if (photoPath) await supabase.storage.from("medicine-photos").remove([photoPath]);
@@ -1207,11 +1210,7 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
     setBusy(false);
   };
   const clock = (time: string) => formatClock(new Date(`2000-01-01T${time}:00`), Intl.DateTimeFormat().resolvedOptions().timeZone, language);
-  const chosenTimes = new Set<string>([
-    ...SLOTS.filter(([key]) => timings.includes(key)).map(([, preset]) => PRESET_TIMES[preset] as string),
-    ...(timings.includes("custom") ? [customTime, ...extraTimes].filter(Boolean) : []),
-  ]);
-  const removedTimes = initialTimes.some((time) => !chosenTimes.has(time));
+  const removedTimes = initialTimes.some((time) => !times.includes(time));
   return (
     <main className="scroll-page no-nav">
       <AppHeader title={t(editing ? "editTitle" : "title")} back={() => go(editing ? "medicineDetail" : "medicines")} />
@@ -1230,12 +1229,21 @@ function AddMedicine({ go, recipient, medicine, onSaved, onMissing = () => {} }:
         </Field>
         <div className="field" role="group" aria-labelledby="f-times-label">
           <p className="field-label" id="f-times-label">{t("when")}</p>
-          <div className="choice-chips wrap">{(["morning", "afternoon", "night", "custom"] as const).map((timing) => <button type="button" key={timing} className={timings.includes(timing) ? "selected" : ""} aria-pressed={timings.includes(timing)} onClick={() => toggleTiming(timing)}>{t(timing)}</button>)}</div>
+          {usualTimes.length > 0 && (
+            <>
+              <p className="hint">{t("usualTimes", { call: parentCall(recipient, language) })}</p>
+              <div className="choice-chips wrap">{usualTimes.map((time) => <button type="button" key={time} className={times.includes(time) ? "selected" : ""} aria-pressed={times.includes(time)} onClick={() => toggleUsual(time)}>{clock(time)}</button>)}</div>
+            </>
+          )}
+          {times.map((time, index) => (
+            <div className="time-row" key={index}>
+              <input {...(index === 0 ? fieldProps("f-time-0", errors) : { id: `f-time-${index}` })} type="time" value={time} aria-label={t("timeN", { n: index + 1 })} onChange={(event) => setTimeAt(index, event.target.value)} />
+              {times.length > 1 && <button type="button" className="time-remove" aria-label={t("removeTime", { n: index + 1 })} onClick={() => setTimes((list) => list.filter((_, i) => i !== index))}>×</button>}
+            </div>
+          ))}
+          {errors["f-time-0"] && !times.some(Boolean) && <p className="field-error" id="f-time-0-error" role="alert">{errors["f-time-0"]}</p>}
+          {times.length < MAX_TIMES && <button type="button" className="secondary-button add-time" onClick={() => setTimes((list) => [...list, ""])}><Icon name="plus" size={16} /> {t("addTime")}</button>}
         </div>
-        {timings.includes("custom") && extraTimes.length > 0 && (
-          <div className="choice-chips wrap" style={{ margin: "4px 0 12px" }}>{extraTimes.map((time) => <button type="button" key={time} className="selected" onClick={() => setExtraTimes((list) => list.filter((x) => x !== time))}>{clock(time)} ×</button>)}</div>
-        )}
-        {timings.includes("custom") && <Field id="f-custom" label={t("customTime")} error={errors["f-custom"]}><input {...fieldProps("f-custom", errors)} type="time" value={customTime} onChange={(event) => setCustomTime(event.target.value)} /></Field>}
         <Field id="f-instructions" label={t("instructions")}><select id="f-instructions" name="instructions" defaultValue={editing ? medicine?.instructions ?? "" : "after_food"}>{INSTRUCTION_OPTIONS.map(([value, key]) => <option key={value} value={value}>{t(key)}</option>)}</select></Field>
         <div className="two-col">
           {!editing && <Field id="f-stock" label={t("stockLabel")} error={errors["f-stock"]}><input {...fieldProps("f-stock", errors)} name="stock" placeholder="30" inputMode="numeric" /></Field>}
@@ -2203,12 +2211,12 @@ export default function App() {
           {screen === "addSelf" && <ProfileForm go={go} recipient={null} adding self onSaved={afterProfileSaved} />}
           {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={medicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
           {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} />}
-          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} onSaved={afterMedicineSaved} />}
+          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineSaved} />}
           {screen === "editMedicine" && recipient && (() => {
             const editing = medicines.find((m) => m.id === selectedMedicineId);
             const medicineGone = () => { showToast(MESSAGES[language].medicine.gone); void refreshMedicines(); go("medicines", { replace: true }); };
             return editing
-              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} onSaved={afterMedicineEdited} onMissing={medicineGone} />
+              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineEdited} onMissing={medicineGone} />
               : medicinesLoading ? null : <GoneRedirect onGone={medicineGone} />;
           })()}
           {screen === "medicineDetail" && <MedicineDetail go={go} medicine={medicines.find((m) => m.id === selectedMedicineId)} onChanged={async () => { await refreshMedicines(); refreshNotifications(); }} />}
