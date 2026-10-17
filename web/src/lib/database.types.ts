@@ -135,6 +135,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"feedback": {
+                  Row: {
+                    "app_language": string,"created_at": string,"id": string,"kind": string,"message": string,"rating": number | null,"screen": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"kind": string,"message": string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"message"?: string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "feedback_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"consent_requests": {
                   Row: {
                     "id": string,"phone": string,"requested_at": string,"requested_by": string | null
@@ -504,6 +524,19 @@ isOneToOne: false
                            },
 "adjust_stock":
 { Args: { "p_delta": number,"p_medicine": string }; Returns: number
+                           },
+"admin_feedback":
+{ Args: { "p_limit"?: number }; Returns: {
+              "app_language": string,
+"created_at": string,
+"id": string,
+"kind": string,
+"message": string,
+"rating": number | null,
+"screen": string | null,
+"sender_email": string | null,
+"sender_name": string | null
+            }[]
                            },
 "admin_stats":
 { Args: { "p_days"?: number }; Returns: Json

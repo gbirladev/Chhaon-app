@@ -401,7 +401,9 @@
     "plansLink": "Plans",
     "plansSub": "See what your plan includes",
     "statsLink": "Pilot stats",
-    "statsSub": "How many people use it, and does it work"
+    "statsSub": "How many people use it, and does it work",
+    "feedbackLink": "Send feedback",
+    "feedbackSub": "Ideas, problems or thanks for the Chhaon team"
   },
   "invites": {
     "sheetTitle": "Invite a family member",
@@ -994,5 +996,36 @@
     "handled": "I've handled it",
     "handledToast": "Marked as handled",
     "handledAlready": "Already resolved"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "subtitle": "Tell us what to improve",
+    "kindLabel": "What is it about?",
+    "kind_idea": "An idea",
+    "kind_problem": "A problem",
+    "kind_praise": "Something I like",
+    "kind_other": "Other",
+    "ratingLabel": "How is the app for you? (optional)",
+    "ratingOption": "{n, plural, one {# star} other {# stars}}",
+    "ratingHint": "Tap a star again to clear it.",
+    "ratingOutOf": "{n} out of 5 stars",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Write in English or Hindi. What would make Chhaon better for you?",
+    "privacyNote": "Please do not write medical details or phone numbers here.",
+    "send": "Send feedback",
+    "sending": "Sending…",
+    "sentToast": "Thank you! Feedback sent.",
+    "errEmpty": "Please write a few words first.",
+    "errLimit": "You have sent a lot of feedback today. Please try again tomorrow.",
+    "errGeneric": "Could not send your feedback. Please check your internet and try again.",
+    "thanksTitle": "Thank you!",
+    "thanksBody": "We read every message. It helps us make Chhaon better for your family.",
+    "done": "Done",
+    "sendAnother": "Send more feedback",
+    "inboxTitle": "Feedback from caregivers",
+    "inboxLoading": "Loading feedback…",
+    "inboxError": "Could not load the feedback.",
+    "inboxEmpty": "No feedback yet.",
+    "noName": "No name"
   }
 }

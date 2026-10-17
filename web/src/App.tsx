@@ -19,6 +19,7 @@ import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
 import { StatsScreen } from "./screens/Stats";
+import { FeedbackScreen } from "./screens/Feedback";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
 import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/SafetyNet";
 import { usePullToRefresh } from "./lib/pullToRefresh";
@@ -53,7 +54,8 @@ type Screen =
   | "appointments"
   | "plans"
   | "stats"
-  | "safety";
+  | "safety"
+  | "feedback";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -256,7 +258,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -1673,6 +1675,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
+      <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
@@ -1857,7 +1860,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2159,7 +2162,7 @@ export default function App() {
 
   // Pull down at the top of a screen to refresh it: reload the shared data, then reopen the screen so it fetches its own.
   const [pullTick, setPullTick] = useState(0);
-  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats"];
+  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "feedback"];
   const { pull, refreshing: pullRefreshing } = usePullToRefresh(ready && !loadFailed && PULL_SCREENS.includes(screen), async () => {
     await Promise.allSettled([
       refreshRecipient(recipientRef.current?.id),
@@ -2210,6 +2213,7 @@ export default function App() {
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
+          {screen === "feedback" && <FeedbackScreen go={go} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}
