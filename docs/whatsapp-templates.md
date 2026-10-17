@@ -264,8 +264,8 @@ There are 19 templates, so 38 submissions (each in two languages).
 - **Buttons:** none
 - **Samples:** {{1}} = पापा
 
-## 19. `carelink_alert_parent_silent_v2`
-*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: Utility (the first version was classified Marketing; this reworded `_v2` was accepted, 2026-10-17), type: Default, no header.*
+## 19. `carelink_alert_parent_silent`
+*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: Marketing as created at Meta (a category cannot be changed afterwards; the wording below was edited in place and accepted in both languages on 2026-10-17; confirm the category shown in WhatsApp Manager), type: Default, no header.*
 
 **English (en)**
 

@@ -33,7 +33,7 @@ ALERT_TEMPLATES = {
     "parent_stopped": "carelink_alert_parent_stopped",          # {{1}} parent
     "parent_declined": "carelink_alert_parent_stopped",         # {{1}} parent
     "parent_responded": "carelink_alert_parent_replied",        # {{1}} parent (they answered after the family was alerted)
-    "parent_silent": "carelink_alert_parent_silent_v2",            # {{1}} parent, {{2}} number of days
+    "parent_silent": "carelink_alert_parent_silent",            # {{1}} parent, {{2}} number of days
 }
 
 LANGUAGES = {"en": "en", "hi": "hi"}  # app language -> WhatsApp template language code
