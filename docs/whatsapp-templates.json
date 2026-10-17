@@ -443,7 +443,7 @@
       }
     },
     {
-      "name": "carelink_parent_checkin_nudge",
+      "name": "carelink_parent_checkin_nudge_v2",
       "category": "MARKETING",
       "sent_to": "parent",
       "purpose": "One gentle nudge when the daily check-in was not answered",

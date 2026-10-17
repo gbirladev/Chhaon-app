@@ -17,7 +17,7 @@ DOSE_REMINDER_PHOTO = "carelink_dose_reminder_photo"
 DOSE_REMINDER_MULTI = "carelink_dose_reminder_multi"   # one reminder for every medicine due at the same time
 DAILY_CHECKIN = "carelink_daily_checkin"
 PARENT_DOSE_NUDGE = "carelink_parent_dose_nudge"        # one gentle nudge when a dose reminder was not answered
-PARENT_CHECKIN_NUDGE = "carelink_parent_checkin_nudge"  # one gentle nudge when the daily check-in was not answered
+PARENT_CHECKIN_NUDGE = "carelink_parent_checkin_nudge_v2"  # one gentle nudge when the daily check-in was not answered
 APPOINTMENT_REMINDER = "carelink_appointment_reminder"
 
 ALERT_OPTIN = "carelink_alert_optin"

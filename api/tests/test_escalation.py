@@ -204,9 +204,9 @@ def test_check_in_is_nudged_at_60_minutes_and_alerts_at_120_when_the_threshold_i
     setup(db, family, settings, policy={"alert_after_unanswered": 1}, checkin_time="08:00", doses=False)
     run_tick(db, messenger, settings, NOW)
     run_tick(db, messenger, settings, at(59))
-    assert sent(messenger, "carelink_parent_checkin_nudge") == []
+    assert sent(messenger, "carelink_parent_checkin_nudge_v2") == []
     run_tick(db, messenger, settings, at(60))
-    (nudge,) = sent(messenger, "carelink_parent_checkin_nudge")
+    (nudge,) = sent(messenger, "carelink_parent_checkin_nudge_v2")
     assert [templates.decode_payload(c["parameters"][0]["payload"])[2] for c in nudge.components if c["type"] == "button"] == ["ok", "call"]
     run_tick(db, messenger, settings, at(119))
     assert notes(db, family, "checkin_missed") == []

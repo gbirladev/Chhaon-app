@@ -32,6 +32,6 @@ When a parent does not answer, Chhaon should escalate in steps and only bother t
 
 ## Still to build
 1. ~~**Backend (step 2):**~~ done, see above. Original list: the scheduler step that creates an escalation per unanswered prompt, sends the nudge, applies the "unanswered in a row" and critical rules, marks missed at the alert time, alerts the family, resolves on a reply (and tells those already alerted), the silent-parent stop, and the server switch.
-2. **Templates (step 3):** `carelink_parent_dose_nudge`, `carelink_parent_checkin_nudge`, and a caregiver "parent replied" alert, in English and Hindi, plus the pack and tests.
+2. **Templates (step 3):** `carelink_parent_dose_nudge`, `carelink_parent_checkin_nudge_v2`, and a caregiver "parent replied" alert, in English and Hindi, plus the pack and tests.
 3. **Screens (step 4):** per-parent Safety net settings (presets, switch, unanswered count), a critical toggle on each medicine, escalation progress on Today with "I've handled it".
 4. **Phase 2:** helper onboarding, consent, requests and replies, quiet hours, daily cap, parent consent, expiring emergency link.
