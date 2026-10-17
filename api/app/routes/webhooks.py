@@ -47,5 +47,5 @@ def receive(
         payload = json.loads(body)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid JSON") from exc
-    process_webhook(db, wa, payload)  # raises -> 500 -> Meta retries (event ids are released first)
+    process_webhook(db, wa, payload, settings)  # raises -> 500 -> Meta retries (event ids are released first)
     return {"status": "ok"}

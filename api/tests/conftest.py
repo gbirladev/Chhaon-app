@@ -49,7 +49,9 @@ class FakeMessenger:
 
 @pytest.fixture
 def settings():
-    return Settings(whatsapp_app_secret=APP_SECRET, whatsapp_verify_token=VERIFY_TOKEN, consent_resend_minutes=10)
+    # the optional features are set explicitly: a developer's own .env (escalation on for the browser, say) must not change test results
+    return Settings(whatsapp_app_secret=APP_SECRET, whatsapp_verify_token=VERIFY_TOKEN, consent_resend_minutes=10,
+                    escalation_enabled=False, slot_reminders_enabled=False, love_loop_enabled=False)
 
 
 @pytest.fixture

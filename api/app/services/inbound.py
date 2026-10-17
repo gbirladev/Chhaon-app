@@ -18,7 +18,9 @@ from datetime import UTC, datetime
 from postgrest.exceptions import APIError
 from supabase import Client
 
+from app.config import Settings
 from app.privacy import mask_phone
+from app.services import love
 from app.services.notify import notify_circle
 from app.whatsapp import templates
 from app.whatsapp.client import Messenger, WhatsAppError
@@ -101,15 +103,18 @@ def _once(db: Client, event_id: str | None, handler) -> None:
 
 
 # ---------------------------------------------------------------- entry point
-def process_webhook(db: Client, wa: Messenger, body) -> None:
+def process_webhook(db: Client, wa: Messenger, body, settings: Settings | None = None) -> None:
+    love_on = bool(settings and settings.love_loop_enabled)
     for entry in _list(_dict(body).get("entry")):
         for change in _list(_dict(entry).get("changes")):
             value = _dict(_dict(change).get("value"))
             for message in _list(value.get("messages")):
                 message = _dict(message)
-                _once(db, _str(message.get("id")), lambda m=message: _handle_message(db, wa, m))
+                _once(db, _str(message.get("id")), lambda m=message: _handle_message(db, wa, m, settings))
             for status in _list(value.get("statuses")):
                 status = _dict(status)
+                if love_on and status.get("status") in {"delivered", "read"} and _str(status.get("id")):
+                    love.update_status(db, status["id"], status["status"], _status_time(status))   # forward-only, so a replay is harmless
                 if status.get("status") == "failed":
                     # Only the numeric error codes are logged: Meta's texts can echo phone numbers.
                     codes = [_dict(e).get("code") for e in _list(status.get("errors"))]
@@ -119,7 +124,34 @@ def process_webhook(db: Client, wa: Messenger, body) -> None:
 
 
 # ---------------------------------------------------------------- messages
-def _handle_message(db: Client, wa: Messenger, message: dict) -> None:
+def _status_time(status: dict) -> datetime:
+    try:
+        return datetime.fromtimestamp(int(status["timestamp"]), UTC)
+    except (KeyError, TypeError, ValueError, OverflowError, OSError):
+        return datetime.now(UTC)
+
+
+def _handle_message(db: Client, wa: Messenger, message: dict, settings: Settings | None = None) -> None:
+    sender = "+" + str(message.get("from", ""))
+    love_on = bool(settings and settings.love_loop_enabled)
+    if love_on and message.get("type") == "text":
+        # NO HEARTS / HEARTS (love messages only) is read BEFORE STOP, so "stop hearts" can never opt a parent out of everything.
+        body = _dict(message.get("text")).get("body")
+        command = love.heart_command(_tokens(body)) if isinstance(body, str) else None
+        if command:
+            love.handle_heart_command(db, wa, sender, command, datetime.now(UTC))
+            return
+    _handle_message_core(db, wa, message)
+    if love_on:
+        # What the parent wrote (text, emoji, a tap) is kept for the families who use the love loop; STOP above already ended consent.
+        body = _dict(message.get("text")).get("body")
+        tokens = _tokens(body) if isinstance(body, str) else []
+        now = datetime.now(UTC)
+        for recipient in db.table("care_recipients").select("*").eq("whatsapp_phone", sender).execute().data:
+            love.record_inbound(db, wa, settings, recipient, message, tokens, now)
+
+
+def _handle_message_core(db: Client, wa: Messenger, message: dict) -> None:
     sender = "+" + str(message.get("from", ""))
     kind = message.get("type")
 
@@ -321,6 +353,7 @@ def _opt_in_again(db: Client, wa: Messenger, sender: str) -> None:
 
 # ---------------------------------------------------------------- delivery failures
 def _handle_failed(db: Client, status: dict) -> None:
+    love.mark_failed(db, status["id"])      # a love message that WhatsApp could not deliver (no-op for everything else)
     # One message can cover several doses (a time slot): tell the family once per parent, not once per dose.
     rows = (
         db.table("dose_events").select("id, medicine_schedules(medicines(care_recipients(id, circle_id)))")

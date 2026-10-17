@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # Escalation ladder (nudge the parent, then alert the family only when it matters). Off until switched on here AND per parent.
     escalation_enabled: bool = False
 
+    # Love loop (caregiver reactions sent to the parent as free session messages). Off until switched on here AND per parent.
+    love_loop_enabled: bool = False
+    love_reply_link_minutes: int = 60   # a parent's text or emoji within this time of a love message counts as the answer to it
+
     # WhatsApp alerts to the caregiver
     alerts_per_hour: int = 6
     alerts_max_attempts: int = 3

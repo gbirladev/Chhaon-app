@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from supabase import Client
 
 from app.config import Settings
-from app.services import alerts, appointments, escalation, messaging
+from app.services import alerts, appointments, escalation, love, messaging
 from app.services.notify import notify_circle
 from app.whatsapp.client import Messenger
 
@@ -53,7 +53,7 @@ def run_tick(
 
 def _run_steps(db: Client, wa: Messenger, settings: Settings, now: datetime) -> dict[str, int]:
     counts: Counter[str] = Counter()
-    steps = (_generate, _send_due_doses, _expire_unsent_doses, _mark_missed_doses, _send_checkins, _escalate, _mark_missed_checkins, _remind_appointments, _deliver_alerts)
+    steps = (_generate, _send_due_doses, _expire_unsent_doses, _mark_missed_doses, _send_checkins, _escalate, _mark_missed_checkins, _remind_appointments, _send_love, _deliver_alerts)
     for step in steps:
         try:
             step(db, wa, settings, now, counts)
@@ -209,6 +209,12 @@ def _send_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime,
 def _escalate(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
     """The escalation ladder for parents who have it switched on (see services/escalation.py)."""
     escalation.run(db, wa, settings, now, _in_scope, counts)
+
+
+def _send_love(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:
+    """Caregiver reactions waiting to go to the parent (see services/love.py)."""
+    if settings.love_loop_enabled:
+        love.run(db, wa, settings, now, _in_scope, counts)
 
 
 def _mark_missed_checkins(db: Client, wa: Messenger, settings: Settings, now: datetime, counts: Counter) -> None:

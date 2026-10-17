@@ -318,4 +318,4 @@ def test_silent_needs_a_full_window_with_not_one_answer():
 def test_the_new_alert_types_are_sent_to_the_family_on_whatsapp():
     assert templates.caregiver_alert("parent_responded", "en", ["Papa"]).name == "carelink_alert_parent_replied"
     assert templates.caregiver_alert("parent_silent", "hi", ["पापा", "3"]).name == "carelink_alert_parent_silent"
-    assert Settings().escalation_enabled is False                             # off unless the server says so
+    assert Settings(_env_file=None).escalation_enabled is False                          # off unless the server says so
