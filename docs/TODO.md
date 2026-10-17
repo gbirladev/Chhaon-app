@@ -157,3 +157,10 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [ ] `carelink_parent_checkin_nudge_v2` is Marketing at Meta (decided 2026-10-17). The Pilot stats page counts only consent requests as Marketing, so its cost estimate slightly undercounts check-in nudges (they are rare). Fix the count if nudges become common. Also confirm the other three new templates (dose nudge, parent replied, parent silent) are Active at Meta before switching escalation on.
 
 - 2026-10-17: all four new Meta templates are created (16 `carelink_parent_dose_nudge`, 17 `carelink_parent_checkin_nudge_v2` = Marketing, 18 `carelink_alert_parent_replied`, 19 `carelink_alert_parent_silent` = Utility, accepted in both languages). Before switching escalation on: confirm 16, 17 and 18 show Active in en AND hi, and send one real test of each.
+
+## To test before switching escalation on (kept for later, 2026-10-17)
+- [ ] In WhatsApp Manager confirm these show **Active** in English AND Hindi: `carelink_parent_dose_nudge` (Utility), `carelink_parent_checkin_nudge_v2` (Marketing), `carelink_alert_parent_replied` (Utility); `carelink_alert_parent_silent` (Utility) is already accepted.
+- [ ] Do one real send of each with a throwaway parent number and your own caregiver number: dose nudge, check-in nudge, "parent replied" alert, "parent silent" alert. Check the wording, the buttons (Taken / I'm okay / Call me), the language, and that a tap on a nudge button is recorded.
+- [ ] Order to switch on: `db push` (migrations 0030 to 0035) -> deploy the API -> set `ESCALATION_ENABLED=true` and `SLOT_REMINDERS_ENABLED=true` in Render -> switch on one parent's Safety net.
+- [ ] Love loop (needs no template): after the same push, set `LOVE_LOOP_ENABLED=true`, turn it on for one parent, tap a heart, and check that the message arrives on a real phone in the open window, that NO HEARTS works, and that delivered/read statuses show up.
+- [ ] Hindi text of the love messages and the new screens: native-speaker review.
