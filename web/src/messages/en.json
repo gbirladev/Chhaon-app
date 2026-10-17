@@ -182,7 +182,10 @@
     "nameSelf": "Your name",
     "whatsappSelf": "Your WhatsApp number",
     "whatsappHintSelf": "The number where you want your medicine reminders.",
-    "noteSelf": "We will send a message to your WhatsApp to confirm this number. Your medicines stay private: nobody else in your family can see them."
+    "noteSelf": "We will send a message to your WhatsApp to confirm this number. Your medicines stay private: nobody else in your family can see them.",
+    "sharedNumber": "This number is also used for {name}. That is fine if they share one phone: reminders for both will go to the same WhatsApp.",
+    "sharedNumberSelf": "This number is already used for {name}. Please use a different number: your own number for your own profile, and each parent's own number for a parent.",
+    "errSelfNumber": "This number belongs to another profile of yours. Please use your own number for your own profile and the parent's number for the parent."
   },
   "today": {
     "morning": "GOOD MORNING",

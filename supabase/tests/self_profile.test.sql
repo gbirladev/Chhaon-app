@@ -1,7 +1,7 @@
 -- "Me": a caregiver's own profile (migration 0036). Run with: npx supabase test db  (not alongside pytest)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(22);
 
 insert into auth.users (id, email, instance_id, aud, role) values
   ('a9200000-0000-0000-0000-000000000001', 'self-owner@test.dev',   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
@@ -54,6 +54,12 @@ select lives_ok($$select public.set_love_enabled((select v from t_ids where k = 
 -- a parent profile cannot be added into the circle of an own profile
 reset role;
 select throws_ok($$insert into public.care_recipients (circle_id, name, relation) values ((select circle_id from public.care_recipients where id = (select v from t_ids where k = 'me')), 'Extra', 'other')$$, 'P0001', 'self_circle_private', 'a parent cannot be added to the circle of an own profile');
+
+-- the same number on two profiles of yours: refused when one of them is your own
+select throws_ok($$select public.create_care_recipient('{"name":"Mummy","relation":"mother","whatsapp_phone":"+919810099999"}'::jsonb)$$, 'P0001', 'self_number_in_use', 'a parent cannot be given your own number');
+select lives_ok($$update public.care_recipients set whatsapp_phone = '+919810011111' where id = (select v from t_ids where k = 'parent')$$, 'a different number is fine');
+select throws_ok($$update public.care_recipients set whatsapp_phone = '+919810099999' where id = (select v from t_ids where k = 'parent')$$, 'P0001', 'self_number_in_use', 'a parent cannot be changed to your own number');
+select throws_ok($$update public.care_recipients set whatsapp_phone = '+919810011111' where id = (select v from t_ids where k = 'me')$$, 'P0001', 'self_number_in_use', 'your own number cannot be changed to a parent''s number');
 
 select * from finish();
 rollback;

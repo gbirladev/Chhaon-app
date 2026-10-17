@@ -102,6 +102,7 @@ const friendlyError = (err: { code?: string; hint?: string } | null | undefined,
   err?.code === "22003" ? t("add.errStock")
   : err?.hint === "too_many_medicines" ? t("add.errTooManyMedicines")
   : err?.hint === "plan_parents" ? t("plans.errParents")
+  : err?.hint === "self_number" ? t("profile.errSelfNumber")
   : err?.hint === "too_many_times" ? t("add.errTooManyTimes")
   : err?.hint === "bad_name" ? t("add.errName")
   : err?.hint === "bad_dosage" ? t("add.errDose")
@@ -457,6 +458,20 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   const [callName, setCallName] = useState(recipient ? parentCall(recipient, language) : defaultCallName("father", language));
   const [callTouched, setCallTouched] = useState(!!recipient);
   const typedPhone = normalizePhone(phoneText);
+  // Another profile of yours that already uses this number: a warning only (a couple may share one phone); the database refuses it for your own profile.
+  const [sharedWith, setSharedWith] = useState<{ name: string; isSelf: boolean } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!typedPhone) { setSharedWith(null); return; }
+      let query = supabase.from("care_recipients").select("name, is_self").eq("whatsapp_phone", typedPhone).limit(1);
+      if (recipient) query = query.neq("id", recipient.id);
+      const { data } = await query;
+      if (!cancelled) setSharedWith(data?.[0] ? { name: data[0].name, isSelf: data[0].is_self } : null);
+    };
+    const id = window.setTimeout(() => void run(), 400);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [typedPhone, recipient?.id]);
   const abroad = !!typedPhone && !typedPhone.startsWith("+91");  // a parent outside India needs a time zone: reminders follow THEIR clock
   // The time zone follows the phone number's country until the caregiver picks one by hand.
   const zoneValue = zoneTouched ? zone : recipient && typedPhone === recipient.whatsapp_phone ? recipient.timezone : defaultZone(typedPhone ?? "");
@@ -537,6 +552,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
         </div>}
         {!isSelf && <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
         <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : "whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        {sharedWith && <p className="form-note" role="status">{t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
         {abroad && <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>}
         {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
