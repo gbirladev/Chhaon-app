@@ -164,3 +164,9 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [ ] Order to switch on: `db push` (migrations 0030 to 0035) -> deploy the API -> set `ESCALATION_ENABLED=true` and `SLOT_REMINDERS_ENABLED=true` in Render -> switch on one parent's Safety net.
 - [ ] Love loop (needs no template): after the same push, set `LOVE_LOOP_ENABLED=true`, turn it on for one parent, tap a heart, and check that the message arrives on a real phone in the open window, that NO HEARTS works, and that delivered/read statuses show up.
 - [ ] Hindi text of the love messages and the new screens: native-speaker review.
+
+## "Me" profile (2026-10-17, see docs/self-profile.md)
+- [ ] Submit template **`carelink_self_optin`** to Meta (Marketing, en + hi, Yes/No buttons; text in docs/whatsapp-templates.md section 20). Until it is approved a real own-number confirmation cannot be completed.
+- [ ] After approval: add yourself on a real phone, tap Yes, check the 08:00 reminder arrives and Taken works.
+- [ ] Pilot stats count own profiles as parents (admin_stats not changed).
+- [ ] Push order now: migrations 0030 to 0036 (0037+ if added), API, web.

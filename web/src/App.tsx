@@ -570,7 +570,7 @@ function parentGreeting(recipient: Recipient | null, language: Language, t: T) {
   return {
     call: parentCall(recipient, language),
     hello: hour < 12 ? t("today.morning") : hour < 17 ? t("today.afternoon") : t("today.evening"),
-    where: `${recipient?.city ? recipient.city + " • " : ""}${formatClock(now, tz, language)}${tz !== Intl.DateTimeFormat().resolvedOptions().timeZone ? " · " + t("today.theirTime") : ""}`,
+    where: `${recipient?.city ? recipient.city + " • " : ""}${formatClock(now, tz, language)}${tz !== Intl.DateTimeFormat().resolvedOptions().timeZone && !recipient?.is_self ? " · " + t("today.theirTime") : ""}`,
   };
 }
 
