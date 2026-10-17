@@ -496,7 +496,7 @@
     },
     {
       "name": "carelink_alert_parent_silent",
-      "category": "MARKETING",
+      "category": "UTILITY",
       "sent_to": "caregiver",
       "purpose": "Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused",
       "header": null,
