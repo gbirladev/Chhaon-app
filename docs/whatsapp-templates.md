@@ -265,7 +265,7 @@ There are 19 templates, so 38 submissions (each in two languages).
 - **Samples:** {{1}} = पापा
 
 ## 19. `carelink_alert_parent_silent`
-*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: Utility, type: Default, no header.*
+*Tells the family a parent has not replied to anything for days; extra nudges and alerts are paused. Sent to the caregiver. Category: **Marketing** (Meta classified it as Marketing on 2026-10-17; accepted because it is rare, at most once per silent parent), type: Default, no header.*
 
 **English (en)**
 
