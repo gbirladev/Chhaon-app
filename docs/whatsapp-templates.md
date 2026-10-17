@@ -235,7 +235,7 @@ There are 19 templates, so 38 submissions (each in two languages).
 - **Samples:** {{1}} = पापा, {{2}} = Metformin (500 mg), Amlodipine (5 mg)
 
 ## 17. `carelink_parent_checkin_nudge`
-*One gentle nudge when the daily check-in was not answered. Sent to the parent. Category: Utility, type: Default, no header.*
+*One gentle nudge when the daily check-in was not answered. Sent to the parent. Category: **Marketing** (decided 2026-10-17: Meta kept classifying it as Marketing, in Hindi even after rewording, so we accept it; it costs more per message but is rare), type: Default, no header. Use the original wording below, or any wording Meta accepts.*
 
 **English (en)**
 

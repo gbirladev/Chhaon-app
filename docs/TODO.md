@@ -153,3 +153,5 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - [ ] Phase 2 as listed in `docs/escalation.md`; alert-detail screen; templates 15 to 19 need Meta approval.
 - [ ] Before switching any of it on for families: a reliable timer (paid hosting plus a warning when ticks stop), privacy text, and the "not an emergency service" wording.
 - [x] Step 2 (server logic) built 2026-10-15; see `docs/escalation.md`. NOT pushed. To use it: submit the four new templates (sections 16 to 19 of `docs/whatsapp-templates.md`) and wait for approval, push migrations 0030 to 0032 (`db push`) and the API, set `ESCALATION_ENABLED=true`, then switch a parent's policy on. There is no screen for the policy yet (step 4); until then it is switched on in the database.
+
+- [ ] `carelink_parent_checkin_nudge` is Marketing at Meta (decided 2026-10-17). The Pilot stats page counts only consent requests as Marketing, so its cost estimate slightly undercounts check-in nudges (they are rare). Fix the count if nudges become common. Also confirm the other three new templates (dose nudge, parent replied, parent silent) are Active at Meta before switching escalation on.
