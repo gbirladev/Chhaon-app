@@ -51,14 +51,14 @@ isOneToOne: false
                   ]
                 },"care_circle_members": {
                   Row: {
-                    "circle_id": string,"created_at": string,"role": Database["public"]['Enums']["member_role"],"user_id": string
+                    "circle_id": string,"created_at": string,"parent_calls_me": string | null,"role": Database["public"]['Enums']["member_role"],"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "circle_id": string,"created_at"?: string,"role"?: Database["public"]['Enums']["member_role"],"user_id": string
+                    "circle_id": string,"created_at"?: string,"parent_calls_me"?: string | null,"role"?: Database["public"]['Enums']["member_role"],"user_id": string
                   }
                   Update: {
-                    "circle_id"?: string,"created_at"?: string,"role"?: Database["public"]['Enums']["member_role"],"user_id"?: string
+                    "circle_id"?: string,"created_at"?: string,"parent_calls_me"?: string | null,"role"?: Database["public"]['Enums']["member_role"],"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -132,26 +132,6 @@ isOneToOne: false
       columns: ["recipient_id"]
 isOneToOne: false
       referencedRelation: "care_recipients"
-      referencedColumns: ["id"]
-    }
-                  ]
-                },"feedback": {
-                  Row: {
-                    "app_language": string,"created_at": string,"id": string,"images": string[],"kind": string,"message": string,"rating": number | null,"screen": string | null,"user_id": string | null
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: string[],"kind": string,"message": string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
-                  }
-                  Update: {
-                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: string[],"kind"?: string,"message"?: string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "feedback_user_id_fkey"
-      columns: ["user_id"]
-isOneToOne: false
-      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -345,6 +325,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"feedback": {
+                  Row: {
+                    "app_language": string,"created_at": string,"id": string,"images": (string)[],"kind": string,"message": string,"rating": number | null,"screen": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: (string)[],"kind": string,"message": string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: (string)[],"kind"?: string,"message"?: string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "feedback_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"love_settings": {
+                  Row: {
+                    "created_at": string,"daily_cap": number,"enabled": boolean,"first_enabled_at": string | null,"parent_opted_out_at": string | null,"pilot_group": string,"quiet_end": string,"quiet_start": string,"recipient_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"daily_cap"?: number,"enabled"?: boolean,"first_enabled_at"?: string | null,"parent_opted_out_at"?: string | null,"pilot_group"?: string,"quiet_end"?: string,"quiet_start"?: string,"recipient_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"daily_cap"?: number,"enabled"?: boolean,"first_enabled_at"?: string | null,"parent_opted_out_at"?: string | null,"pilot_group"?: string,"quiet_end"?: string,"quiet_start"?: string,"recipient_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "love_settings_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: true
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"medicine_schedules": {
                   Row: {
                     "created_at": string,"days_of_week": (number)[],"end_date": string | null,"id": string,"medicine_id": string,"start_date": string,"time_of_day": string
@@ -405,6 +425,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"parent_messages": {
+                  Row: {
+                    "body": string | null,"created_at": string,"id": string,"kind": string,"reaction_id": string | null,"recipient_id": string,"wamid": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"reaction_id"?: string | null,"recipient_id": string,"wamid": string
+                  }
+                  Update: {
+                    "body"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"reaction_id"?: string | null,"recipient_id"?: string,"wamid"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "parent_messages_reaction_id_fkey"
+      columns: ["reaction_id"]
+isOneToOne: false
+      referencedRelation: "reactions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "parent_messages_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: false
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"phone_opt_outs": {
                   Row: {
                     "opted_out_at": string,"phone": string
@@ -451,6 +497,32 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "plans"
       referencedColumns: ["key"]
+    }
+                  ]
+                },"reactions": {
+                  Row: {
+                    "batch_id": string | null,"category": string,"delivered_at": string | null,"due_at": string,"emoji": string | null,"expires_at": string,"fail_reason": string | null,"id": string,"in_window": boolean | null,"queued_at": string,"read_at": string | null,"recipient_id": string,"sender_id": string | null,"sent_at": string | null,"source_id": string,"source_type": string,"status": string,"text": string | null,"type": string,"wamid": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "batch_id"?: string | null,"category"?: string,"delivered_at"?: string | null,"due_at"?: string,"emoji"?: string | null,"expires_at"?: string,"fail_reason"?: string | null,"id"?: string,"in_window"?: boolean | null,"queued_at"?: string,"read_at"?: string | null,"recipient_id": string,"sender_id"?: string | null,"sent_at"?: string | null,"source_id": string,"source_type": string,"status"?: string,"text"?: string | null,"type": string,"wamid"?: string | null
+                  }
+                  Update: {
+                    "batch_id"?: string | null,"category"?: string,"delivered_at"?: string | null,"due_at"?: string,"emoji"?: string | null,"expires_at"?: string,"fail_reason"?: string | null,"id"?: string,"in_window"?: boolean | null,"queued_at"?: string,"read_at"?: string | null,"recipient_id"?: string,"sender_id"?: string | null,"sent_at"?: string | null,"source_id"?: string,"source_type"?: string,"status"?: string,"text"?: string | null,"type"?: string,"wamid"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reactions_recipient_id_fkey"
+      columns: ["recipient_id"]
+isOneToOne: false
+      referencedRelation: "care_recipients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reactions_sender_id_fkey"
+      columns: ["sender_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
                   ]
                 },"report_values": {
@@ -527,16 +599,7 @@ isOneToOne: false
                            },
 "admin_feedback":
 { Args: { "p_limit"?: number }; Returns: {
-              "app_language": string,
-"created_at": string,
-"id": string,
-"images": string[],
-"kind": string,
-"message": string,
-"rating": number | null,
-"screen": string | null,
-"sender_email": string | null,
-"sender_name": string | null
+              "app_language": string,"created_at": string,"id": string,"images": (string)[],"kind": string,"message": string,"rating": number,"screen": string,"sender_email": string,"sender_name": string
             }[]
                            },
 "admin_stats":
@@ -601,6 +664,9 @@ isOneToOne: false
 "erase_caregiver":
 { Args: { "p_user": string }; Returns: undefined
                            },
+"feedback_files_today":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "generate_dose_events":
 { Args: { "p_grace"?: string,"p_horizon"?: string,"p_now"?: string,"p_recipients"?: (string)[] }; Returns: number
                            },
@@ -613,6 +679,9 @@ isOneToOne: false
 "invite_hash":
 { Args: { "p_token": string }; Returns: string
                            },
+"is_admin_user":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "is_circle_member":
 { Args: { "p_circle": string }; Returns: boolean
                            },
@@ -621,6 +690,9 @@ isOneToOne: false
                            },
 "leave_circle":
 { Args: { "p_circle": string }; Returns: undefined
+                           },
+"love_stats":
+{ Args: { "p_days"?: number }; Returns: Json
                            },
 "paused_medicines":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -703,8 +775,17 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"send_reaction":
+{ Args: { "p_emoji"?: string,"p_recipient": string,"p_source_id": string,"p_source_type": string,"p_text"?: string,"p_type": string }; Returns: string
+                           },
+"set_love_enabled":
+{ Args: { "p_enabled": boolean,"p_recipient": string }; Returns: undefined
+                           },
 "set_medicine_critical":
 { Args: { "p_critical": boolean,"p_medicine": string }; Returns: undefined
+                           },
+"set_parent_calls_me":
+{ Args: { "p_circle": string,"p_name": string }; Returns: undefined
                            },
 "sole_member_recipients":
 { Args: { "p_user": string }; Returns: {

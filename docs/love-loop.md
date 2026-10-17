@@ -36,8 +36,14 @@ Each reaction records `in_window` and `category` (`service`). Logs carry counts 
 ## Pilot numbers
 `select public.love_stats(14)` (admin account): reactions by status, parent replies to reactions, and the confirmation rate before vs after for love and control families.
 
+## Screens (step 3, built 2026-10-17)
+- Family tab > **Love messages** (shown only when `/features` says `love`): switch per parent, "what {parent} calls you" (saved per family circle), the rules in plain words, the parent's latest messages.
+- Today: a **love card** (only when switched on and the parent has agreed). Each taken dose (a time slot of doses is one line) and the answered check-in has hearts (❤️ 🙏 🤗) and **Write** (3 presets or up to 150 characters). Under it: what was sent, the status (waiting / sent / delivered / read / not sent, with a plain reason), and what the parent wrote back. After NO HEARTS the buttons are replaced by a note.
+- Notifications: not delivered (expired / parent said no hearts / WhatsApp failed), parent opted out or back in, parent wrote to you.
+- Pilot stats page (admin): reactions by status, replies, and confirmation before vs after for love and control families (`love_stats()`).
+- English and Hindi. Browser-tested (`love-ui.mjs`, 24 checks). The Hindi needs native review.
+
 ## Status of the build
-- Step 1 database: done (migration 0033, `supabase/tests/love_loop.test.sql`).
-- Step 2 backend: done (`api/tests/test_love.py`, 42 tests). NOT pushed.
-- Copy review, then step 3 screens (react buttons on Today, status, parent replies, settings toggle, "what my parent calls me", stats): not built.
-- Not built: the optional WhatsApp alert for parent messages (would need a new template).
+- Step 1 database, step 2 backend, step 3 screens: done. NOT pushed.
+- Not built: the optional WhatsApp alert for parent messages (needs a new template).
+- To use it: `db push` (migrations 0033 and later), deploy the API, set `LOVE_LOOP_ENABLED=true` in Render, the family switches it on per parent. Pilot comparison: set `love_settings.pilot_group = 'control'` by hand for the families without it.

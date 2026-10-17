@@ -66,24 +66,25 @@ export async function handleEscalation(id: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------- which features the server has switched on
-export type Features = { escalation: boolean };
+export type Features = { escalation: boolean; love: boolean };
+const NONE: Features = { escalation: false, love: false };
 let known: Features | null = null;
 
 export async function loadFeatures(): Promise<Features> {
   if (known) return known;
   try {
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/features`);
-    if (!response.ok) return { escalation: false };
+    if (!response.ok) return NONE;
     const body = (await response.json()) as Partial<Features>;
-    known = { escalation: body.escalation === true };
+    known = { escalation: body.escalation === true, love: body.love === true };
     return known;
   } catch {
-    return { escalation: false };   // server asleep or unreachable: show nothing rather than a screen that may not work
+    return NONE;   // server asleep or unreachable: show nothing rather than a screen that may not work
   }
 }
 
 export function useFeatures(): Features {
-  const [features, setFeatures] = useState<Features>(known ?? { escalation: false });
+  const [features, setFeatures] = useState<Features>(known ?? NONE);
   useEffect(() => {
     let cancelled = false;
     void loadFeatures().then((f) => { if (!cancelled) setFeatures(f); });

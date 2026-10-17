@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { AppHeader } from "../App";
 import { FeedbackInbox } from "./Feedback";
+import { LoveStatsSection } from "./Love";
 import { loadPilotStats, type PilotStats } from "../lib/stats";
 import "./stats.css";
 
@@ -110,6 +111,7 @@ export function StatsScreen({ go }: { go: (screen: "family") => void }) {
               <div className="tile wide"><span className="label">{t("messages")}</span><span className="value">{number(s.whatsapp7d.utility + s.whatsapp7d.marketing)}</span><span className="sub">{t("messagesSub", { utility: s.whatsapp7d.utility, marketing: s.whatsapp7d.marketing })}</span><span className="sub">{t("fee", { rupees: number(fee) })}</span></div>
             </div>
             <p className="note">{t("note", { time: new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(s.generatedAt)) })}</p>
+            <LoveStatsSection />
             <FeedbackInbox />
           </>
         );

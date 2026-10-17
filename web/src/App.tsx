@@ -20,6 +20,7 @@ import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
 import { StatsScreen } from "./screens/Stats";
 import { FeedbackScreen } from "./screens/Feedback";
+import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
 import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/SafetyNet";
 import { usePullToRefresh } from "./lib/pullToRefresh";
@@ -55,7 +56,8 @@ type Screen =
   | "plans"
   | "stats"
   | "safety"
-  | "feedback";
+  | "feedback"
+  | "love";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -258,7 +260,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "love"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -613,13 +615,14 @@ function NotificationSheet({ notifications, medicineNames, callFor, onDelete, on
   const language = useLocale() as Language;
   const dialog = useDialog(onClose);
   const text = (n: AppNotification) => {
-    const payload = (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string; count?: number; days?: number };
+    const payload = (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string; count?: number; days?: number; reason?: string };
     const call = callFor(payload.recipient_id);  // the parent THIS alert is about, not necessarily the one on screen
     const name = payload.medicine_id ? medicineNames[payload.medicine_id] : undefined;
     if (n.type === "refill_needed") return name ? t("refill_needed", { name }) : t("refill_needed_generic");
     if (n.type === "out_of_stock") return name ? t("out_of_stock", { name }) : t("out_of_stock_generic");
     if (n.type === "dose_missed" && typeof payload.count === "number" && payload.count > 1) return t("dose_missed_many", { call, count: payload.count });
     if (n.type === "parent_silent") return t("parent_silent", { call, days: payload.days ?? 3 });
+    if (n.type === "love_not_delivered") return t(`love_not_delivered_${payload.reason === "expired" || payload.reason === "parent_opted_out" || payload.reason === "whatsapp_failed" ? payload.reason : "other"}`, { call });
     if (n.type === "dose_missed") return name ? t("dose_missed_named", { call, name }) : t("dose_missed", { call });
     if (n.type === "reminder_not_sent") return name ? t("reminder_not_sent_named", { call, name }) : t("reminder_not_sent", { call });
     return t.has(n.type) ? t(n.type, { call }) : t("unknown");
@@ -991,6 +994,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       )}
 
       {checkinCard()}
+
+      {recipient && <LoveCard recipient={recipient} call={call} />}
 
       {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
 
@@ -1677,6 +1682,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <InstallLink />
       <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} />
+      <LoveLink go={go} />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
@@ -1860,7 +1866,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2162,7 +2168,7 @@ export default function App() {
 
   // Pull down at the top of a screen to refresh it: reload the shared data, then reopen the screen so it fetches its own.
   const [pullTick, setPullTick] = useState(0);
-  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "feedback"];
+  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "feedback", "love"];
   const { pull, refreshing: pullRefreshing } = usePullToRefresh(ready && !loadFailed && PULL_SCREENS.includes(screen), async () => {
     await Promise.allSettled([
       refreshRecipient(recipientRef.current?.id),
@@ -2214,6 +2220,7 @@ export default function App() {
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
+          {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}

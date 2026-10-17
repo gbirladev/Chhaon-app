@@ -334,11 +334,11 @@ export async function loadTodayDoses(recipient: Recipient): Promise<TodayDose[]>
     .map((d) => ({ id: d.id, status: d.status, scheduledAt: d.scheduled_at, name: d.medicine_schedules.medicines.name, dosage: d.medicine_schedules.medicines.dosage, active: d.medicine_schedules.medicines.active }));
 }
 
-export type TodayCheckin = { status: Database["public"]["Enums"]["checkin_status"]; sent_at: string | null; responded_at: string | null } | null;
+export type TodayCheckin = { id: string; status: Database["public"]["Enums"]["checkin_status"]; sent_at: string | null; responded_at: string | null } | null;
 
 export async function loadCheckin(recipient: Recipient): Promise<TodayCheckin> {
   const { data, error } = await supabase
-    .from("checkins").select("status, sent_at, responded_at")
+    .from("checkins").select("id, status, sent_at, responded_at")
     .eq("recipient_id", recipient.id).eq("date", localDate(new Date(), recipient.timezone)).maybeSingle();
   if (error) throw error;
   return data;
