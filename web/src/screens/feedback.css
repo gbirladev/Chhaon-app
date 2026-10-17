@@ -26,3 +26,19 @@
 .feedback-rating { color: #8a5410; letter-spacing: 1px; }
 .feedback-text { margin: 6px 0 8px; color: #2f4743; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 .feedback-item small { display: block; color: #566966; font-size: max(0.8125rem, 12px); line-height: 1.4; overflow-wrap: anywhere; }
+
+/* pictures on a message: the picker with its thumbnails (sender) and the owner's thumbnails + large view */
+.feedback-thumbs { display: flex; gap: 10px; flex-wrap: wrap; list-style: none; margin: 0 0 10px; padding: 0; }
+.feedback-thumbs li { position: relative; width: 84px; height: 84px; }
+.feedback-thumbs img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid #dfe8e5; background: #edf2f0; }
+.feedback-thumb-x { position: absolute; top: -8px; right: -8px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #173d3a; color: #fff; font-size: 20px; line-height: 1; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.feedback-thumb-x:focus-visible { outline: 2px solid #247c72; outline-offset: 2px; }
+.feedback-attach { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; }
+.feedback-images { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.feedback-image { width: 72px; height: 72px; padding: 0; border: 1px solid #dfe8e5; border-radius: 10px; overflow: hidden; background: #edf2f0; }
+.feedback-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.feedback-image.missing { display: grid; place-items: center; padding: 4px; color: #566966; font-size: 12px; text-align: center; }
+.feedback-image:focus-visible { outline: 2px solid #247c72; outline-offset: 1px; }
+.feedback-viewer { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; padding: 56px 12px 12px; background: rgba(15,35,32,.88); }
+.feedback-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.feedback-viewer-x { position: absolute; top: 10px; right: 10px; }

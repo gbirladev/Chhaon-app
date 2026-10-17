@@ -137,14 +137,14 @@ isOneToOne: false
                   ]
                 },"feedback": {
                   Row: {
-                    "app_language": string,"created_at": string,"id": string,"kind": string,"message": string,"rating": number | null,"screen": string | null,"user_id": string | null
+                    "app_language": string,"created_at": string,"id": string,"images": string[],"kind": string,"message": string,"rating": number | null,"screen": string | null,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "app_language"?: string,"created_at"?: string,"id"?: string,"kind": string,"message": string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: string[],"kind": string,"message": string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
                   }
                   Update: {
-                    "app_language"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"message"?: string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
+                    "app_language"?: string,"created_at"?: string,"id"?: string,"images"?: string[],"kind"?: string,"message"?: string,"rating"?: number | null,"screen"?: string | null,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -530,6 +530,7 @@ isOneToOne: false
               "app_language": string,
 "created_at": string,
 "id": string,
+"images": string[],
 "kind": string,
 "message": string,
 "rating": number | null,

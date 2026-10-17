@@ -42,19 +42,19 @@ export async function loadDocument(id: string): Promise<WalletDoc | null> {
 }
 
 /** Short-lived links for private files, keyed by storage path. A path that cannot be signed is simply missing. */
-export async function signedUrls(paths: string[], seconds = 300): Promise<Record<string, string>> {
+export async function signedUrls(paths: string[], seconds = 300, bucket = BUCKET): Promise<Record<string, string>> {
   const wanted = [...new Set(paths)].filter(Boolean);
   if (!wanted.length) return {};
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(wanted, seconds);
+  const { data } = await supabase.storage.from(bucket).createSignedUrls(wanted, seconds);
   const out: Record<string, string> = {};
   for (const item of data ?? []) if (item.path && item.signedUrl) out[item.path] = item.signedUrl;
   return out;
 }
 
-const randomName = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+export const randomName =() => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 const BY_EXTENSION: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic", heif: "image/heif" };
 /** The file's type; some phones and browsers leave it empty or say "octet-stream", so the extension is the fallback. */
-const kindOf = (file: File) => {
+export const kindOf =(file: File) => {
   if (file.type && file.type !== "application/octet-stream") return file.type;
   return BY_EXTENSION[file.name.toLowerCase().split(".").pop() ?? ""] ?? "";
 };

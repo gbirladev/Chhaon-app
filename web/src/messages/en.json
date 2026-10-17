@@ -1026,6 +1026,21 @@
     "inboxLoading": "Loading feedback…",
     "inboxError": "Could not load the feedback.",
     "inboxEmpty": "No feedback yet.",
-    "noName": "No name"
+    "noName": "No name",
+    "imagesLabel": "Pictures (optional)",
+    "attach": "{left, plural, one {Attach a picture (1 more)} other {Attach pictures (up to #)}}",
+    "preparing": "Getting your picture ready…",
+    "imageAlt": "Picture {n}",
+    "removeImage": "Remove picture {n}",
+    "imagesPrivacy": "A screenshot or photo can show personal or medical details, names or phone numbers. Please blur or crop them out before sending if needed.",
+    "errImageType": "Only photos and screenshots can be attached.",
+    "errImageHeic": "This photo is in a format we cannot use (HEIC). Please take the photo again, or choose it as a JPEG. On an iPhone, Settings > Camera > Formats > Most Compatible.",
+    "errImageSize": "That picture is too big (5 MB at most).",
+    "errImageMax": "You can attach 3 pictures at most.",
+    "errImageUpload": "Could not upload your picture. Your message is still here. Please check your internet and try again.",
+    "openImage": "Open picture {n} larger",
+    "imageMissing": "Cannot load",
+    "viewerLabel": "Picture sent with the feedback",
+    "close": "Close"
   }
 }
