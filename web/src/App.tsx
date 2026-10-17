@@ -18,6 +18,7 @@ import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { PlansScreen } from "./screens/Plans";
+import { StockField } from "./screens/StockField";
 import { StatsScreen } from "./screens/Stats";
 import { FeedbackScreen } from "./screens/Feedback";
 import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
@@ -1342,7 +1343,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
         <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>
         <div className="stepper" role="group" aria-label={t("medicine.stock")}>
           <button type="button" onClick={() => changeStock(-1)} disabled={busy || stock <= 0} aria-label={t("medicine.decrease")}>−</button>
-          <output aria-live="polite">{stock}</output>
+          <StockField value={stock} max={MAX_NUMBER} disabled={busy} onCommit={(next) => changeStock(next - stock)} />
           <button type="button" onClick={() => changeStock(1)} disabled={busy || stock >= MAX_NUMBER} aria-label={t("medicine.increase")}>+</button>
         </div>
         <p className="form-note" style={{ textAlign: "center" }}>{medicine.threshold === null ? t("medicine.refillOff") : t("medicine.refillAt", { count: medicine.threshold })}</p>
