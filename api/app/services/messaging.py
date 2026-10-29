@@ -13,7 +13,7 @@ from supabase import Client
 from app.config import Settings
 from app.privacy import mask_phone
 from app.whatsapp import templates
-from app.whatsapp.client import Messenger
+from app.whatsapp.client import Messenger, WhatsAppError
 
 log = logging.getLogger("carelink.messaging")
 
@@ -27,6 +27,11 @@ INSTRUCTIONS = {
 }
 HI_UNITS = {"tablet": "गोली", "tablets": "गोलियाँ", "capsule": "कैप्सूल", "capsules": "कैप्सूल", "drops": "बूँदें",
             "units": "यूनिट", "puffs": "पफ़", "tsp": "चम्मच"}
+
+
+# Meta codes that mean "the template, its parameters or its picture were refused" (not "this person cannot be reached"):
+# parameter problems (132018, 132000, 132012, 132007, 131009) and a picture WhatsApp could not use (131053).
+PHOTO_FALLBACK_CODES = {132018, 132000, 132012, 132007, 131009, 131053}
 
 
 def clean(text: str | None, limit: int = 40) -> str:
@@ -167,7 +172,19 @@ def send_dose_reminder(db: Client, wa: Messenger, dose_event_id: str, now: datet
         ev["id"], _signed_photo_url(db, medicine["photo_url"], r["id"]),
     )
     try:
-        message_id = wa.send_template(r["whatsapp_phone"], template)
+        try:
+            message_id = wa.send_template(r["whatsapp_phone"], template)
+        except WhatsAppError as exc:
+            if template.name != templates.DOSE_REMINDER_PHOTO or exc.code not in PHOTO_FALLBACK_CODES:
+                raise
+            # WhatsApp refused the PHOTO version of the reminder (its template or picture setup): a reminder without the picture is far
+            # better than none, so send the plain one. The real cause is fixed in WhatsApp Manager; this keeps the parent's reminders going.
+            log.warning("photo reminder refused (code %s), sending the plain reminder instead", exc.code)
+            plain = templates.dose_reminder(
+                language, clean(call_name(r, language)), clean(medicine["name"]), clean(localize_dose(medicine["dosage"], language), 30),
+                INSTRUCTIONS[language if language in INSTRUCTIONS else "en"].get(medicine["instructions"], "-"), ev["id"], None,
+            )
+            message_id = wa.send_template(r["whatsapp_phone"], plain)
     except Exception:
         db.table("dose_events").update({"status": "pending", "sent_at": None}).eq("id", ev["id"]).execute()
         raise

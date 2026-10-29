@@ -12,7 +12,11 @@ log = logging.getLogger("carelink.whatsapp")
 
 
 class WhatsAppError(Exception):
-    """Meta rejected the request or was unreachable."""
+    """Meta rejected the request or was unreachable. `code` is Meta's numeric error code when it gave one (never message content)."""
+
+    def __init__(self, message: str, code: int | None = None):
+        super().__init__(message)
+        self.code = code
 
 
 class Messenger(Protocol):
@@ -53,12 +57,13 @@ class WhatsAppClient:
                 code = response.json().get("error", {}).get("code")
             except (ValueError, AttributeError):
                 code = None
+            code = code if isinstance(code, int) else None
             template = payload.get("template") or {}
             log.warning(
                 "WhatsApp API error status=%s code=%s template=%s lang=%s",
                 response.status_code, code, template.get("name"), (template.get("language") or {}).get("code"),
             )
-            raise WhatsAppError(f"WhatsApp API error {response.status_code}")
+            raise WhatsAppError(f"WhatsApp API error {response.status_code}", code=code)
         try:
             message = response.json()["messages"][0]
             # "held_for_quality_assessment" means Meta accepted it but delays delivery (new templates, pacing).
