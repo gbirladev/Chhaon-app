@@ -40,7 +40,7 @@ def status(db, dose):
     return db.table("dose_events").select("status, whatsapp_message_id").eq("id", dose).single().execute().data
 
 
-@pytest.mark.parametrize("code", [132018, 132000, 132012, 131053])
+@pytest.mark.parametrize("code", [132018, 132000, 132012, 131053, 132001, 132015, 132016])
 def test_a_refused_photo_template_falls_back_to_the_plain_reminder(db, pending_dose, code):
     wa = PickyMessenger(code=code)
     assert messaging.send_dose_reminder(db, wa, pending_dose, now=NOW) == "sent"

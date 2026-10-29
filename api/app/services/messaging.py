@@ -29,9 +29,10 @@ HI_UNITS = {"tablet": "गोली", "tablets": "गोलियाँ", "capsu
             "units": "यूनिट", "puffs": "पफ़", "tsp": "चम्मच"}
 
 
-# Meta codes that mean "the template, its parameters or its picture were refused" (not "this person cannot be reached"):
-# parameter problems (132018, 132000, 132012, 132007, 131009) and a picture WhatsApp could not use (131053).
-PHOTO_FALLBACK_CODES = {132018, 132000, 132012, 132007, 131009, 131053}
+# Meta codes that mean "the PHOTO template, its parameters or its picture were refused" (not "this person cannot be reached"):
+# parameter problems (132018, 132000, 132012, 132007, 131009), a picture WhatsApp could not use (131053), and a template that is not
+# usable right now (132001 not found / not approved in that language, 132015 paused, 132016 disabled, e.g. while it is being edited).
+PHOTO_FALLBACK_CODES = {132018, 132000, 132012, 132007, 131009, 131053, 132001, 132015, 132016}
 
 
 def clean(text: str | None, limit: int = 40) -> str:
