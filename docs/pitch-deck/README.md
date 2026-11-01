@@ -1,6 +1,6 @@
 # Chhaon pitch deck
 
-A copy of the pitch deck, saved 2026-11-01 (version 8 of the online deck).
+A copy of the pitch deck, saved 2026-11-01 (version 9 of the online deck).
 
 - Online (private to the owner until shared): https://claude.ai/artifact/We3SEYRfAiWz18k5iVj2Qh
 - `deck.json`: the slide order, sections and fonts.
