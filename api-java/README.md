@@ -17,7 +17,15 @@ Scaffold / foundation (done):
   `user_credentials`).
 - Deploy pipeline (`.github/workflows/backend-*.yml`, `deploy/aws/*`) — inert until AWS exists.
 
-To port from FastAPI (feature by feature): parent profiles/recipients, medicines + schedules,
+Parent profiles / care recipients (done): `GET/POST /api/v1/recipients`, `GET/PUT/DELETE
+/api/v1/recipients/{id}`. Membership scoping enforced in the app layer (RLS is bypassed by the
+`postgres` role). Phone normalized to E.164; timezone/blood-group/list validation; plan-limit
+pre-check. During transition, DB triggers still enforce owner-member creation, consent-null,
+`limit_parents`, phone-change consent reset, self-profile guards (their errors are translated);
+these move fully into Java at cutover. TODO: trigger WhatsApp consent on create/phone-change and
+purge storage files on delete (await the WhatsApp/storage ports).
+
+Still to port from FastAPI (feature by feature): medicines + schedules,
 dose scheduler (`@Scheduled`), WhatsApp send + webhook, daily check-ins, reports + AI (anthropic-java),
 appointments, family invites, emergency links, plans/limits, notifications.
 

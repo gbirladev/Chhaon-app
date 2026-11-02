@@ -1,0 +1,295 @@
+package org.smartgurukul.chhaon.recipient;
+
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.ContactDto;
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.CreateRecipientRequest;
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.RecipientResponse;
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.UpdateRecipientRequest;
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.DateTimeException;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.PAYMENT_REQUIRED;
+
+@Service
+public class CareRecipientService {
+
+    private static final Set<String> RELATIONS = Set.of(
+            "father", "mother", "grandfather", "grandmother", "father_in_law", "mother_in_law",
+            "spouse", "uncle", "aunt", "brother", "sister", "other", "self");
+    private static final Set<String> BLOOD_GROUPS = Set.of(
+            "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-");
+    private static final int MAX_LIST_ITEMS = 30;
+    private static final int MAX_ITEM_LEN = 80;
+
+    private final CareRecipientRepository recipients;
+    private final CareCircleRepository circles;
+    private final CareCircleMemberRepository members;
+
+    public CareRecipientService(CareRecipientRepository recipients,
+                                CareCircleRepository circles,
+                                CareCircleMemberRepository members) {
+        this.recipients = recipients;
+        this.circles = circles;
+        this.members = members;
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecipientResponse> list(UUID userId) {
+        return recipients.findAllForUser(userId).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RecipientResponse get(UUID userId, UUID id) {
+        return toResponse(requireMemberRecipient(userId, id));
+    }
+
+    @Transactional
+    public RecipientResponse create(UUID userId, CreateRecipientRequest req) {
+        boolean isSelf = Boolean.TRUE.equals(req.isSelf());
+
+        // Plan limit (clean message; the DB limit_parents trigger is the backstop).
+        if (!isSelf) {
+            Integer max = recipients.maxParentsForUser(userId); // null = unlimited
+            if (max != null && recipients.countNonSelfForUser(userId) >= max) {
+                throw new ResponseStatusException(PAYMENT_REQUIRED,
+                        "You've reached your plan's limit of parent profiles. Upgrade to add more.");
+            }
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // 1) New circle; the DB trigger handle_new_circle adds the caller as owner member.
+        CareCircle circle = new CareCircle();
+        circle.setId(UUID.randomUUID());
+        circle.setCreatedBy(userId);
+        circle.setCreatedAt(now);
+        circles.saveAndFlush(circle);
+
+        // 2) The recipient.
+        CareRecipient r = new CareRecipient();
+        r.setId(UUID.randomUUID());
+        r.setCircleId(circle.getId());
+        r.setSelf(isSelf);
+        r.setCreatedAt(now);
+        r.setUpdatedAt(now);
+        r.setRelation(isSelf ? "self" : normalizeRelation(req.relation()));
+        r.setCallName(isSelf ? null : trimToNull(req.callName()));
+        r.setName(req.name().trim());
+        r.setAge(req.age() == null ? null : req.age().shortValue());
+        r.setDob(req.dob());
+        r.setCity(trimToNull(req.city()));
+        r.setTimezone(resolveTimezone(req.timezone()));
+        r.setLanguage(normalizeLanguage(req.language()));
+        r.setConditions(sanitizeList(req.conditions()));
+        r.setAllergies(sanitizeList(req.allergies()));
+        r.setBloodGroup(validateBloodGroup(req.bloodGroup()));
+        r.setWhatsappPhone(resolvePhone(req.whatsappPhone()));
+        r.setDoctorContacts(toContacts(req.doctorContacts()));
+        r.setEmergencyContacts(toContacts(req.emergencyContacts()));
+        if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
+        if (Boolean.TRUE.equals(req.caregiverAttested())) r.setCaregiverAttestedAt(now);
+
+        try {
+            recipients.saveAndFlush(r);
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        // TODO(port WhatsApp): if a phone was set, trigger a consent request here.
+        return toResponse(r);
+    }
+
+    @Transactional
+    public RecipientResponse update(UUID userId, UUID id, UpdateRecipientRequest req) {
+        CareRecipient r = requireMemberRecipient(userId, id);
+        // is_self and circle are immutable; relation forced to 'self' for a self profile.
+        r.setRelation(r.isSelf() ? "self" : normalizeRelation(req.relation()));
+        r.setCallName(r.isSelf() ? null : trimToNull(req.callName()));
+        r.setName(req.name().trim());
+        r.setAge(req.age() == null ? null : req.age().shortValue());
+        r.setDob(req.dob());
+        r.setCity(trimToNull(req.city()));
+        r.setTimezone(resolveTimezone(req.timezone()));
+        r.setLanguage(normalizeLanguage(req.language()));
+        r.setConditions(sanitizeList(req.conditions()));
+        r.setAllergies(sanitizeList(req.allergies()));
+        r.setBloodGroup(validateBloodGroup(req.bloodGroup()));
+        r.setWhatsappPhone(resolvePhone(req.whatsappPhone()));
+        r.setDoctorContacts(toContacts(req.doctorContacts()));
+        r.setEmergencyContacts(toContacts(req.emergencyContacts()));
+        if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
+        if (Boolean.TRUE.equals(req.caregiverAttested()) && r.getCaregiverAttestedAt() == null) {
+            r.setCaregiverAttestedAt(OffsetDateTime.now());
+        }
+        r.setUpdatedAt(OffsetDateTime.now());
+        // DB triggers handle consent reset on phone change and dose clearing on timezone change.
+        try {
+            recipients.saveAndFlush(r);
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        return toResponse(r);
+    }
+
+    @Transactional
+    public void delete(UUID userId, UUID id) {
+        CareRecipient r = requireMemberRecipient(userId, id);
+        // Delete is owner-only.
+        var member = members.findByCircleIdAndUserId(r.getCircleId(), userId).orElse(null);
+        if (member == null || member.getRole() != MemberRole.owner) {
+            throw new ResponseStatusException(NOT_FOUND, "Parent profile not found");
+        }
+        // TODO(port storage): purge medicine-photo and report files for this recipient first.
+        recipients.delete(r); // ON DELETE CASCADE removes medicines, schedules, doses, reports, etc.
+    }
+
+    // --- helpers ---
+
+    private CareRecipient requireMemberRecipient(UUID userId, UUID id) {
+        return recipients.findForUser(id, userId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Parent profile not found"));
+    }
+
+    private static String trimToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
+    }
+
+    private static String normalizeRelation(String relation) {
+        if (relation == null || relation.isBlank()) return "other";
+        String r = relation.trim();
+        return RELATIONS.contains(r) && !r.equals("self") ? r : "other";
+    }
+
+    private static String normalizeLanguage(String language) {
+        return "hi".equals(language) ? "hi" : "en";
+    }
+
+    private static String resolveTimezone(String tz) {
+        String zone = (tz == null || tz.isBlank()) ? "Asia/Kolkata" : tz.trim();
+        try {
+            ZoneId.of(zone);
+        } catch (DateTimeException e) {
+            throw new ResponseStatusException(BAD_REQUEST, "Unknown timezone: " + zone);
+        }
+        return zone;
+    }
+
+    private static String validateBloodGroup(String bg) {
+        String v = trimToNull(bg);
+        if (v != null && !BLOOD_GROUPS.contains(v)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid blood group: " + v);
+        }
+        return v;
+    }
+
+    private static String resolvePhone(String raw) {
+        if (raw == null || raw.isBlank()) return null; // phone is optional
+        String normalized = PhoneNormalizer.normalize(raw);
+        if (normalized == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid WhatsApp phone number");
+        }
+        return normalized;
+    }
+
+    private static List<String> sanitizeList(List<String> in) {
+        if (in == null) return List.of();
+        List<String> cleaned = in.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .toList();
+        if (cleaned.size() > MAX_LIST_ITEMS) {
+            throw new ResponseStatusException(BAD_REQUEST, "At most " + MAX_LIST_ITEMS + " items allowed");
+        }
+        for (String s : cleaned) {
+            if (s.length() > MAX_ITEM_LEN) {
+                throw new ResponseStatusException(BAD_REQUEST, "Each item must be ≤ " + MAX_ITEM_LEN + " chars");
+            }
+        }
+        return cleaned;
+    }
+
+    private static List<Contact> toContacts(List<ContactDto> in) {
+        if (in == null) return List.of();
+        return in.stream()
+                .filter(c -> c != null && ((c.name() != null && !c.name().isBlank())
+                        || (c.phone() != null && !c.phone().isBlank())))
+                .map(c -> new Contact(c.name() == null ? null : c.name().trim(), c.phone()))
+                .collect(Collectors.toList());
+    }
+
+    private static List<ContactDto> fromContacts(List<Contact> in) {
+        if (in == null) return List.of();
+        return in.stream().map(c -> new ContactDto(c.getName(), c.getPhone())).toList();
+    }
+
+    /** Map known Postgres trigger/constraint errors to clean HTTP responses. */
+    private RuntimeException translate(DataAccessException e) {
+        String msg = rootMessage(e).toLowerCase();
+        if (msg.contains("plan_parents")) {
+            return new ResponseStatusException(PAYMENT_REQUIRED,
+                    "You've reached your plan's limit of parent profiles.");
+        }
+        if (msg.contains("self_number_in_use")) {
+            return new ResponseStatusException(CONFLICT,
+                    "This number is already used by your own profile.");
+        }
+        if (msg.contains("self_exists")) {
+            return new ResponseStatusException(CONFLICT, "You already have a self profile.");
+        }
+        if (msg.contains("self_circle")) {
+            return new ResponseStatusException(CONFLICT, "A self profile cannot be shared.");
+        }
+        if (msg.contains("care_recipients_whatsapp_phone_check")) {
+            return new ResponseStatusException(BAD_REQUEST, "Invalid WhatsApp phone number");
+        }
+        if (msg.contains("timezone")) {
+            return new ResponseStatusException(BAD_REQUEST, "Unknown timezone");
+        }
+        return e; // unknown -> 500
+    }
+
+    private static String rootMessage(Throwable e) {
+        Throwable t = e;
+        while (t.getCause() != null && t.getCause() != t) t = t.getCause();
+        return t.getMessage() == null ? "" : t.getMessage();
+    }
+
+    private RecipientResponse toResponse(CareRecipient r) {
+        return new RecipientResponse(
+                r.getId().toString(),
+                r.getCircleId().toString(),
+                r.getName(),
+                r.getRelation(),
+                r.getCallName(),
+                r.getAge() == null ? null : r.getAge().intValue(),
+                r.getDob(),
+                r.getCity(),
+                r.getWhatsappPhone(),
+                r.getTimezone(),
+                r.getLanguage(),
+                r.getConditions(),
+                r.getAllergies(),
+                r.getBloodGroup(),
+                fromContacts(r.getDoctorContacts()),
+                fromContacts(r.getEmergencyContacts()),
+                r.getCheckinTime(),
+                r.isSelf(),
+                r.getCaregiverAttestedAt(),
+                r.getConsentAt(),
+                r.getOptedOutAt(),
+                r.getConsentRequestedAt(),
+                r.getCreatedAt(),
+                r.getUpdatedAt());
+    }
+}
