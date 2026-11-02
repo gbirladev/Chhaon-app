@@ -25,7 +25,15 @@ pre-check. During transition, DB triggers still enforce owner-member creation, c
 these move fully into Java at cutover. TODO: trigger WhatsApp consent on create/phone-change and
 purge storage files on delete (await the WhatsApp/storage ports).
 
-Still to port from FastAPI (feature by feature): medicines + schedules,
+Medicines + schedules (done): `GET/POST /api/v1/recipients/{recipientId}/medicines`,
+`PUT/PATCH/DELETE /api/v1/medicines/{id}`, `POST /api/v1/medicines/{id}/stock` (delta).
+App-layer scoping by circle membership; name/dosage/instructions/photo-path validation; 1-12
+distinct times; schedule reconciliation on update (keeps history); stock as clamped deltas;
+active/critical flags. DB triggers still enforce caps + low-stock notifications (errors
+translated). TODO: storage photo upload/signed URLs + purge on delete; dose-event generation
+(with the scheduler port).
+
+Still to port from FastAPI (feature by feature):
 dose scheduler (`@Scheduled`), WhatsApp send + webhook, daily check-ins, reports + AI (anthropic-java),
 appointments, family invites, emergency links, plans/limits, notifications.
 
