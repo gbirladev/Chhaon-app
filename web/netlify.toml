@@ -11,6 +11,15 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Android TWA (Play Store wrapper) Digital Asset Links. Must be served as a real JSON file,
+# so this is declared before the SPA fallback and forced. Vite does not copy the public/.well-known
+# dotfolder reliably, so the source of truth is public/assetlinks.json (copied to dist root).
+[[redirects]]
+  from = "/.well-known/assetlinks.json"
+  to = "/assetlinks.json"
+  status = 200
+  force = true
+
 # Single page app: any other address opens the app.
 [[redirects]]
   from = "/*"

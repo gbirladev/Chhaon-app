@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.smartgurukul.chhaon",
+      "sha256_cert_fingerprints": [
+        "49:11:20:D9:CD:59:B1:C7:21:C4:26:AB:D6:12:E8:22:D1:D5:74:95:77:88:FD:97:DC:00:F7:17:BB:7D:50:34"
+      ]
+    }
+  }
+]
