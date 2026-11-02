@@ -22,3 +22,10 @@ sudo nginx -t && sudo systemctl reload nginx
 
 echo "Provisioned. Next: set /etc/chhaon/backend.env, then run certbot --nginx -d api.chhaon.site"
 echo "Ensure this instance has an IAM role allowing s3:GetObject on the deploy bucket and SSM."
+echo
+echo "REQUIRED — stable IP: allocate an Elastic IP and associate it with THIS instance so the"
+echo "public IP never changes on stop/start/replace. Then point the api.chhaon.site DNS A record"
+echo "at the Elastic IP (set once). One-time, from a machine with the AWS CLI + permissions:"
+echo "  EIP_ALLOC=\$(aws ec2 allocate-address --domain vpc --region ap-south-1 --query AllocationId --output text)"
+echo "  aws ec2 associate-address --region ap-south-1 --instance-id <THIS_INSTANCE_ID> --allocation-id \$EIP_ALLOC"
+echo "(Deploys do NOT change the IP — they swap the JAR on the running box; the EIP covers stop/start.)"

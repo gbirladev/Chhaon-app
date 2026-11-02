@@ -42,3 +42,8 @@ Push to `main` touching `api-java/**` → `backend-ci.yml` tests, `backend-deplo
 fat JAR, uploads to S3, and deploys to the EC2 box via SSM (swap JAR, restart, health-check,
 auto-rollback). See `deploy/aws/` for the on-box script, systemd unit, nginx config, and the
 one-time `provision-server.sh`. Required GitHub Secrets are listed in `backend-deploy.yml`.
+
+**Stable IP:** the EC2 box uses an **Elastic IP** (allocated + associated during provisioning)
+so its public IP never changes on stop/start/replace. DNS (`api.chhaon.site` A record) and the
+TLS cert point at the Elastic IP, set once. Deploys never change the IP (they swap the JAR on the
+running box); the Elastic IP covers instance stop/start/replacement. See `provision-server.sh`.
