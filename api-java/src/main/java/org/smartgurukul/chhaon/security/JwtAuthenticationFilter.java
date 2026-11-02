@@ -25,9 +25,11 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final SupabaseJwtVerifier supabaseVerifier;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, SupabaseJwtVerifier supabaseVerifier) {
         this.jwtService = jwtService;
+        this.supabaseVerifier = supabaseVerifier;
     }
 
     @Override
@@ -39,9 +41,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             try {
-                Claims claims = jwtService.parse(token);
-                UUID userId = UUID.fromString(claims.getSubject());
-                boolean admin = Boolean.TRUE.equals(claims.get("admin", Boolean.class));
+                boolean admin;
+                UUID userId;
+                Claims own = tryOwn(token);
+                if (own != null) {
+                    userId = UUID.fromString(own.getSubject());
+                    admin = Boolean.TRUE.equals(own.get("admin", Boolean.class));
+                } else {
+                    // Fall back to a Supabase-issued access token (frontend logs in via Supabase).
+                    Claims sb = supabaseVerifier.tryParse(token);
+                    if (sb == null) throw new io.jsonwebtoken.JwtException("unrecognized token");
+                    userId = UUID.fromString(sb.getSubject());
+                    admin = false; // Supabase tokens carry no app admin claim
+                }
                 var authorities = admin
                         ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN"),
                                   new SimpleGrantedAuthority("ROLE_USER"))
@@ -58,5 +70,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    /** Parse as one of our own tokens, or null if it isn't one / is invalid. */
+    private Claims tryOwn(String token) {
+        try {
+            return jwtService.parse(token);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
