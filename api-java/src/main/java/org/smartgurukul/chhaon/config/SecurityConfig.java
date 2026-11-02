@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/actuator/health/**",
+                                "/error",
                                 "/api/v1/auth/**",
                                 "/api/v1/whatsapp/webhook").permitAll()
                         .anyRequest().authenticated())

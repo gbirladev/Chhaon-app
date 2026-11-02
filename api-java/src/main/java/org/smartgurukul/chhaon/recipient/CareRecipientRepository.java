@@ -35,8 +35,11 @@ public interface CareRecipientRepository extends JpaRepository<CareRecipient, UU
             """)
     long countNonSelfForUser(@Param("userId") UUID userId);
 
-    /** The effective parent cap for the user's plan, via the existing DB function plan_of_user. */
-    @Query(value = "select p.max_parents from plans p where p.key = public.plan_of_user(:userId)",
+    /**
+     * The effective parent cap for the user's plan. plan_of_user(uuid) returns a whole plans row
+     * (handling the free-trial -> plus logic), so we read max_parents off it. null = unlimited.
+     */
+    @Query(value = "select (public.plan_of_user(cast(:userId as uuid))).max_parents",
             nativeQuery = true)
     Integer maxParentsForUser(@Param("userId") UUID userId);
 }
