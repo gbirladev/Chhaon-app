@@ -1,0 +1,79 @@
+name: Backend Deploy
+
+# Mirrors the Smart Gurukul pipeline: build a fat JAR, upload to S3, then have a single EC2
+# box pull + swap + restart via AWS SSM Run Command. No containers, no IaC.
+# Only runs when the Java backend changes.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api-java/**"
+      - ".github/workflows/backend-deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-java
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build JAR
+        run: mvn -B -DskipTests clean package
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload JAR to S3 (latest + sha-tagged)
+        run: |
+          JAR=target/chhaon-backend.jar
+          aws s3 cp "$JAR" "s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_JAR_KEY }}"
+          aws s3 cp "$JAR" "s3://${{ secrets.S3_BUCKET }}/releases/chhaon-backend-${GITHUB_SHA}.jar"
+
+      - name: Deploy to EC2 via SSM
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_JAR_KEY: ${{ secrets.S3_JAR_KEY }}
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          # Runtime secrets written into /etc/chhaon/backend.env on the box.
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          APP_JWT_SECRET: ${{ secrets.APP_JWT_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_VERIFY_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN }}
+          WHATSAPP_APP_SECRET: ${{ secrets.WHATSAPP_APP_SECRET }}
+        run: bash deploy/aws/send-ssm-deploy.sh
+
+      - name: Smoke test (public health)
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "${{ secrets.HEALTH_CHECK_URL }}" | grep -q '"status":"UP"'; then
+              echo "Health OK"; exit 0
+            fi
+            echo "waiting for health... ($i)"; sleep 5
+          done
+          echo "Health check failed"; exit 1
