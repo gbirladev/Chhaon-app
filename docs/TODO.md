@@ -174,9 +174,48 @@ Decided on 2026-10-15 not to pursue an Android app or a Play Store listing. The 
 - 2026-10-17: new Meta templates (`carelink_self_optin` and the other newly added ones) are **under review** at Meta. Check again later: all must be Active in en AND hi before switching escalation on / using "Me" with a real number.
 
 ## WhatsApp delivery problems found 2026-10-29 (live)
-- [ ] **132018 on the Hindi photo reminder** (`carelink_dose_reminder_photo`, hi): the Hindi version has NO image header, the app sends one, so Meta refuses every send. Fix at Meta: add an Image header with a sample image to the Hindi version (or create `_v2` in en + hi with the header and tell Claude the name). Check the English version too. Until then the hotfix (commit df6784f, NOT pushed yet) sends the plain reminder when Meta refuses the photo one.
+- [ ] **132018 on the Hindi photo reminder** (`carelink_dose_reminder_photo`, hi): the Hindi version has NO image header, the app sends one, so Meta refuses every send. Fix at Meta: add an Image header with a sample image to the Hindi version (or create `_v2` in en + hi with the header and tell Claude the name). Check the English version too. Until then the hotfix (commits df6784f and 68ac7d4, on GitHub: checked 2026-11-02) sends the plain reminder when Meta refuses the photo one or the template is not usable.
 - [ ] **131049 "healthy ecosystem engagement"** (Meta chose not to deliver): hit consent requests (Marketing) and the daily 08:00 IST message (probably the check-in). Meta moved a Hindi template to Marketing ("did not meet utility guidelines", 2026-10-29). **Review requested by the owner**, available until 2026-12-13. Record which template and the outcome. If it stays Marketing: option B = send the daily check-in as a free-form message with buttons when the 24-hour window is open (after a Taken tap), template only as fallback.
 - [ ] Build: log every message the app sends (template, parent, wamid) so every failure is matched, shown to the family and attributed to a template. Today failed check-ins, consent requests and alerts are silent (only doses are matched).
 - [ ] Build: parent-started chat (link / QR with a ready "Hi" to the business number) so consent can be asked inside the 24-hour window without a Marketing template.
 - [ ] The 2 parents still waiting for consent: ask them to send "Hi" to the business number first, then press Send again.
 - [ ] Check categories of `carelink_daily_checkin`, `carelink_dose_reminder`, `carelink_dose_reminder_photo` and the alert templates in WhatsApp Manager (Insights: Sent vs Delivered per template).
+
+## Upcoming features: the Premium plan (discussed 2026-11-02)
+Reminders stay free: nobody pays for them. Premium sells one promise, not a list of features:
+**"A real person watches over Papa's health every week, and tells you before a small problem becomes a big one."**
+A named care coordinator per family ("Chhaon Saathi"), helped by AI. Indian families pay for people and results (Emoha Rs 1,999–10,999/month,
+Anvayaa USD 999+/year), not for apps; software-only competitors (Maitri Rs 299) cannot offer this. Working price: **Rs 499/month** (test Rs 499 vs Rs 999).
+NOT decided yet: it is a service, and CLAUDE.md keeps services out of v1. The 3-week test below decides.
+
+- [ ] **Test first, no code (3 weeks):** the owner is the coordinator for 5–10 pilot families who agree. Each week: call each parent (how they feel,
+      BP/sugar readings, medicine problems, needs), log readings in a private sheet, send the child a Sunday summary, act on alerts. After 3 weeks, offer
+      to continue at Rs 499/month. **Success = 3 or more of 10 families actually pay.** Note the minutes spent per family (tells how many families one
+      coordinator can handle; the estimate is about 300).
+- [ ] Before the test: the weekly call script for the parent and the Sunday summary for the child (English + Hindi), and consent text that says a
+      person reviews the data.
+- What Premium would include (build only if the test passes):
+  - [ ] **Coordinator:** the same person every week (name and photo in the app), a weekly call in the parent's language, a summary to the family,
+        acts when something is off (calls the parent, then tells the family what happened and what to do), guides the family in a crisis
+        (hospital, insurance card, documents). Not an emergency service: 112 first.
+  - [ ] **Health Control ("Is the medicine working?"):** the parent sends a photo of the BP machine or glucometer screen; Chhaon reads it and asks the
+        parent to confirm (✅ / ✏️); trend next to the medicine confirmations; the target is the one the doctor gave (typed in by the family), never our
+        own "normal"; alert when readings stay above it. Why: in India only about 15% of people with high BP have it under control (WHO 2023), and only
+        36% of people with diabetes have their sugar under control (ICMR-INDIAB 2022). Lawyer check before charging (CDSCO).
+  - [ ] **Doctor report** before each appointment (readings, missed doses, current medicines), and **prescription photo → medicine plan update**
+        after the visit (the child approves every change).
+  - [ ] **Coordinator dashboard** (internal): families needing attention today (sorted by AI), call notes, AI-drafted summaries. Staff see only
+        their own families; the family can see who opened what.
+  - [ ] **Care Log** for families with a paid attendant: arrival, medicines given (photo), meals; alert when something is missing. Ask pilot families
+        with an attendant before building.
+  - The **Safety net** (built, switched off) becomes part of Premium, because WhatsApp alerts cost money. In-app alerts stay free for everyone.
+- Rules: coordination, never medical advice (no medicine changes; the doctor decides). Fraud-safe: the coordinator never asks for money, OTP, Aadhaar
+  or bank details, calls only from Chhaon's number, and uses a family code word; background checks for staff.
+  - [ ] Add to the `consent_yes` reply (`api/app/whatsapp/templates.py`): "Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone
+        does, it is not us." (free-form reply, no Meta approval needed; Hindi needs a native read).
+- Free plan change to consider: cover all of one parent's medicines (today Free allows 2) once one-reminder-per-slot is live, because the cost then
+  depends on time slots, not on the number of medicines.
+- Rough maths, to be measured in the test: 300 families x Rs 499 = about Rs 1.5 lakh a month per coordinator, against a salary (about Rs 30,000 is an
+  assumption) plus WhatsApp and AI costs.
+- Later: AI voice calls take over the routine weekly calls and coordinators handle only problems (South Korea's Naver CareCall does AI check-in calls);
+  partner money (refills when stock runs low, home lab tests when due); employers and group insurers paying for employees' parents; an NRI plan in dollars.
