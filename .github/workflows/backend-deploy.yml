@@ -17,7 +17,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  AWS_REGION: ap-south-1
+  # Free-plan account is region-locked to Sydney (ap-southeast-2); the Supabase DB lives there too.
+  AWS_REGION: ap-southeast-2
 
 jobs:
   build-and-deploy:
