@@ -1,0 +1,44 @@
+# Chhaon backend (Java Spring Boot)
+
+The Chhaon API, being rewritten from the Python FastAPI service (`../api/`) into Java Spring
+Boot to match the Smart Gurukul stack. Deploys to AWS (EC2 + S3 + SSM) in **ap-south-1 (Mumbai)**.
+
+- **Stack:** Spring Boot 3.4 · Java 21 · Maven · Flyway · Spring Security + JWT (jjwt) · Postgres (Supabase).
+- **Auth:** custom JWT — the app owns identity (`profiles` + `user_credentials`); Supabase Auth
+  and RLS are no longer used. Access control lives in the app layer.
+
+## Status
+
+Scaffold / foundation (done):
+- Project, config, health endpoint.
+- Spring Security + JWT (`security/`), stateless.
+- Auth vertical: `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`.
+- `profiles` entity + Flyway `V1__custom_auth.sql` (drops the `profiles → auth.users` FK, adds
+  `user_credentials`).
+- Deploy pipeline (`.github/workflows/backend-*.yml`, `deploy/aws/*`) — inert until AWS exists.
+
+To port from FastAPI (feature by feature): parent profiles/recipients, medicines + schedules,
+dose scheduler (`@Scheduled`), WhatsApp send + webhook, daily check-ins, reports + AI (anthropic-java),
+appointments, family invites, emergency links, plans/limits, notifications.
+
+## Run locally
+
+Requires JDK 21 and Maven. Secrets come from `api-java/.env.local` (gitignored).
+
+```sh
+cd api-java
+set -a; . ./.env.local; set +a      # loads SPRING_DATASOURCE_* and APP_JWT_SECRET
+mvn spring-boot:run
+```
+
+> ⚠️ **Flyway runs on startup and will alter the connected database** (V1 drops the
+> `profiles_id_fkey` and creates `user_credentials`). Point `.env.local` at a dev/branch
+> database first, or confirm before running against the shared Supabase project. Existing users
+> have no password row yet, so they can't log in via the new flow until one is set.
+
+## Deploy
+
+Push to `main` touching `api-java/**` → `backend-ci.yml` tests, `backend-deploy.yml` builds the
+fat JAR, uploads to S3, and deploys to the EC2 box via SSM (swap JAR, restart, health-check,
+auto-rollback). See `deploy/aws/` for the on-box script, systemd unit, nginx config, and the
+one-time `provision-server.sh`. Required GitHub Secrets are listed in `backend-deploy.yml`.

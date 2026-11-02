@@ -1,0 +1,17 @@
+[Unit]
+Description=Chhaon backend (Spring Boot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+EnvironmentFile=/etc/chhaon/backend.env
+Environment=SPRING_PROFILES_ACTIVE=prod
+ExecStart=/usr/bin/java -XX:+UseContainerSupport -XX:MaxRAMPercentage=45 -jar /opt/chhaon/chhaon-backend.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
