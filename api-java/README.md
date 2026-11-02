@@ -33,6 +33,16 @@ active/critical flags. DB triggers still enforce caps + low-stock notifications 
 translated). TODO: storage photo upload/signed URLs + purge on delete; dose-event generation
 (with the scheduler port).
 
+Scheduler + dose events + check-ins (done): a Spring `@Scheduled` tick (default DISABLED via
+`chhaon.scheduler.enabled`, enabled at cutover) that reuses the Postgres `generate_dose_events`
+function and runs the guarded state machine — generate → send due (pending→sent) → expire unsent
+(pending→skipped) → mark missed (sent→missed) → daily check-ins (send + mark missed) — with
+`notify_circle` alerts. Every transition is a conditional UPDATE (claim). WhatsApp send is behind
+`WhatsAppSender` (dry-run until that port). Admin-only `POST /api/v1/admin/tick[?recipientId=]`
+triggers a (scoped) tick for ops/testing. Verified live against the Sydney DB. Not yet ported:
+escalation ladder, alert delivery to caregivers' WhatsApp, appointment reminders, love loop, slot
+grouping, and the inbound "Taken"/check-in reply transitions (come with the WhatsApp webhook port).
+
 Still to port from FastAPI (feature by feature):
 dose scheduler (`@Scheduled`), WhatsApp send + webhook, daily check-ins, reports + AI (anthropic-java),
 appointments, family invites, emergency links, plans/limits, notifications.
