@@ -114,9 +114,10 @@ public class SchedulerService {
         List<Object> p = new ArrayList<>();
         p.add(doseMissedMinutes);
         String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, r.language, " +
+                "r.call_name, " +
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
-                "m.id medicine_id " +
+                "m.id medicine_id, m.name medicine_name " +
                 "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
                 "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id " +
                 "where de.status = 'pending' and de.scheduled_at <= now() " +
@@ -134,8 +135,9 @@ public class SchedulerService {
                     "update dose_events set status='sent', sent_at=now() where id=? and status='pending'", doseId);
             if (claimed != 1) continue; // another tick took it
             try {
-                String msgId = wa.sendTemplate((String) row.get("whatsapp_phone"), "dose_reminder",
-                        (String) row.get("language"), row.get("medicine_id"));
+                String text = doseReminderText((String) row.get("language"),
+                        (String) row.get("call_name"), (String) row.get("medicine_name"));
+                String msgId = wa.send((String) row.get("whatsapp_phone"), text);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
                 sent++;
             } catch (Exception sendEx) {
@@ -195,7 +197,7 @@ public class SchedulerService {
 
     private int sendCheckins(UUID scope) {
         List<Object> p = new ArrayList<>();
-        String sql = "select r.id recipient_id, r.timezone, r.checkin_time, r.circle_id, r.whatsapp_phone, r.language " +
+        String sql = "select r.id recipient_id, r.timezone, r.checkin_time, r.circle_id, r.whatsapp_phone, r.language, r.call_name " +
                 "from care_recipients r " +
                 "where r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 "and r.is_self = false" + scopeClause(scope, p, "r");
@@ -220,7 +222,8 @@ public class SchedulerService {
                     recipientId, today);
             if (claimed != 1) continue;
             try {
-                wa.sendTemplate((String) row.get("whatsapp_phone"), "daily_checkin", (String) row.get("language"));
+                wa.send((String) row.get("whatsapp_phone"),
+                        checkinText((String) row.get("language"), (String) row.get("call_name")));
                 sent++;
             } catch (Exception sendEx) {
                 jdbc.update("update checkins set status='pending', sent_at=null where recipient_id=? and date=? and status='sent'",
@@ -260,6 +263,26 @@ public class SchedulerService {
                 "select gen_random_uuid(), m.user_id, ?, cast(? as jsonb), now() " +
                 "from care_circle_members m where m.circle_id = ?",
                 type, payloadJson, circleId);
+    }
+
+    /** Short, respectful bilingual reminder text (free-form; the self-hosted gateway allows it). */
+    private static String doseReminderText(String lang, String callName, String medName) {
+        String who = (callName == null || callName.isBlank()) ? "" : " " + callName.trim();
+        String med = (medName == null || medName.isBlank()) ? "" : " (" + medName.trim() + ")";
+        if ("hi".equals(lang)) {
+            return "Namaste" + who + " 🙏 Dawai ka samay ho gaya hai" + med +
+                    ". Lene ke baad '✅ Liya' bhej dijiye.";
+        }
+        return "Namaste" + who + " 🙏 It's time for your medicine" + med +
+                ". Reply '✅ Taken' once you've had it.";
+    }
+
+    private static String checkinText(String lang, String callName) {
+        String who = (callName == null || callName.isBlank()) ? "" : " " + callName.trim();
+        if ("hi".equals(lang)) {
+            return "Namaste" + who + " 🙏 Subh prabhat! Aap theek hain? '👍 Theek hoon' bhej dijiye.";
+        }
+        return "Good morning" + who + " 🙏 Are you doing okay today? Reply '👍 I'm okay'.";
     }
 
     private static String scopeClause(UUID scope, List<Object> params, String alias) {

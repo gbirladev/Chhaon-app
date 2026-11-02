@@ -1,0 +1,19 @@
+[Unit]
+Description=Chhaon WhatsApp gateway (WA-AKG / Baileys)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/whatsapp-gateway
+EnvironmentFile=/opt/whatsapp-gateway/.env
+Environment=NODE_ENV=production
+ExecStart=/opt/whatsapp-gateway/node_modules/.bin/tsx src/server/index.ts
+Restart=always
+RestartSec=5
+MemoryHigh=640M
+MemoryMax=900M
+
+[Install]
+WantedBy=multi-user.target
