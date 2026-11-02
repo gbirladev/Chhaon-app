@@ -17,7 +17,7 @@ exec 9>"$LOCK"
 flock -n 9 || { echo "DEPLOY FAILED: another deploy holds the lock"; exit 2; }
 
 echo "Downloading s3://$S3_BUCKET/$S3_JAR_KEY ..."
-aws s3 cp "s3://$S3_BUCKET/$S3_JAR_KEY" "$NEW"
+aws s3 cp "s3://$S3_BUCKET/$S3_JAR_KEY" "$NEW" --region "${AWS_REGION:-ap-southeast-2}"
 
 [ -f "$JAR" ] && cp -f "$JAR" "$PREV" || true
 mv -f "$NEW" "$JAR"
