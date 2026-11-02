@@ -1,68 +1,71 @@
 #!/usr/bin/env bash
 # CI-side: trigger a deploy on the EC2 box via AWS SSM Run Command.
-# Mirrors Smart Gurukul: write runtime secrets into /etc/chhaon/backend.env (key-by-key, never
-# wiping an unset one), then run the on-box pull/swap/restart/health/rollback script.
-#
-# Requires in the environment (from the workflow): AWS CLI configured, S3_BUCKET, S3_JAR_KEY,
-# EC2_INSTANCE_ID, and the runtime secret vars. Inert until those AWS resources exist.
+# Writes runtime secrets into /etc/chhaon/backend.env (key-by-key; a missing/empty secret
+# leaves the existing on-box value untouched), then runs the on-box pull/swap/restart/health/
+# rollback script. The whole remote script is base64-wrapped into a single SSM command token
+# (passing a multi-line script via the --parameters shorthand mangles newlines).
 set -euo pipefail
 
-: "${EC2_INSTANCE_ID:?}" "${S3_BUCKET:?}" "${S3_JAR_KEY:?}"
+: "${EC2_INSTANCE_ID:?}" "${S3_BUCKET:?}" "${S3_JAR_KEY:?}" "${AWS_REGION:=ap-southeast-2}"
 
-# Upload the current on-box script so the box always runs the latest version.
+# Upload the latest on-box deploy script so the box always runs the current version.
 aws s3 cp "deploy/aws/deploy-from-s3.sh" "s3://${S3_BUCKET}/deploy/deploy-from-s3.sh"
 
-# Managed runtime keys. A key is only rewritten when its value is non-empty, so a missing
-# secret leaves the existing on-box value untouched.
 MANAGED_KEYS=(
   SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME SPRING_DATASOURCE_PASSWORD
   APP_JWT_SECRET ANTHROPIC_API_KEY
   WHATSAPP_TOKEN WHATSAPP_PHONE_NUMBER_ID WHATSAPP_VERIFY_TOKEN WHATSAPP_APP_SECRET
 )
 
-# Build base64-wrapped KEY=VALUE pairs for safe transport through the SSM shell.
-ENV_B64_LINES=""
+# Build the remote script. Each managed secret is embedded as a base64 KEY=VALUE line so the
+# values never need shell-escaping; empty ones are skipped (keep existing on-box value).
+ENV_LINES=""
 for k in "${MANAGED_KEYS[@]}"; do
   v="${!k:-}"
   [ -z "$v" ] && continue
-  ENV_B64_LINES+="$(printf '%s=%s' "$k" "$v" | base64)\n"
+  ENV_LINES+="$(printf '%s=%s' "$k" "$v" | base64 | tr -d '\n')"$'\n'
 done
 
-read -r -d '' REMOTE <<REMOTE_SCRIPT || true
+REMOTE=$(cat <<EOF
+#!/bin/bash
 set -euo pipefail
-sudo install -d -m 750 /etc/chhaon /opt/chhaon
+install -d -m 750 /etc/chhaon /opt/chhaon
 ENV_FILE=/etc/chhaon/backend.env
-sudo touch "\$ENV_FILE"; sudo chmod 640 "\$ENV_FILE"
-printf '%b' "${ENV_B64_LINES}" | while IFS= read -r line; do
+touch "\$ENV_FILE"; chmod 640 "\$ENV_FILE"
+while IFS= read -r line; do
   [ -z "\$line" ] && continue
   decoded="\$(printf '%s' "\$line" | base64 --decode)"
   key="\${decoded%%=*}"
-  sudo sed -i "/^\${key}=/d" "\$ENV_FILE"
-  echo "\$decoded" | sudo tee -a "\$ENV_FILE" >/dev/null
-done
-# Install + run the latest deploy script.
-aws s3 cp "s3://${S3_BUCKET}/deploy/deploy-from-s3.sh" /opt/chhaon/deploy-from-s3.sh
-sudo install -m 750 /opt/chhaon/deploy-from-s3.sh /opt/chhaon/deploy-from-s3.sh
-sudo S3_BUCKET="${S3_BUCKET}" S3_JAR_KEY="${S3_JAR_KEY}" bash /opt/chhaon/deploy-from-s3.sh
-REMOTE_SCRIPT
+  sed -i "/^\${key}=/d" "\$ENV_FILE"
+  printf '%s\n' "\$decoded" >> "\$ENV_FILE"
+done <<'ENVB64'
+${ENV_LINES}ENVB64
+aws s3 cp "s3://${S3_BUCKET}/deploy/deploy-from-s3.sh" /opt/chhaon/deploy-from-s3.sh --region ${AWS_REGION}
+chmod 750 /opt/chhaon/deploy-from-s3.sh
+S3_BUCKET="${S3_BUCKET}" S3_JAR_KEY="${S3_JAR_KEY}" AWS_REGION="${AWS_REGION}" bash /opt/chhaon/deploy-from-s3.sh
+EOF
+)
 
+B64=$(printf '%s' "$REMOTE" | base64 | tr -d '\n')
 CMD_ID=$(aws ssm send-command \
   --instance-ids "${EC2_INSTANCE_ID}" \
   --document-name "AWS-RunShellScript" \
-  --comment "Chhaon backend deploy ${GITHUB_SHA:-manual}" \
-  --parameters "commands=[$(printf '%s' "$REMOTE" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')]" \
+  --comment "Chhaon deploy ${GITHUB_SHA:-manual}" \
+  --timeout-seconds 600 \
+  --parameters commands="[\"echo ${B64} | base64 --decode | bash\"]" \
   --query "Command.CommandId" --output text)
 
 echo "SSM command: $CMD_ID"
-# Poll for completion.
 for _ in $(seq 1 60); do
   STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" \
             --instance-id "${EC2_INSTANCE_ID}" --query "Status" --output text 2>/dev/null || echo "Pending")
   echo "status: $STATUS"
   case "$STATUS" in
-    Success) exit 0 ;;
-    Failed|Cancelled|TimedOut) aws ssm get-command-invocation --command-id "$CMD_ID" \
-        --instance-id "${EC2_INSTANCE_ID}" --query "StandardErrorContent" --output text; exit 1 ;;
+    Success) aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${EC2_INSTANCE_ID}" \
+               --query "StandardOutputContent" --output text | tail -5; exit 0 ;;
+    Failed|Cancelled|TimedOut)
+      aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${EC2_INSTANCE_ID}" \
+        --query "StandardErrorContent" --output text; exit 1 ;;
   esac
   sleep 5
 done
