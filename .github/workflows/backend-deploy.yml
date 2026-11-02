@@ -68,6 +68,9 @@ jobs:
           WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
           WHATSAPP_VERIFY_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN }}
           WHATSAPP_APP_SECRET: ${{ secrets.WHATSAPP_APP_SECRET }}
+          WHATSAPP_GATEWAY_URL: ${{ secrets.WHATSAPP_GATEWAY_URL }}
+          WHATSAPP_GATEWAY_TOKEN: ${{ secrets.WHATSAPP_GATEWAY_TOKEN }}
+          WHATSAPP_SENDER_SESSION_NAME: ${{ secrets.WHATSAPP_SENDER_SESSION_NAME }}
         run: bash deploy/aws/send-ssm-deploy.sh
 
       - name: Smoke test (public health)
