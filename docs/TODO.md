@@ -11,6 +11,13 @@
 - [ ] **Real SMS provider for phone OTP** (Twilio / MessageBird). Local dev uses a test number (`+91 99999 99999`, code `123456`).
 - [ ] **Production hosting:** Supabase project in a Mumbai region, a Python host for `api/` (preferably India), static host for `web/`.
 - [x] Privacy policy + terms pages, consent, export, delete (step 11). **Still needed:** lawyer review of `web/src/content/legal.ts` (placeholders in [brackets]), Hindi review, grievance officer details.
+- [x] **Email login sends a code, not a link (fixed 2026-11-03).** Supabase's Magic Link and Confirm signup templates were still the stock "click this link" ones on the live project, even though the local `supabase/config.toml` + `supabase/templates/otp.html` already send `{{ .Token }}`. Fixed by hand in the dashboard (Authentication > Email Templates) to match `otp.html`. Reminder: never run `supabase config push` to do this (local config carries test login codes).
+- [x] **Custom SMTP configured 2026-11-03:** Gmail (`chhaon.app.mail@gmail.com`) via an App Password, `smtp.gmail.com:587`, set in Supabase Dashboard > Authentication > Settings > SMTP Settings. Fine for the pilot (~500 emails/day cap); move to a dedicated provider (SES, Brevo, Resend) if volume grows past that.
+
+## Open question: Supabase DB moved from Mumbai to Sydney (found 2026-11-03)
+`api-java/deploy/aws/INFRA.md` says the Supabase DB was moved to **Sydney (ap-southeast-2)** on 2026-11-02 to co-locate with the new AWS backend (the free-plan AWS account is region-locked to Sydney). This was done as part of the Java backend / AWS migration, without a corresponding decision recorded here. It contradicts every other doc (`CLAUDE.md`, this file, `docs/deploy.md`), which still say Mumbai, and `CLAUDE.md` ties the Mumbai choice specifically to **health data and the DPDP Act 2023** ("prefer servers in India"), not just latency.
+- [ ] **Decide deliberately:** is hosting Indian residents' health data in Australia acceptable for the pilot, or does the DB need to move back to Mumbai? Not yet decided; flagged, not acted on.
+- [ ] Once decided, update `CLAUDE.md`, `docs/deploy.md` and this file to match reality (they currently all say Mumbai).
 
 ## Parked decisions
 - [ ] Caregiver alert channel beyond the in-app bell (missed dose / no check-in): WhatsApp message to the caregiver, web push, or email.
