@@ -423,7 +423,10 @@ sending the consent request, appointment reminders, escalation (Safety net), lov
 - [ ] Tell the pilot families that reminders were paused since 2 Nov 21:00 IST, if real families are using it.
 - [ ] Build the Today warning ("reminders are delayed, please remind {Papa} yourself") and the scheduler heartbeat (already listed above) so this can never be silent again.
 - **Plan for Option B (nothing below deploys until approved; Java work goes on a branch, never straight to main, because a push to `api-java/**` deploys to production):**
-  0. [ ] Web, today: the red "Reminders are delayed" card on Today (a dose long past its time and still `pending`), so families are never falsely reassured during the gap.
+  0. [x] DONE 2026-11-04 (committed locally, not pushed): the red "Reminders are delayed" card on Today (a dose of a parent who has agreed, still `pending` more than 20 minutes after its time; English and Hindi; 12 browser checks).
+         **Its limit:** it only helps while today's doses exist. If the scheduler is down at the start of a day, no doses are created, so Today just says "No doses are scheduled today" and the card cannot appear.
+         The real fix is a **scheduler heartbeat**: each tick records `last_tick_at` in a small table readable by signed-in users, and the app shows the same card when it is older than about 15 minutes while reminders are expected.
+         [ ] Build the heartbeat after the reply pipeline (a new migration, one line in the Java tick, the web check).
   1. [ ] Test foundation for Java (there are NO tests today): tests run against a real Postgres built from `supabase/migrations` (the SQL functions are the logic), in CI and locally; Maven runs through Docker (no JDK on the Mac).
          First, tests that pin down what the 6-step tick does today.
   2. [ ] The reply pipeline (the blocker): a signed webhook endpoint for the gateway (`message.received`, `message.status`; HMAC `X-Webhook-Signature`), idempotent, understanding free-text replies in English and Hindi (no buttons exist):

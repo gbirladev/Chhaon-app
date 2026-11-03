@@ -884,6 +884,9 @@ function AlertsSheet({ initial, onClose, onDone }: { initial: string; onClose: (
   );
 }
 
+/** How long a due reminder may wait before the family is told that reminders are delayed. */
+const DELAYED_AFTER_MS = 20 * 60_000;
+
 function Today({ go, language, setLanguage, recipient, recipients, notifications, medicineNames, medicines, onNotificationsSeen, onDeleteNotification, onSelectParent }: { go: (screen: Screen) => void; language: Language; setLanguage: (language: Language) => void; recipient: Recipient | null; recipients: Recipient[]; notifications: AppNotification[]; medicineNames: Record<string, string>; medicines: Medicine[]; onNotificationsSeen: (ids: string[]) => void; onDeleteNotification: (id: string) => void; onSelectParent: (id: string) => void }) {
   const t = useTranslations();
   const header = parentGreeting(recipient, language, t);
@@ -892,7 +895,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   const [sheetOpen, setSheetOpen] = useState(false);
   const [parentsOpen, setParentsOpen] = useState(false);
   // The loaded data is tagged with the parent it belongs to, so after switching parent the old one's doses are never shown.
-  const [loaded, setLoaded] = useState<{ id: string; doses: TodayDose[]; checkin: TodayCheckin } | null>(null);
+  const [loaded, setLoaded] = useState<{ id: string; doses: TodayDose[]; checkin: TodayCheckin; at: number } | null>(null);
   const [errorFor, setErrorFor] = useState<string | null>(null);
   const mine = loaded && loaded.id === recipient?.id ? loaded : null;
   const doses = mine ? mine.doses : null;
@@ -910,7 +913,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     const load = async () => {
       try {
         const [d, c] = await Promise.all([loadTodayDoses(recipient), loadCheckin(recipient)]);
-        if (!cancelled) { setLoaded({ id: recipient.id, doses: d, checkin: c }); setErrorFor(null); }
+        if (!cancelled) { setLoaded({ id: recipient.id, doses: d, checkin: c, at: Date.now() }); setErrorFor(null); }
       } catch {
         if (!cancelled) setErrorFor(recipient.id);
       }
@@ -939,6 +942,11 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   // A paused medicine's doses that were already created are not shown as coming up (the scheduler removes them).
   const visibleDoses = (doses ?? []).filter((d) => d.active || d.status !== "pending");
   const missed = visibleDoses.filter((d) => d.status === "missed");
+  // A working reminder system sends a due reminder within minutes. A dose that is still "pending" long after its time means reminders are NOT being sent
+  // (the scheduler is down): say so, instead of showing it as "next" and letting the family believe the parent was reminded.
+  const stuck = !mine || !consented || recipient?.is_self ? [] : visibleDoses.filter((d) => d.status === "pending" && mine.at - new Date(d.scheduledAt).getTime() > DELAYED_AFTER_MS);
+  const stuckNames = [...new Set(stuck.map((d) => d.name))];
+  const stuckShown = stuckNames.slice(0, 5).join(", ") + (stuckNames.length > 5 ? ` +${stuckNames.length - 5}` : "");
   const lastMissed = missed[missed.length - 1];
 
   const checkinCard = () => {
@@ -999,6 +1007,13 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
       <TrialBanner go={go} />
       {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
+      {stuck.length > 0 && (
+        <section className="alert-card" role="alert">
+          <div className="alert-icon">!</div>
+          <div><strong>{t("today.delayedTitle")}</strong><p>{t("today.delayedBody", { call, names: stuckShown })}</p></div>
+          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
+        </section>
+      )}
       <InstallBanner />
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}

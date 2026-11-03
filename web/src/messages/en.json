@@ -237,6 +237,8 @@
     "pauseMedicinesTitle": "Some reminders are paused",
     "pauseMedicinesBody": "{call} will NOT get reminders for: {names}. These are above the number of medicines your family's plan covers. Nothing was deleted: upgrading brings them back.",
     "pauseButton": "See Plans",
+    "delayedTitle": "Reminders are delayed",
+    "delayedBody": "{call} has not been sent a reminder for: {names}. Chhaon is not sending messages right now, so please remind {call} yourself.",
     "pauseItemParents": "{count, plural, one {# parent} other {# parents}}",
     "pauseItemMedicines": "{count, plural, one {# medicine} other {# medicines}}",
     "and": "and",
