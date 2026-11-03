@@ -275,10 +275,10 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
 The live site (`chhaon.site/app`) calls `https://api.chhaon.site` for five things. That address is now the **Java backend** on the AWS box
 (54.79.216.98), which does not have them: they lived only in the Python API on Render, which is no longer used. The Java backend has only auth,
 recipients, medicines and `admin/tick`; the web app itself reads the database through Supabase directly.
-- [ ] **Emergency card public page is broken (checked in a browser 2026-11-03 with a made-up link):** `chhaon.site/app/#/e/<token>` shows "Could not
+- [x] **Emergency card public page was broken (checked in a browser 2026-11-03 with a made-up link); fixed and live:** `chhaon.site/app/#/e/<token>` shows "Could not
       load. Please check your internet and try again." for every link, because `GET /public/emergency/<token>` is not served. This is what a stranger
       opens in a crisis, so fix it first.
-      **FIXED IN CODE 2026-11-03, NOT LIVE YET:** see "Done 2026-11-03" below (it needs migration 0038 on the Sydney database and a web deploy).
+      **FIXED AND LIVE 2026-11-03** (migration 0038 + web deploy; real link verified): see "Done 2026-11-03" below.
 - [ ] **Asking a parent for consent** (`POST /recipients/{id}/consent-request`) and **WhatsApp alerts opt-in** (`POST /alerts/whatsapp/request`) are not
       served, so new families probably cannot start reminders from the app. Not tested with a live login.
 - [ ] **`GET /features` is refused**, so the Safety net and Love messages screens stay hidden in production whatever the settings are.
@@ -313,7 +313,7 @@ recipients, medicines and `admin/tick`; the web app itself reads the database th
       phones (the top-bar links are hidden on screens narrower than 960 px), plus the footer link.
 
 ## Done 2026-11-03 (in the code, committed): emergency card from the database, pilot plan setup, doctors page
-**None of this is live until the two migrations are applied to the Sydney database AND the web is deployed (push to `main`).**
+**LIVE since 2026-11-03:** migrations 0038 and 0039 were applied to the Sydney database by the owner, the web was deployed, and the emergency card was opened with a real link in a private window and shows the information.
 - **Emergency card without the old API.** `supabase/migrations/20261103000038_public_emergency_card.sql` adds `public_emergency_card(p_token)`: the same minimal
   card the Python route returned (first name, age, blood group, conditions, allergies, active medicines with times, up to 4 contacts, first doctor), `null`
   for unknown, revoked, deleted or malformed links, hidden characters cleaned, every view counted, callable by anon, the table itself still closed to anon.
@@ -352,3 +352,14 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
 - [ ] **Instead, if wanted:** (a) a plain link on the appointments screen that opens a Google Maps or Practo search for the specialty in the parent's city (no ranking,
       no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
+
+## Permissions on the Sydney database differ from the migrations (found 2026-11-03)
+Testing the live card function through the public API showed that an anonymous visitor could run `record_emergency_view` (HTTP 204), although migration 0022 revokes it
+from everyone but the server. On the local database (built from the migrations) it is refused. Tables are fine (an anonymous visitor sees no rows of the links table)
+and the new helper is refused, so this looks like GRANT / REVOKE statements lost when the database was copied to Sydney.
+- [ ] **Run on the Sydney database:** `revoke execute on function public.record_emergency_view(uuid) from public, anon, authenticated; grant execute on function public.record_emergency_view(uuid) to service_role;`
+- [ ] **List what an anonymous visitor can run** (read-only) and compare: on a correct database exactly `has_control_chars`, `public_emergency_card`, `storage_recipient_id`, `text_array_ok`:
+      `select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prokind = 'f' and p.prorettype <> 'trigger'::regtype and has_function_privilege('anon', p.oid, 'execute') order by 1;`
+      If more appear, generate a repair script from the correct local permissions, compare, then apply (do not hand-edit one by one).
+- [ ] Tell whoever copied the database to leave the permissions in (for example `pg_dump` without `--no-acl`), and check the same for `authenticated` on service-only functions.
+
