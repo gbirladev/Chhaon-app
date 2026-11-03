@@ -33,9 +33,21 @@
   .benefits { list-style: none; padding: 0; display: grid; gap: 14px; }
   .benefits li { margin: 0; }
   .benefits strong { display: block; }
+  /* The benefits are the point of the page: tinted panel, accent border, ticks. */
+  .highlight { border: 2px solid var(--teal); background: linear-gradient(180deg, #eaf7f2 0%, #ffffff 55%); box-shadow: 0 10px 30px rgba(36, 124, 114, .12); }
+  .highlight .kicker { margin: 0 0 4px; color: var(--teal); font-size: .8rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .highlight h2 { font-size: clamp(1.35rem, 3.6vw, 1.7rem); line-height: 1.25; margin-bottom: 4px; }
+  .highlight .sub-h { color: var(--teal-dark); }
+  .highlight .benefits li { position: relative; padding-left: 36px; }
+  .highlight .benefits li::before { content: "\2713"; position: absolute; left: 0; top: 2px; width: 24px; height: 24px; border-radius: 50%; background: var(--teal); color: #fff; font-weight: 800; font-size: .85rem; display: grid; place-items: center; }
+  .highlight .benefits strong { color: var(--ink); font-size: 1.03rem; }
+  .benefit-cols { display: grid; gap: 4px 36px; }
+  .benefit-cols .sub-h { margin-top: 12px; }
+  @media (min-width: 760px) { .benefit-cols { grid-template-columns: 1fr 1fr; } main { max-width: 900px; } }
   .plain { padding-left: 20px; }
   .plain li { margin-bottom: 8px; }
   .sub-h { margin: 22px 0 8px; font-size: 1.05rem; }
+  .sub-h.first { margin-top: 12px; }
   html { scroll-behavior: smooth; }
   section[id] { scroll-margin-top: 12px; }
 
@@ -120,26 +132,47 @@
 
   <nav class="jump" aria-label="On this page"><a href="#helps">How it helps</a><a href="#patient">What your patient gets</a><a href="#see">What you will see</a><a href="#faq">Questions</a><a href="#cards">QR cards</a></nav>
 
+
+
+  <section id="helps" class="highlight">
+    <p class="kicker">What you get</p>
+    <h2>How Chhaon helps you and your patients</h2>
+    <div class="benefit-cols">
+      <div>
+    <h3 class="sub-h first">For your patient's care</h3>
+    <ul class="benefits">
+      <li><strong>See what happened between visits.</strong> At the next visit you get one page: the medicines you prescribed and how many doses the patient confirmed in the last 30 days, medicine by medicine. You can see which medicine is being missed, not just that something is.</li>
+      <li><strong>Patients who follow the prescription.</strong> A short WhatsApp message at each dose time with a ✅ Taken button, in Hindi or English. No app and no account: it works on any phone with WhatsApp.</li>
+      <li><strong>A family that knows the plan.</strong> A son or daughter in another city sees what you prescribed and is told when a dose gets no reply, so the plan does not depend on one phone call.</li>
+      <li><strong>A clear record in an emergency.</strong> The family keeps an emergency card with the medicines, allergies, conditions, blood group and contacts, and can share it with one link. Anyone treating your patient reads the same list you prescribed.</li>
+      <li><strong>Prescriptions and reports in one place.</strong> The family keeps them as photos or PDFs, so your patient arrives with the paperwork instead of a memory of it.</li>
+    </ul>
+      </div>
+      <div>
+    <h3 class="sub-h">For your practice</h3>
+    <ul class="benefits">
+      <li><strong>A better consultation.</strong> The family arrives with the medicine list and the last 30 days, instead of "I think he took them". Less of the visit goes on finding out what happened.</li>
+      <li><strong>Continuity.</strong> The next visit starts from what you prescribed and what was actually taken.</li>
+      <li><strong>Patients are reminded of your appointments.</strong> If the family adds the visit, the patient is reminded the evening before and the morning of it.</li>
+      <li><strong>Nothing to set up and nothing to pay.</strong> No login, no app, no integration, no data sent to you. At the visit, just ask: <em>"Do you have the Chhaon summary?"</em> (In the app: Family, then Share with doctor.)</li>
+      <li><strong>A say in what we build.</strong> We are new and building with doctors. Tell us what would make Chhaon more useful for your clinic and we read every message.</li>
+    </ul>
+      </div>
+    </div>
+    <p class="hint">These benefits come from the product itself. Chhaon does not offer doctors anything for recommending it, because the only good reason to mention it is that it helps your patient.</p>
+  </section>
+
   <section class="glance" aria-labelledby="glance-h">
     <h2 id="glance-h">At a glance</h2>
     <dl>
-      <div><dt>Cost</dt><dd>Free for doctors. Families are not charged at the moment; if that ever changes, they will see the price before they pay.</dd></div>
+      <div><dt>Cost</dt><dd>Free for doctors. Chhaon is in its pilot and families are not charged. If that ever changes, they will see the price before they pay.</dd></div>
+      <div><dt>Pilot limits</dt><dd>For now a family can add up to 4 parents, 10 people in the family group, 20 medicines for each parent and 100 reports for each parent. These details may change after the pilot.</dd></div>
       <div><dt>Patient needs</dt><dd>Only WhatsApp. No app, no account, nothing to install.</dd></div>
       <div><dt>Languages</dt><dd>English and Hindi.</dd></div>
       <div><dt>Family side</dt><dd>A web app on any phone or computer, at chhaon.site/app. It can be added to the phone's home screen.</dd></div>
       <div><dt>Consent</dt><dd>The patient is asked on WhatsApp before anything is sent, and can stop at any time by replying STOP.</dd></div>
       <div><dt>Status</dt><dd>New. We are starting with a small number of families and clinics, and we read every message you send us.</dd></div>
     </dl>
-  </section>
-
-  <section id="helps">
-    <h2>How it helps you</h2>
-    <ul class="benefits">
-      <li><strong>See what happened between visits.</strong> At the next visit you get one page: the medicines you prescribed and how many doses the patient confirmed in the last 30 days, medicine by medicine. You can see which medicine is being missed, not just that something is.</li>
-      <li><strong>Patients who follow the prescription.</strong> A short WhatsApp message at each dose time with a ✅ Taken button, in Hindi or English. No app and no account: it works on any phone with WhatsApp.</li>
-      <li><strong>A family that knows the plan.</strong> A son or daughter in another city sees what you prescribed and is told when a dose gets no reply.</li>
-      <li><strong>Nothing extra for you.</strong> No login, no app, no data sent to you. The family shows or sends the summary only when they choose. At the visit, just ask: <em>"Do you have the Chhaon summary?"</em> (In the app: Family, then Share with doctor.)</li>
-    </ul>
   </section>
 
   <section id="patient" aria-labelledby="patient-h">
@@ -249,7 +282,8 @@
     </details>
     <details>
       <summary>What does it cost?</summary>
-      <p>It is free for doctors. Families are not charged at the moment. If that ever changes, they will see the price before they pay.</p>
+      <p>It is free for doctors. Chhaon is in its pilot and families are not charged. If that ever changes, they will see the price before they pay.</p>
+      <p>Pilot version: for now a family can add up to 4 parents, 10 people in the family group, 20 medicines for each parent and 100 reports for each parent. These details may change after the pilot.</p>
     </details>
     <details>
       <summary>Will you contact my patients or promote my clinic?</summary>

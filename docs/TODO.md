@@ -278,6 +278,7 @@ recipients, medicines and `admin/tick`; the web app itself reads the database th
 - [ ] **Emergency card public page is broken (checked in a browser 2026-11-03 with a made-up link):** `chhaon.site/app/#/e/<token>` shows "Could not
       load. Please check your internet and try again." for every link, because `GET /public/emergency/<token>` is not served. This is what a stranger
       opens in a crisis, so fix it first.
+      **FIXED IN CODE 2026-11-03, NOT LIVE YET:** see "Done 2026-11-03" below (it needs migration 0038 on the Sydney database and a web deploy).
 - [ ] **Asking a parent for consent** (`POST /recipients/{id}/consent-request`) and **WhatsApp alerts opt-in** (`POST /alerts/whatsapp/request`) are not
       served, so new families probably cannot start reminders from the app. Not tested with a live login.
 - [ ] **`GET /features` is refused**, so the Safety net and Love messages screens stay hidden in production whatever the settings are.
@@ -299,7 +300,7 @@ recipients, medicines and `admin/tick`; the web app itself reads the database th
   only for admin logins, nothing to change.
 
 ## Before the first 10 doctors get QR cards (listed 2026-11-03)
-- [ ] **Free plan limits:** after the 30-day trial, Free allows only 2 medicines per parent and no family invites, so a doctor's patient on 5 medicines would
+- [x] **Free plan limits (solved by migration 0039 once it is applied: everyone is on Family):** after the 30-day trial, Free allows only 2 medicines per parent and no family invites, so a doctor's patient on 5 medicines would
       have most reminders paused. Raise the Free limits or put pilot families on a bigger plan (`docs/plans.md`, "Change a limit").
 - [ ] **Supabase Auth Site URL and redirect URL** should be `https://chhaon.site/app` (dashboard setting), or login and sign-up confirmation land on the
       marketing page.
@@ -310,3 +311,39 @@ recipients, medicines and `admin/tick`; the web app itself reads the database th
 - [ ] **Native Hindi read** of the doctors-page script and the `doctorSummary` texts.
 - [x] **Home page links to the doctors page** (2026-11-03): "For doctors" in the top bar on desktop, and a line under the main buttons that also shows on
       phones (the top-bar links are hidden on screens narrower than 960 px), plus the footer link.
+
+## Done 2026-11-03 (in the code, committed): emergency card from the database, pilot plan setup, doctors page
+**None of this is live until the two migrations are applied to the Sydney database AND the web is deployed (push to `main`).**
+- **Emergency card without the old API.** `supabase/migrations/20261103000038_public_emergency_card.sql` adds `public_emergency_card(p_token)`: the same minimal
+  card the Python route returned (first name, age, blood group, conditions, allergies, active medicines with times, up to 4 contacts, first doctor), `null`
+  for unknown, revoked, deleted or malformed links, hidden characters cleaned, every view counted, callable by anon, the table itself still closed to anon.
+  The public page (`web/src/lib/emergencyPublic.ts`) now calls it with a plain request (no Supabase library, no login session). Checked: identical output to the
+  Python route for all 19 local parents (including the fuzz-test records); 40 database tests (`supabase/tests/public_emergency_card.test.sql`); 20 browser checks
+  with the old API blocked (real card, capitals, unknown / malformed / revoked links, 429, 500, offline, Hindi, only the small page code loads).
+  - [ ] Not replaced: the Python route's per-IP rate limit (30 a minute). A 256-bit token cannot be guessed; if guessing traffic ever shows up, limit at the edge.
+  - [ ] When the Java backend takes over the other four routes, it can expose this function too; nothing breaks if it does.
+- **Pilot plan setup.** `supabase/migrations/20261103000039_everyone_on_family.sql`: new accounts start on Family, existing Free and Plus accounts move to Family,
+  **admin accounts are always Ultra** (data move plus a trigger, `profiles_set_admin_ultra`). Family = 4 parents, 10 people in a family, 20 medicines per parent,
+  100 reports per parent. The Plans screen (Family tab, "Your plan") shows only the account's own plan and a "Pilot version" note whose numbers are read from the
+  `plans` table; `VITE_PLANS_ENABLED=true` brings the full view back. Details and how to go back: `docs/plans.md`, "Plans off". Tests: `plans_default_family`
+  (17), and `plans` / `documents_limits` now set their Free accounts explicitly. All 17 database test files pass (368 checks).
+  - [ ] Hindi wording of the pilot note and the "Your plan" link needs a native read.
+  - [ ] The doctors page repeats the pilot limits as plain text: change it if the Family limits change.
+- **Doctors page:** the benefits are now the first thing on the page, highlighted, in two columns (for the patient's care, for the practice); the page says plainly that
+  nothing is offered to doctors for recommending Chhaon (Regulation 6.4.1). Pilot limits stated under "At a glance" and in the cost answer.
+- [ ] **To make it live (needs your database and GitHub access):**
+  1. In the Sydney Supabase project, check which migrations are applied (`select version from supabase_migrations.schema_migrations order by version desc limit 5;`).
+     If 0030 to 0037 are NOT applied yet, do not `db push` blindly (it would apply them all): paste `20261103000038_public_emergency_card.sql` and then
+     `20261103000039_everyone_on_family.sql` into the SQL editor, one after the other (both only need tables from migrations 0027 and older).
+  2. Push to `main` so GitHub Actions deploys the web (it only runs when `web/` changes).
+  3. Open `https://chhaon.site/app/#/e/<a real link>`: it should show the card. Then Family > Your plan.
+  4. Optionally set the GitHub repository variable `VITE_PLANS_ENABLED` (leave unset or `false` for the pilot).
+
+
+## Decided NOT to build: "nearest / top recommended doctors" (2026-11-03)
+Reasons: (1) it contradicts the promise on the doctors page ("we do not ... promote clinics") and would give a doctor who recommends Chhaon something in return
+(Regulation 6.4.1 of the Medical Council ethics code; paid rankings are also restricted); (2) rankings invite pressure and need an objective, defensible method
+(reviews, moderation, upkeep); (3) a wrong or outdated recommendation becomes Chhaon's liability; (4) Google Maps and Practo already do this better and free.
+- [ ] **Instead, if wanted:** (a) a plain link on the appointments screen that opens a Google Maps or Practo search for the specialty in the parent's city (no ranking,
+      no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
+- [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
