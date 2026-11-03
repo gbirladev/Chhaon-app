@@ -2,6 +2,7 @@ package org.smartgurukul.chhaon.scheduler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -148,7 +149,7 @@ public class SchedulerService {
                     "update dose_events set status='sent', sent_at=now() where id=? and status='pending'", doseId);
             if (claimed != 1) continue; // another tick took it
             try {
-                String text = doseReminderText((String) row.get("language"),
+                String text = MessageTexts.doseReminder((String) row.get("language"),
                         (String) row.get("call_name"), (String) row.get("medicine_name"));
                 String msgId = wa.send((String) row.get("whatsapp_phone"), text);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
@@ -236,7 +237,7 @@ public class SchedulerService {
             if (claimed != 1) continue;
             try {
                 String msgId = wa.send((String) row.get("whatsapp_phone"),
-                        checkinText((String) row.get("language"), (String) row.get("call_name")));
+                        MessageTexts.checkin((String) row.get("language"), (String) row.get("call_name")));
                 rememberCheckinMessageId(recipientId, today, msgId);
                 sent++;
             } catch (Exception sendEx) {
@@ -291,26 +292,6 @@ public class SchedulerService {
                 "select gen_random_uuid(), m.user_id, ?, cast(? as jsonb), now() " +
                 "from care_circle_members m where m.circle_id = ?",
                 type, payloadJson, circleId);
-    }
-
-    /** Short, respectful bilingual reminder text (free-form; the self-hosted gateway allows it). */
-    private static String doseReminderText(String lang, String callName, String medName) {
-        String who = (callName == null || callName.isBlank()) ? "" : " " + callName.trim();
-        String med = (medName == null || medName.isBlank()) ? "" : " (" + medName.trim() + ")";
-        if ("hi".equals(lang)) {
-            return "Namaste" + who + " 🙏 Dawai ka samay ho gaya hai" + med +
-                    ". Lene ke baad '✅ Liya' bhej dijiye.";
-        }
-        return "Namaste" + who + " 🙏 It's time for your medicine" + med +
-                ". Reply '✅ Taken' once you've had it.";
-    }
-
-    private static String checkinText(String lang, String callName) {
-        String who = (callName == null || callName.isBlank()) ? "" : " " + callName.trim();
-        if ("hi".equals(lang)) {
-            return "Namaste" + who + " 🙏 Subh prabhat! Aap theek hain? '👍 Theek hoon' bhej dijiye.";
-        }
-        return "Good morning" + who + " 🙏 Are you doing okay today? Reply '👍 I'm okay'.";
     }
 
     private static String scopeClause(UUID scope, List<Object> params, String alias) {

@@ -42,6 +42,12 @@ public final class ReplyTexts {
                 : "Welcome back 🙏 Reminders have started again.";
     }
 
+    public static String alertsOn(String lang) {
+        return hi(lang)
+                ? "धन्यवाद 🙏 छाँव अलर्ट चालू हो गए हैं। जब किसी बात पर आपका ध्यान चाहिए होगा, हम यहाँ संदेश भेजेंगे। बंद करने के लिए कभी भी STOP लिखें।"
+                : "Thank you 🙏 Chhaon alerts are on. We will message you here when something needs your attention. Reply STOP any time to turn them off.";
+    }
+
     public static String alertsOff(String lang) {
         return hi(lang)
                 ? "ठीक है, छाँव अलर्ट बंद हैं। आप इन्हें ऐप में दोबारा चालू कर सकते हैं।"
