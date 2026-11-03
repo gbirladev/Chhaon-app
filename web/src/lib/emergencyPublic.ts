@@ -14,14 +14,27 @@ export type PublicCard = {
 
 export type CardResult = { kind: "ok"; card: PublicCard } | { kind: "off" } | { kind: "busy" } | { kind: "error" };
 
-/** Never throws. "off" covers unknown, revoked and malformed links alike (the server does not say which). */
+/**
+ * Never throws. "off" covers unknown, revoked, deleted and malformed links alike (the database does not say which).
+ *
+ * The card is read straight from the database through one function (`public_emergency_card`, migration 0038), called
+ * with the public anon key. A plain request, not the Supabase library: this page must stay tiny for slow phones and
+ * must never start a login session.
+ */
 export async function fetchPublicCard(token: string, signal?: AbortSignal): Promise<CardResult> {
   try {
-    const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/public/emergency/${encodeURIComponent(token)}`, { signal, cache: "no-store", referrerPolicy: "no-referrer" });
-    if (response.status === 404) return { kind: "off" };
+    const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY);
+    const headers: Record<string, string> = { apikey: key, "Content-Type": "application/json" };
+    if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;  // the older anon key is a JWT; newer publishable keys are sent as apikey only
+    const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_SUPABASE_URL)}/rest/v1/rpc/public_emergency_card`, {
+      method: "POST", signal, cache: "no-store", referrerPolicy: "no-referrer", headers, body: JSON.stringify({ p_token: token }),
+    });
     if (response.status === 429) return { kind: "busy" };
     if (!response.ok) return { kind: "error" };
-    return { kind: "ok", card: (await response.json()) as PublicCard };
+    const data: unknown = await response.json();
+    if (data === null) return { kind: "off" };
+    if (typeof data !== "object" || Array.isArray(data)) return { kind: "error" };
+    return { kind: "ok", card: data as PublicCard };
   } catch {
     return { kind: "error" };
   }
