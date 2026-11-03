@@ -361,9 +361,15 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
 - [x] **Repaired and verified 2026-11-03:** `supabase/maintenance/restore_function_permissions.sql` (generated from the correct local permissions; tested on a deliberately opened
       local copy: 0 differences, safe to run twice). After running it on Sydney the totals were exactly the expected `4 | 40 | 51 | 51` (anonymous | signed-in | server | all), and from
       outside the six server-only functions answer "permission denied" while `public_emergency_card` still answers visitors.
-- [ ] **Check the TABLE permissions the same way:** run `supabase/maintenance/table_permissions_check.sql` on the Sydney database and compare with the 26 expected lines in that file. Row
-      security (RLS) held in the tests (an anonymous visitor sees no rows of the links table), but column-level rules such as which columns a signed-in user may write on `appointments`,
-      `notifications`, `reports` and `care_circle_members` may be lost too.
+- [x] **Table permissions checked 2026-11-03: ALSO lost.** Every table on Sydney had full permissions for anonymous and signed-in users (the migrations restrict writes on several: `emergency_links`,
+      `care_circle_members`, `notifications`, `appointments`, `reports`); only row security (RLS) was protecting them. Two tables that are not in the migrations, `user_credentials` (Java login,
+      empty at the time) and `flyway_schema_history` (2 rows), had row security OFF and were readable and writable by an anonymous visitor (count-only requests confirmed it; no rows were read).
+- [ ] **Lock the two Java-backend tables now** (the Java service connects as `postgres`, per `api-java/README.md`, so it is not affected; confirm with its owner):
+      `revoke all on table public.user_credentials from public, anon, authenticated; alter table public.user_credentials enable row level security; revoke all on table public.flyway_schema_history from public, anon, authenticated; alter table public.flyway_schema_history enable row level security;`
+      Check from outside: a count-only request to `/rest/v1/user_credentials` with the public key must now be refused, not `200`.
+- [ ] **Restore the table permissions:** run `supabase/maintenance/restore_table_permissions.sql` on Sydney (generated from the correct local permissions; tested on a deliberately opened local copy: 0 missing,
+      0 extra, identical 26-line fingerprint, safe to run twice), then run `supabase/maintenance/table_permissions_check.sql` and compare with its 26 expected lines (the two Java tables should show `0 | 0 | 0 | f | t`).
+- [ ] **Optional hardening, test locally first:** the anonymous role has no need for any table in this app (the public card is a function). Revoking all table permissions from `anon` would be a second lock.
 - [ ] **Tell whoever copied the database** to keep the permissions next time (for example `pg_dump` without `--no-acl`), and to run the two maintenance files after any future copy.
 - [ ] **New functions:** Supabase gives every new function to anonymous, signed-in and server roles by default; a migration that adds a server-only function must revoke it, and
       `restore_function_permissions.sql` must be regenerated to include it.
