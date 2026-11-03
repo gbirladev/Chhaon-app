@@ -398,3 +398,27 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
   ask for the location itself, so Chhaon never collects it. If ever added: only on a button tap, once, never stored, privacy text updated (DPDP), and `Permissions-Policy: geolocation=(self)`
   (today the header says `geolocation=()` in `web/vite.config.ts` and `docs/deploy.md`; GitHub Pages cannot set headers).
 - **Dark / light mode:** an agent was launched on 2026-11-03 in its own git worktree; review its branch and merge when it reports.
+
+## URGENT: reminders stopped after the move to AWS (found 2026-11-03)
+**Evidence (Sydney database, read-only query):** the last reminder ever sent was 2026-11-02 15:30 UTC (21:00 India time); 13 doses since then are still `pending` long after their time; the Today screen therefore shows
+"NEXT 9:30 AM" at 11:55 PM (it decides what is next from the saved status only). The Java backend itself is up (`/actuator/health` answers 200), so the web side is alive but **nothing sends reminders**.
+
+**How it worked before (Python, Render):** a timer OUTSIDE the app (a Render cron job, woken by cron-job.org) called `POST /cron/tick` on the API every 1 to 5 minutes with a secret. One tick: create doses 24 h ahead, send due
+reminders through Meta's WhatsApp templates, expire unsent ones, mark missed after 60 min, daily check-ins, missed check-ins, appointment reminders (and escalation, love loop and slot grouping when switched on). Parents'
+"Taken", check-in, consent and STOP replies arrived at `/webhooks/whatsapp`.
+
+**How it works now (Java, AWS):** the timer is INSIDE the Java program (`@Scheduled`, every 5 minutes, first run 1 minute after start), but it only does anything when `chhaon.scheduler.enabled=true`. The default is `false`
+and the deploy workflow never sets it, so no tick has run. Sending goes through the self-hosted WhatsApp gateway (WA-AKG); with `WHATSAPP_GATEWAY_URL` blank it only logs ("dry-run") and returns a fake message id.
+The Java tick has 6 steps (create doses, send due, unsent to skipped, missed, check-ins sent, check-ins missed). **Not in Java yet:** reading the parent's replies (no webhook: "Taken", check-in answers, consent Yes/No, STOP),
+sending the consent request, appointment reminders, escalation (Safety net), love loop, slot grouping, WhatsApp alerts to the family.
+
+**Two dangers of just switching it on:**
+1. With the gateway not configured, doses would be marked `sent` with fake ids although nothing was delivered (it would hide the failure).
+2. Without the reply webhook, a parent's "Taken" tap is never recorded, so after 60 minutes every dose becomes `missed` and the family gets a false "missed dose" alert.
+
+- [ ] **Decide today, with whoever owns `api-java/`:** (A) bring the proven Python tick and webhook back for the pilot (on the AWS box or anywhere, pointed at the Sydney database; its messenger must use whichever WhatsApp route is real now), then migrate piece by piece
+      with tests; or (B) finish the Java port (reply webhook, consent request, appointment reminders) BEFORE enabling `chhaon.scheduler.enabled`. Do not enable the Java scheduler with only the current 6 steps.
+- [ ] Confirm the gateway: `WHATSAPP_GATEWAY_URL` / `_TOKEN` / session set and the number connected; send one real test.
+- [ ] When any scheduler resumes, old `pending` doses will be handled by the normal rules (unsent past the window become `skipped` and the family gets "reminder not sent, please call").
+- [ ] Tell the pilot families that reminders were paused since 2 Nov 21:00 IST, if real families are using it.
+- [ ] Build the Today warning ("reminders are delayed, please remind {Papa} yourself") and the scheduler heartbeat (already listed above) so this can never be silent again.
