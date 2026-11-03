@@ -353,13 +353,17 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
       no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
 
-## Permissions on the Sydney database differ from the migrations (found 2026-11-03)
-Testing the live card function through the public API showed that an anonymous visitor could run `record_emergency_view` (HTTP 204), although migration 0022 revokes it
-from everyone but the server. On the local database (built from the migrations) it is refused. Tables are fine (an anonymous visitor sees no rows of the links table)
-and the new helper is refused, so this looks like GRANT / REVOKE statements lost when the database was copied to Sydney.
-- [ ] **Run on the Sydney database:** `revoke execute on function public.record_emergency_view(uuid) from public, anon, authenticated; grant execute on function public.record_emergency_view(uuid) to service_role;`
-- [ ] **List what an anonymous visitor can run** (read-only) and compare: on a correct database exactly `has_control_chars`, `public_emergency_card`, `storage_recipient_id`, `text_array_ok`:
-      `select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prokind = 'f' and p.prorettype <> 'trigger'::regtype and has_function_privilege('anon', p.oid, 'execute') order by 1;`
-      If more appear, generate a repair script from the correct local permissions, compare, then apply (do not hand-edit one by one).
-- [ ] Tell whoever copied the database to leave the permissions in (for example `pg_dump` without `--no-acl`), and check the same for `authenticated` on service-only functions.
-
+## Permissions on the Sydney database differed from the migrations (found 2026-11-03): functions FIXED, tables still to check
+Testing the live card function through the public API showed that an anonymous visitor could run `record_emergency_view`; listing everything an anonymous visitor could
+run showed **48 functions where the migrations allow 4**. Five server-only functions (`erase_caregiver`, `claim_consent_request`, `confirm_dose_slot`, `consume_stock`,
+`generate_dose_events`) run with full power and do not check who calls them, so they were open to anyone holding the site's public key (a secret ID was the only protection).
+The GRANT / REVOKE statements were lost when the database was copied to Sydney.
+- [x] **Repaired and verified 2026-11-03:** `supabase/maintenance/restore_function_permissions.sql` (generated from the correct local permissions; tested on a deliberately opened
+      local copy: 0 differences, safe to run twice). After running it on Sydney the totals were exactly the expected `4 | 40 | 51 | 51` (anonymous | signed-in | server | all), and from
+      outside the six server-only functions answer "permission denied" while `public_emergency_card` still answers visitors.
+- [ ] **Check the TABLE permissions the same way:** run `supabase/maintenance/table_permissions_check.sql` on the Sydney database and compare with the 26 expected lines in that file. Row
+      security (RLS) held in the tests (an anonymous visitor sees no rows of the links table), but column-level rules such as which columns a signed-in user may write on `appointments`,
+      `notifications`, `reports` and `care_circle_members` may be lost too.
+- [ ] **Tell whoever copied the database** to keep the permissions next time (for example `pg_dump` without `--no-acl`), and to run the two maintenance files after any future copy.
+- [ ] **New functions:** Supabase gives every new function to anonymous, signed-in and server roles by default; a migration that adds a server-only function must revoke it, and
+      `restore_function_permissions.sql` must be regenerated to include it.
