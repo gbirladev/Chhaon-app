@@ -45,13 +45,17 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      // Scoped to /app/: the marketing site (home.html, about.html, legal/) sits at the domain root,
+      // outside the PWA entirely, and is never touched by the service worker.
+      scope: "/app/",
       includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "Chhaon",
         short_name: "Chhaon",
         description: "Look after your parents' health from anywhere.",
-        id: "/",
-        start_url: "/",
+        id: "/app/",
+        start_url: "/app/",
+        scope: "/app/",
         display: "standalone",
         orientation: "portrait",
         background_color: "#f8faf8",
@@ -64,8 +68,10 @@ export default defineConfig({
       },
       workbox: {
         // App shell is cached; Supabase / API calls always go to the network (health data is never cached offline).
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/emergency\//, /^\/about\.html$/, /^\/privacy\.html$/, /^\/legal\//, /^\/home\.html$/, /^\/landing\//],
+        // The marketing site (/, /about.html, /legal/, ...) lives outside scope "/app/", so this fallback never reaches it anyway;
+        // the denylist stays as a second guard in case scope is ever widened.
+        navigateFallback: "/app/index.html",
+        navigateFallbackDenylist: [/^\/$/, /^\/emergency\//, /^\/about\.html$/, /^\/privacy\.html$/, /^\/legal\//, /^\/home\.html$/, /^\/landing\//],
       },
     }),
   ],

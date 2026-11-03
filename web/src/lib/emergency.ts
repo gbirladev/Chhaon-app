@@ -31,5 +31,5 @@ export async function rotateEmergencyLink(recipientId: string): Promise<Emergenc
   return toLink(data[0]);
 }
 
-/** The page lives in the same app (hash route), so it works on any static host without server rewrites. */
-export const emergencyLinkUrl = (token: string) => `${window.location.origin}/#/e/${token}`;
+/** The page lives in the same app (hash route) under /app/, so it works on any static host without server rewrites. */
+export const emergencyLinkUrl = (token: string) => `${window.location.origin}/app/#/e/${token}`;

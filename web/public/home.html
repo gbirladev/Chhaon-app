@@ -10,6 +10,11 @@
 <meta property="og:description" content="Medicine reminders, a daily check-in and alerts for families who live far from their parents. Parents only need WhatsApp." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<script>
+  // Emergency-card and family-invite links shared before the app moved to /app looked like
+  // chhaon.site/#/e/<token> or chhaon.site/#/join/<token>. Send them on to the app unchanged.
+  if (/^#\/(e|join)\//.test(location.hash)) location.replace("/app/" + location.hash);
+</script>
 <style>
   :root {
     --teal: #247c72; --teal-dark: #1b625a; --ink: #173d3a; --muted: #566966; --line: #dce7e4;
@@ -247,7 +252,7 @@
     </nav>
     <div class="actions">
       <button class="lang" id="lang" type="button" aria-label="Switch language"><span class="en">हिंदी</span><span class="hi">English</span></button>
-      <a class="btn primary small" href="/"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+      <a class="btn primary small" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
     </div>
   </div>
 </header>
@@ -261,7 +266,7 @@
       <h1><span class="en">Stay close to your parents, <em>every day.</em></span><span class="hi">हर दिन अपने माता-पिता के <em>पास रहें।</em></span></h1>
       <p class="lead"><span class="en">Chhaon turns WhatsApp into a gentle safety net for your parents: medicine reminders, a daily “are you okay?”, and an alert to you when something needs attention. They install nothing.</span><span class="hi">छाँव आपके माता-पिता के लिए WhatsApp को एक भरोसेमंद सहारा बना देता है: दवा के रिमाइंडर, रोज़ का “क्या आप ठीक हैं?”, और ज़रूरत पड़ने पर आपको तुरंत सूचना। उन्हें कुछ भी इंस्टॉल नहीं करना पड़ता।</span></p>
       <div class="cta">
-        <a class="btn primary" href="/"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+        <a class="btn primary" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
         <a class="btn ghost" href="#how"><span class="en">See how it works</span><span class="hi">देखिए कैसे काम करता है</span></a>
       </div>
       <div class="proof">
@@ -406,7 +411,7 @@
     <div class="final reveal">
       <h2><span class="en">Be their shade, even from far away.</span><span class="hi">दूर रहकर भी बनिए उनकी छाँव।</span></h2>
       <p><span class="en">Set up your first parent in about two minutes. No cost during the pilot.</span><span class="hi">लगभग दो मिनट में अपने पहले माता-पिता को जोड़िए। पायलट के दौरान कोई शुल्क नहीं।</span></p>
-      <a class="btn" href="/"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+      <a class="btn" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
     </div>
   </div>
 </section>

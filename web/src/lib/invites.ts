@@ -26,7 +26,7 @@ export const pendingInvite = (): string | null => {
   try { const v = sessionStorage.getItem(KEY); return v && TOKEN.test(v) ? v : null; } catch { return null; }
 };
 export const clearPendingInvite = () => { try { sessionStorage.removeItem(KEY); } catch { /* ignore */ } };
-export const inviteLink = (token: string) => `${window.location.origin}/#/join/${token}`;
+export const inviteLink = (token: string) => `${window.location.origin}/app/#/join/${token}`;
 
 export type InviteFailure = "invalid" | "expired" | "revoked" | "used" | "member" | "circle_full" | "too_many_invites" | "no_parent" | "error";
 

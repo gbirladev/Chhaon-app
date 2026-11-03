@@ -47,6 +47,11 @@ jobs:
         run: |
           # Serve dotfolders/underscored files (GH Pages otherwise runs Jekyll which skips them).
           touch dist/.nojekyll
+          # Marketing site at the root; the app (built as dist/index.html by Vite) moves to /app/.
+          # Asset references in it are absolute ("/assets/..."), so they still resolve correctly from /app/.
+          mkdir -p dist/app
+          cp dist/index.html dist/app/index.html
+          cp dist/home.html dist/index.html
           # Custom domain.
           echo "chhaon.site" > dist/CNAME
           # Digital Asset Links for the Android TWA (Vite doesn't copy the public/.well-known dotfolder).
