@@ -389,7 +389,11 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
   - [ ] Optional: a "new version, tap to refresh" banner when the service worker updates (not an automatic reload: it could lose typed text).
 - **Report upload fails and medicine photos are missing in production.** The files live in Supabase Storage (three private buckets: medicine-photos, reports, feedback), which a database copy does not bring
   over. Unverified until checked on Sydney.
-  - [ ] Run `supabase/maintenance/storage_check.sql` on Sydney (read-only) and compare with the expected lines in the file.
+  - [x] **Storage check run on Sydney 2026-11-04: it returned NO ROWS = the project has no storage buckets and no storage access rules at all.** That is why report uploads fail (the bucket does not exist) and old photos do not show.
+  - [ ] Run `supabase/maintenance/restore_storage.sql` on Sydney (creates the three private buckets and the 7 access rules; the four functions the rules use already exist there), then run `storage_check.sql` again: expect 3 buckets (0 files) and 7 rules. Then add a report photo and a medicine photo in the app.
+  - [ ] **Copy the old files** with `supabase/maintenance/copy_storage.mjs` (tested 2026-11-04 against 861 real local files with a stand-in new project: look-only by default, never overwrites or deletes, retries, refuses old = new, checks the result; byte-for-byte identical, 11 checks).
+        Needs the OLD project to still exist: do not delete it first. In your own terminal set `OLD_SUPABASE_URL`, `OLD_SERVICE_KEY`, `NEW_SUPABASE_URL` (`https://utjgegiioflwnmesmgcv.supabase.co`), `NEW_SERVICE_KEY` (Dashboard, Project Settings, API, the secret / service_role key of each project; never paste them into a chat or a file in the repository),
+        then `node supabase/maintenance/copy_storage.mjs` (look only) and `node supabase/maintenance/copy_storage.mjs --apply`.
   - [ ] If a bucket or rule is missing: run `supabase/maintenance/restore_storage.sql` (tested on the correct local database: 0 differences, no file touched). That restores uploads for NEW files.
   - [ ] **The old photos and reports are only in the old (Mumbai) project's storage: do NOT delete that project until they are copied** (a script using both projects' service keys; never paste keys in chat).
         Rows in the database already point at the right paths, so copying the files with the same names is enough.
