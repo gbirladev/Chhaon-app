@@ -332,9 +332,14 @@ recipients, medicines and `admin/tick`; the web app itself reads the database th
 - **Doctors page:** the benefits are now the first thing on the page, highlighted, in two columns (for the patient's care, for the practice); the page says plainly that
   nothing is offered to doctors for recommending Chhaon (Regulation 6.4.1). Pilot limits stated under "At a glance" and in the cost answer.
 - [ ] **To make it live (needs your database and GitHub access):**
-  1. In the Sydney Supabase project, check which migrations are applied (`select version from supabase_migrations.schema_migrations order by version desc limit 5;`).
-     If 0030 to 0037 are NOT applied yet, do not `db push` blindly (it would apply them all): paste `20261103000038_public_emergency_card.sql` and then
-     `20261103000039_everyone_on_family.sql` into the SQL editor, one after the other (both only need tables from migrations 0027 and older).
+  1. **The Sydney database (project `utjgegiioflwnmesmgcv`, checked 2026-11-03) has NO migration history table** (`supabase_migrations.schema_migrations` does not
+     exist), so the Supabase tool cannot know what is applied: **never run `supabase db push` against it** (it would try to apply every migration from the start).
+     Apply changes by pasting SQL into the SQL editor. A schema check on that day showed the tables and columns of migrations 0018, 0022, 0027, 0028, 0029, 0032, 0033,
+     0034 and 0036 all present, so 0038 and 0039 can be applied as they are. Paste `20261103000038_public_emergency_card.sql`, run it, then
+     `20261103000039_everyone_on_family.sql`, run it.
+     - After 0038: `select public.public_emergency_card(repeat('0', 64)) is null, has_function_privilege('anon','public.public_emergency_card(text)','execute'), has_function_privilege('anon','public.record_emergency_view(uuid)','execute'), has_function_privilege('anon','public.card_clean(text, integer)','execute');` should give `true, true, false, false`.
+     - After 0039: `select plan, case when is_admin then 'admin' else 'user' end as kind, count(*) from public.profiles group by 1,2 order by 1,2;` should show no `free` or `plus` rows and the admin on `ultra`; `select column_default from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='plan';` should show `'family'::text`.
+     - To undo 0038: `drop function public.public_emergency_card(text); drop function public.card_clean(text, integer);`. To undo 0039: see `docs/plans.md`, "Plans off".
   2. Push to `main` so GitHub Actions deploys the web (it only runs when `web/` changes).
   3. Open `https://chhaon.site/app/#/e/<a real link>`: it should show the card. Then Family > Your plan.
   4. Optionally set the GitHub repository variable `VITE_PLANS_ENABLED` (leave unset or `false` for the pilot).
