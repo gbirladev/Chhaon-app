@@ -416,9 +416,19 @@ sending the consent request, appointment reminders, escalation (Safety net), lov
 1. With the gateway not configured, doses would be marked `sent` with fake ids although nothing was delivered (it would hide the failure).
 2. Without the reply webhook, a parent's "Taken" tap is never recorded, so after 60 minutes every dose becomes `missed` and the family gets a false "missed dose" alert.
 
-- [ ] **Decide today, with whoever owns `api-java/`:** (A) bring the proven Python tick and webhook back for the pilot (on the AWS box or anywhere, pointed at the Sydney database; its messenger must use whichever WhatsApp route is real now), then migrate piece by piece
+- [x] **Decided 2026-11-04: Option B (the Java backend is the one backend; finish it before enabling its scheduler).** Plan below. (The options were: A) bring the Python tick back; B) finish the Java port first.)
       with tests; or (B) finish the Java port (reply webhook, consent request, appointment reminders) BEFORE enabling `chhaon.scheduler.enabled`. Do not enable the Java scheduler with only the current 6 steps.
 - [ ] Confirm the gateway: `WHATSAPP_GATEWAY_URL` / `_TOKEN` / session set and the number connected; send one real test.
 - [ ] When any scheduler resumes, old `pending` doses will be handled by the normal rules (unsent past the window become `skipped` and the family gets "reminder not sent, please call").
 - [ ] Tell the pilot families that reminders were paused since 2 Nov 21:00 IST, if real families are using it.
 - [ ] Build the Today warning ("reminders are delayed, please remind {Papa} yourself") and the scheduler heartbeat (already listed above) so this can never be silent again.
+- **Plan for Option B (nothing below deploys until approved; Java work goes on a branch, never straight to main, because a push to `api-java/**` deploys to production):**
+  0. [ ] Web, today: the red "Reminders are delayed" card on Today (a dose long past its time and still `pending`), so families are never falsely reassured during the gap.
+  1. [ ] Test foundation for Java (there are NO tests today): tests run against a real Postgres built from `supabase/migrations` (the SQL functions are the logic), in CI and locally; Maven runs through Docker (no JDK on the Mac).
+         First, tests that pin down what the 6-step tick does today.
+  2. [ ] The reply pipeline (the blocker): a signed webhook endpoint for the gateway (`message.received`, `message.status`; HMAC `X-Webhook-Signature`), idempotent, understanding free-text replies in English and Hindi (no buttons exist):
+         Taken (link it to the reminder the parent replied to, else the latest one sent), check-in answers, consent yes/no, STOP and START. Port from `api/app/services/inbound.py` using the existing database functions.
+  3. [ ] Messages without buttons: reminder, check-in and consent texts in English and Hindi that tell the parent how to reply; the three routes the web app already calls (`/recipients/{id}/consent-request`, `/alerts/whatsapp/request`, `/features`).
+  4. [ ] The rest of the tick: appointment reminders, alerts to the family on WhatsApp; later the Safety net and love messages.
+  5. [ ] Switching on safely: gateway sends a real test message; dry run; the scheduler for ONE test parent (scoped tick), then all; the heartbeat. `chhaon.scheduler.enabled` stays false until steps 2 and 3 are tested.
+
