@@ -23,11 +23,33 @@
  * No CSP is set on the dev server because it would break Vite HMR (inline scripts + websocket).
  * Fonts are self-hosted via @fontsource, so no third-party font origins are needed.
  */
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+/**
+ * Production layout: the marketing home page at "/", the app at "/app/".
+ * Done in the build (not as a copy step in CI) so the service worker's precache list and `vite preview`
+ * match exactly what is deployed. The app's asset links are absolute ("/assets/..."), so moving its
+ * index.html into app/ needs no other change. The dev server is unaffected (the app stays at "/").
+ */
+function siteLayout(): Plugin {
+  return {
+    name: "chhaon-site-layout",
+    apply: "build",
+    enforce: "post",
+    generateBundle(_options, bundle) {
+      const app = bundle["index.html"];
+      if (!app || app.type !== "asset") this.error("chhaon-site-layout: index.html missing from the bundle");
+      delete bundle["index.html"];
+      this.emitFile({ type: "asset", fileName: "app/index.html", source: app.source });
+      this.emitFile({ type: "asset", fileName: "index.html", source: readFileSync(path.resolve(__dirname, "public/home.html")) });
+    },
+  };
+}
 
 const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
@@ -43,6 +65,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    siteLayout(),
     VitePWA({
       registerType: "autoUpdate",
       // Scoped to /app/: the marketing site (home.html, about.html, legal/) sits at the domain root,
@@ -68,10 +91,14 @@ export default defineConfig({
       },
       workbox: {
         // App shell is cached; Supabase / API calls always go to the network (health data is never cached offline).
-        // The marketing site (/, /about.html, /legal/, ...) lives outside scope "/app/", so this fallback never reaches it anyway;
-        // the denylist stays as a second guard in case scope is ever widened.
+        // Only addresses under /app/ ever fall back to the app shell. Browsers that still hold the old site-wide
+        // registration (scope "/", from before /app existed) pick up this worker too; the allowlist keeps them showing
+        // the real home, doctors, legal and any future pages instead of the app.
         navigateFallback: "/app/index.html",
-        navigateFallbackDenylist: [/^\/$/, /^\/emergency\//, /^\/about\.html$/, /^\/privacy\.html$/, /^\/legal\//, /^\/home\.html$/, /^\/landing\//],
+        navigateFallbackAllowlist: [/^\/app\//],
+        // Only the app is precached. The marketing site ("index.html" here is the home page) and the doctors page
+        // with its QR library are plain web pages that families never need offline.
+        globIgnores: ["**/node_modules/**/*", "index.html", "home.html", "about.html", "privacy.html", "doctors.html", "legal/**", "vendor/**"],
       },
     }),
   ],

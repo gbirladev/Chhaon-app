@@ -226,3 +226,27 @@ NOT decided yet: it is a service, and CLAUDE.md keeps services out of v1. The 3-
   assumption) plus WhatsApp and AI costs.
 - Later: AI voice calls take over the routine weekly calls and coordinators handle only problems (South Korea's Naver CareCall does AI check-in calls);
   partner money (refills when stock runs low, home lab tests when due); employers and group insurers paying for employees' parents; an NRI plan in dollars.
+
+## Growth plan: doctors bring families, vendors pay (decided 2026-11-03)
+Basic reminders will not earn from families. Plan: grow the user base through doctors, keep Chhaon free for families and doctors, and earn
+from vendors (pharmacies, labs, devices) when a family chooses to order something.
+- **Rule that protects the doctors:** a doctor gets nothing commercial for recommending Chhaon: no money, gifts, free promotion or ranking.
+  Regulation 6.4.1 of the 2002 Medical Council ethics code (in force; NMC put its 2023 rules on hold) bars doctors from any "gift, gratuity,
+  commission or bonus" for referring patients, labs included. "We'll market your clinic free in return" was dropped for this reason.
+  The doctor recommends Chhaon only because it helps their patients.
+- [x] **Doctor kit (built 2026-11-03):** `chhaon.site/doctors` (`web/public/doctors.html`): what Chhaon is, the "nothing in return" note,
+  and printable QR cards (English + Hindi, 6 per A4 sheet, optional clinic name). Linked from the home page footer.
+  Each doctor gets their own link `chhaon.site/doctors?ref=D001`; the printed QR then opens `chhaon.site/app/?ref=D001`, so cards printed now
+  keep working when counting starts. Keep the list of codes (doctor, clinic, date) in a private sheet.
+- [ ] **Count families per doctor (needs the new backend):** save `ref` from the app URL on sign-up. Not built: sign-up is moving to the Java
+  backend's own login, so agree with whoever owns `api-java/` where the field lives (a `profiles.referred_by` column) before building it.
+  Families who arrive without a code (home page, typed address, a friend's message) are counted as "direct"; nothing about the app changes for
+  them. To see every channel, add one optional sign-up question: "How did you hear about Chhaon? Doctor / Friend or family / WhatsApp / Google /
+  Other", saved next to the code.
+- [ ] **Start with 10 doctors met in person,** not a mass mailing. Measure: patients per doctor, families still active after 4 weeks.
+- [ ] **Vendor income, easiest first:** (1) BP machine / glucometer affiliate links in the child's app (supports Health Control);
+  (2) refill orders through one partner pharmacy (commission); (3) home lab tests when due (referral fee); (4) insurance later, through an
+  IRDAI-licensed partner; (5) no pharma ads. Paid placements are labelled; the family can always keep their own chemist; data is never sold or
+  shared with vendors (DPDP: earn only when the family itself orders). Offers and payments only in the child's app, never on the parent's WhatsApp.
+- [ ] **Coming later for doctors, only with the family's consent:** a one-page summary of missed doses before each visit.
+- Note: `web/public/about.html` still says the old name "Vatsalaya"; update or remove it.

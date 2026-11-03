@@ -13,7 +13,12 @@
 <script>
   // Emergency-card and family-invite links shared before the app moved to /app looked like
   // chhaon.site/#/e/<token> or chhaon.site/#/join/<token>. Send them on to the app unchanged.
-  if (/^#\/(e|join)\//.test(location.hash)) location.replace("/app/" + location.hash);
+  // hashchange covers a link pasted into a tab that already shows this page (no reload happens then).
+  (function () {
+    var forward = function () { if (/^#\/(e|join)\//.test(location.hash)) location.replace("/app/" + location.hash); };
+    forward();
+    window.addEventListener("hashchange", forward);
+  })();
 </script>
 <style>
   :root {
@@ -420,7 +425,7 @@
 <footer>
   <div class="wrap">
     <span>© <span id="year">2026</span> Chhaon · <span class="en">Care for your parents, even from far away.</span><span class="hi">दूर रहकर भी माता-पिता की देखभाल।</span></span>
-    <nav aria-label="Footer"><a href="legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a></nav>
+    <nav aria-label="Footer"><a href="legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a><a href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a></nav>
   </div>
 </footer>
 

@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+# copied from node_modules by scripts/copy-vendor.mjs
+public/vendor
 
 # Editor directories and files
 .vscode/*

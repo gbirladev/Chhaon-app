@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>For doctors - Chhaon</title>
+<meta name="description" content="Chhaon sends your patients free WhatsApp medicine reminders and tells their family when a dose is missed. Print a QR card for your clinic desk." />
+<meta name="theme-color" content="#247c72" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<style>
+  :root { --teal: #247c72; --teal-dark: #1b625a; --ink: #173d3a; --muted: #566966; --line: #dce7e4; --mint: #e9f6f2; --bg: #f8faf8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif; color: var(--ink); background: var(--bg); }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 16px 64px; }
+  a { color: var(--teal); }
+  .brand { font-weight: 800; font-size: 1.3rem; color: var(--teal); text-decoration: none; }
+  h1 { font-size: clamp(1.7rem, 4.5vw, 2.3rem); line-height: 1.2; margin: 18px 0 10px; }
+  h2 { font-size: 1.25rem; margin: 0 0 10px; }
+  p { margin: 0 0 10px; }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  .lead { color: var(--muted); font-size: 1.1rem; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-top: 16px; }
+  .ethics { background: var(--mint); border-color: #cfe8df; }
+  label { display: block; font-weight: 700; margin-bottom: 6px; }
+  input { width: 100%; font: inherit; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; min-height: 48px; }
+  input:focus { outline: 3px solid #ee7a47; outline-offset: 2px; }
+  .hint { color: var(--muted); font-size: .92rem; margin-top: 6px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 999px; border: 0; background: var(--teal); color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-top: 14px; }
+  .btn:hover { background: var(--teal-dark); }
+  footer { margin-top: 28px; color: var(--muted); font-size: .95rem; }
+
+  /* The card: the same design on screen (preview) and on paper (6 per A4 sheet). */
+  .preview { display: flex; justify-content: center; margin-top: 16px; }
+  .sheet { display: none; }
+  .card { width: 9.4cm; height: 8.6cm; border: 1px dashed #b9c9c5; border-radius: 10px; padding: .45cm .5cm; display: flex; flex-direction: column; align-items: center; text-align: center; background: #fff; color: var(--ink); overflow: hidden; }
+  .card .c-brand { font-weight: 800; color: var(--teal); font-size: 13pt; }
+  .card .c-en { font-weight: 700; font-size: 11pt; line-height: 1.25; margin-top: 2pt; }
+  .card .c-hi { font-size: 10.5pt; line-height: 1.3; margin-top: 2pt; }
+  .card svg { width: 3.6cm; height: 3.6cm; margin: 6pt 0 4pt; }
+  .card .c-scan { font-size: 9pt; color: var(--muted); }
+  .card .c-url { font-size: 9pt; font-weight: 700; }
+  .card .c-clinic { font-size: 9pt; color: var(--muted); margin-top: auto; }
+  .card .c-clinic:empty { display: none; }
+
+  @media print {
+    @page { size: A4; margin: 1cm; }
+    body { background: #fff; }
+    main > *:not(.sheet) { display: none !important; }
+    main { padding: 0; max-width: none; }
+    .sheet { display: grid; grid-template-columns: repeat(2, 9.4cm); grid-auto-rows: 8.6cm; gap: .4cm; justify-content: center; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">Chhaon</a>
+  <h1>Help your patients take the medicines you prescribe</h1>
+  <p class="lead">Chhaon sends free WhatsApp reminders to older patients and tells their family if a dose is missed. The patient installs nothing.</p>
+
+  <section>
+    <h2>How it works for your patient</h2>
+    <ol>
+      <li>The family scans the QR card at your desk (usually a son or daughter, often in another city).</li>
+      <li>They add the parent and the medicines you prescribed.</li>
+      <li>The parent gets a short WhatsApp message at each dose time and taps <b>✅ Taken</b>. If no reply comes, the family is told.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>What it means for you</h2>
+    <ul>
+      <li>Patients who actually take what you prescribe, between visits.</li>
+      <li>A family that knows the plan, even when they live far away.</li>
+      <li>Coming later, only with the family's consent: a short summary of missed doses before each visit.</li>
+    </ul>
+  </section>
+
+  <section class="ethics">
+    <h2>Free, and nothing in return</h2>
+    <p>Chhaon is free for you and your patients. We do not pay doctors, give gifts, or promote clinics in return for recommending Chhaon, in line with the Medical Council's code of ethics on referrals (Regulation 6.4). Recommend it only if you think it helps your patients.</p>
+    <p>Chhaon never asks patients for money, OTPs, Aadhaar or bank details.</p>
+  </section>
+
+  <section>
+    <h2>Print QR cards for your desk</h2>
+    <label for="clinic">Clinic name (optional, printed small on the card)</label>
+    <input id="clinic" maxlength="60" autocomplete="organization" placeholder="e.g. Sharma Clinic, Lucknow" />
+    <p class="hint">Prints 6 cards on one A4 sheet. Cut along the dashed lines.</p>
+    <div class="preview" id="preview"></div>
+    <button class="btn" type="button" id="print">Print cards</button>
+  </section>
+
+  <footer>
+    Questions? Write to <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a> · <a href="/">chhaon.site</a> · <a href="/legal/privacy.html">Privacy policy</a>
+  </footer>
+
+  <div class="sheet" id="sheet" aria-hidden="true"></div>
+</main>
+
+<script src="/vendor/qrcode.js"></script>
+<script>
+  (function () {
+    // ?ref=<code> identifies the doctor's own link (e.g. /doctors?ref=D001). It goes into the printed QR so cards
+    // printed today keep working once sign-ups start counting it. Anything unexpected is ignored.
+    var raw = new URLSearchParams(location.search).get("ref") || "";
+    var ref = /^[A-Za-z0-9-]{1,32}$/.test(raw) ? raw : "";
+    // "/app/" with the slash: printed cards live for months, so point straight at the final address (no redirect).
+    var target = location.origin + "/app/" + (ref ? "?ref=" + encodeURIComponent(ref) : "");
+
+    var SVG = "http://www.w3.org/2000/svg";
+    function qrSvg(value) {
+      var qr = qrcode(0, "M");
+      qr.addData(value);
+      qr.make();
+      var n = qr.getModuleCount(), d = "";
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) d += "M" + (c + 4) + " " + (r + 4) + "h1v1h-1z";
+      var svg = document.createElementNS(SVG, "svg");
+      svg.setAttribute("viewBox", "0 0 " + (n + 8) + " " + (n + 8));  // 4-module quiet zone
+      svg.setAttribute("shape-rendering", "crispEdges");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", "QR code to open Chhaon");
+      var path = document.createElementNS(SVG, "path");
+      path.setAttribute("d", d);
+      path.setAttribute("fill", "#000");
+      svg.appendChild(path);
+      return svg;
+    }
+
+    function line(cls, text) {
+      var el = document.createElement("div");
+      el.className = cls;
+      el.textContent = text;  // textContent only: the clinic name is never treated as HTML
+      return el;
+    }
+
+    function card() {
+      var el = document.createElement("div");
+      el.className = "card";
+      el.appendChild(line("c-brand", "Chhaon · छाँव"));
+      el.appendChild(line("c-en", "Free WhatsApp medicine reminders for your parents"));
+      el.appendChild(line("c-hi", "माता-पिता के लिए मुफ़्त WhatsApp दवा रिमाइंडर"));
+      el.appendChild(qrSvg(target));
+      el.appendChild(line("c-scan", "Scan with your phone camera · फ़ोन कैमरे से स्कैन करें"));
+      el.appendChild(line("c-url", "chhaon.site/app"));
+      el.appendChild(line("c-clinic", ""));
+      return el;
+    }
+
+    var preview = document.getElementById("preview");
+    var sheet = document.getElementById("sheet");
+    preview.appendChild(card());
+    for (var i = 0; i < 6; i++) sheet.appendChild(card());
+
+    var clinic = document.getElementById("clinic");
+    clinic.addEventListener("input", function () {
+      var text = clinic.value.trim() ? "From " + clinic.value.trim() : "";
+      document.querySelectorAll(".c-clinic").forEach(function (el) { el.textContent = text; });
+    });
+    document.getElementById("print").addEventListener("click", function () { window.print(); });
+  })();
+</script>
+</body>
+</html>
