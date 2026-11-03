@@ -47,6 +47,22 @@ echo "Copying the plans catalogue (reference data) ..."
 docker exec "$CONTAINER" pg_dump -U postgres -d "$SOURCE_DB" -a -t public.plans \
   | docker exec -i "$CONTAINER" psql -U postgres -d "$TEST_DB" -v ON_ERROR_STOP=1 -q >/dev/null
 
+# Migrations NEWER than what the local dev database may have (this branch can add migrations that were never
+# applied to the shared database, which this script never writes to). Each file is applied in one transaction;
+# if it fails because the dump already contains it ("already exists"), it is rolled back and skipped.
+AFTER="${APPLY_MIGRATIONS_AFTER:-20261103000039}"
+MIG_DIR="$(cd "$(dirname "$0")/../.." && pwd)/supabase/migrations"
+for f in "$MIG_DIR"/*.sql; do
+  version="$(basename "$f" | cut -d_ -f1)"
+  if [ "$version" -gt "$AFTER" ]; then
+    if docker exec -i "$CONTAINER" psql -U postgres -d "$TEST_DB" -1 -v ON_ERROR_STOP=1 -q <"$f" >/dev/null 2>&1; then
+      echo "Applied migration $(basename "$f") to $TEST_DB"
+    else
+      echo "Skipped migration $(basename "$f") (already in the dump or failed; check with psql if unexpected)"
+    fi
+  fi
+done
+
 verify() { docker exec -i "$CONTAINER" psql -U postgres -d "$TEST_DB" -Atq -c "$1"; }
 missing=0
 for f in generate_dose_events confirm_dose_slot consume_stock claim_consent_request; do

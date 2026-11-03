@@ -75,8 +75,21 @@ public class SchedulerService {
         step(counters, "doses_missed", () -> markMissedDoses(scope));
         step(counters, "checkins_sent", () -> sendCheckins(scope));
         step(counters, "checkins_missed", () -> markMissedCheckins(scope));
+        recordHeartbeat();
         log.info("tick(scope={}) {}", scope, counters);
         return counters;
+    }
+
+    /**
+     * Tells the database "a tick just ran" so the app can warn the family when reminders stop.
+     * Best effort: a failure here is logged and ignored, and never touches the tick's counters.
+     */
+    private void recordHeartbeat() {
+        try {
+            jdbc.execute("select public.touch_scheduler_heartbeat()");
+        } catch (Exception e) {
+            log.warn("scheduler heartbeat could not be recorded: {}", e.getClass().getSimpleName());
+        }
     }
 
     private void step(Map<String, Integer> counters, String key, StepRunnable r) {
