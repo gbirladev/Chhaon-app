@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>For doctors - Chhaon</title>
-<meta name="description" content="Chhaon sends your patients free WhatsApp medicine reminders and tells their family when a dose is missed. Print a QR card for your clinic desk." />
+<meta name="description" content="Chhaon sends your patients free WhatsApp medicine reminders and gives the family a one-page summary to show you at the visit. Print a QR card for your clinic desk." />
 <meta name="theme-color" content="#247c72" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <style>
@@ -29,6 +29,65 @@
   .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 999px; border: 0; background: var(--teal); color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-top: 14px; }
   .btn:hover { background: var(--teal-dark); }
   footer { margin-top: 28px; color: var(--muted); font-size: .95rem; }
+
+  .benefits { list-style: none; padding: 0; display: grid; gap: 14px; }
+  .benefits li { margin: 0; }
+  .benefits strong { display: block; }
+  .plain { padding-left: 20px; }
+  .plain li { margin-bottom: 8px; }
+  .sub-h { margin: 22px 0 8px; font-size: 1.05rem; }
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 12px; }
+
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .jump a { padding: 8px 14px; min-height: 40px; display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 999px; background: #fff; font-size: .92rem; font-weight: 600; text-decoration: none; }
+  .jump a:hover { border-color: var(--teal); }
+
+  .glance dl { margin: 0; display: grid; gap: 10px; }
+  .glance dl div { display: grid; grid-template-columns: 8em 1fr; gap: 10px; }
+  .glance dt { color: var(--muted); font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding-top: 3px; }
+  .glance dd { margin: 0; }
+  @media (max-width: 520px) {
+    .glance dl div { grid-template-columns: 1fr; gap: 0; }
+    .glance dt { padding-top: 0; }
+  }
+
+  /* What the patient receives: example messages, plain chat bubbles. */
+  .chats { display: grid; gap: 14px; margin: 12px 0; }
+  .chat { margin: 0; padding: 14px; border-radius: 14px; background: #eef3f1; }
+  .chat figcaption { margin-bottom: 8px; color: var(--muted); font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .bubble { max-width: 34em; padding: 10px 14px; border-radius: 4px 14px 14px 14px; background: #fff; box-shadow: 0 1px 2px rgba(23, 61, 58, .12); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; max-width: 34em; }
+  .chips span { flex: 1; min-width: 7em; padding: 9px 12px; text-align: center; border-radius: 12px; background: #fff; color: #1f8f6b; font-weight: 700; box-shadow: 0 1px 2px rgba(23, 61, 58, .12); }
+
+  blockquote { margin: 0 0 12px; padding: 12px 16px; border-left: 4px solid var(--teal); border-radius: 0 12px 12px 0; background: var(--mint); }
+
+  details { border-top: 1px solid var(--line); }
+  details:first-of-type { border-top: 0; }
+  summary { cursor: pointer; padding: 14px 0; min-height: 48px; font-weight: 700; list-style-position: outside; }
+  summary:focus-visible { outline: 3px solid #ee7a47; outline-offset: 2px; border-radius: 6px; }
+  details p { margin: 0 0 14px; color: var(--ink); }
+
+  /* The example summary: made-up data, labelled as such. Hidden when printing (only the QR cards print). */
+  .sample { position: relative; margin: 12px 0; padding: 16px; border: 1.5px dashed #b9c9c5; border-radius: 14px; background: #fbfdfc; font-size: .96rem; overflow-wrap: anywhere; }
+  .sample .tag { display: inline-block; margin-bottom: 8px; padding: 2px 10px; border-radius: 999px; background: #ffeccb; color: #b04e1f; font-size: .78rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+  .sample p { margin: 0; }
+  .sample .s-kicker { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+  .sample .s-name { font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
+  .sample .s-sub { color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--teal); }
+  .sample dl { margin: 10px 0 0; display: grid; gap: 6px; }
+  .sample dl div { display: grid; grid-template-columns: 7.5em 1fr; gap: 8px; }
+  .sample dt { color: var(--muted); font-size: .8rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding-top: 2px; }
+  .sample dd { margin: 0; }
+  .sample h3 { margin: 16px 0 6px; font-size: 1.02rem; }
+  .sample .s-meds { list-style: none; padding: 0; display: grid; gap: 6px; }
+  .sample .s-meds li { margin: 0; }
+  .sample .s-meds b { display: block; }
+  .sample .s-overall { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
+  .sample .s-row { display: flex; justify-content: space-between; gap: 12px; }
+  .sample .s-bar { height: 8px; margin: 4px 0 10px; border-radius: 4px; background: #e6ecea; overflow: hidden; }
+  .sample .s-bar i { display: block; height: 100%; background: var(--teal); }
+  .sample .s-check { margin-top: 4px; }
 
   /* The card: the same design on screen (preview) and on paper (6 per A4 sheet). */
   .preview { display: flex; justify-content: center; margin-top: 16px; }
@@ -57,10 +116,92 @@
 <main>
   <a class="brand" href="/">Chhaon</a>
   <h1>Help your patients take the medicines you prescribe</h1>
-  <p class="lead">Chhaon sends free WhatsApp reminders to older patients and tells their family if a dose is missed. The patient installs nothing.</p>
+  <p class="lead">Between visits you can't see whether a prescription is being taken. Chhaon reminds your patient on WhatsApp, tells the family when a dose gets no reply, and gives you a one-page summary at the next visit. It is free, and there is nothing extra for you to do.</p>
+
+  <nav class="jump" aria-label="On this page"><a href="#helps">How it helps</a><a href="#patient">What your patient gets</a><a href="#see">What you will see</a><a href="#faq">Questions</a><a href="#cards">QR cards</a></nav>
+
+  <section class="glance" aria-labelledby="glance-h">
+    <h2 id="glance-h">At a glance</h2>
+    <dl>
+      <div><dt>Cost</dt><dd>Free for doctors. Families are not charged at the moment; if that ever changes, they will see the price before they pay.</dd></div>
+      <div><dt>Patient needs</dt><dd>Only WhatsApp. No app, no account, nothing to install.</dd></div>
+      <div><dt>Languages</dt><dd>English and Hindi.</dd></div>
+      <div><dt>Family side</dt><dd>A web app on any phone or computer, at chhaon.site/app. It can be added to the phone's home screen.</dd></div>
+      <div><dt>Consent</dt><dd>The patient is asked on WhatsApp before anything is sent, and can stop at any time by replying STOP.</dd></div>
+      <div><dt>Status</dt><dd>New. We are starting with a small number of families and clinics, and we read every message you send us.</dd></div>
+    </dl>
+  </section>
+
+  <section id="helps">
+    <h2>How it helps you</h2>
+    <ul class="benefits">
+      <li><strong>See what happened between visits.</strong> At the next visit you get one page: the medicines you prescribed and how many doses the patient confirmed in the last 30 days, medicine by medicine. You can see which medicine is being missed, not just that something is.</li>
+      <li><strong>Patients who follow the prescription.</strong> A short WhatsApp message at each dose time with a ✅ Taken button, in Hindi or English. No app and no account: it works on any phone with WhatsApp.</li>
+      <li><strong>A family that knows the plan.</strong> A son or daughter in another city sees what you prescribed and is told when a dose gets no reply.</li>
+      <li><strong>Nothing extra for you.</strong> No login, no app, no data sent to you. The family shows or sends the summary only when they choose. At the visit, just ask: <em>"Do you have the Chhaon summary?"</em> (In the app: Family, then Share with doctor.)</li>
+    </ul>
+  </section>
+
+  <section id="patient" aria-labelledby="patient-h">
+    <h2 id="patient-h">What your patient receives</h2>
+    <p>Short, polite WhatsApp messages in the patient's language. The patient only taps a button. Examples, with made-up names:</p>
+    <div class="chats">
+      <figure class="chat">
+        <figcaption>Medicine reminder, at each dose time</figcaption>
+        <div class="bubble">Namaste Papa 🙏 Good day! It is time for your medicine. Please take Metformin (500 mg), After food. When you have taken it, please tap the Taken button below so your family knows. Thank you.</div>
+        <div class="chips"><span>Taken</span></div>
+      </figure>
+      <figure class="chat">
+        <figcaption>Daily check-in, every morning</figcaption>
+        <div class="bubble">Good morning Papa! ☀️ This is your daily check-in that your family set up on Chhaon. Are you feeling okay today? Please tap one of the buttons below.</div>
+        <div class="chips"><span>I'm okay</span><span>Call me</span></div>
+      </figure>
+    </div>
+    <p class="hint">If there is no reply, the family is told, in the app and optionally on WhatsApp. If the patient taps "Call me", the family is told to call. The patient is also reminded the evening before and the morning of a doctor visit. Nothing is sent until the patient agrees.</p>
+
+    <h3 class="sub-h">What the family gets</h3>
+    <ul class="plain">
+      <li><strong>Today screen:</strong> which doses were taken, missed or still pending, and whether the daily check-in was answered.</li>
+      <li><strong>Alerts</strong> in the app, and optionally on WhatsApp, when a dose goes unconfirmed or the check-in gets no reply.</li>
+      <li><strong>The medicine list:</strong> name, dose, exact times, before or after food, and the stock left, with a warning before it runs out.</li>
+      <li><strong>Doctor visits:</strong> the next appointment, with WhatsApp reminders to the patient.</li>
+      <li><strong>Prescriptions and reports</strong> kept in one place, as a photo or PDF.</li>
+      <li><strong>Emergency card:</strong> medicines, allergies, conditions, blood group and contacts on one page, shared by a link the family can switch off at any time.</li>
+      <li><strong>Family sharing:</strong> brothers and sisters can follow the same parent.</li>
+    </ul>
+  </section>
+
+  <section id="see" aria-labelledby="sample-h">
+    <h2 id="sample-h">What you will see</h2>
+    <p>One page, in English or Hindi, printed or sent on WhatsApp by the family. This is an example with made-up data:</p>
+    <article class="sample" aria-label="Example summary with made-up data">
+      <span class="tag">Example · made-up data</span>
+      <p class="s-kicker">Medicine summary</p>
+      <p class="s-name">Sample Patient</p>
+      <p class="s-sub">68 years • Lucknow</p>
+      <dl>
+        <div><dt>Blood group</dt><dd>A+</dd></div>
+        <div><dt>Conditions</dt><dd>Type 2 diabetes, High BP</dd></div>
+        <div><dt>Allergies</dt><dd>Penicillin</dd></div>
+      </dl>
+      <h3>Medicines now</h3>
+      <ul class="s-meds">
+        <li><b>Telmisartan 40 mg</b> 8:00 AM · After food</li>
+        <li><b>Metformin 500 mg</b> 8:00 AM &amp; 8:00 PM · After food</li>
+      </ul>
+      <h3>Last 30 days</h3>
+      <p class="s-overall">69 of 90 doses confirmed (77%)</p>
+      <div class="s-row"><span>Metformin 500 mg</span><b>41 of 60</b></div>
+      <div class="s-bar" aria-hidden="true"><i style="width:68%"></i></div>
+      <div class="s-row"><span>Telmisartan 40 mg</span><b>28 of 30</b></div>
+      <div class="s-bar" aria-hidden="true"><i style="width:93%"></i></div>
+      <p class="s-check">Daily check-in answered on 26 of 30 days</p>
+    </article>
+    <p class="hint">It is based on the patient's replies on WhatsApp. "Not confirmed" means no reply was received; the dose may still have been taken. It supports your judgement and is not medical advice.</p>
+  </section>
 
   <section>
-    <h2>How it works for your patient</h2>
+    <h2>How a patient starts</h2>
     <ol>
       <li>The family scans the QR card at your desk (usually a son or daughter, often in another city).</li>
       <li>They add the parent and the medicines you prescribed.</li>
@@ -68,22 +209,61 @@
     </ol>
   </section>
 
-  <section>
-    <h2>What it means for you</h2>
-    <ul>
-      <li>Patients who actually take what you prescribe, between visits.</li>
-      <li>A family that knows the plan, even when they live far away.</li>
-      <li>Coming later, only with the family's consent: a short summary of missed doses before each visit.</li>
-    </ul>
+  <section aria-labelledby="say-h">
+    <h2 id="say-h">What you can tell your patient</h2>
+    <p>If you think it will help, a few plain sentences are enough:</p>
+    <blockquote lang="en">There is a service that sends your parent a WhatsApp message at each medicine time. They only tap "Taken". The family is told if a dose gets no reply, and you can show me the summary at your next visit. Scan this card to start.</blockquote>
+    <blockquote lang="hi">एक सेवा है जो आपके माता-पिता को हर दवा के समय WhatsApp पर संदेश भेजती है। उन्हें बस “ले ली” दबाना है। अगर किसी खुराक का जवाब न आए तो परिवार को बता दिया जाता है, और अगली बार आप मुझे सारांश दिखा सकते हैं। शुरू करने के लिए यह कार्ड स्कैन करें।</blockquote>
+    <p class="hint">Whether and how you mention Chhaon is your own professional decision. We do not ask you to endorse or advertise it.</p>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-h">
+    <h2 id="faq-h">Questions doctors ask</h2>
+    <details>
+      <summary>Does Chhaon change or suggest medicines?</summary>
+      <p>No. The family enters the medicines from your prescription and Chhaon only reminds. It never suggests, changes or diagnoses anything. The list is only as accurate as what the family typed, so it is worth a quick look at it during the visit.</p>
+    </details>
+    <details>
+      <summary>What does "not confirmed" mean?</summary>
+      <p>The patient did not tap Taken. The dose may still have been taken. Doses that were paused, or are still waiting, are not counted.</p>
+    </details>
+    <details>
+      <summary>Can the patient say no, or stop?</summary>
+      <p>Yes. Nothing is sent until the patient agrees on WhatsApp, and replying STOP at any time ends all messages.</p>
+    </details>
+    <details>
+      <summary>Does the patient need a smartphone?</summary>
+      <p>The patient needs WhatsApp, so a smartphone. Chhaon cannot reach a patient who does not use WhatsApp.</p>
+    </details>
+    <details>
+      <summary>Which medicines does it work for?</summary>
+      <p>It is built for regular medicines taken at fixed times, such as for blood pressure or diabetes. It is not built for medicines taken only when needed.</p>
+    </details>
+    <details>
+      <summary>What data is kept, and who can see it?</summary>
+      <p>The details the family adds (the patient's name, age, city, conditions, allergies and medicines) and whether each dose was confirmed on WhatsApp. Only the family members the account holder invites can see it. We do not sell data and we show no advertisements. You see nothing unless the family shows you the summary. Read the <a href="/legal/privacy.html">privacy policy</a>.</p>
+    </details>
+    <details>
+      <summary>Is it an emergency service?</summary>
+      <p>No. In an emergency, call 112. Chhaon's alerts depend on the patient's reply and can be late.</p>
+    </details>
+    <details>
+      <summary>What does it cost?</summary>
+      <p>It is free for doctors. Families are not charged at the moment. If that ever changes, they will see the price before they pay.</p>
+    </details>
+    <details>
+      <summary>Will you contact my patients or promote my clinic?</summary>
+      <p>No. We do not contact your patients, share their details with you, or promote clinics. Chhaon gives you nothing in return for recommending it.</p>
+    </details>
   </section>
 
   <section class="ethics">
     <h2>Free, and nothing in return</h2>
-    <p>Chhaon is free for you and your patients. We do not pay doctors, give gifts, or promote clinics in return for recommending Chhaon, in line with the Medical Council's code of ethics on referrals (Regulation 6.4). Recommend it only if you think it helps your patients.</p>
+    <p>Chhaon is free for doctors. We do not pay doctors, give gifts, or promote clinics in return for recommending Chhaon, in line with the Medical Council's code of ethics on referrals (Regulation 6.4). Recommend it only if you think it helps your patients.</p>
     <p>Chhaon never asks patients for money, OTPs, Aadhaar or bank details.</p>
   </section>
 
-  <section>
+  <section id="cards">
     <h2>Print QR cards for your desk</h2>
     <label for="clinic">Clinic name (optional, printed small on the card)</label>
     <input id="clinic" maxlength="60" autocomplete="organization" placeholder="e.g. Sharma Clinic, Lucknow" />
@@ -93,7 +273,7 @@
   </section>
 
   <footer>
-    Questions? Write to <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a> · <a href="/">chhaon.site</a> · <a href="/legal/privacy.html">Privacy policy</a>
+    Questions, or what would make Chhaon more useful for your clinic? Write to <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a> · <a href="/">chhaon.site</a> · <a href="/legal/privacy.html">Privacy policy</a>
   </footer>
 
   <div class="sheet" id="sheet" aria-hidden="true"></div>
