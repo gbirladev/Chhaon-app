@@ -17,6 +17,7 @@ import { EmergencyLinkPanel } from "./screens/EmergencyLink";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
+import { DoctorSummaryScreen } from "./screens/DoctorSummary";
 import { PlansScreen } from "./screens/Plans";
 import { StockField } from "./screens/StockField";
 import { StatsScreen } from "./screens/Stats";
@@ -59,6 +60,7 @@ type Screen =
   | "safety"
   | "feedback"
   | "love"
+  | "doctor"
   | "addSelf";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
@@ -263,7 +265,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "love"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -1653,6 +1655,7 @@ const plusPhone = (phone: string) => (phone.startsWith("+") ? phone : `+${phone}
 
 function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, onLeft }: { go: (screen: Screen) => void; members: CircleMember[]; userId: string | null; recipient: Recipient | null; onSignOut: () => void; onMembersChanged: () => void; onLeft: () => void }) {
   const t = useTranslations("family");
+  const td = useTranslations("doctorSummary");
   const ti = useTranslations("invites");
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { let cancelled = false; loadIsAdmin().then((v) => { if (!cancelled) setIsAdmin(v); }).catch(() => {}); return () => { cancelled = true; }; }, []);
@@ -1706,6 +1709,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
@@ -1893,9 +1897,9 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
   );
 }
 
-const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp"];
+const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "addSelf", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2197,7 +2201,7 @@ export default function App() {
 
   // Pull down at the top of a screen to refresh it: reload the shared data, then reopen the screen so it fetches its own.
   const [pullTick, setPullTick] = useState(0);
-  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "feedback", "love"];
+  const PULL_SCREENS: Screen[] = ["today", "appointments", "medicines", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "feedback", "love", "doctor"];
   const { pull, refreshing: pullRefreshing } = usePullToRefresh(ready && !loadFailed && PULL_SCREENS.includes(screen), async () => {
     await Promise.allSettled([
       refreshRecipient(recipientRef.current?.id),
@@ -2246,6 +2250,7 @@ export default function App() {
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}
           {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
           {screen === "whatsapp" && <WhatsApp go={go} recipient={recipient} medicines={medicines} />}
+          {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}

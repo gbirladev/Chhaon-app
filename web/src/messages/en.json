@@ -1143,5 +1143,30 @@
     "statsOther": "{queued} waiting · {expired} expired · {failed} failed · {skipped} skipped · {replies} replies from parents",
     "statsConfirm": "Reminders confirmed, {days} days before and after: {group} {before}% → {after}%",
     "statsNone": "No data yet"
+  },
+  "doctorSummary": {
+    "title": "Doctor summary",
+    "subtitle": "To show at {call}'s next visit",
+    "linkTitle": "Share with doctor",
+    "linkSub": "Medicines and the last 30 days on one page",
+    "language": "Summary language",
+    "english": "English",
+    "hindi": "हिन्दी",
+    "print": "Print or save as PDF",
+    "share": "Share",
+    "shareTitle": "Medicine summary for {name}",
+    "loadFailed": "Could not load the history. Please try again.",
+    "sheetTitle": "Medicine summary",
+    "prepared": "Prepared on {date} from the Chhaon app",
+    "medicinesNow": "Medicines now",
+    "noMedicines": "No medicines added.",
+    "lastDays": "Last {days} days",
+    "overall": "{confirmed} of {total} doses confirmed ({percent}%)",
+    "noHistory": "No reminder has been confirmed or missed yet, so there is nothing to summarise.",
+    "byMedicine": "By medicine",
+    "count": "{confirmed} of {total}",
+    "notActive": "not active now",
+    "checkins": "Daily check-in answered on {answered} of {total} days",
+    "note": "Based on {name}'s replies to WhatsApp reminders. \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice."
   }
 }

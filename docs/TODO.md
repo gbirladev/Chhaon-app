@@ -250,3 +250,23 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
   shared with vendors (DPDP: earn only when the family itself orders). Offers and payments only in the child's app, never on the parent's WhatsApp.
 - [ ] **Coming later for doctors, only with the family's consent:** a one-page summary of missed doses before each visit.
 - Note: `web/public/about.html` still says the old name "Vatsalaya"; update or remove it.
+- [x] **Doctor summary, family side (built 2026-11-03):** Family > Share with doctor (`web/src/screens/DoctorSummary.tsx`, `web/src/lib/adherence.ts`).
+  One page: patient details, medicines now, doses confirmed in the last 30 days (total and per medicine), check-ins; English by default, Hindi
+  one tap away; print / save as PDF and share as text. Counts only results (taken, taken late = confirmed; missed = no confirmation; pending,
+  sent and skipped are left out), never judges, says "not medical advice", never shows 100% while a dose is unconfirmed. Hindi wording
+  (`doctorSummary` in `hi.json`) needs a native read.
+- **Parked (decided 2026-11-03): no doctor login for now.** It would make a stranger a viewer of a parent's health data (needs NMC registration
+  checks, per-patient consent from the family, an audit log, revoke), doctors rarely adopt another app, the backend login is being moved to the
+  Java service, and no doctor has asked yet. The family carries the sheet to the visit instead.
+  - [ ] **Next, only if families use the sheet and doctors ask to receive it:** an expiring read-only link (about 7 days, family can cancel, no
+        phone numbers or address on the page, wording "anyone with this link can see this page"), modelled on the emergency link. Needs a backend
+        part: agree it with whoever owns `api-java/` first.
+  - [ ] **Only after that, if 10 or more doctors actively ask:** a doctor login, with NMC verification, per-patient consent, audit log, and a
+        lawyer's view. Nothing commercial may flow to the doctor (Regulation 6.4.1).
+  - [ ] **Find out first:** give the QR cards to 10 doctors in person; ask the families whether they showed the summary and whether the doctor
+        wanted more.
+- [ ] **Medicine photos not showing (reported 2026-11-03):** the Medicines list never shows photos (by design, only the medicine detail screen
+  does; the photo flow itself works locally: upload, signed link, image shown). Two things to settle: (1) if thumbnails on the list rows are
+  wanted, add them (one signed link per photo; changes the list design); (2) on the live site, check the Sydney Supabase project's Storage >
+  `medicine-photos` (and `reports`): files do not move with a database copy, so photos and wallet files from the old Mumbai project may be
+  missing while medicines still point at their paths. If empty, copy the files across from the old project.
