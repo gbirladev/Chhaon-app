@@ -32,7 +32,9 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/error",
                                 "/api/v1/auth/**",
-                                "/api/v1/whatsapp/webhook").permitAll()
+                                "/api/v1/whatsapp/webhook",
+                                // The gateway's signed webhook (HMAC checked by the controller, fails closed).
+                                "/webhooks/whatsapp-gateway").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(restAuthEntryPoint()))
                 .addFilterBefore(jwtAuthenticationFilter,

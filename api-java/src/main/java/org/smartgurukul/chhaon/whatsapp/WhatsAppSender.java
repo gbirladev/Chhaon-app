@@ -110,7 +110,8 @@ public class WhatsAppSender {
         return digits + "@s.whatsapp.net";
     }
 
-    private static String mask(String phone) {
+    /** Phone numbers are never logged in full: only the last three digits. */
+    public static String mask(String phone) {
         if (phone == null || phone.length() < 4) return "****";
         return "***" + phone.substring(phone.length() - 3);
     }

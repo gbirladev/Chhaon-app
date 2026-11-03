@@ -235,8 +235,9 @@ public class SchedulerService {
                     recipientId, today);
             if (claimed != 1) continue;
             try {
-                wa.send((String) row.get("whatsapp_phone"),
+                String msgId = wa.send((String) row.get("whatsapp_phone"),
                         checkinText((String) row.get("language"), (String) row.get("call_name")));
+                rememberCheckinMessageId(recipientId, today, msgId);
                 sent++;
             } catch (Exception sendEx) {
                 jdbc.update("update checkins set status='pending', sent_at=null where recipient_id=? and date=? and status='sent'",
@@ -245,6 +246,20 @@ public class SchedulerService {
             }
         }
         return sent;
+    }
+
+    /**
+     * Remembers which WhatsApp message carried today's check-in, so a swipe-reply to it can be matched
+     * (checkins.whatsapp_message_id, migration 20261104000041). Best effort: if the column does not exist yet or the
+     * update fails, the check-in itself is unaffected.
+     */
+    private void rememberCheckinMessageId(UUID recipientId, LocalDate date, String messageId) {
+        try {
+            jdbc.update("update checkins set whatsapp_message_id = ? where recipient_id = ? and date = ?",
+                    messageId, recipientId, date);
+        } catch (Exception e) {
+            log.warn("check-in message id not stored: {}", e.getClass().getSimpleName());
+        }
     }
 
     private int markMissedCheckins(UUID scope) {
