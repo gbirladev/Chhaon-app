@@ -373,3 +373,28 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
 - [ ] **Tell whoever copied the database** to keep the permissions next time (for example `pg_dump` without `--no-acl`), and to run the two maintenance files after any future copy.
 - [ ] **New functions:** Supabase gives every new function to anonymous, signed-in and server roles by default; a migration that adds a server-only function must revoke it, and
       `restore_function_permissions.sql` must be regenerated to include it.
+
+## Reported in production, 2026-11-03 (evening)
+- **Time shows Sydney / "morning" at night in India.** Today's greeting and clock use the parent's STORED time zone. Reproduced in a browser: with `Australia/Sydney` stored, Today says GOOD MORNING
+  while it is night in India. No code anywhere sets Sydney as a default (the defaults are `Asia/Kolkata`); Sydney only comes from data. Also, a wrong stored zone could not be corrected: the profile
+  form hid the time zone box for +91 numbers and saved the stored zone unchanged. **Fixed in code (not live until pushed):** the box is always shown, starts at the stored zone (or the phone's country),
+  and what is saved is what it shows (11 browser checks).
+  - [ ] **Urgent for real families, because reminders go out on the parent's clock:** on Sydney run `select left(whatsapp_phone, 3) as phone, timezone, count(*) from public.care_recipients group by 1, 2 order by 3 desc;`
+        and `select timezone, count(*) from public.profiles group by 1;` and `show timezone;`. Parents with a +91 number and a non-India zone are wrong: fix them with an UPDATE after previewing
+        (`update public.care_recipients set timezone = 'Asia/Kolkata' where left(whatsapp_phone, 3) = '+91' and timezone <> 'Asia/Kolkata';`). The trigger clears pending doses when the zone changes, so
+        reminders are regenerated on the right clock. Find out where Sydney came from (the copy of the data? a script?) so it does not happen again.
+- **Phone still shows the previous view.** Reproduced: a browser that visited the old site shows the OLD app on the first visit after a deploy and the NEW app on the next visit (the offline copy in the
+  service worker is replaced in the background). Nothing is broken; open the app twice. One real problem found: an icon added to the home screen while the app lived at `/` opens `/`, which is now the
+  website. **Fixed in `web/public/home.html`:** opened as an installed app (Android standalone, iPhone home screen), `/` goes straight to `/app/`. 5 browser checks.
+  - [ ] Optional: a "new version, tap to refresh" banner when the service worker updates (not an automatic reload: it could lose typed text).
+- **Report upload fails and medicine photos are missing in production.** The files live in Supabase Storage (three private buckets: medicine-photos, reports, feedback), which a database copy does not bring
+  over. Unverified until checked on Sydney.
+  - [ ] Run `supabase/maintenance/storage_check.sql` on Sydney (read-only) and compare with the expected lines in the file.
+  - [ ] If a bucket or rule is missing: run `supabase/maintenance/restore_storage.sql` (tested on the correct local database: 0 differences, no file touched). That restores uploads for NEW files.
+  - [ ] **The old photos and reports are only in the old (Mumbai) project's storage: do NOT delete that project until they are copied** (a script using both projects' service keys; never paste keys in chat).
+        Rows in the database already point at the right paths, so copying the files with the same names is enough.
+- **"Ask for location access" (decided not to, 2026-11-03).** The device location is the CAREGIVER's, who is often in another country: useless for the parent's time zone (the box and the phone's country do that)
+  and for "doctors near Papa" (the parent's city does that). The one place location helps is a bystander on the emergency card page; there, a plain link to Google Maps ("hospitals near me") lets Maps
+  ask for the location itself, so Chhaon never collects it. If ever added: only on a button tap, once, never stored, privacy text updated (DPDP), and `Permissions-Policy: geolocation=(self)`
+  (today the header says `geolocation=()` in `web/vite.config.ts` and `docs/deploy.md`; GitHub Pages cannot set headers).
+- **Dark / light mode:** an agent was launched on 2026-11-03 in its own git worktree; review its branch and merge when it reports.

@@ -19,6 +19,12 @@
     forward();
     window.addEventListener("hashchange", forward);
   })();
+  // An icon added to the home screen while the app lived at "/" still opens "/". Opened as an installed app (its own window,
+  // not a browser tab), send it straight on to the app instead of showing the website. Normal visitors are not affected.
+  (function () {
+    var installed = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    if (installed && location.pathname === "/") location.replace("/app/" + location.search + location.hash);
+  })();
 </script>
 <style>
   :root {

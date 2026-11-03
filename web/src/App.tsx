@@ -474,8 +474,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     const id = window.setTimeout(() => void run(), 400);
     return () => { cancelled = true; window.clearTimeout(id); };
   }, [typedPhone, recipient?.id]);
-  const abroad = !!typedPhone && !typedPhone.startsWith("+91");  // a parent outside India needs a time zone: reminders follow THEIR clock
-  // The time zone follows the phone number's country until the caregiver picks one by hand.
+    // The time zone follows the phone number's country until the caregiver picks one by hand. It is always shown: reminders follow THE PARENT's clock.
   const zoneValue = zoneTouched ? zone : recipient && typedPhone === recipient.whatsapp_phone ? recipient.timezone : defaultZone(typedPhone ?? "");
   const zoneOptions: string[] = (TIMEZONES as readonly string[]).includes(zoneValue) ? [...TIMEZONES] : [...TIMEZONES, zoneValue];
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
@@ -499,7 +498,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (!name) found["f-name"] = t("errName");
     const whatsapp = normalizePhone(data.whatsapp ?? "");
     if (!whatsapp) found["f-whatsapp"] = t("invalidPhone");
-    const timezone = whatsapp?.startsWith("+91") ? (recipient?.timezone ?? "Asia/Kolkata") : (data.timezone || zoneValue);
+    const timezone = data.timezone || zoneValue;   // always the box: it starts at the stored zone, or the number's country (India: Asia/Kolkata)
     const ageText = (data.age ?? "").trim();
     const age = ageText ? Number(ageText) : null;
     if (age !== null && !(/^\d{1,3}$/.test(ageText) && age >= 0 && age <= 130)) found["f-age"] = t("invalidAge");
@@ -555,7 +554,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
         {!isSelf && <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
         <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : "whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {sharedWith && <p className="form-note" role="status">{t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
-        {abroad && <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>}
+        <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
         {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
         <div className="two-col">
