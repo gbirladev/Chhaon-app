@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, usePlanPauses } from "../App";
-import { daysLeft, loadPlanOverview, loadPlans, type PlanInfo, type PlanOverview } from "../lib/plans";
+import { daysLeft, loadPlanOverview, loadPlans, PLANS_ENABLED, type PlanInfo, type PlanOverview } from "../lib/plans";
 import "./plans.css";
 
 const CONTACT_EMAIL = "chhaon.app.mail@gmail.com";
@@ -24,7 +24,7 @@ export function PlansScreen({ go }: { go: (screen: "family") => void }) {
   const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("mailSubject"))}`;
   return (
     <main className="scroll-page no-nav plans-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle")} back={() => go("family")} />
+      <AppHeader title={t(PLANS_ENABLED ? "title" : "pilotTitle")} subtitle={t(PLANS_ENABLED ? "subtitle" : "pilotSubtitle")} back={() => go("family")} />
       {state === null && <p className="plan-usage" role="status">{t("loading")}</p>}
       {state === "error" && <p className="plan-usage" role="alert">{t("loadError")}</p>}
       {state && state !== "error" && (
@@ -43,7 +43,7 @@ export function PlansScreen({ go }: { go: (screen: "family") => void }) {
           {pauses && (pauses.parentIds.length > 0 || pauses.medicines.length > 0) && (
             <div className="plan-trial ended" role="alert"><strong>{t("pausedNow", { items: [pauses.parentIds.length > 0 ? tt("pauseItemParents", { count: pauses.parentIds.length }) : "", pauses.medicines.length > 0 ? tt("pauseItemMedicines", { count: pauses.medicines.length }) : ""].filter(Boolean).join(` ${tt("and")} `) })}</strong></div>
           )}
-          {state.plans.map((p) => {
+          {state.plans.filter((p) => PLANS_ENABLED || p.key === state.mine.plan).map((p) => {   // during the pilot: only the account's own plan
             const current = p.key === state.mine.plan;
             const trialPlan = state.mine.onTrial && p.key === state.mine.effective;
             return (
@@ -59,11 +59,25 @@ export function PlansScreen({ go }: { go: (screen: "family") => void }) {
               </section>
             );
           })}
-          <div className="plan-note">
-            <strong>{t("noteTitle")}</strong>
-            <p style={{ margin: "6px 0 0" }}>{t("noteBody")}</p>
-            <a href={mailto}>{t("contact")}</a>
-          </div>
+          {PLANS_ENABLED ? (
+            <div className="plan-note">
+              <strong>{t("noteTitle")}</strong>
+              <p style={{ margin: "6px 0 0" }}>{t("noteBody")}</p>
+              <a href={mailto}>{t("contact")}</a>
+            </div>
+          ) : (() => {
+            const mine = state.plans.find((p) => p.key === state.mine.plan);
+            const finite = !!mine && mine.maxParents !== null && mine.maxMembers !== null && mine.maxMedicines !== null && mine.maxDocuments !== null;
+            return (
+              <div className="plan-note">
+                <strong>{t("pilotNoteTitle")}</strong>
+                <p style={{ margin: "6px 0 0" }}>{finite && mine
+                  ? t("pilotNoteBody", { parents: mine.maxParents as number, members: mine.maxMembers as number, medicines: mine.maxMedicines as number, documents: mine.maxDocuments as number })
+                  : t("pilotNoteUnlimited")}</p>
+                <p style={{ margin: "6px 0 0" }}>{t("pilotMore")} <a href={mailto}>{t("contact")}</a></p>
+              </div>
+            );
+          })()}
         </>
       )}
     </main>

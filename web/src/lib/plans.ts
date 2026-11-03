@@ -1,5 +1,12 @@
 import { supabase } from "./supabase";
 
+/**
+ * The full pricing view (every plan card, trial and upgrade notes) is built but switched off during the pilot: everyone is on the
+ * Family plan (migration 0039) and the Plans screen shows only the account's own plan with a pilot note. Set VITE_PLANS_ENABLED=true
+ * to bring the full view back (see docs/plans.md, "Plans off").
+ */
+export const PLANS_ENABLED = import.meta.env.VITE_PLANS_ENABLED === "true";
+
 /** Pricing plans and the free trial (migration 0027). The limits are enforced in the database; this only reads them to show them. */
 /** A null limit means unlimited. */
 export type PlanInfo = { key: string; name: string; maxParents: number | null; maxMembers: number | null; maxMedicines: number | null; maxDocuments: number | null };

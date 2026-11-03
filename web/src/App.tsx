@@ -28,7 +28,7 @@ import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/Sa
 import { usePullToRefresh } from "./lib/pullToRefresh";
 import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
-import { daysLeft, loadPlanOverview, loadPlanPauses, type PlanOverview, type PlanPauses } from "./lib/plans";
+import { daysLeft, loadPlanOverview, loadPlanPauses, PLANS_ENABLED, type PlanOverview, type PlanPauses } from "./lib/plans";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
@@ -1716,7 +1716,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
       <LoveLink go={go} hidden={!!recipient?.is_self} />
-      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t("plansLink")}</strong><p>{t("plansSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>

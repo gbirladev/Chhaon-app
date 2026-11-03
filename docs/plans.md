@@ -51,3 +51,20 @@ in the last 7 days of the trial, a banner saying how many medicines/parents WOUL
 ## Where the limits are enforced
 
 `limit_parents` and `limit_medicines` triggers (so direct table writes are covered too), `create_family_invite` and `accept_family_invite` (circle size), `guard_profile_plan` (nobody changes their own plan or trial). Tests: `supabase/tests/plans.test.sql`.
+
+## Plans off (the pilot): everyone is on Family (migration 0039)
+
+While Chhaon is free, nobody should meet a Free limit (Free allowed only 2 medicines per parent and no invites after the 30-day trial).
+- **Database (migration 0039, `supabase/migrations/20261103000039_everyone_on_family.sql`):** the default plan of a new account is `family`;
+  every existing Free or Plus account moves to `family`; **admin accounts are always `ultra`** (unlimited): moving them now, and a trigger
+  (`profiles_set_admin_ultra`) keeps it true when someone is marked admin later or a plan is edited by hand. Family means 4 parents, 10 people in a
+  family, 20 medicines per parent, 100 reports per parent. A paid plan ignores the trial date, so the trial never matters.
+- **App:** the Plans screen (Family tab, "Your plan") shows only the account's own plan card and a "Pilot version" note with the real limits
+  (read from the `plans` table, so the numbers cannot drift). Free, Plus and Ultra cards, trial notes and "upgrade" wording stay hidden.
+  The full view is built: set `VITE_PLANS_ENABLED=true` (a GitHub repository variable for the web deploy, or `web/.env.local` locally) and redeploy.
+- **The doctors page** (`web/public/doctors.html`) repeats the pilot limits as plain text: update it if the Family limits change.
+- **Bringing plans back:** run `alter table public.profiles alter column plan set default 'free';`, move the accounts you want to a smaller plan
+  with `update public.profiles set plan = 'free' where email = '...'` (the one migration 0039 moved cannot be told apart afterwards, so decide
+  who goes back to Free), give new accounts a fresh trial if wanted (`trial_ends_at`), and set `VITE_PLANS_ENABLED=true`. Admin accounts stay Ultra.
+- **Applying 0039 to a database:** `npx supabase@2.120.0 db push` (dry run first; never `config push`), or paste the file into the Supabase SQL editor.
+

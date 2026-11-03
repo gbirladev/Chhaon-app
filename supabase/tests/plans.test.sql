@@ -15,6 +15,8 @@ insert into auth.users (id, email, instance_id, aud, role) values
 select ok((select trial_ends_at between now() + interval '29 days' and now() + interval '31 days' from public.profiles where id = 'd7000000-0000-0000-0000-000000000004'), 'a new account gets a 30-day trial');
 
 -- set up by hand, as the owner of the app would
+-- New accounts start on Family (migration 0039). These tests are about Free and its trial, so say so.
+update public.profiles set plan = 'free' where id in ('a7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000003', 'd7000000-0000-0000-0000-000000000004');
 update public.profiles set trial_ends_at = now() - interval '1 day' where id in ('a7000000-0000-0000-0000-000000000001', 'b7000000-0000-0000-0000-000000000002', 'e7000000-0000-0000-0000-000000000005');
 update public.profiles set plan = 'family' where id = 'b7000000-0000-0000-0000-000000000002';
 update public.profiles set plan = 'plus'   where id = 'e7000000-0000-0000-0000-000000000005';

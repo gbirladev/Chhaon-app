@@ -33,6 +33,7 @@ jobs:
       VITE_API_URL: ${{ vars.VITE_API_URL }}
       VITE_REPORTS_ENABLED: ${{ vars.VITE_REPORTS_ENABLED }}
       VITE_PRIVACY_ENABLED: ${{ vars.VITE_PRIVACY_ENABLED }}
+      VITE_PLANS_ENABLED: ${{ vars.VITE_PLANS_ENABLED }}
       VITE_PHONE_LOGIN: ${{ vars.VITE_PHONE_LOGIN }}
     steps:
       - uses: actions/checkout@v4

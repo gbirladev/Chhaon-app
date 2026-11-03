@@ -9,6 +9,8 @@ insert into auth.users (id, email, instance_id, aud, role) values
   ('c5000000-0000-0000-0000-000000000003', 'wl-ultra@test.dev',  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
   ('d5000000-0000-0000-0000-000000000004', 'wl-plus@test.dev',   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
 -- set up by hand, as the owner of the app would
+-- New accounts start on Family (migration 0039). These tests are about Free, so say so.
+update public.profiles set plan = 'free' where id in ('a5000000-0000-0000-0000-000000000001', 'b5000000-0000-0000-0000-000000000002');
 update public.profiles set trial_ends_at = now() - interval '1 day' where id in ('a5000000-0000-0000-0000-000000000001', 'c5000000-0000-0000-0000-000000000003', 'd5000000-0000-0000-0000-000000000004');
 update public.profiles set plan = 'ultra' where id = 'c5000000-0000-0000-0000-000000000003';
 update public.profiles set plan = 'plus'  where id = 'd5000000-0000-0000-0000-000000000004';
