@@ -353,7 +353,7 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
       no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
 
-## Permissions on the Sydney database differed from the migrations (found 2026-11-03): functions FIXED, tables still to check
+## Permissions on the Sydney database differed from the migrations (found 2026-11-03): functions AND tables FIXED and verified
 Testing the live card function through the public API showed that an anonymous visitor could run `record_emergency_view`; listing everything an anonymous visitor could
 run showed **48 functions where the migrations allow 4**. Five server-only functions (`erase_caregiver`, `claim_consent_request`, `confirm_dose_slot`, `consume_stock`,
 `generate_dose_events`) run with full power and do not check who calls them, so they were open to anyone holding the site's public key (a secret ID was the only protection).
@@ -364,10 +364,10 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
 - [x] **Table permissions checked 2026-11-03: ALSO lost.** Every table on Sydney had full permissions for anonymous and signed-in users (the migrations restrict writes on several: `emergency_links`,
       `care_circle_members`, `notifications`, `appointments`, `reports`); only row security (RLS) was protecting them. Two tables that are not in the migrations, `user_credentials` (Java login,
       empty at the time) and `flyway_schema_history` (2 rows), had row security OFF and were readable and writable by an anonymous visitor (count-only requests confirmed it; no rows were read).
-- [ ] **Lock the two Java-backend tables now** (the Java service connects as `postgres`, per `api-java/README.md`, so it is not affected; confirm with its owner):
+- [x] **Done 2026-11-03: the two Java-backend tables are locked (from outside a count-only request now gets 401, not 200)** (the Java service connects as `postgres`, per `api-java/README.md`, so it is not affected; confirm with its owner):
       `revoke all on table public.user_credentials from public, anon, authenticated; alter table public.user_credentials enable row level security; revoke all on table public.flyway_schema_history from public, anon, authenticated; alter table public.flyway_schema_history enable row level security;`
       Check from outside: a count-only request to `/rest/v1/user_credentials` with the public key must now be refused, not `200`.
-- [ ] **Restore the table permissions:** run `supabase/maintenance/restore_table_permissions.sql` on Sydney (generated from the correct local permissions; tested on a deliberately opened local copy: 0 missing,
+- [x] **Done and verified 2026-11-03: table permissions restored (the 26 tables match the correct state line for line, 0 differences; from outside, `profiles`, `care_recipients`, `emergency_links` show 0 rows and `plans` is refused):** run `supabase/maintenance/restore_table_permissions.sql` on Sydney (generated from the correct local permissions; tested on a deliberately opened local copy: 0 missing,
       0 extra, identical 26-line fingerprint, safe to run twice), then run `supabase/maintenance/table_permissions_check.sql` and compare with its 26 expected lines (the two Java tables should show `0 | 0 | 0 | f | t`).
 - [ ] **Optional hardening, test locally first:** the anonymous role has no need for any table in this app (the public card is a function). Revoking all table permissions from `anon` would be a second lock.
 - [ ] **Tell whoever copied the database** to keep the permissions next time (for example `pg_dump` without `--no-acl`), and to run the two maintenance files after any future copy.
