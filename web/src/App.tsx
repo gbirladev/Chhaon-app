@@ -29,6 +29,7 @@ import { usePullToRefresh } from "./lib/pullToRefresh";
 import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
 import { daysLeft, loadPlanOverview, loadPlanPauses, PLANS_ENABLED, type PlanOverview, type PlanPauses } from "./lib/plans";
+import { loadSchedulerAge, SCHEDULER_STALE_SECONDS } from "./lib/scheduler";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
@@ -895,7 +896,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   const [sheetOpen, setSheetOpen] = useState(false);
   const [parentsOpen, setParentsOpen] = useState(false);
   // The loaded data is tagged with the parent it belongs to, so after switching parent the old one's doses are never shown.
-  const [loaded, setLoaded] = useState<{ id: string; doses: TodayDose[]; checkin: TodayCheckin; at: number } | null>(null);
+  const [loaded, setLoaded] = useState<{ id: string; doses: TodayDose[]; checkin: TodayCheckin; at: number; age: number | null } | null>(null);
   const [errorFor, setErrorFor] = useState<string | null>(null);
   const mine = loaded && loaded.id === recipient?.id ? loaded : null;
   const doses = mine ? mine.doses : null;
@@ -912,8 +913,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     let cancelled = false;
     const load = async () => {
       try {
-        const [d, c] = await Promise.all([loadTodayDoses(recipient), loadCheckin(recipient)]);
-        if (!cancelled) { setLoaded({ id: recipient.id, doses: d, checkin: c, at: Date.now() }); setErrorFor(null); }
+        const [d, c, age] = await Promise.all([loadTodayDoses(recipient), loadCheckin(recipient), loadSchedulerAge().catch(() => null)]);
+        if (!cancelled) { setLoaded({ id: recipient.id, doses: d, checkin: c, at: Date.now(), age }); setErrorFor(null); }
       } catch {
         if (!cancelled) setErrorFor(recipient.id);
       }
@@ -946,6 +947,10 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   // (the scheduler is down): say so, instead of showing it as "next" and letting the family believe the parent was reminded.
   const stuck = !mine || !consented || recipient?.is_self ? [] : visibleDoses.filter((d) => d.status === "pending" && mine.at - new Date(d.scheduledAt).getTime() > DELAYED_AFTER_MS);
   const stuckNames = [...new Set(stuck.map((d) => d.name))];
+  // The scheduler's own heartbeat (no heartbeat ever recorded = nothing to compare with = no alarm): if it last ran long ago, reminders and tomorrow's doses are not being made.
+  const schedulerAge = mine && consented && !recipient?.is_self ? mine.age : null;
+  const schedulerStale = schedulerAge !== null && schedulerAge > SCHEDULER_STALE_SECONDS;
+  const ago = (seconds: number) => seconds < 5400 ? t("today.agoMinutes", { count: Math.max(1, Math.round(seconds / 60)) }) : seconds < 129600 ? t("today.agoHours", { count: Math.round(seconds / 3600) }) : t("today.agoDays", { count: Math.round(seconds / 86400) });
   const stuckShown = stuckNames.slice(0, 5).join(", ") + (stuckNames.length > 5 ? ` +${stuckNames.length - 5}` : "");
   const lastMissed = missed[missed.length - 1];
 
@@ -1007,7 +1012,14 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
       <TrialBanner go={go} />
       {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
-      {stuck.length > 0 && (
+      {schedulerStale && schedulerAge !== null && (
+        <section className="alert-card" role="alert">
+          <div className="alert-icon">!</div>
+          <div><strong>{t("today.staleTitle")}</strong><p>{t("today.staleBody", { call, ago: ago(schedulerAge) })}</p></div>
+          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
+        </section>
+      )}
+      {!schedulerStale && stuck.length > 0 && (
         <section className="alert-card" role="alert">
           <div className="alert-icon">!</div>
           <div><strong>{t("today.delayedTitle")}</strong><p>{t("today.delayedBody", { call, names: stuckShown })}</p></div>

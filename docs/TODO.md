@@ -426,7 +426,11 @@ sending the consent request, appointment reminders, escalation (Safety net), lov
   0. [x] DONE 2026-11-04 (committed locally, not pushed): the red "Reminders are delayed" card on Today (a dose of a parent who has agreed, still `pending` more than 20 minutes after its time; English and Hindi; 12 browser checks).
          **Its limit:** it only helps while today's doses exist. If the scheduler is down at the start of a day, no doses are created, so Today just says "No doses are scheduled today" and the card cannot appear.
          The real fix is a **scheduler heartbeat**: each tick records `last_tick_at` in a small table readable by signed-in users, and the app shows the same card when it is older than about 15 minutes while reminders are expected.
-         [ ] Build the heartbeat after the reply pipeline (a new migration, one line in the Java tick, the web check).
+         [x] Heartbeat, DB and web side DONE 2026-11-04 (committed locally): migration `20261104000040_scheduler_heartbeat.sql` (a one-row table nobody can read directly, `touch_scheduler_heartbeat()` for the server only,
+             `scheduler_health()` for signed-in users; 11 database checks) and the Today card "Reminders have stopped" when the last tick is more than 15 minutes old ("2 minutes ago" style text in English and Hindi,
+             silent when no heartbeat was ever recorded so there is no false alarm; 13 browser checks).
+         [ ] Java side: at the end of each tick call `select public.touch_scheduler_heartbeat()` (best effort: catch and log, never fail the tick). Requested from the Java agent.
+         [ ] To make it live, IN THIS ORDER: apply migration 0040 on Sydney (SQL editor), deploy the Java line, then the web. Until the first tick is recorded the app stays silent.
   1. [ ] Test foundation for Java (there are NO tests today): tests run against a real Postgres built from `supabase/migrations` (the SQL functions are the logic), in CI and locally; Maven runs through Docker (no JDK on the Mac).
          First, tests that pin down what the 6-step tick does today.
   2. [ ] The reply pipeline (the blocker): a signed webhook endpoint for the gateway (`message.received`, `message.status`; HMAC `X-Webhook-Signature`), idempotent, understanding free-text replies in English and Hindi (no buttons exist):

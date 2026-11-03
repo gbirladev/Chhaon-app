@@ -742,6 +742,9 @@ isOneToOne: false
 "plan_pauses":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"scheduler_health":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "preview_family_invite":
 { Args: { "p_token": string }; Returns: Json
                            },
