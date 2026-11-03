@@ -270,3 +270,43 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
   wanted, add them (one signed link per photo; changes the list design); (2) on the live site, check the Sydney Supabase project's Storage >
   `medicine-photos` (and `reports`): files do not move with a database copy, so photos and wallet files from the old Mumbai project may be
   missing while medicines still point at their paths. If empty, copy the files across from the old project.
+
+## Production after the move to AWS: what is broken, and what "enable Safety net / Love in production" needs (found 2026-11-03)
+The live site (`chhaon.site/app`) calls `https://api.chhaon.site` for five things. That address is now the **Java backend** on the AWS box
+(54.79.216.98), which does not have them: they lived only in the Python API on Render, which is no longer used. The Java backend has only auth,
+recipients, medicines and `admin/tick`; the web app itself reads the database through Supabase directly.
+- [ ] **Emergency card public page is broken (checked in a browser 2026-11-03 with a made-up link):** `chhaon.site/app/#/e/<token>` shows "Could not
+      load. Please check your internet and try again." for every link, because `GET /public/emergency/<token>` is not served. This is what a stranger
+      opens in a crisis, so fix it first.
+- [ ] **Asking a parent for consent** (`POST /recipients/{id}/consent-request`) and **WhatsApp alerts opt-in** (`POST /alerts/whatsapp/request`) are not
+      served, so new families probably cannot start reminders from the app. Not tested with a live login.
+- [ ] **`GET /features` is refused**, so the Safety net and Love messages screens stay hidden in production whatever the settings are.
+- [ ] **Reminders may not be sending at all:** the Java scheduler is OFF by default (`chhaon.scheduler.enabled`, "enabled at cutover") and the deploy
+      workflow's server settings do not turn it on. Could not see the server itself: check `/etc/chhaon/backend.env` on the box.
+- [ ] **Not yet ported to Java** (per `api-java/README.md`): escalation ladder (Safety net), love loop, one-reminder-per-slot, appointment reminders, alert
+      delivery to the family's WhatsApp, and handling the parent's "Taken" / check-in replies (the WhatsApp webhook). Reports and AI, family invites,
+      emergency links, plans and notifications are also still on the Python side.
+- **Do NOT make the web show the Safety net by faking `/features`:** families would see a safety net that sends nothing. It must run for real first.
+- [ ] **Decide the path with whoever owns `api-java/`:** (A) run the Python API again next to the Java one (the web app calls only Python routes on this
+      address, and the Safety net, love loop, consent and emergency page are already built and tested there: 282 API tests); (B) port them to Java feature
+      by feature (the buddy's plan; slower); (C) agree the order first. Whichever it is, the five routes above come before any new feature.
+- [ ] **To switch the Safety net / Love messages on once the code runs somewhere:** migrations 0030 to 0037 on the Sydney database (not verified), the
+      server settings `ESCALATION_ENABLED`, `LOVE_LOOP_ENABLED`, `SLOT_REMINDERS_ENABLED` on whichever server runs that code, a scheduler tick that really
+      runs and a warning when it stops, then the real send tests with throwaway numbers listed under "To test before switching escalation on", then one parent
+      first. The templates list no longer matters if sending now goes through the WhatsApp gateway: confirm how the gateway handles consent, STOP and buttons.
+- Locally both are already ON (`api/.env` has `ESCALATION_ENABLED=true` and `LOVE_LOOP_ENABLED=true`; Family tab shows Safety net and Love messages).
+  `SLOT_REMINDERS_ENABLED` is not set locally. AI report reading stays OFF on purpose (needs doctor and lawyer review). Admin screens (Pilot stats) show
+  only for admin logins, nothing to change.
+
+## Before the first 10 doctors get QR cards (listed 2026-11-03)
+- [ ] **Free plan limits:** after the 30-day trial, Free allows only 2 medicines per parent and no family invites, so a doctor's patient on 5 medicines would
+      have most reminders paused. Raise the Free limits or put pilot families on a bigger plan (`docs/plans.md`, "Change a limit").
+- [ ] **Supabase Auth Site URL and redirect URL** should be `https://chhaon.site/app` (dashboard setting), or login and sign-up confirmation land on the
+      marketing page.
+- [ ] **Doctors page promises to confirm:** "if that ever changes, [families] will see the price before they pay"; "we show no advertisements" (matches the
+      privacy policy but conflicts with the planned vendor links: reconcile before building those); no claim about where data is stored (Mumbai or Sydney is
+      undecided).
+- [ ] **"About us / who is behind Chhaon"** for the doctors page, once the company details exist. Doctors will ask.
+- [ ] **Native Hindi read** of the doctors-page script and the `doctorSummary` texts.
+- [x] **Home page links to the doctors page** (2026-11-03): "For doctors" in the top bar on desktop, and a line under the main buttons that also shows on
+      phones (the top-bar links are hidden on screens narrower than 960 px), plus the footer link.
