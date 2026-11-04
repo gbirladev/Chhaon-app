@@ -51,6 +51,11 @@ rules are recreated (2026-11-04) and new uploads work. **Question: before the mo
 (medicine photos, reports)?** The old Mumbai project appears to have been deleted. If you have a copy, tell the product owner;
 `supabase/maintenance/copy_storage.mjs` can load it.
 
+## Which account to use
+
+Please do **not** use the owner's admin account (`gbirla.dev.rnd@gmail.com`) for any setup, login or testing. It is the live admin
+account (Ultra plan, real data). Use a separate account of your own for the dashboards and for any test sign-ins in the app.
+
 ## Step by step (do in this order)
 
 **A. Get the secret.** The product owner generates it (`openssl rand -hex 32`) and sends it to you privately. Keep it in a
