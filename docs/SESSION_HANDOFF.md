@@ -139,6 +139,23 @@ should be `https://chhaon.site/app`; "About us" on the doctors page; reports wit
 (`VITE_REPORTS_ENABLED`); the owner did test a report upload in production, so check what `web-deploy.yml` currently sets before
 assuming. Safety net and Love messages were enabled in production at the owner's request; admin-only features stay off.
 
+## 8b. SEO and search (done 2026-11-04, live)
+
+- Pushed and live: keyword titles/descriptions, canonical links, social preview image (`web/public/og-image.jpg`, 1200x630), structured
+  data (organisation, website, web app, FAQ), `robots.txt`, `sitemap.xml` (5 pages), `/app/` and the two old "Vatsalaya" pages
+  (`/about.html`, `/privacy.html`) set to noindex.
+- Hindi home page `https://chhaon.site/hi/` with hreflang links; it is GENERATED from `web/public/home.html` by
+  `web/scripts/build-hindi-home.mjs` on every build. Edit `home.html`, never `hi/index.html`. The legal pages are generated the same way by
+  `build-legal-pages.mjs`. The home page's own script sets `document.title`, keep it in line with the `<title>` tag.
+- Google Search Console: Domain property `chhaon.site` verified by DNS TXT at Hostinger (registrar and DNS), owned by
+  `gbirla.dev.rnd@gmail.com`; sitemap submitted (Success, 5 pages); indexing requested for `/`, `/hi/`, `/doctors.html`.
+  Hostinger DNS keeps the `v=spf1` record and the `google-site-verification=AosOqw0...` record; an older `NufpW8d0...` record from a
+  different Google account can be deleted (and that account removed in Search Console, Settings, Users and permissions).
+- Not done yet: Bing Webmaster Tools (import from Google), guide pages for search ("looking after parents from abroad", "medicine
+  reminders for elderly parents on WhatsApp", "what to keep on an emergency card"), links from other sites (clinics, startup listings,
+  NRI groups), Hindi review of the search title/description (`docs/hindi-review.md` Part 3), Play Store privacy link should be
+  `https://chhaon.site/legal/privacy.html` (not the old `/privacy.html`).
+
 ## 9. How to run and test
 
 - **Web (from `web/`):** `npx tsc -b` (types), `npx oxlint src/App.tsx` (baseline **14 warnings, must not increase**), `npm run build`.
