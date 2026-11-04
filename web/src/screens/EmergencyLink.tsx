@@ -62,7 +62,7 @@ export function EmergencyLinkPanel({ recipientId, name, share, toast }: Props) {
               <button className="secondary-button" disabled={busy} onClick={() => setConfirm("off")}>{t("turnOff")}</button>
             </div>
           ) : (
-            <div role="alertdialog" aria-label={t(confirm === "off" ? "turnOff" : "newLink")} style={{ background: "#fff7f6", border: "1px solid #f0b8b4", borderRadius: 14, padding: 12 }}>
+            <div role="alertdialog" aria-label={t(confirm === "off" ? "turnOff" : "newLink")} style={{ background: "var(--s-fff7f6)", border: "1px solid var(--b-f0b8b4)", borderRadius: 14, padding: 12 }}>
               <p style={{ margin: "0 0 10px", fontWeight: 600 }}>{t(confirm === "off" ? "confirmOff" : "confirmNew")}</p>
               <div className="emergency-actions">
                 <button className="primary-button" disabled={busy} onClick={() => void run(confirm === "off" ? async () => { await revokeEmergencyLink(recipientId); return null; } : () => rotateEmergencyLink(recipientId))}>{t(confirm === "off" ? "yesOff" : "yesNew")}</button>

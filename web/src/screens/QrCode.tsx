@@ -12,6 +12,7 @@ export function QrCode({ value, label, size = 200 }: { value: string; label: str
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + 4} ${r + 4}h1v1h-1z`;
     return { path: d, count: n + 8 };  // 4-module quiet zone, as the QR standard asks
   }, [value]);
+  // Deliberately NOT theme tokens: a QR code must be black on white (with the quiet zone) in every theme, or phones cannot scan it.
   return (
     <svg role="img" aria-label={label} width={size} height={size} viewBox={`0 0 ${count} ${count}`} shapeRendering="crispEdges" style={{ display: "block", margin: "0 auto", background: "#fff", borderRadius: 12, maxWidth: "100%", height: "auto" }}>
       <path d={path} fill="#000" />

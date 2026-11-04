@@ -1,19 +1,19 @@
 /* Family invites (step 9) */
-.invite-link { width: 100%; min-height: 48px; margin: 0 0 14px; padding: 0 12px; border: 1px solid #cfe0dc; border-radius: 12px; background: #f6faf8; color: #25423d; font-size: 0.8125rem; text-overflow: ellipsis; }
+.invite-link { width: 100%; min-height: 48px; margin: 0 0 14px; padding: 0 12px; border: 1px solid var(--b-cfe0dc); border-radius: 12px; background: var(--s-f6faf8); color: var(--t-25423d); font-size: 0.8125rem; text-overflow: ellipsis; }
 .invite-wa { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; min-height: 52px; border-radius: 14px; font-weight: 700; }
-.primary-button.invite-wa { background: #247c72; color: #fff; border: 0; }
+.primary-button.invite-wa { background: var(--primary); color: var(--on-fill); border: 0; }
 .invite-note { margin: 12px 0 4px; text-align: center; }
-.pending-invites { background: #fff; border-radius: 17px; padding: 12px 14px; box-shadow: 0 4px 18px rgba(30,68,63,.06); }
+.pending-invites { background: var(--surface); border-radius: 17px; padding: 12px 14px; box-shadow: 0 4px 18px var(--sh-1e443f-a06); }
 .pending-invites h2 { margin: 0 0 4px; font-size: 0.9375rem; }
 .pending-invites ul { list-style: none; margin: 0; padding: 0; }
-.pending-invites li { display: flex; align-items: center; gap: 10px; min-height: 56px; border-top: 1px solid #edf1ef; }
+.pending-invites li { display: flex; align-items: center; gap: 10px; min-height: 56px; border-top: 1px solid var(--line-soft); }
 .pending-invites li:first-child { border-top: 0; }
 .pending-invites li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .pending-invites strong, .pending-invites small { display: block; }
-.pending-invites small { color: #566966; font-size: max(0.75rem, 12px); margin-top: 2px; }
-.pending-invites button, .member-action { min-height: 44px; min-width: 64px; padding: 0 12px; border-radius: 12px; border: 1px solid #efc4be; background: #fff; color: #b14137; font-weight: 700; font-size: max(0.75rem, 12px); }
-.leave-link { color: #b14137; }
+.pending-invites small { color: var(--text-muted); font-size: max(0.75rem, 12px); margin-top: 2px; }
+.pending-invites button, .member-action { min-height: 44px; min-width: 64px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--b-efc4be); background: var(--surface); color: var(--t-b14137); font-weight: 700; font-size: max(0.75rem, 12px); }
+.leave-link { color: var(--t-b14137); }
 .join-screen { text-align: center; gap: 14px; }
 .join-screen h2 { margin: 6px 0 0; overflow-wrap: anywhere; }
-.join-screen p { margin: 0; color: #566966; }
-.invite-banner { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #e7f3f0; color: #1d6259; font-weight: 600; }
+.join-screen p { margin: 0; color: var(--text-muted); }
+.invite-banner { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--s-e7f3f0); color: var(--t-1d6259); font-weight: 600; }

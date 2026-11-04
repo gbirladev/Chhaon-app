@@ -63,7 +63,7 @@ export function InstallLink() {
   return (
     <>
       <button className="feature-link" onClick={() => setOpen(true)}>
-        <span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="phone" /></span>
+        <span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="phone" /></span>
         <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
         <Icon name="chevron" />
       </button>

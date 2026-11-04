@@ -1,30 +1,30 @@
 /* Love loop: the card on Today and the settings screen. */
-.love-card { margin: 0 0 14px; padding: 14px; border-radius: 14px; background: #fff; border: 1px solid #f0d6d2; color: #173d3a; }
+.love-card { margin: 0 0 14px; padding: 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--b-f0d6d2); color: var(--text); }
 .love-card > strong { display: block; margin-bottom: 4px; }
-.love-note { margin: 8px 2px; padding: 10px 12px; border-radius: 12px; background: #f6f1e6; color: #5c4a14; line-height: 1.5; font-size: max(0.9375rem, 12px); }
-.love-moment { padding-top: 10px; margin-top: 10px; border-top: 1px solid #f3e7e5; }
-.love-what { margin: 0 0 8px; display: flex; gap: 8px; line-height: 1.45; color: #2f4743; font-size: max(0.9375rem, 12px); }
-.love-what span { color: #247c72; font-weight: 700; }
+.love-note { margin: 8px 2px; padding: 10px 12px; border-radius: 12px; background: var(--s-f6f1e6); color: var(--t-5c4a14); line-height: 1.5; font-size: max(0.9375rem, 12px); }
+.love-moment { padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--b-f3e7e5); }
+.love-what { margin: 0 0 8px; display: flex; gap: 8px; line-height: 1.45; color: var(--text-soft); font-size: max(0.9375rem, 12px); }
+.love-what span { color: var(--primary-text); font-weight: 700; }
 .love-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.love-emoji { min-width: 48px; min-height: 48px; border-radius: 14px; border: 1.5px solid #ecd2cd; background: #fff8f7; font-size: 1.5rem; cursor: pointer; }
+.love-emoji { min-width: 48px; min-height: 48px; border-radius: 14px; border: 1.5px solid var(--b-ecd2cd); background: var(--s-fff8f7); font-size: 1.5rem; cursor: pointer; }
 .love-emoji:disabled, .love-write:disabled { opacity: .55; }
-.love-write { min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid #cfe0dc; background: #fff; color: #247c72; font-weight: 700; cursor: pointer; }
-.love-sent { margin: 6px 0; padding: 8px 10px; border-radius: 12px; background: #fdf3f1; }
+.love-write { min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--b-cfe0dc); background: var(--surface); color: var(--primary-text); font-weight: 700; cursor: pointer; }
+.love-sent { margin: 6px 0; padding: 8px 10px; border-radius: 12px; background: var(--s-fdf3f1); }
 .love-sent p { margin: 0; line-height: 1.45; }
-.love-sent small { color: #566966; font-size: max(0.8125rem, 12px); }
-.love-sent.failed, .love-sent.expired, .love-sent.skipped { background: #f6f1e6; }
+.love-sent small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.love-sent.failed, .love-sent.expired, .love-sent.skipped { background: var(--s-f6f1e6); }
 .love-who { font-weight: 700; margin-right: 4px; }
-.love-reply { margin-top: 6px !important; padding-left: 10px; border-left: 3px solid #e9a39b; color: #3b2a28; }
+.love-reply { margin-top: 6px !important; padding-left: 10px; border-left: 3px solid var(--b-e9a39b); color: var(--t-3b2a28); }
 .love-reply span { font-size: 1.05rem; }
-.love-more { margin-top: 10px; background: none; border: 0; color: #247c72; font-weight: 700; min-height: 44px; cursor: pointer; }
-.love-inbox { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3e7e5; }
+.love-more { margin-top: 10px; background: none; border: 0; color: var(--primary-text); font-weight: 700; min-height: 44px; cursor: pointer; }
+.love-inbox { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--b-f3e7e5); }
 .love-inbox p, .love-inbox-row { margin: 4px 0; line-height: 1.45; }
-.love-inbox small { color: #566966; }
+.love-inbox small { color: var(--text-muted); }
 .love-sheet textarea { width: 100%; min-height: 84px; }
-.love-count { margin: 4px 0 0; text-align: right; color: #566966; font-size: max(0.8125rem, 12px); }
-.love-page .love-intro { margin: 14px 2px; color: #2f4743; line-height: 1.55; font-size: max(1rem, 12px); }
+.love-count { margin: 4px 0 0; text-align: right; color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.love-page .love-intro { margin: 14px 2px; color: var(--text-soft); line-height: 1.55; font-size: max(1rem, 12px); }
 .love-page .love-section { margin-top: 22px; }
-.love-page .love-section h2 { margin: 0 0 8px; font-size: 1.0625rem; color: #173d3a; }
-.love-page .love-rules { margin: 0; padding-left: 20px; color: #2f4743; line-height: 1.6; font-size: max(0.9375rem, 12px); }
-.love-page .love-inbox-row { padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid #f0d6d2; }
+.love-page .love-section h2 { margin: 0 0 8px; font-size: 1.0625rem; color: var(--text); }
+.love-page .love-rules { margin: 0; padding-left: 20px; color: var(--text-soft); line-height: 1.6; font-size: max(0.9375rem, 12px); }
+.love-page .love-inbox-row { padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--b-f0d6d2); }
 .love-stats { margin-top: 22px; } .love-stats h2 { margin: 0 0 8px; font-size: 1.0625rem; } .love-stats p { margin: 4px 0; line-height: 1.5; }
