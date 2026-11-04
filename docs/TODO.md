@@ -452,6 +452,8 @@ Details: `docs/java-whatsapp-replies.md`, tests: `docs/java-tests.md`. (The "URG
 - [ ] **Still to port (skipped on purpose to restore reminders first):** appointment reminders; WhatsApp alerts to the family (outbox, `/alerts/whatsapp/request`, the caregiver's confirmation); escalation; love loop. Until the alerts are ported the family sees missed doses only in the app.
 - [ ] Hindi wording of all new messages needs a native review. Real-phone test of the swipe-reply (quote) path. LID-only senders are ignored (their STOP too): see the doc.
 
+**PARKED FOR THE BUDDY (2026-11-04):** the product owner has no AWS or gateway access. Items 1 and 2 of the checklist below (server env incl. `WHATSAPP_WEBHOOK_SECRET`, gateway webhook, session connected) are written up in `docs/buddy-handoff.md` to send him. Migration 0040 is applied on Sydney. Waiting on the buddy; then push (deploys), real-phone test, scoped tick, scheduler on.
+
 ### Switch-on checklist (do in this order; `chhaon.scheduler.enabled` stays false until step 8)
 1. Owner reviews and merges the branch; deploy only when the owner says so (a push touching `api-java/**` deploys to production).
 2. Sydney database: apply `20261104000040_scheduler_heartbeat.sql` and (optional) `20261104000041_checkin_message_id.sql` by hand (it has no migration history), plus 0038/0039 if still pending. Check: `select public.scheduler_health();` and `select column_name from information_schema.columns where table_name='checkins' and column_name='whatsapp_message_id';`
