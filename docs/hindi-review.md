@@ -1,0 +1,69 @@
+# Hindi wording to review (for a native speaker)
+
+Written 2026-11-04. Every line below is Hindi that a real person will read. **Part 1 matters most**: parents read these on WhatsApp, and
+a stiff or wrong word there costs trust. Please read each Hindi line out loud and mark OK or write a better version in the last column.
+Placeholders in {braces} are filled in by the app: {name} is what the family calls the parent (for example Papa), {medicine} the medicine name,
+{caregiver} the family member's name.
+
+Questions to keep in mind: Is it warm and respectful (आप, not तुम)? Is it simple enough for an older person with little schooling? Would a Hinglish word (for example रिमाइंडर, अलर्ट, WhatsApp) be better than a formal one?
+
+## Part 1: WhatsApp messages to parents and family (the Java backend)
+
+### Messages we start
+
+| Message | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| Dose reminder (we send, at the time) | नमस्ते {name} 🙏 दवा लेने का समय हो गया है ({medicine})। लेने के बाद 1 लिखकर भेजिए। | Namaste {name} 🙏 It's time for your medicine ({medicine}). Reply 1 when you have taken it. | |
+| Daily check-in (we send, morning) | सुप्रभात {name} 🙏 आज आप कैसे हैं? ठीक हैं तो 1 लिखें, फ़ोन चाहिए तो 2। | Good morning {name} 🙏 Are you okay today? Reply 1 if you are okay, 2 if you want a call. | |
+| Consent request (first message to a parent) | नमस्ते {name} 🙏 {caregiver} आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहते हैं। शुरू करने के लिए 1 लिखें, नहीं चाहिए तो 2। कभी भी STOP लिखकर रोक सकते हैं। | Namaste {name} 🙏 {caregiver} would like to send you gentle medicine reminders on WhatsApp. Reply 1 to start, 2 for no. You can reply STOP any time. | |
+| Consent request for the caregiver's own medicines | नमस्ते {name} 🙏 आपने अपनी दवाओं के रिमाइंडर के लिए अपना नंबर जोड़ा है। शुरू करने के लिए 1 लिखें, नहीं चाहिए तो 2। कभी भी STOP लिखकर रोक सकते हैं। | Namaste {name} 🙏 You added this number for your own medicine reminders on Chhaon. Reply 1 to start, 2 for no. You can reply STOP any time. | |
+| Alerts opt-in (to a caregiver) | नमस्ते {name} 🙏 छाँव आपको यहाँ ज़रूरी अलर्ट भेजना चाहता है (जैसे माता-पिता की छूटी हुई दवा)। चालू करने के लिए 1 लिखें, नहीं चाहिए तो 2। कभी भी STOP लिखकर रोक सकते हैं। | Namaste {name} 🙏 Chhaon would like to send you important alerts here (for example a missed medicine of your parent). Reply 1 to turn alerts on, 2 for no. You can reply STOP any time. | |
+
+### Replies we send back after the parent answered
+
+| Message | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| consentYes | धन्यवाद 🙏 अब आपको यहाँ दवा के हल्के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें। | Thank you 🙏 You will now get gentle medicine reminders here. Reply STOP any time to stop. | |
+| consentNo | कोई बात नहीं। हम आपको कोई संदेश नहीं भेजेंगे। मन बदले तो START लिखें। | No problem. We will not send you any messages. If you change your mind, reply START. | |
+| stopped | ठीक है, हमने सभी संदेश बंद कर दिए हैं। दोबारा चाहिए तो START लिखें। | Okay, we have stopped all messages. Reply START if you want them again. | |
+| resumed | वापसी पर स्वागत है 🙏 रिमाइंडर फिर से शुरू हो गए हैं। | Welcome back 🙏 Reminders have started again. | |
+| alertsOn | धन्यवाद 🙏 छाँव अलर्ट चालू हो गए हैं। जब किसी बात पर आपका ध्यान चाहिए होगा, हम यहाँ संदेश भेजेंगे। बंद करने के लिए कभी भी STOP लिखें। | Thank you 🙏 Chhaon alerts are on. We will message you here when something needs your attention. Reply STOP any time to turn them off. | |
+| alertsOff | ठीक है, छाँव अलर्ट बंद हैं। आप इन्हें ऐप में दोबारा चालू कर सकते हैं। | Okay, Chhaon alerts are off. You can turn them on again in the app. | |
+| alertsResumed | छाँव अलर्ट फिर से चालू हैं। बंद करने के लिए STOP लिखें। | Chhaon alerts are on again. Reply STOP to turn them off. | |
+        return hi(lang)
+                ? "धन्यवाद 🙏 दवा" + med + " नोट कर ली ✅"
+                : "Thank you 🙏 Noted:" + (med.isEmpty() ? " your medicine" : med) + " ✅ | |
+| doseNotYet | ठीक है 🙏 दवा लेने के बाद 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once you have taken it. | |
+| nextDoseHint | अगली दवा के लिए फिर से 1 लिखें। | Reply 1 again for the next medicine. | |
+| checkinHint | आज आप ठीक हैं? ठीक हों तो 1 लिखें, फ़ोन चाहिए तो 2। | Are you okay today? Reply 1 if yes, 2 if you want a call. | |
+| checkinOk | धन्यवाद 🙏 जानकर अच्छा लगा कि आप ठीक हैं। | Thank you 🙏 Glad you are okay. Have a lovely day. | |
+| checkinCall | ठीक है 🙏 हमने आपके परिवार को बता दिया है। | Okay 🙏 We have let your family know. | |
+| help | नमस्ते 🙏 जवाब देने के लिए: हाँ / ले ली / मैं ठीक हूँ के लिए 1 लिखें, नहीं / फ़ोन चाहिए के लिए 2 लिखें। रोकने के लिए STOP लिखें। | Namaste 🙏 To reply: type 1 for yes / taken / I am okay, 2 for no / call me. Type STOP to stop messages. | |
+| consentHelp | नमस्ते 🙏 रिमाइंडर शुरू करने के लिए 1 लिखें, नहीं चाहिए तो 2। रोकने के लिए कभी भी STOP लिखें। | Namaste 🙏 Reply 1 to start reminders, 2 for no. STOP any time. | |
+| doseTaken | धन्यवाद 🙏 दवा {medicine} नोट कर ली ✅ | Thank you 🙏 Noted: {medicine} ✅ | |
+
+What parents can type (also in `docs/java-whatsapp-replies.md`): 1 = yes / taken / I am okay; 2 = no / call me; STOP; START. Words like `haan`, `le li`, `ले ली`, `theek hoon`, `phone karo`, `रुको`, `बंद करो` are understood too. Tell us any common Hindi reply we miss.
+
+## Part 2: new app screens (Hindi, `web/src/messages/hi.json`, added since the last push)
+
+| Key | English | Hindi | OK / better wording |
+|---|---|---|---|
+| today.delayedTitle | Reminders are delayed | रिमाइंडर देर से हैं | |
+| today.delayedBody | {call} has not been sent a reminder for: {names}. Chhaon is not sending messages right now, so please remind {call} yourself. | {call} को इन दवाइयों का रिमाइंडर अभी तक नहीं भेजा गया: {names}। छाँव अभी संदेश नहीं भेज पा रहा है, इसलिए कृपया {call} को खुद याद दिलाइए। | |
+| today.staleTitle | Reminders have stopped | रिमाइंडर रुके हुए हैं | |
+| today.staleBody | Chhaon's reminder system last ran {ago} ago, so reminders and alerts may not be going out. Please remind {call} yourself. | छाँव का रिमाइंडर सिस्टम {ago} पहले आख़िरी बार चला था, इसलिए रिमाइंडर और अलर्ट शायद न जा रहे हों। कृपया {call} को खुद याद दिलाइए। | |
+| today.agoMinutes | {count, plural, one {# minute} other {# minutes}} | {count} मिनट | |
+| today.agoHours | {count, plural, one {# hour} other {# hours}} | {count} घंटे | |
+| today.agoDays | {count, plural, one {# day} other {# days}} | {count} दिन | |
+| appearance.title | Appearance | थीम | |
+| appearance.hint | Choose how Chhaon looks on this phone. | चुनिए कि इस फ़ोन पर छाँव कैसा दिखे। | |
+| appearance.system | System | फ़ोन जैसा | |
+| appearance.light | Light | हल्का | |
+| appearance.dark | Dark | गहरा | |
+| appearance.systemNote | Follows your phone's light or dark setting. | आपके फ़ोन की हल्की या गहरी सेटिंग के अनुसार बदलेगा। | |
+| appearance.lightNote | Always light, even if your phone is set to dark. | हमेशा हल्का रहेगा, चाहे फ़ोन में गहरा चुना हो। | |
+| appearance.darkNote | Always dark, easier on the eyes at night. | हमेशा गहरा रहेगा, रात में आँखों को आराम मिलता है। | |
+
+## Still to come
+
+The alerts to caregivers (missed dose, no check-in) and appointment reminders are being ported to the Java backend; their Hindi texts will need the same review once merged.
