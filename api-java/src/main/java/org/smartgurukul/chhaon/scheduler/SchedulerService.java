@@ -214,7 +214,9 @@ public class SchedulerService {
         String sql = "select r.id recipient_id, r.timezone, r.checkin_time, r.circle_id, r.whatsapp_phone, r.language, r.call_name " +
                 "from care_recipients r " +
                 "where r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
-                "and r.is_self = false" + scopeClause(scope, p, "r");
+                "and r.is_self = false " +
+                // STOP belongs to the NUMBER: never a check-in to a number that opted out, even when another parent record carries it.
+                "and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)" + scopeClause(scope, p, "r");
         int sent = 0;
         for (Map<String, Object> row : jdbc.queryForList(sql, p.toArray())) {
             String tz = (String) row.get("timezone");

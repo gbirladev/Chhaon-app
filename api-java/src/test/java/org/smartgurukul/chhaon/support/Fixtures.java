@@ -88,6 +88,10 @@ public class Fixtures {
         jdbc.update("insert into care_recipients (id, circle_id, name, call_name, relation, language, whatsapp_phone, timezone) " +
                         "values (?, ?, ?, ?, 'father', ?, ?, ?)",
                 recipientId, circleId, name, "hi".equals(language) ? "पापा" : "Papa", language, phone, zone.getId());
+        // The default check-in time is 08:00: whenever the suite happens to run inside the morning window the tick would send an
+        // unexpected check-in. Park it twelve hours away from now; tests that want a check-in set it themselves.
+        jdbc.update("update care_recipients set checkin_time = ? where id = ?",
+                ZonedDateTime.now(zone).plusHours(12).toLocalTime().withSecond(0).withNano(0), recipientId);
         if (consented) consent(recipientId);
         phones.add(phone);
         return new Family(userId, circleId, recipientId, phone, zone);

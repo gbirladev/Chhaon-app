@@ -230,6 +230,19 @@ class SchedulerTickCharacterizationTest extends DbTest {
         assertThat(wa.sent()).isEmpty();
     }
 
+    @Test
+    void step5_neverSendsACheckinToANumberThatSaidStop() {
+        // Found while writing the reply tests: the check-in step used to ignore phone_opt_outs (only doses checked it).
+        ZoneId zone = Fixtures.safeZone();
+        Family f = fx.family(Fixtures.randomPhone(), "en", true, zone);
+        fx.optOutPhone(f.phone());
+        LocalTime tenAgo = ZonedDateTime.now(zone).minusMinutes(10).toLocalTime().withSecond(0).withNano(0);
+        fx.jdbc().update("update care_recipients set checkin_time = ? where id = ?", tenAgo, f.recipientId());
+
+        assertThat(tick(f).get("checkins_sent")).isEqualTo(0);
+        assertThat(wa.sent()).isEmpty();
+    }
+
     // ---------------------------------------------------------------- 6. check-ins missed
 
     @Test
