@@ -3,13 +3,129 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chhaon | Stay close to your parents, every day</title>
-<meta name="description" content="Chhaon turns WhatsApp into a gentle safety net for your parents: medicine reminders, a daily check-in, and alerts to you when something needs attention. Parents install nothing." />
+<title>Chhaon: WhatsApp medicine reminders for your parents</title>
+<meta name="description" content="Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing." />
 <meta name="theme-color" content="#247c72" />
-<meta property="og:title" content="Chhaon | Stay close to your parents, every day" />
-<meta property="og:description" content="Medicine reminders, a daily check-in and alerts for families who live far from their parents. Parents only need WhatsApp." />
-<meta property="og:type" content="website" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="canonical" href="https://chhaon.site/" />
+<meta property="og:site_name" content="Chhaon" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://chhaon.site/" />
+<meta property="og:title" content="Chhaon: WhatsApp medicine reminders for your parents" />
+<meta property="og:description" content="Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing." />
+<meta property="og:image" content="https://chhaon.site/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Chhaon: stay close to your parents, every day" />
+<meta property="og:locale" content="en_IN" />
+<meta property="og:locale:alternate" content="hi_IN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Chhaon: WhatsApp medicine reminders for your parents" />
+<meta name="twitter:description" content="Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing." />
+<meta name="twitter:image" content="https://chhaon.site/og-image.jpg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://chhaon.site/#org",
+   "name": "Chhaon",
+   "alternateName": "छाँव",
+   "url": "https://chhaon.site/",
+   "logo": "https://chhaon.site/icon-512.png",
+   "email": "chhaon.app.mail@gmail.com"
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://chhaon.site/#website",
+   "url": "https://chhaon.site/",
+   "name": "Chhaon",
+   "inLanguage": [
+    "en-IN",
+    "hi-IN"
+   ],
+   "publisher": {
+    "@id": "https://chhaon.site/#org"
+   }
+  },
+  {
+   "@type": "WebApplication",
+   "@id": "https://chhaon.site/#app",
+   "name": "Chhaon",
+   "url": "https://chhaon.site/app/",
+   "applicationCategory": "HealthApplication",
+   "operatingSystem": "Any (web browser, installable)",
+   "inLanguage": [
+    "en-IN",
+    "hi-IN"
+   ],
+   "description": "Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing.",
+   "publisher": {
+    "@id": "https://chhaon.site/#org"
+   },
+   "audience": {
+    "@type": "Audience",
+    "audienceType": "Adult children caring for ageing parents, in India and abroad"
+   }
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Does my parent need to install anything?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. They only need WhatsApp on their phone. They never create an account."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "What if Papa does not reply?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "If a dose is not confirmed within the hour, or the morning check-in gets no reply, you get an alert in the app and on your WhatsApp, so you can call."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Which languages are supported?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "English and Hindi, in the app and in the messages to your parent. More Indian languages will follow."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Does it replace a doctor?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. Chhaon helps families keep track. It does not give medical advice. For any health question, please ask a doctor."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "What does it cost?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "We are starting with a small pilot with families. Pricing will be shared later."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Is my family’s information safe?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Each family’s data is kept apart and files are stored privately. You can read our privacy policy in plain words."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
 <script>
   // Emergency-card and family-invite links shared before the app moved to /app looked like
   // chhaon.site/#/e/<token> or chhaon.site/#/join/<token>. Send them on to the app unchanged.
@@ -443,7 +559,7 @@
 (function () {
   var root = document.documentElement, btn = document.getElementById("lang");
   root.classList.add("js");
-  function set(l) { root.lang = l; try { localStorage.setItem("chhaon-site-lang", l); } catch (e) {} document.title = l === "hi" ? "छाँव | हर दिन अपने माता-पिता के पास रहें" : "Chhaon | Stay close to your parents, every day"; }
+  function set(l) { root.lang = l; try { localStorage.setItem("chhaon-site-lang", l); } catch (e) {} document.title = l === "hi" ? "छाँव: माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर" : "Chhaon: WhatsApp medicine reminders for your parents"; }
   var saved = null; try { saved = localStorage.getItem("chhaon-site-lang"); } catch (e) {}
   set(saved || ((navigator.language || "").toLowerCase().indexOf("hi") === 0 ? "hi" : "en"));
   btn.addEventListener("click", function () { set(root.lang === "hi" ? "en" : "hi"); });

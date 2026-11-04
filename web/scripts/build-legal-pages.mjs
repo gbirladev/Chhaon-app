@@ -22,7 +22,15 @@ const page = (kind, other) => {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="index,follow" />
-<title>${esc(en.title)} - Chhaon</title>
+<title>${esc(en.title)} | Chhaon</title>
+<meta name="description" content="${kind === "privacy" ? "What Chhaon keeps about your family, why, who can see it, and your choices, in plain words." : "The terms for using Chhaon, in plain words."}" />
+<link rel="canonical" href="https://chhaon.site/legal/${kind}.html" />
+<meta property="og:site_name" content="Chhaon" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://chhaon.site/legal/${kind}.html" />
+<meta property="og:title" content="${esc(en.title)} | Chhaon" />
+<meta property="og:image" content="https://chhaon.site/og-image.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <style>
   :root { --teal:#247c72; --ink:#173d3a; --muted:#566966; --bg:#f8faf8; }
   * { box-sizing: border-box; }
