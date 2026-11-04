@@ -71,6 +71,10 @@ jobs:
           WHATSAPP_GATEWAY_URL: ${{ secrets.WHATSAPP_GATEWAY_URL }}
           WHATSAPP_GATEWAY_TOKEN: ${{ secrets.WHATSAPP_GATEWAY_TOKEN }}
           WHATSAPP_SENDER_SESSION_NAME: ${{ secrets.WHATSAPP_SENDER_SESSION_NAME }}
+          # Signs the gateway's webhook calls (same value as in the gateway). Blank keeps the value already on the box.
+          WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
+          # Reminders switch: set the secret to "true" to turn the scheduler on, "false" to turn it off. Blank keeps the value on the box.
+          CHHAON_SCHEDULER_ENABLED: ${{ secrets.CHHAON_SCHEDULER_ENABLED }}
         run: bash deploy/aws/send-ssm-deploy.sh
 
       - name: Smoke test (public health)
