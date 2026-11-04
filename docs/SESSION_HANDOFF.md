@@ -149,9 +149,9 @@ assuming. Safety net and Love messages were enabled in production at the owner's
   `build-legal-pages.mjs`. The home page's own script sets `document.title`, keep it in line with the `<title>` tag.
 - Google Search Console: Domain property `chhaon.site` verified by DNS TXT at Hostinger (registrar and DNS), owned by
   `gbirla.dev.rnd@gmail.com`; sitemap submitted (Success, 5 pages); indexing requested for `/`, `/hi/`, `/doctors.html`.
-  Hostinger DNS keeps the `v=spf1` record and the `google-site-verification=AosOqw0...` record; an older `NufpW8d0...` record from a
-  different Google account can be deleted (and that account removed in Search Console, Settings, Users and permissions).
-- Not done yet: Bing Webmaster Tools (import from Google), guide pages for search ("looking after parents from abroad", "medicine
+  Hostinger DNS keeps the `v=spf1` record and the `google-site-verification=AosOqw0...` record (keep both). The older record and the
+  other Google account were removed (done 2026-11-04). Bing Webmaster Tools: imported from Google Search Console (done 2026-11-04).
+- Not done yet: guide pages for search ("looking after parents from abroad", "medicine
   reminders for elderly parents on WhatsApp", "what to keep on an emergency card"), links from other sites (clinics, startup listings,
   NRI groups), Hindi review of the search title/description (`docs/hindi-review.md` Part 3), Play Store privacy link should be
   `https://chhaon.site/legal/privacy.html` (not the old `/privacy.html`).
