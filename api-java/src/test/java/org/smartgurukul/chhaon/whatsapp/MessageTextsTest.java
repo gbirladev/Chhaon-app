@@ -1,0 +1,114 @@
+package org.smartgurukul.chhaon.whatsapp;
+
+import org.junit.jupiter.api.Test;
+import org.smartgurukul.chhaon.whatsapp.reply.ReplyTexts;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/** Pure unit tests (no database): language, the reply instruction, and no placeholder left over. */
+class MessageTextsTest {
+
+    private static final Pattern DEVANAGARI = Pattern.compile("[\\u0900-\\u097F]");
+
+    private static void clean(String text) {
+        assertThat(text).doesNotContain("{", "}", "%s", "null", "undefined", "\n\n").isNotBlank();
+        assertThat(text.length()).as("short enough for a chat: " + text).isLessThan(330);
+    }
+
+    @Test
+    void doseReminderEndsWithHowToReply_english() {
+        String t = MessageTexts.doseReminder("en", "Papa", "Metformin");
+        clean(t);
+        assertThat(t).startsWith("Namaste Papa 🙏").contains("Metformin").endsWith("Reply 1 when you have taken it.");
+        assertThat(DEVANAGARI.matcher(t).find()).isFalse();
+    }
+
+    @Test
+    void doseReminderEndsWithHowToReply_hindi() {
+        String t = MessageTexts.doseReminder("hi", "पापा", "Metformin");
+        clean(t);
+        assertThat(t).startsWith("नमस्ते पापा 🙏").contains("Metformin").endsWith("1 लिखकर भेजिए।");
+    }
+
+    @Test
+    void checkinEndsWithBothAnswers() {
+        String en = MessageTexts.checkin("en", "Papa");
+        clean(en);
+        assertThat(en).startsWith("Good morning Papa").endsWith("Reply 1 if you are okay, 2 if you want a call.");
+        String hi = MessageTexts.checkin("hi", "पापा");
+        clean(hi);
+        assertThat(hi).startsWith("सुप्रभात पापा").contains("1 लिखें").endsWith("2।");
+    }
+
+    @Test
+    void consentRequestSaysWhoAsksAndHowToAnswerAndHowToStop() {
+        String en = MessageTexts.consentRequest("en", "Papa", "Ananya");
+        clean(en);
+        assertThat(en).contains("Namaste Papa").contains("Ananya").contains("Reply 1 to start, 2 for no").endsWith("You can reply STOP any time.");
+        String hi = MessageTexts.consentRequest("hi", "पापा", "Ananya");
+        clean(hi);
+        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("1 लिखें").contains("2").endsWith("STOP लिखकर रोक सकते हैं।");
+    }
+
+    @Test
+    void aMissingNameIsLeftOutGracefully() {
+        for (String blank : new String[] {null, "", "   ", "\n"}) {
+            assertThat(MessageTexts.doseReminder("en", blank, "Metformin")).startsWith("Namaste 🙏");
+            assertThat(MessageTexts.checkin("en", blank)).startsWith("Good morning 🙏");
+            assertThat(MessageTexts.checkin("hi", blank)).startsWith("सुप्रभात 🙏");
+            assertThat(MessageTexts.consentRequest("en", blank, blank)).startsWith("Namaste 🙏 Your family");
+            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपके परिवार");
+        }
+        assertThat(MessageTexts.doseReminder("en", "Papa", null)).doesNotContain("(").doesNotContain("null");
+        assertThat(MessageTexts.doseReminder("en", "Papa", "  ")).doesNotContain("()");
+    }
+
+    @Test
+    void anUnknownLanguageFallsBackToEnglish() {
+        assertThat(MessageTexts.doseReminder(null, "Papa", "X")).startsWith("Namaste Papa");
+        assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Reply 1");
+    }
+
+    @Test
+    void namesTypedByACaregiverCannotInjectLineBreaksOrLongText() {
+        String t = MessageTexts.doseReminder("en", "Pa\npa\r\n\t  Reply 2", "Metformin\u0000\nEvil " + "x".repeat(200));
+        assertThat(t).doesNotContain("\n").doesNotContain("\r").doesNotContain("\t").doesNotContain("\u0000");
+        assertThat(t.length()).isLessThan(330);
+        assertThat(MessageTexts.consentRequest("en", "Papa", "An\nanya")).doesNotContain("\n");
+    }
+
+    @Test
+    void selfAndAlertOptInTextsAlsoEndWithHowToAnswer() {
+        for (String lang : List.of("en", "hi")) {
+            for (String t : List.of(MessageTexts.selfConsentRequest(lang, "Ananya"), MessageTexts.alertOptIn(lang, "Ananya"))) {
+                clean(t);
+                assertThat(t).contains("STOP").contains("1").contains("2");
+            }
+        }
+    }
+
+    @Test
+    void replyTextsAreCompleteInBothLanguagesAndMentionNoButtons() {
+        List<String> all = List.of(
+                ReplyTexts.consentYes("en"), ReplyTexts.consentNo("en"), ReplyTexts.stopped("en"), ReplyTexts.resumed("en"),
+                ReplyTexts.doseTaken("en", "Metformin"), ReplyTexts.doseNotYet("en"), ReplyTexts.nextDoseHint("en"),
+                ReplyTexts.checkinHint("en"), ReplyTexts.checkinOk("en"), ReplyTexts.checkinCall("en"), ReplyTexts.help("en"),
+                ReplyTexts.consentHelp("en"), ReplyTexts.alertsOn("en"), ReplyTexts.alertsOff("en"), ReplyTexts.alertsResumed("en"),
+                ReplyTexts.consentYes("hi"), ReplyTexts.consentNo("hi"), ReplyTexts.stopped("hi"), ReplyTexts.resumed("hi"),
+                ReplyTexts.doseTaken("hi", "Metformin"), ReplyTexts.doseNotYet("hi"), ReplyTexts.nextDoseHint("hi"),
+                ReplyTexts.checkinHint("hi"), ReplyTexts.checkinOk("hi"), ReplyTexts.checkinCall("hi"), ReplyTexts.help("hi"),
+                ReplyTexts.consentHelp("hi"), ReplyTexts.alertsOn("hi"), ReplyTexts.alertsOff("hi"), ReplyTexts.alertsResumed("hi"));
+        for (String t : all) {
+            clean(t);
+            assertThat(t.toLowerCase()).doesNotContain("button", "tap");
+        }
+        assertThat(ReplyTexts.help("en")).contains("1").contains("2").contains("STOP");
+        assertThat(DEVANAGARI.matcher(ReplyTexts.help("hi")).find()).isTrue();
+        assertThat(DEVANAGARI.matcher(ReplyTexts.help("en")).find()).isFalse();
+        assertThat(ReplyTexts.stopped("en")).contains("START");
+        assertThat(ReplyTexts.consentNo("hi")).contains("START");
+    }
+}
