@@ -71,6 +71,6 @@ the SHA-256 fingerprint of the key that signs the **installed** app.
 1. Create a Google Play Console developer account ($25 one-time).
 2. Create app → upload `android-twa/app-release-bundle.aab` to the Internal testing track.
 3. Fill store listing, data safety (health data — be accurate), privacy policy URL
-   (https://chhaon.site/privacy.html), content rating.
+   (https://chhaon.site/legal/privacy.html), content rating.
 4. After upload, add the Play app-signing fingerprint to `assetlinks.json` (see above).
 5. Promote Internal → Closed/Open → Production when ready.
