@@ -1,0 +1,9 @@
+/* Appearance card on the Family tab: System / Light / Dark. Colours come only from the theme tokens. */
+.appearance-card { margin-top: 12px; padding: 14px; border-radius: 16px; background: var(--surface); box-shadow: 0 4px 18px var(--sh-1e443f-a06); color: var(--text); }
+.appearance-card h3 { margin: 0; font-size: max(0.9375rem, 12px); }
+.appearance-card p { margin: 3px 0 12px; color: var(--text-muted); font-size: max(0.875rem, 12px); line-height: 1.4; }
+.appearance-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--s-edf5f2); }
+.appearance-options button { min-height: 44px; padding: 0 6px; border: 0; border-radius: 11px; background: transparent; color: var(--text-label); font-size: max(0.875rem, 12px); font-weight: 700; overflow-wrap: anywhere; }
+.appearance-options button.on { background: var(--primary); color: var(--on-fill); box-shadow: 0 3px 10px var(--sh-1e443f-a14); }
+.appearance-card small { display: block; margin-top: 10px; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
+@media (forced-colors: active) { .appearance-options button.on { outline: 2px solid Highlight; outline-offset: -2px; } }

@@ -1183,5 +1183,15 @@
     "notActive": "not active now",
     "checkins": "Daily check-in answered on {answered} of {total} days",
     "note": "Based on {name}'s replies to WhatsApp reminders. \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice."
+  },
+  "appearance": {
+    "title": "Appearance",
+    "hint": "Choose how Chhaon looks on this phone.",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "systemNote": "Follows your phone's light or dark setting.",
+    "lightNote": "Always light, even if your phone is set to dark.",
+    "darkNote": "Always dark, easier on the eyes at night."
   }
 }

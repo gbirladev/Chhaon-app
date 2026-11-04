@@ -14,6 +14,7 @@ import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
 import { ConsentGate, Goodbye, LegalLinks, LegalPage, OfflineBanner, PrivacyData } from "./screens/Privacy";
 import { EmergencyLinkPanel } from "./screens/EmergencyLink";
+import { AppearanceCard } from "./screens/Appearance";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
@@ -423,7 +424,7 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
       {import.meta.env.DEV && <p>{t("devHint")}</p>}
       <input className="otp-input" aria-label={t("heading")} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="one-time-code" placeholder="• • • • • •" autoFocus />
       {error && <p role="alert" className="form-error">{error}</p>}
-      {notice && <p role="status" style={{ textAlign: "center", color: "#247c72" }}>{notice}</p>}
+      {notice && <p role="status" style={{ textAlign: "center", color: "var(--primary-text)" }}>{notice}</p>}
       <button className="primary-button" onClick={verify} disabled={busy}>{busy ? t("checking") : t("verify")}</button>
       <button className="text-button" onClick={resend}>{t("resend")}</button>
     </main>
@@ -1735,15 +1736,16 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
-      <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
-      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
+      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
-      <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
       <LoveLink go={go} hidden={!!recipient?.is_self} />
-      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="heart" /></span><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
-      {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
+      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="heart" /></span><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
+      {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
+      <AppearanceCard />
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
   );

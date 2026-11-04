@@ -178,7 +178,7 @@ export function LoveLink({ go, hidden = false }: { go: (screen: "love") => void;
   if (!features.love || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("love")}>
-      <span style={{ background: "#fdecea", color: "#b4443a" }} aria-hidden="true">❤️</span>
+      <span style={{ background: "var(--s-fdecea)", color: "var(--t-b4443a)" }} aria-hidden="true">❤️</span>
       <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
       <Icon name="chevron" />
     </button>

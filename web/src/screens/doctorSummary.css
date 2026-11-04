@@ -1,38 +1,38 @@
-/* Doctor summary: a white page on screen, the only thing that prints when this screen is open. */
-.ds-lang { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: -8px 0 14px; color: #566966; font-size: max(0.875rem, 12px); }
+/* Doctor summary: themed on screen (light or dark), always black on white when printed; the only thing that prints when this screen is open. */
+.ds-lang { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: -8px 0 14px; color: var(--text-muted); font-size: max(0.875rem, 12px); }
 .ds-lang span { margin-right: 4px; }
-.ds-lang button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid #dce7e4; background: #fff; color: #247c72; font: inherit; font-weight: 700; }
-.ds-lang button[aria-pressed="true"] { background: #247c72; border-color: #247c72; color: #fff; }
+.ds-lang button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--b-dce7e4); background: var(--surface); color: var(--primary-text); font: inherit; font-weight: 700; }
+.ds-lang button[aria-pressed="true"] { background: var(--primary); border-color: var(--b-247c72); color: var(--on-fill); }
 
-.ds-sheet { background: #fff; border: 1px solid #dce7e4; border-radius: 16px; padding: 18px 16px; color: #173d3a; overflow-wrap: anywhere; }
-.ds-sheet header { padding-bottom: 12px; border-bottom: 2px solid #247c72; }
-.ds-kicker { margin: 0; font-size: max(0.75rem, 12px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #247c72; }
+.ds-sheet { background: var(--surface); border: 1px solid var(--b-dce7e4); border-radius: 16px; padding: 18px 16px; color: var(--text); overflow-wrap: anywhere; }
+.ds-sheet header { padding-bottom: 12px; border-bottom: 2px solid var(--b-247c72); }
+.ds-kicker { margin: 0; font-size: max(0.75rem, 12px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--primary-text); }
 .ds-sheet h2 { margin: 4px 0 0; font-size: 1.5rem; line-height: 1.2; }
-.ds-sub { margin: 4px 0 0; color: #566966; }
+.ds-sub { margin: 4px 0 0; color: var(--text-muted); }
 .ds-sheet h3 { margin: 18px 0 8px; font-size: 1.0625rem; }
-.ds-sheet h4 { margin: 14px 0 6px; font-size: max(0.875rem, 12px); color: #566966; font-weight: 700; }
-.ds-muted { margin: 0; color: #566966; }
+.ds-sheet h4 { margin: 14px 0 6px; font-size: max(0.875rem, 12px); color: var(--text-muted); font-weight: 700; }
+.ds-muted { margin: 0; color: var(--text-muted); }
 
 .ds-facts { margin: 12px 0 0; display: grid; gap: 8px; }
 .ds-facts div { display: grid; grid-template-columns: 9.5em 1fr; gap: 8px; }
-.ds-facts dt { font-size: max(0.75rem, 12px); font-weight: 800; letter-spacing: .04em; color: #566966; text-transform: uppercase; padding-top: 2px; }
+.ds-facts dt { font-size: max(0.75rem, 12px); font-weight: 800; letter-spacing: .04em; color: var(--text-muted); text-transform: uppercase; padding-top: 2px; }
 .ds-facts dd { margin: 0; }
 
 .ds-meds, .ds-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .ds-meds li { display: grid; gap: 1px; break-inside: avoid; }
-.ds-meds span { color: #566966; }
-.ds-meds small { color: #566966; font-size: max(0.8125rem, 12px); }
+.ds-meds span { color: var(--text-muted); }
+.ds-meds small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
 
 .ds-overall { margin: 0; font-size: 1.0625rem; }
 .ds-rows li { break-inside: avoid; }
 .ds-row-head { display: flex; justify-content: space-between; gap: 12px; }
-.ds-row-head em { color: #566966; font-style: normal; }
+.ds-row-head em { color: var(--text-muted); font-style: normal; }
 .ds-row-head strong { white-space: nowrap; }
-.ds-bar { height: 8px; margin-top: 4px; border-radius: 4px; background: #e6ecea; overflow: hidden; }
-.ds-bar i { display: block; height: 100%; background: #247c72; }
+.ds-bar { height: 8px; margin-top: 4px; border-radius: 4px; background: var(--s-e6ecea); overflow: hidden; }
+.ds-bar i { display: block; height: 100%; background: var(--primary); }
 .ds-checkins { margin: 12px 0 0; }
 
-.ds-sheet footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #dce7e4; color: #566966; font-size: max(0.8125rem, 12px); }
+.ds-sheet footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--b-dce7e4); color: var(--text-muted); font-size: max(0.8125rem, 12px); }
 .ds-note, .ds-prepared { margin: 0 0 6px; }
 
 .ds-actions { display: grid; gap: 10px; margin-top: 16px; }

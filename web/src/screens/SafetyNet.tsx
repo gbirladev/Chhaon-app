@@ -176,7 +176,7 @@ export function SafetyNetLink({ go, hidden = false }: { go: (screen: "safety") =
   if (!features.escalation || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("safety")}>
-      <span style={{ background: "#e3f3ef", color: "#247c72" }}><Icon name="shield" /></span>
+      <span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="shield" /></span>
       <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
       <Icon name="chevron" />
     </button>
