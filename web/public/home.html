@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#247c72" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="canonical" href="https://chhaon.site/" />
+<link rel="alternate" hreflang="en" href="https://chhaon.site/" />
+<link rel="alternate" hreflang="hi" href="https://chhaon.site/hi/" />
+<link rel="alternate" hreflang="x-default" href="https://chhaon.site/" />
 <meta property="og:site_name" content="Chhaon" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://chhaon.site/" />
@@ -531,7 +534,7 @@
       <details><summary><span class="en">Which languages are supported?</span><span class="hi">कौन-सी भाषाएँ चलती हैं?</span></summary><p><span class="en">English and Hindi, in the app and in the messages to your parent. More Indian languages will follow.</span><span class="hi">ऐप में भी और माता-पिता को जाने वाले संदेशों में भी, हिंदी और English। और भारतीय भाषाएँ आगे जुड़ेंगी।</span></p></details>
       <details><summary><span class="en">Does it replace a doctor?</span><span class="hi">क्या यह डॉक्टर की जगह लेता है?</span></summary><p><span class="en">No. Chhaon helps families keep track. It does not give medical advice. For any health question, please ask a doctor.</span><span class="hi">नहीं। छाँव परिवारों को हिसाब रखने में मदद करता है। यह चिकित्सा सलाह नहीं देता। सेहत के किसी भी सवाल पर कृपया डॉक्टर से पूछें।</span></p></details>
       <details><summary><span class="en">What does it cost?</span><span class="hi">इसकी क़ीमत क्या है?</span></summary><p><span class="en">We are starting with a small pilot with families. Pricing will be shared later.</span><span class="hi">हम परिवारों के साथ एक छोटे पायलट से शुरू कर रहे हैं। क़ीमत की जानकारी बाद में दी जाएगी।</span></p></details>
-      <details><summary><span class="en">Is my family’s information safe?</span><span class="hi">क्या मेरे परिवार की जानकारी सुरक्षित है?</span></summary><p><span class="en">Each family’s data is kept apart and files are stored privately. You can read our <a href="legal/privacy.html">privacy policy</a> in plain words.</span><span class="hi">हर परिवार का डेटा अलग रखा जाता है और फ़ाइलें निजी स्टोरेज में रहती हैं। हमारी <a href="legal/privacy.html">गोपनीयता नीति</a> सरल शब्दों में पढ़िए।</span></p></details>
+      <details><summary><span class="en">Is my family’s information safe?</span><span class="hi">क्या मेरे परिवार की जानकारी सुरक्षित है?</span></summary><p><span class="en">Each family’s data is kept apart and files are stored privately. You can read our <a href="/legal/privacy.html">privacy policy</a> in plain words.</span><span class="hi">हर परिवार का डेटा अलग रखा जाता है और फ़ाइलें निजी स्टोरेज में रहती हैं। हमारी <a href="/legal/privacy.html">गोपनीयता नीति</a> सरल शब्दों में पढ़िए।</span></p></details>
     </div>
   </div>
 </section>
@@ -551,7 +554,7 @@
 <footer>
   <div class="wrap">
     <span>© <span id="year">2026</span> Chhaon · <span class="en">Care for your parents, even from far away.</span><span class="hi">दूर रहकर भी माता-पिता की देखभाल।</span></span>
-    <nav aria-label="Footer"><a href="legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a><a href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a></nav>
+    <nav aria-label="Footer"><a href="/legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="/legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a><a href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a></nav>
   </div>
 </footer>
 
@@ -561,8 +564,15 @@
   root.classList.add("js");
   function set(l) { root.lang = l; try { localStorage.setItem("chhaon-site-lang", l); } catch (e) {} document.title = l === "hi" ? "छाँव: माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर" : "Chhaon: WhatsApp medicine reminders for your parents"; }
   var saved = null; try { saved = localStorage.getItem("chhaon-site-lang"); } catch (e) {}
-  set(saved || ((navigator.language || "").toLowerCase().indexOf("hi") === 0 ? "hi" : "en"));
-  btn.addEventListener("click", function () { set(root.lang === "hi" ? "en" : "hi"); });
+  // The Hindi page (/hi/) always opens in Hindi. The button moves between / and /hi/, so each language has its own address for search engines.
+  var onHi = location.pathname.indexOf("/hi/") === 0;
+  set(onHi ? "hi" : (saved || ((navigator.language || "").toLowerCase().indexOf("hi") === 0 ? "hi" : "en")));
+  btn.addEventListener("click", function () {
+    var to = root.lang === "hi" ? "en" : "hi";
+    set(to);
+    if (to === "hi" && !onHi) location.href = "/hi/";
+    else if (to === "en" && onHi) location.href = "/";
+  });
   document.getElementById("year").textContent = new Date().getFullYear();
   var bar = document.getElementById("bar");
   function onScroll() { bar.classList.toggle("stuck", window.scrollY > 8); }

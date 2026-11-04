@@ -64,6 +64,16 @@ What parents can type (also in `docs/java-whatsapp-replies.md`): 1 = yes / taken
 | appearance.lightNote | Always light, even if your phone is set to dark. | हमेशा हल्का रहेगा, चाहे फ़ोन में गहरा चुना हो। | |
 | appearance.darkNote | Always dark, easier on the eyes at night. | हमेशा गहरा रहेगा, रात में आँखों को आराम मिलता है। | |
 
+## Part 3: the Hindi website page (https://chhaon.site/hi/, what Google shows in search results)
+
+| Where | English | Hindi | OK / better wording |
+|---|---|---|---|
+| Search result title | Chhaon: WhatsApp medicine reminders for your parents | छाँव: माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर | |
+| Search result description | Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing. | माता-पिता को WhatsApp पर दवा के समय प्यार भरा रिमाइंडर और रोज़ सुबह हाल-चाल का संदेश। दवा छूटे तो आपको पता चल जाता है। माता-पिता को कुछ इंस्टॉल नहीं करना। | |
+
+The rest of the Hindi page is the existing Hindi text of the home page (`web/public/home.html`, the `class="hi"` parts). The words people
+actually type into Google in Hindi matter here: if a reviewer knows better search words (for example दवा याद दिलाने वाला ऐप), tell us.
+
 ## Still to come
 
 The alerts to caregivers (missed dose, no check-in) and appointment reminders are being ported to the Java backend; their Hindi texts will need the same review once merged.
