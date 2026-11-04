@@ -51,6 +51,37 @@ rules are recreated (2026-11-04) and new uploads work. **Question: before the mo
 (medicine photos, reports)?** The old Mumbai project appears to have been deleted. If you have a copy, tell the product owner;
 `supabase/maintenance/copy_storage.mjs` can load it.
 
+## Step by step (do in this order)
+
+**A. Get the secret.** The product owner generates it (`openssl rand -hex 32`) and sends it to you privately. Keep it in a
+password manager. If you would rather generate it yourself, run the same command and send the value back to the product owner.
+
+**B. Put it in the backend.** On the server, edit the backend env file (the one the service reads, built from
+`api-java/deploy/aws/backend.env.example`) and add the line `WHATSAPP_WEBHOOK_SECRET=<secret>`. While you are there, check
+that `WHATSAPP_GATEWAY_URL`, `WHATSAPP_GATEWAY_TOKEN` and `WHATSAPP_SENDER_SESSION_NAME` have values and that
+`CHHAON_SCHEDULER_ENABLED` is false or absent. Restart the backend service. (This setting only takes effect once the new code
+is deployed, see item 3. Before that, it is harmless.)
+
+**C. Put it in the gateway.** Open the gateway dashboard, find the webhook settings of the sending session, and set:
+URL `https://api.chhaon.site/webhooks/whatsapp-gateway`, secret = the same value, events `message.received` and
+`message.status`. Save. Make sure the session shows as connected.
+
+**D. Check the webhook after the new code is deployed** (from any terminal; replace `<secret>`):
+
+```
+URL=https://api.chhaon.site/webhooks/whatsapp-gateway
+# 1. No signature. Expect HTTP 401 {"status":"bad signature"}  (503 means the secret is not set on the server yet)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$URL" -H 'Content-Type: application/json' -d '{"event":"test"}'
+# 2. Correct signature on a harmless test event. Expect HTTP 200 {"status":"ignored:event"}
+BODY='{"event":"test"}'
+SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac '<secret>' | sed 's/^.* //')
+curl -s -w "\n%{http_code}\n" -X POST "$URL" -H 'Content-Type: application/json' -H "X-Webhook-Signature: sha256=$SIG" -d "$BODY"
+```
+
+If 1 gives 401 and 2 gives 200, the secret matches and the webhook works. A 200 on test 1 should never happen.
+
+**E. Tell the product owner** the results of D and whether the session is connected.
+
 ## 6. After you have done 1 and 2
 
 Tell the product owner. They will push, and then the two of you do the real-phone test and the scoped single-parent tick from
