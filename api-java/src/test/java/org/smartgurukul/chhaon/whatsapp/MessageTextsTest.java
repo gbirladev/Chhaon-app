@@ -14,7 +14,7 @@ class MessageTextsTest {
     private static final Pattern DEVANAGARI = Pattern.compile("[\\u0900-\\u097F]");
 
     private static void clean(String text) {
-        assertThat(text).doesNotContain("{", "}", "%s", "null", "undefined", "\n\n").isNotBlank();
+        assertThat(text).doesNotContain("{", "}", "%s", "null", "undefined", "\n\n\n").isNotBlank();
         assertThat(text.length()).as("short enough for a chat: " + text).isLessThan(330);
     }
 
@@ -22,7 +22,7 @@ class MessageTextsTest {
     void doseReminderEndsWithHowToReply_english() {
         String t = MessageTexts.doseReminder("en", "Papa", "Metformin");
         clean(t);
-        assertThat(t).startsWith("Namaste Papa 🙏").contains("Metformin").endsWith("Reply 1 when you have taken it.");
+        assertThat(t).startsWith("Namaste Papa 🙏").contains("Metformin").contains("*Metformin*").endsWith("Reply *1* once you have taken it ✅");
         assertThat(DEVANAGARI.matcher(t).find()).isFalse();
     }
 
@@ -30,37 +30,37 @@ class MessageTextsTest {
     void doseReminderEndsWithHowToReply_hindi() {
         String t = MessageTexts.doseReminder("hi", "पापा", "Metformin");
         clean(t);
-        assertThat(t).startsWith("नमस्ते पापा 🙏").contains("Metformin").endsWith("1 लिखकर भेजिए।");
+        assertThat(t).startsWith("नमस्ते पापा 🙏").contains("*Metformin*").endsWith("*1* लिखकर भेजिए ✅");
     }
 
     @Test
     void checkinEndsWithBothAnswers() {
         String en = MessageTexts.checkin("en", "Papa");
         clean(en);
-        assertThat(en).startsWith("Good morning Papa").endsWith("Reply 1 if you are okay, 2 if you want a call.");
+        assertThat(en).startsWith("Good morning Papa").contains("How are you today?").endsWith("Reply *1* if you are fine 😊\nReply *2* if you want a call 📞");
         String hi = MessageTexts.checkin("hi", "पापा");
         clean(hi);
-        assertThat(hi).startsWith("सुप्रभात पापा").contains("1 लिखें").endsWith("2।");
+        assertThat(hi).startsWith("सुप्रभात पापा").contains("*1* लिखें").endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
     }
 
     @Test
     void consentRequestSaysWhoAsksAndHowToAnswerAndHowToStop() {
         String en = MessageTexts.consentRequest("en", "Papa", "Ananya");
         clean(en);
-        assertThat(en).contains("Namaste Papa").contains("Ananya").contains("Reply 1 to start, 2 for no").endsWith("You can reply STOP any time.");
+        assertThat(en).contains("Namaste Papa").contains("Ananya").contains("Reply *1* to start ✅").contains("Reply *2* if you do not want this").endsWith("You can reply STOP any time.");
         String hi = MessageTexts.consentRequest("hi", "पापा", "Ananya");
         clean(hi);
-        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("1 लिखें").contains("2").endsWith("STOP लिखकर रोक सकते हैं।");
+        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("Ananya आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहते हैं।").contains("*1* लिखें ✅").contains("*2* लिखें").endsWith("STOP लिखकर रोक सकते हैं।");
     }
 
     @Test
     void aMissingNameIsLeftOutGracefully() {
         for (String blank : new String[] {null, "", "   ", "\n"}) {
             assertThat(MessageTexts.doseReminder("en", blank, "Metformin")).startsWith("Namaste 🙏");
-            assertThat(MessageTexts.checkin("en", blank)).startsWith("Good morning 🙏");
-            assertThat(MessageTexts.checkin("hi", blank)).startsWith("सुप्रभात 🙏");
-            assertThat(MessageTexts.consentRequest("en", blank, blank)).startsWith("Namaste 🙏 Your family");
-            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपके परिवार");
+            assertThat(MessageTexts.checkin("en", blank)).startsWith("Good morning ☀️🙏");
+            assertThat(MessageTexts.checkin("hi", blank)).startsWith("सुप्रभात ☀️🙏");
+            assertThat(MessageTexts.consentRequest("en", blank, blank)).startsWith("Namaste 🙏\nYour family would like");
+            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपका परिवार आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहता है।").doesNotContain("आपके परिवार");
         }
         assertThat(MessageTexts.doseReminder("en", "Papa", null)).doesNotContain("(").doesNotContain("null");
         assertThat(MessageTexts.doseReminder("en", "Papa", "  ")).doesNotContain("()");
@@ -69,15 +69,26 @@ class MessageTextsTest {
     @Test
     void anUnknownLanguageFallsBackToEnglish() {
         assertThat(MessageTexts.doseReminder(null, "Papa", "X")).startsWith("Namaste Papa");
-        assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Reply 1");
+        assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Reply *1*");
     }
 
     @Test
     void namesTypedByACaregiverCannotInjectLineBreaksOrLongText() {
         String t = MessageTexts.doseReminder("en", "Pa\npa\r\n\t  Reply 2", "Metformin\u0000\nEvil " + "x".repeat(200));
-        assertThat(t).doesNotContain("\n").doesNotContain("\r").doesNotContain("\t").doesNotContain("\u0000");
+        // the only line breaks are the layout's own: a typed name or medicine cannot add lines, tabs or control characters
+        assertThat(t.split("\n", -1)).hasSize(4);
+        assertThat(t).doesNotContain("\r").doesNotContain("\t").doesNotContain("\u0000");
         assertThat(t.length()).isLessThan(330);
-        assertThat(MessageTexts.consentRequest("en", "Papa", "An\nanya")).doesNotContain("\n");
+        assertThat(MessageTexts.consentRequest("en", "Papa", "An\nanya").split("\n", -1)).hasSize(
+                MessageTexts.consentRequest("en", "Papa", "Ananya").split("\n", -1).length);
+    }
+
+    @Test
+    void namesCannotUseWhatsAppFormatting() {
+        String t = MessageTexts.doseReminder("en", "*Pa_pa*", "~Met`formin~");
+        assertThat(t).contains("Namaste Papa 🙏").contains("*Metformin*");
+        assertThat(t.chars().filter(c -> c == '*').count()).isEqualTo(4);   // only our own two bold pairs
+        assertThat(t).doesNotContain("_").doesNotContain("~").doesNotContain("`");
     }
 
     @Test
@@ -85,7 +96,7 @@ class MessageTextsTest {
         for (String lang : List.of("en", "hi")) {
             for (String t : List.of(MessageTexts.selfConsentRequest(lang, "Ananya"), MessageTexts.alertOptIn(lang, "Ananya"))) {
                 clean(t);
-                assertThat(t).contains("STOP").contains("1").contains("2");
+                assertThat(t).contains("STOP").contains("*1*").contains("*2*");
             }
         }
     }

@@ -73,7 +73,7 @@ class SchedulerTickCharacterizationTest extends DbTest {
         assertThat(fx.dose(dose).get("whatsapp_message_id")).isEqualTo("test-out-1");
         assertThat(wa.sent()).hasSize(1);
         assertThat(wa.sent().get(0).to()).isEqualTo(f.phone());
-        assertThat(wa.sent().get(0).text()).contains("Namaste").contains("Metformin").endsWith("Reply 1 when you have taken it."); // text changed in part 3 (typed replies)
+        assertThat(wa.sent().get(0).text()).contains("Namaste").contains("Metformin").endsWith("Reply *1* once you have taken it ✅"); // text changed in part 3 (typed replies)
 
         // A second tick does not send it again (the claim is a conditional update).
         assertThat(tick(f).get("doses_sent")).isEqualTo(0);
@@ -208,7 +208,7 @@ class SchedulerTickCharacterizationTest extends DbTest {
         assertThat(row.get("status")).isEqualTo("sent");
         assertThat(row.get("sent_at")).isNotNull();
         assertThat(wa.sent()).hasSize(1);
-        assertThat(wa.sent().get(0).text()).startsWith("Good morning").contains("Papa").endsWith("2 if you want a call."); // text changed in part 3
+        assertThat(wa.sent().get(0).text()).startsWith("Good morning").contains("Papa").endsWith("Reply *2* if you want a call 📞"); // text changed in part 3
 
         // Once per day.
         assertThat(tick(f).get("checkins_sent")).isEqualTo(0);

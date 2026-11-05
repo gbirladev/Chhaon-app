@@ -44,6 +44,12 @@ Questions to keep in mind: Is it warm and respectful (आप, not तुम)? Is
 
 What parents can type (also in `docs/java-whatsapp-replies.md`): 1 = yes / taken / I am okay; 2 = no / call me; STOP; START. Words like `haan`, `le li`, `ले ली`, `theek hoon`, `phone karo`, `रुको`, `बंद करो` are understood too. Tell us any common Hindi reply we miss.
 
+**Update 2026-11-05:** the five messages we start (dose reminder, daily check-in, consent request, own-number consent, alerts opt-in) were re-laid-out
+for readability: a greeting line, one line of news, and the answers on their own lines with the number in bold (*1*). The Hindi consent text also
+fixes a grammar mistake ("आपके परिवार ... चाहते हैं" is now "आपका परिवार ... चाहता है"). The table above still shows the old one-line wording of
+these five; the current text is in `api-java/src/main/java/org/smartgurukul/chhaon/whatsapp/MessageTexts.java` and the unit test `MessageTextsTest.java`. Please review the new
+layout rather than the old table rows.
+
 ## Part 2: new app screens (Hindi, `web/src/messages/hi.json`, added since the last push)
 
 | Key | English | Hindi | OK / better wording |
