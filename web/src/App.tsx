@@ -1,6 +1,7 @@
 import { Component, createContext, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ErrorInfo, type ReactNode } from "react";
 import { createTranslator, useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
+import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired } from "./lib/auth";
 import { compressImage } from "./lib/image";
 import {
   isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
@@ -73,9 +74,6 @@ export const useSessionExpired = () => useContext(SessionContext);
 
 /** The privacy pages, the first-login consent sheet, data export and account deletion are built but switched off for v1. Set VITE_PRIVACY_ENABLED=true to turn them on. */
 const PRIVACY_ENABLED = import.meta.env.VITE_PRIVACY_ENABLED === "true";
-
-/** Login by phone text message needs an SMS provider. Set VITE_PHONE_LOGIN=false to offer email only (the production pilot). */
-const PHONE_LOGIN = import.meta.env.VITE_PHONE_LOGIN !== "false";
 
 const MAX_NUMBER = 100000;  // stock, dose and refill numbers: far above anything real, far below database limits
 
@@ -308,32 +306,22 @@ function LoadFailedNotice({ onRetry }: { onRetry: () => void }) {
   return <Notice title={navigator.onLine ? t("crashTitle") : tPrivacy("offlineTitle")} body={t("loadFailed")} action={t("retry")} onAction={onRetry} />;
 }
 
-/** No connection (or the request never reached the server), as opposed to a refused request. */
-const isNetworkFailure = (err: { name?: string; status?: number } | null | undefined) =>
-  !navigator.onLine || err?.name === "AuthRetryableFetchError" || err?.status === 0 || err?.status === undefined;
-
 function Welcome({ go }: { go: (screen: Screen) => void }) {
   const t = useTranslations("welcome");
-  const [method, setMethod] = useState<"phone" | "email">(PHONE_LOGIN ? "phone" : "email");
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const continueLogin = async () => {
     setError("");
-    let target: { phone: string } | { email: string };
-    if (method === "phone") {
-      const phone = normalizePhone(value);
-      if (!phone) { document.getElementById("login-input")?.focus(); return setError(t("invalidPhone")); }
-      target = { phone };
-    } else {
-      if (!/^\S+@\S+\.\S+$/.test(value.trim())) { document.getElementById("login-input")?.focus(); return setError(t("invalidEmail")); }
-      target = { email: value.trim() };
-    }
+    const phone = normalizePhone(value);
+    if (!phone) { document.getElementById("login-input")?.focus(); return setError(t("invalidPhone")); }
     setBusy(true);
-    const { error: err } = await supabase.auth.signInWithOtp(target);
+    const res = await requestOtp(phone);
     setBusy(false);
-    if (err) return setError(t(isNetworkFailure(err) ? "networkError" : err.status === 429 ? "tooManyCodes" : "sendFailed"));
-    sessionStorage.setItem("carelink-login", JSON.stringify({ method, value: "phone" in target ? target.phone : target.email }));
+    if (!res.ok) {
+      return setError(t(res.error === "network" ? "networkError" : res.error === "too_many" ? "tooManyCodes" : res.error === "invalid_phone" ? "invalidPhone" : "sendFailed"));
+    }
+    sessionStorage.setItem("carelink-login", JSON.stringify({ value: phone }));
     go("otp");
   };
   return (
@@ -355,26 +343,21 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
         {pendingInvite() && <p className="invite-banner" role="status">{t("inviteBanner")}</p>}
       </div>
       <div className="login-card">
-        <label htmlFor="login-input">{method === "phone" ? t("phoneLabel") : t("emailLabel")}</label>
+        <label htmlFor="login-input">{t("phoneLabel")}</label>
         <div className="phone-input">
-          {method === "phone" && !/^\s*(\+|00)/.test(value) && <span>+91</span>}
-          <input id="login-input" aria-invalid={error ? true : undefined} aria-describedby={method === "phone" ? "login-hint" : undefined} value={value} onChange={(event) => setValue(event.target.value)} placeholder={method === "phone" ? t("phonePlaceholder") : t("emailPlaceholder")} inputMode={method === "phone" ? "tel" : "email"} />
+          {!/^\s*(\+|00)/.test(value) && <span>+91</span>}
+          <input id="login-input" aria-invalid={error ? true : undefined} aria-describedby="login-hint" value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("phonePlaceholder")} inputMode="tel" />
         </div>
-        {method === "phone" && <p id="login-hint" className="login-hint">{t("outsideIndia")}</p>}
+        <p id="login-hint" className="login-hint">{t("outsideIndia")}</p>
         {error && <p role="alert" className="form-error">{error}</p>}
         <button className="primary-button" onClick={continueLogin} disabled={busy}>{busy ? t("sending") : t("continue")}</button>
-        {PHONE_LOGIN && (
-          <button className="text-button" onClick={() => { setMethod(method === "phone" ? "email" : "phone"); setValue(""); setError(""); }}>
-            {method === "phone" ? t("useEmail") : t("usePhone")}
-          </button>
-        )}
         {PRIVACY_ENABLED && <LegalLinks go={go} />}
       </div>
     </main>
   );
 }
 
-type PendingLogin = { method: "phone" | "email"; value: string } | null;
+type PendingLogin = { value: string } | null;
 const readPendingLogin = (): PendingLogin => {
   try { return JSON.parse(sessionStorage.getItem("carelink-login") ?? "null"); } catch { return null; }
 };
@@ -397,10 +380,8 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
     verifying.current = true;
     setBusy(true);
     try {
-      const { error: err } = await supabase.auth.verifyOtp(
-        pending.method === "phone" ? { phone: pending.value, token: otp, type: "sms" } : { email: pending.value, token: otp, type: "email" },
-      );
-      if (err) { setBusy(false); return setError(t(isNetworkFailure(err) ? "networkError" : err.status === 429 ? "tooManyTries" : "wrongCode")); }
+      const res = await verifyOtp(pending.value, otp);
+      if (!res.ok) { setBusy(false); return setError(t(res.error === "network" ? "networkError" : res.error === "too_many" ? "tooManyTries" : "wrongCode")); }
       sessionStorage.removeItem("carelink-login");
       await onVerified();
     } finally {
@@ -411,8 +392,8 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
   const resend = async () => {
     if (!pending) return go("welcome", { replace: true });
     setError(""); setNotice("");
-    const { error: err } = await supabase.auth.signInWithOtp(pending.method === "phone" ? { phone: pending.value } : { email: pending.value });
-    if (err) return setError(t(isNetworkFailure(err) ? "networkError" : err.status === 429 ? "tooManyTries" : "resendFailed"));
+    const res = await requestOtp(pending.value);
+    if (!res.ok) return setError(t(res.error === "network" ? "networkError" : res.error === "too_many" ? "tooManyTries" : "resendFailed"));
     setNotice(t("resent"));
   };
   if (!pending) return null;
@@ -2000,18 +1981,16 @@ export default function App() {
   const refreshRecipient = async (selectId?: string, notifyIfRemoved = false): Promise<Recipient | null | "error"> => {
     try {
       const previousId = recipientRef.current?.id;
-      const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user.id ?? null;
+      const uid = authUserId();
       setUserId(uid);
       if (uid && !selectedIdRef.current) {
         try { selectedIdRef.current = localStorage.getItem(`carelink-parent-${uid}`); } catch { /* storage blocked */ }
       }
-      const list = await loadRecipients(data.session);
+      const list = await loadRecipients();
       if (list.length === 0 && recipientRef.current) {
-        // We had a parent a moment ago and now there are none. Either the login belongs to an account that no longer
-        // exists (send them to log in) or the parent was removed (the guard below sends them to "Add your parent").
-        const { error } = await supabase.auth.getUser();
-        if (error && [401, 403, 404].includes(error.status ?? 0)) { void expireSession(); return null; }
+        // We had a parent a moment ago and now there are none. Either our login has expired (send them to log in)
+        // or the parent was removed (the guard below sends them to "Add your parent").
+        if (authExpired()) { void expireSession(); return null; }
       }
       if (selectId) selectedIdRef.current = selectId;
       const chosen = list.find((r) => r.id === selectedIdRef.current) ?? list[0] ?? null;
@@ -2054,12 +2033,13 @@ export default function App() {
   // guessing "no parent yet", which would send them to the add-parent form and risk a duplicate parent.
   const boot = async () => {
     setLoadFailed(false);
-    let { data: { session } } = await supabase.auth.getSession();
+    let session = authToken();
     let expired = false;
-    if (session) {
-      // A saved login for an account that no longer exists would otherwise fail on every save. Verify it with the server.
-      const { error } = await supabase.auth.getUser();
-      if (error && [401, 403, 404].includes(error.status ?? 0)) { await supabase.auth.signOut(); session = null; expired = true; }
+    if (session && authExpired()) {
+      // A stored token that has expired: clear it and ask them to log in again.
+      clearToken();
+      session = null;
+      expired = true;
     }
     if (!session) {
       setSignedIn(false);
@@ -2200,7 +2180,7 @@ export default function App() {
     go("medicineDetail", { replace: true });
   };
   const expireSession = async () => {
-    await supabase.auth.signOut();
+    clearToken();
     setSignedIn(false);
     recipientRef.current = null;
     selectedIdRef.current = null;
@@ -2213,7 +2193,7 @@ export default function App() {
     showToast(MESSAGES[language].common.sessionExpired);
   };
   const signOut = async () => {
-    await supabase.auth.signOut();
+    clearToken();
     setSignedIn(false);
     recipientRef.current = null;
     selectedIdRef.current = null;

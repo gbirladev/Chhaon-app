@@ -31,4 +31,24 @@ public final class AuthDtos {
             String email,
             String plan) {
     }
+
+    // --- Phone-OTP login ---
+
+    public record OtpRequest(
+            @NotBlank String phone) {
+    }
+
+    public record OtpVerifyRequest(
+            @NotBlank String phone,
+            @NotBlank String code) {
+    }
+
+    /** Returned after a successful verify. The token is a Supabase-compatible access token. */
+    public record OtpLoginResponse(
+            String token,
+            String userId,
+            String name,
+            String plan,
+            boolean isNew) {
+    }
 }

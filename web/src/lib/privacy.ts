@@ -1,16 +1,16 @@
 import { supabase } from "./supabase";
 import { resolveLocalUrl } from "./hosts";
 import { POLICY_VERSION } from "../content/legal";
+import { authToken, authUserId } from "./auth";
 
 const api = (path: string) => `${resolveLocalUrl(import.meta.env.VITE_API_URL)}${path}`;
-const token = async () => (await supabase.auth.getSession()).data.session?.access_token ?? null;
+const token = async () => authToken();
 
 export type PrivacyState = { accepted: boolean; isNew: boolean };
 
 /** Has this caregiver agreed to the CURRENT policy version? null if we cannot tell (offline): then we do not ask. */
 export async function loadPrivacyState(): Promise<PrivacyState | null> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return null;
   const { data, error } = await supabase.from("profiles").select("privacy_accepted_at, policy_version").eq("id", uid).maybeSingle();
   if (error || !data) return null;
@@ -21,8 +21,7 @@ export async function loadPrivacyState(): Promise<PrivacyState | null> {
 }
 
 export async function acceptPrivacy(): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return false;
   const { data, error } = await supabase.from("profiles").update({ privacy_accepted_at: new Date().toISOString(), policy_version: POLICY_VERSION }).eq("id", uid).select("id");
   return !error && !!data?.length;

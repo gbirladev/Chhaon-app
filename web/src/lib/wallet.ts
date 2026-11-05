@@ -1,5 +1,6 @@
 import { compressImage } from "./image";
 import { supabase } from "./supabase";
+import { authToken } from "./auth";
 
 /** Reports wallet (migration 0029): a parent's reports, prescriptions and other papers, stored as photos or PDFs. No reading or analysis. */
 export const CATEGORIES = ["lab", "prescription", "scan", "discharge", "vaccination", "insurance", "bill", "other"] as const;
@@ -63,8 +64,7 @@ export type UploadResult = { ok: true; items: Uploaded[] } | { ok: false; reason
 
 /** Uploads the chosen photos / PDFs. Photos are shrunk first (and get a small preview); a failure removes whatever was already uploaded. */
 export async function uploadFiles(recipientId: string, files: File[], onProgress?: (done: number) => void): Promise<UploadResult> {
-  const { data: auth } = await supabase.auth.getSession();
-  if (!auth.session) return { ok: false, reason: "auth" };
+  if (!authToken()) return { ok: false, reason: "auth" };
   const items: Uploaded[] = [];
   const cleanup = async () => { await supabase.storage.from(BUCKET).remove(items.flatMap((i) => [i.path, ...(i.thumbPath ? [i.thumbPath] : [])])); };
   for (const [index, file] of files.entries()) {

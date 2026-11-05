@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { authUserId } from "./auth";
 
 /** Pilot stats for the owner of the app (migration 0028). Totals only: the database never returns names, numbers or emails here. */
 export type DailyStat = { date: string; remindersSent: number; remindersTaken: number; newCaregivers: number };
@@ -48,8 +49,8 @@ export async function loadPilotStats(days = 14): Promise<PilotStats> {
 
 /** True for the owner's account only (the flag is set by hand; nobody can set it for themselves). */
 export async function loadIsAdmin(): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return false;
-  const { data } = await supabase.from("profiles").select("is_admin").eq("id", auth.user.id).maybeSingle();
+  const uid = authUserId();
+  if (!uid) return false;
+  const { data } = await supabase.from("profiles").select("is_admin").eq("id", uid).maybeSingle();
   return data?.is_admin === true;
 }
