@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { updateTabIcon } from "./logo";
 
 /** Appearance: System (default, follows the phone), Light or Dark. Remembered on this device only.
  *  public/theme.js applies the saved choice before the first paint; this file keeps it in step afterwards.
@@ -26,6 +27,7 @@ function paint(choice: ThemeChoice) {
   else { root.setAttribute("data-theme", choice); root.style.colorScheme = choice; }
   const dark = choice === "dark" || (choice === "system" && systemIsDark());
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? BAR_DARK : BAR_LIGHT);
+  updateTabIcon();   // dark mode has its own primary colour
 }
 
 export function applyThemeChoice(choice: ThemeChoice) {

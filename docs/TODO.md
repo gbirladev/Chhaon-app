@@ -645,3 +645,5 @@ else is shrunk). Only files in the person's own folder `medicine-photos/<recipie
   for non-Hindi readers (NRI families' circles, doctors abroad). Test with 5-10 families/doctors before deciding; could work as a
   Hindi-site variant or a secondary mark. Concepts: mockup canvas, screen "11 · Logo concepts".
 - [ ] Later polish of C by a designer: softer, rounder roof; maybe a small warm/gold accent.
+- [ ] **Regenerate social preview with logo C:** `web/public/og-image.jpg` (1200x630, shown when a link is shared on WhatsApp etc.)
+  still has the old white-heart-on-teal logo and teal background. Master logo PNG: `web/public/icons/logo-1024.png`.

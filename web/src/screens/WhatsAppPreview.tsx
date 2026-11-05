@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Icon } from "../App";
+import { Logo } from "./Logo";
 import { loadRecentActivity, type Activity, type Recipient } from "../lib/api";
 import { formatClock, localDate, type Language } from "../lib/format";
 import { loadWhatsAppPreview, waLines, type PreviewMessage, type WhatsAppPreview } from "../lib/whatsappPreview";
@@ -142,7 +143,7 @@ export function WhatsAppScreen({ go, recipient }: { go: (screen: "family") => vo
   return (
     <main className="whatsapp-page">
       <h1 className="sr-only">{t("title")}</h1>
-      <header className="wa-header"><button onClick={() => go("family")} aria-label={t("back")}><Icon name="back" /></button><span className="wa-logo"><Icon name="heart" size={19} /></span><div><strong>Chhaon</strong><small>{t("title")}</small></div></header>
+      <header className="wa-header"><button onClick={() => go("family")} aria-label={t("back")}><Icon name="back" /></button><Logo className="wa-logo" size={41} inverse /><div><strong>Chhaon</strong><small>{t("title")}</small></div></header>
       <div className="wa-chat">
         {failed && <div className="wa-helper preview-note wa-first">{t("loadError")}</div>}
         {preview && !loading && (

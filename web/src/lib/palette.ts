@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { customPaletteCss, customPrimary } from "./recolour";
+import { updateTabIcon } from "./logo";
 
 /** Colour theme. "chhaon" (the violet of theme.css) is the default and means NO data-palette attribute;
  *  the ready-made ones are generated into src/palettes.css by scripts/build-palettes.mjs; "custom" is any colour the
@@ -50,6 +51,7 @@ async function paint(palette: Palette) {
   }
   if (palette === DEFAULT_PALETTE) root.removeAttribute("data-palette");
   else root.setAttribute("data-palette", palette);
+  updateTabIcon();   // the browser-tab logo in the new colour
 }
 
 export async function applyPalette(palette: Palette, customColour?: string) {
