@@ -89,7 +89,7 @@ class SchedulerPhotoReminderTest extends DbTest {
         Image img = images.get(0);
         assertThat(img.to()).isEqualTo(f.phone());
         assertThat(img.caption())
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\nDose: *500 mg*\n\nReply *1* or 👍 once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nMedicine time: *Metformin*\n500 mg\n\nTaken it? Just reply *1*");
         assertThat(img.jpeg()).isNotEmpty();
         assertThat(wa.sentTo(f.phone())).hasSize(1);   // one message only, no extra text
         assertThat(fx.dose(dose)).containsEntry("status", "sent").containsEntry("whatsapp_message_id", img.messageId());
@@ -207,7 +207,7 @@ class SchedulerPhotoReminderTest extends DbTest {
 
         assertThat(wa.images()).hasSize(1);
         assertThat(wa.images().get(0).to()).isEqualTo(helper);
-        assertThat(wa.images().get(0).caption()).startsWith("Namaste Sunita ji 🙏").contains("Time for Papa's medicine 💊 *Metformin*\nDose: *500 mg*\n🔵 Blue round tablet").endsWith("Reply *1* or 👍 once you have given it ✅");
+        assertThat(wa.images().get(0).caption()).startsWith("Namaste Sunita ji 🙏").contains("Time for Papa's medicine: *Metformin*\n500 mg · 🔵 Blue round tablet").endsWith("Given it to Papa? Just reply *1*");
     }
 
     @Test
@@ -222,8 +222,8 @@ class SchedulerPhotoReminderTest extends DbTest {
 
         assertThat(wa.images()).hasSize(1);
         assertThat(wa.images().get(0).caption()).matches("(?s)Good (morning|afternoon|evening) Shivani .*")
-                .contains("\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\nDose: *500 mg*")
-                .endsWith("Reply *1* or 👍 once you have taken it ✅");
+                .contains("\nWeek 24 starts today 💛\nMedicine time: *Iron + folic acid*\n500 mg")
+                .endsWith("Taken it? Just reply *1*");
     }
 
     @Test

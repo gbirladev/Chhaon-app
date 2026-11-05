@@ -113,8 +113,25 @@ public class WhatsAppPreviewController {
             Map<String, Object> row = new HashMap<>(r);
             row.putAll(dose);
             boolean firstOfItsDay = dose.get("scheduled_at") != null && firstDoseOfDay(recipientId, at, zone);
-            messages.add(new Message("dose", "receiver", doseText(row, reminderTo, firstOfItsDay ? newWeek(row, at, zone) : null, at),
-                    at, dose.get("photo_url") != null));
+            Integer week = firstOfItsDay ? newWeek(row, at, zone) : null;
+            // Every medicine due at that same moment goes out as ONE reminder (SchedulerService#sendDueDoses): show that message.
+            List<Map<String, Object>> slot = dose.get("scheduled_at") == null ? List.of() : jdbc.queryForList(
+                    "select de.scheduled_at, m.name medicine_name, m.dosage, m.photo_url, to_jsonb(m) ->> 'pill_colour' pill_colour, " +
+                    "to_jsonb(m) ->> 'pill_shape' pill_shape from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
+                    "join medicines m on m.id = s.medicine_id where m.recipient_id = ? and m.active and de.status = 'pending' " +
+                    "and de.scheduled_at = ? order by lower(m.name), de.id", recipientId, dose.get("scheduled_at"));
+            if (slot.size() > 1) {
+                List<Map<String, Object>> slotRows = new ArrayList<>();
+                for (Map<String, Object> d : slot) {
+                    Map<String, Object> one = new HashMap<>(r);
+                    one.putAll(d);
+                    slotRows.add(one);
+                }
+                // several medicines: no photo (only a one-medicine reminder carries the photo)
+                messages.add(new Message("dose", "receiver", SchedulerService.slotText(slotRows, week, at), at, false));
+            } else {
+                messages.add(new Message("dose", "receiver", doseText(row, reminderTo, week, at), at, dose.get("photo_url") != null));
+            }
         }
         List<DoseText> doses = new ArrayList<>();
         for (Map<String, Object> m : active) {

@@ -239,8 +239,8 @@ class ReminderReceiverTest extends DbTest {
         assertThat(wa.sentTo(f.phone())).isEmpty();
         List<Sent> sent = wa.sentTo(helper);
         assertThat(sent).hasSize(1);
-        assertThat(sent.get(0).text()).startsWith("Namaste Sunita ji 🙏").contains("Time for Papa's medicine 💊 *Metformin*")
-                .contains("🔵 Blue round tablet").endsWith("Reply *1* or 👍 once you have given it ✅");
+        assertThat(sent.get(0).text()).startsWith("Namaste Sunita ji 🙏").contains("Time for Papa's medicine: *Metformin*")
+                .contains("🔵 Blue round tablet").endsWith("Given it to Papa? Just reply *1*");
     }
 
     @Test
@@ -252,7 +252,7 @@ class ReminderReceiverTest extends DbTest {
         scheduler.tick(f.recipientId());
 
         assertThat(wa.sentTo(f.phone()).get(0).text()).isEqualTo(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null, "500 mg"))
-                .contains("\nDose: *500 mg*\n");
+                .contains("\n500 mg\n");
     }
 
     @Test

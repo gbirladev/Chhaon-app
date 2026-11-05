@@ -35,7 +35,7 @@ public final class MessageTexts {
     }
 
     /** " Papa" (with the leading space) or "" when no name is known. */
-    private static String who(String callName) {
+    static String who(String callName) {
         String n = clean(callName, 40);
         return n.isEmpty() ? "" : " " + n;
     }
@@ -49,26 +49,21 @@ public final class MessageTexts {
     }
 
     /**
-     * With how the tablet looks (migration 0042), so a parent who cannot read the strip can still pick it ("🔵 Blue round tablet"),
-     * and the dose the family typed ("Dose: *500 mg*", R2). No dose stored = no dose line. The dose is shown as stored, only the
-     * unit word is translated ({@link #localizeDose}); it is never computed or changed.
+     * One medicine (see {@link ReminderTexts#doseText} for the wording and for several medicines due together): the name in bold on
+     * its own line, then the dose the family typed and how the tablet looks (migration 0042), e.g. "500 mg · 🔵 Blue round tablet",
+     * then ONE question ending in "Just reply *1*". No dose stored = no dose. The dose is shown as stored, only the unit word is
+     * translated ({@link #localizeDose}); it is never computed or changed.
      */
     public static String doseReminder(String language, String callName, String medicine, String pillColour, String pillShape,
                                       String dosage) {
-        String med = clean(medicine, 60);
-        String extra = doseLine(language, dosage) + lookLine(language, pillColour, pillShape);
-        if (hi(language)) {
-            return "नमस्ते" + who(callName) + " 🙏\nदवा लेने का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                    + extra + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
-        }
-        return "Namaste" + who(callName) + " 🙏\nIt's time for your medicine 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                + extra + "\n\nReply *1* or 👍 once you have taken it ✅";
+        return ReminderTexts.doseText(ReminderTexts.Reader.person(language, callName),
+                java.util.List.of(new ReminderTexts.Item(medicine, dosage, pillColour, pillShape)), null);
     }
 
     /**
      * For a pregnancy (care_type = pregnant, migration 0043): a greeting for the time of day, the new pregnancy week ONCE a week,
-     * then the medicine and its dose. Same pill-look line and the same reply as for everyone (*1* = taken), so the reply classifier
-     * is unchanged. Example: "Good morning Shivani ☀️\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\nDose: *1 tablet*".
+     * then the medicine and its dose. Same body and the same reply as for everyone (*1* = taken), so the reply classifier
+     * is unchanged. Example: "Good morning Shivani ☀️\nWeek 24 starts today 💛\nMedicine time: *Iron + folic acid*\n1 tablet\n\nTaken it? Just reply *1*".
      *
      * <p>Decision (R2): the week is said only in the FIRST reminder sent on the day a new week starts (the scheduler decides, see
      * SchedulerService#weekToSay); every other reminder and the daily check-in leave it out, so "Week 24" is not repeated twice a day.
@@ -83,24 +78,13 @@ public final class MessageTexts {
 
     public static String pregnancyDoseReminder(String language, String callName, String medicine, String pillColour,
                                                String pillShape, String dosage, Integer newWeek, int localHour) {
-        String med = clean(medicine, 60);
-        String extra = doseLine(language, dosage) + lookLine(language, pillColour, pillShape);
-        String head = greeting(language, callName, localHour) + weekLine(language, newWeek);
-        if (hi(language)) {
-            return head + "\n" + (med.isEmpty() ? "दवा" : "*" + med + "*") + " लेने का समय हो गया है 💊"
-                    + extra + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
-        }
-        return head + "\nTime for your " + (med.isEmpty() ? "medicine" : "*" + med + "*") + " 💊"
-                + extra + "\n\nReply *1* or 👍 once you have taken it ✅";
+        return ReminderTexts.doseText(ReminderTexts.Reader.pregnancy(language, callName, newWeek, localHour),
+                java.util.List.of(new ReminderTexts.Item(medicine, dosage, pillColour, pillShape)), null);
     }
 
     /** The gentler daily check-in for a pregnancy: same answers as everyone (*1* fine, *2* call me). No week line (see above). */
     public static String pregnancyCheckin(String language, String callName) {
-        String head = greeting(language, callName, 8);
-        if (hi(language)) {
-            return head + "\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
-        }
-        return head + "\nHow are you feeling today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞";
+        return ReminderTexts.checkinText(ReminderTexts.Reader.pregnancy(language, callName, null, 8));
     }
 
     /** "\n🔵 Blue round tablet" or "". */
@@ -154,7 +138,7 @@ public final class MessageTexts {
     }
 
     /** "Good morning Shivani ☀️" / "सुप्रभात Shivani ☀️", by the hour on the person's clock. */
-    private static String greeting(String language, String callName, int localHour) {
+    static String greeting(String language, String callName, int localHour) {
         String n = who(callName);
         boolean morning = localHour >= 4 && localHour < 12;
         boolean afternoon = localHour >= 12 && localHour < 17;
@@ -165,7 +149,7 @@ public final class MessageTexts {
     }
 
     /** "\nWeek 24 starts today 💛" / "\nआज से आपका 24वाँ हफ़्ता शुरू हो रहा है 💛", or "" without a week. */
-    private static String weekLine(String language, Integer week) {
+    static String weekLine(String language, Integer week) {
         if (week == null || week < 1 || week > 42) return "";
         return hi(language) ? "\nआज से आपका " + hindiOrdinal(week) + " हफ़्ता शुरू हो रहा है 💛" : "\nWeek " + week + " starts today 💛";
     }
@@ -218,10 +202,7 @@ public final class MessageTexts {
     }
 
     public static String checkin(String language, String callName) {
-        if (hi(language)) {
-            return "सुप्रभात" + who(callName) + " ☀️🙏\nआज आप कैसे हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
-        }
-        return "Good morning" + who(callName) + " ☀️🙏\nHow are you today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞";
+        return ReminderTexts.checkinText(ReminderTexts.Reader.person(language, callName));
     }
 
     /** The first message to a parent: asks for agreement (consent) before anything else is ever sent. */

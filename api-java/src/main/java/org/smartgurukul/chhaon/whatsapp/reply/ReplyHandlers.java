@@ -56,6 +56,7 @@ public class ReplyHandlers {
             case ReplyRouter.AlertOptIn a -> alertOptIn(a, m, out);
             case Dose d -> dose(d, m, out);
             case DoseNotYet n -> out.add(new OutboundReply(m.phone(), doseNotYetText(n)));
+            case ReplyRouter.DoseLater l -> doseLater(l, m, out);
             case Checkin c -> checkin(c, m, out);
             case Help h -> help(h, m, out);
             case ReplyRouter.Silent s -> { }
@@ -253,12 +254,33 @@ public class ReplyHandlers {
                 ? ReceiverTexts.doseTaken(language, ReceiverTexts.personName((String) row.get("call_name"), (String) row.get("person_name")),
                         String.join(", ", noted))
                 : ReplyTexts.doseTaken(language, String.join(", ", noted));
+        if ("poll".equals(d.via())) {
+            // A tap on a poll confirmed its whole slot; any other open reminder / check-in is a poll of its own to tap.
+            out.add(new OutboundReply(m.phone(), text));
+            return;
+        }
         if (remainingSentDoses(m.phone()) > 0) {
             text += "\n" + ReplyTexts.nextDoseHint(language);
         } else if (openCheckin(m.phone())) {
             text += "\n" + ReplyTexts.checkinHint(language);
         }
         out.add(new OutboundReply(m.phone(), text));
+    }
+
+    /** A "⏰ Later" vote: nothing is recorded; "Okay, tap ✅ once taken" (a helper / the caregiver: naming the person). */
+    private void doseLater(ReplyRouter.DoseLater l, InboundMessage m, List<OutboundReply> out) {
+        Map<String, Object> r = firstOrNull(jdbc.queryForList(
+                "select " + ReceiverTexts.languageSql("r") + " language, r.name, r.call_name, r.reminder_to, r.whatsapp_phone " +
+                        "from dose_events de join medicine_schedules s on s.id = de.schedule_id join medicines m on m.id = s.medicine_id " +
+                        "join care_recipients r on r.id = m.recipient_id where de.id = ?", l.doseId()));
+        if (r == null || !m.phone().equals(r.get("whatsapp_phone"))) {
+            log.warn("ignored a poll vote from an unexpected number {}", WhatsAppSender.mask(m.phone()));
+            return;
+        }
+        String language = (String) r.get("language");
+        out.add(new OutboundReply(m.phone(), ReceiverTexts.notThePerson((String) r.get("reminder_to"))
+                ? ReceiverTexts.dosePollLater(language, (String) r.get("reminder_to"), personOf(r))
+                : ReplyTexts.dosePollLater(language)));
     }
 
     /** "Okay, reply 1 once taken" - for a helper / the caregiver: "once you have given Papa the medicine". */
@@ -321,15 +343,30 @@ public class ReplyHandlers {
         // (a panicking parent, a duplicate) creates exactly ONE call-request notification.
         int first = jdbc.update("update checkins set status = 'replied', responded_at = now() " +
                 "where id = ? and status <> 'replied'", c.checkinId());
-        if (first == 0) return;
         String language = (String) row.get("language");
+        if (first == 0) {
+            // Already answered. Only a POLL vote changed to "📞 Please call me" (after "😊 I'm fine") still tells the family, once:
+            // a changed vote is a deliberate correction, and asking for a call must never be lost.
+            if (!c.callMe() || !"poll".equals(c.via()) || !claimCallRequest(c.checkinId())) return;
+            notifier.notifyCircle((UUID) row.get("circle_id"), "checkin_call_requested",
+                    Map.of("recipient_id", row.get("recipient_id").toString()));
+            out.add(new OutboundReply(m.phone(), ReplyTexts.checkinCall(language)));
+            return;
+        }
         if (c.callMe()) {
+            claimCallRequest(c.checkinId());
             notifier.notifyCircle((UUID) row.get("circle_id"), "checkin_call_requested",
                     Map.of("recipient_id", row.get("recipient_id").toString()));
             out.add(new OutboundReply(m.phone(), ReplyTexts.checkinCall(language)));
         } else {
             out.add(new OutboundReply(m.phone(), ReplyTexts.checkinOk(language)));
         }
+    }
+
+    /** One "call me" per check-in: remembered in whatsapp_events (no migration). False when it was already asked. */
+    private boolean claimCallRequest(UUID checkinId) {
+        return jdbc.update("insert into whatsapp_events (id) values (?) on conflict (id) do nothing",
+                "gw:checkin-call:" + checkinId) == 1;
     }
 
     // ---------------------------------------------------------------- help (rate limited)

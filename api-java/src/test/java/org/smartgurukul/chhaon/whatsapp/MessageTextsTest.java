@@ -22,7 +22,7 @@ class MessageTextsTest {
     void doseReminderEndsWithHowToReply_english() {
         String t = MessageTexts.doseReminder("en", "Papa", "Metformin");
         clean(t);
-        assertThat(t).startsWith("Namaste Papa 🙏").contains("Metformin").contains("*Metformin*").endsWith("Reply *1* or 👍 once you have taken it ✅");
+        assertThat(t).startsWith("Namaste Papa 🙏").contains("Metformin").contains("*Metformin*").endsWith("Taken it? Just reply *1*").doesNotContain("👍");
         assertThat(DEVANAGARI.matcher(t).find()).isFalse();
     }
 
@@ -30,17 +30,17 @@ class MessageTextsTest {
     void doseReminderEndsWithHowToReply_hindi() {
         String t = MessageTexts.doseReminder("hi", "पापा", "Metformin");
         clean(t);
-        assertThat(t).startsWith("नमस्ते पापा 🙏").contains("*Metformin*").endsWith("*1* या 👍 भेजिए ✅");
+        assertThat(t).startsWith("नमस्ते पापा 🙏").contains("*Metformin*").endsWith("दवा ले ली? जवाब में बस *1* लिखें");
     }
 
     @Test
     void checkinEndsWithBothAnswers() {
         String en = MessageTexts.checkin("en", "Papa");
         clean(en);
-        assertThat(en).startsWith("Good morning Papa").contains("How are you today?").endsWith("Reply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞");
+        assertThat(en).startsWith("Good morning Papa").contains("How are you today?").endsWith("Reply *1* if you are fine 😊\nReply *2* if you want a call 📞");
         String hi = MessageTexts.checkin("hi", "पापा");
         clean(hi);
-        assertThat(hi).startsWith("सुप्रभात पापा").contains("*1* या 👍 भेजें").endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
+        assertThat(hi).startsWith("सुप्रभात पापा").contains("ठीक हैं तो *1* लिखें").endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
     }
 
     @Test
@@ -55,10 +55,11 @@ class MessageTextsTest {
 
     @Test
     void everyQuestionAParentCanAnswerWithAReactionMentionsThumbsUp() {
-        // F6: a long-press 👍 on these messages counts as 1 (ReplyRouter.routeReaction)
+        // F6: a long-press 👍 on these messages counts as 1 (ReplyRouter.routeReaction). The reminder and the check-in ask
+        // ONE thing and offer only the number since 2026-11-05 (a 👍 reaction still counts, it is just not offered there).
         for (String lang : new String[] {"en", "hi"}) {
-            assertThat(MessageTexts.doseReminder(lang, "Papa", "Metformin")).contains("*1* ").contains("👍");
-            assertThat(MessageTexts.checkin(lang, "Papa")).contains("👍").contains("*2*");
+            assertThat(MessageTexts.doseReminder(lang, "Papa", "Metformin")).contains("*1*").doesNotContain("👍");
+            assertThat(MessageTexts.checkin(lang, "Papa")).doesNotContain("👍").contains("*1*").contains("*2*");
             assertThat(MessageTexts.consentRequest(lang, "Papa", "Ananya")).contains("👍");
             assertThat(MessageTexts.selfConsentRequest(lang, "Ananya")).contains("👍");
             assertThat(ReceiverTexts.consentRequest(lang, "helper", "Sunita", "Papa", "Ananya")).contains("👍");
@@ -84,11 +85,12 @@ class MessageTextsTest {
     @Test
     void theReminderSaysTheDoseInTheReceiversLanguage() {
         assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", "blue", "round", "500 mg"))
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\nDose: *500 mg*\n🔵 Blue round tablet\n\n"
-                        + "Reply *1* or 👍 once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nMedicine time: *Metformin*\n500 mg · 🔵 Blue round tablet\n\n"
+                        + "Taken it? Just reply *1*");
         assertThat(MessageTexts.doseReminder("hi", "पापा", "Thyronorm", null, null, "1 tablet"))
-                .isEqualTo("नमस्ते पापा 🙏\nदवा लेने का समय हो गया है 💊 *Thyronorm*\nमात्रा: *1 गोली*\n\nलेने के बाद *1* या 👍 भेजिए ✅");
-        assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null, null)).doesNotContain("Dose");
+                .isEqualTo("नमस्ते पापा 🙏\nदवा का समय: *Thyronorm*\n1 गोली\n\nदवा ले ली? जवाब में बस *1* लिखें");
+        assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null, null)).isEqualTo(
+                "Namaste Papa 🙏\nMedicine time: *Metformin*\n\nTaken it? Just reply *1*");
         // unit words as the app shows them; the amount is never changed
         assertThat(MessageTexts.localizeDose("en", "1 tablet")).isEqualTo("1 tablet");
         assertThat(MessageTexts.localizeDose("en", "1.5 tablets")).isEqualTo("1.5 tablets");
@@ -113,7 +115,7 @@ class MessageTextsTest {
     @Test
     void anUnknownLanguageFallsBackToEnglish() {
         assertThat(MessageTexts.doseReminder(null, "Papa", "X")).startsWith("Namaste Papa");
-        assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Reply *1*");
+        assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Just reply *1*");
     }
 
     @Test

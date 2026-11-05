@@ -12,7 +12,7 @@ buttons**, so a parent answers by **typing**. This page is the contract and the 
 | Header | `X-Webhook-Signature: sha256=<hex>`, hex = HMAC-SHA256 of the RAW body with the webhook secret (checked in constant time) |
 | Secret | env `WHATSAPP_WEBHOOK_SECRET` (property `app.whatsapp.webhook-secret`) |
 | Answers | 503 secret not configured; 401 signature missing/wrong (nothing is done); 400 not JSON; 413 too large (256 KB); **200** accepted (also for events we ignore on purpose); 500 processing failed (everything rolled back) |
-| Events used | `message.received`, `message.status`. Any other event is accepted and ignored. |
+| Events used | `message.received`, `message.status`, `poll.vote` (see "Polls" below; the gateway sends it to webhooks subscribed to `message.received`). Any other event is accepted and ignored. |
 
 Nothing from the request (numbers, text) is logged; numbers are masked like `WhatsAppSender.mask` (`***123`).
 
@@ -79,8 +79,10 @@ Capitals, full-width letters, spaces, zero-width characters, emoji and punctuati
    number, the most recently asked one): 1 / yes / ok / START agree, 2 / no declines (and records the number as opted out).
 3. The message **quotes** one of our messages: its id equals `dose_events.whatsapp_message_id` (or `checkins.whatsapp_message_id`,
    migration 0041). That dose / check-in is answered, even if it was already marked missed (late taps become `taken_late`).
-4. Otherwise the **most recent dose reminder still `sent`** (12 h at most). `1`/taken confirms that ONE dose and uses stock once
-   (`consume_stock`); `all taken` confirms the whole time slot (`confirm_dose_slot`); `2` replies "reply 1 once you have taken it".
+4. Otherwise the **most recent dose reminder still `sent`** (12 h at most). Since 2026-11-05 one reminder = one time slot, so
+   `1` / taken / `all taken` confirm the WHOLE slot (every medicine of that person due at that moment, `confirm_dose_slot`; stock
+   used once per dose, `consume_stock`); `2` replies "reply 1 once you have taken it". A swipe-reply, a late `1` and a 👍 reaction
+   also confirm the whole slot.
 5. Otherwise **today's check-in** still `sent` (or `missed` within 12 h): 1 / okay = replied; 2 / call me / "not well" = replied **and**
    the family gets `checkin_call_requested` (once).
 6. Otherwise a dose marked `missed` in the last 6 h: `taken_late`.
@@ -93,7 +95,25 @@ check-in); and `help` with no check-in open gets the help text, the family is no
 
 ## Messages we send (all end with how to reply)
 
-`MessageTexts` (reminder, check-in, consent request) and `ReplyTexts` (answers), English and Devanagari Hindi. Example:
+`ReminderTexts` (dose reminder per slot, check-in, polls; `MessageTexts` / `ReceiverTexts` delegate to it), `MessageTexts` (consent
+request) and `ReplyTexts` (answers), English and Devanagari Hindi. Reminder wording since 2026-11-05 (owner-approved: one question,
+only "1", no 👍 offered, no trailing ✅, the medicine name bold on its own line):
+
+```
+नमस्ते Shivani 🙏                       Namaste Papa 🙏
+रात 8:00 की दवाएं:                      Medicine time: *Ecosprin 150*
+• *Argipreg* · 1 sachet                 1 tablet · 🔵 Blue round tablet
+• *Metformin 500* · 1 गोली · 🔵 नीली गोल गोली
+                                        Taken it? Just reply *1*
+सब ले लीं? जवाब में बस *1* लिखें
+```
+Helper: `Namaste Sunita ji 🙏 / Time for Papa's medicine: *Metformin* / 500 mg / / Given it to Papa? Just reply *1*`
+(Hindi `Papa को दवा दे दी? जवाब में बस *1* लिखें`); a family member: `Has Papa taken it? Just reply *1*`. Check-in:
+`Good morning Papa ☀️🙏 / How are you today? / / Reply *1* if you are fine 😊 / Reply *2* if you want a call 📞`. Consent stays as before:
+`Namaste Papa 🙏 Ananya would like to send you gentle medicine reminders on WhatsApp. Reply 1 to start, 2 for no. You can reply STOP any time.`
+**The Hindi wording needs a native review.**
+
+Older examples (before 2026-11-05) for reference:
 `Namaste Papa 🙏 It's time for your medicine (Metformin). Reply 1 when you have taken it.` /
 `Good morning Papa 🙏 Are you okay today? Reply 1 if you are okay, 2 if you want a call.` /
 `Namaste Papa 🙏 Ananya would like to send you gentle medicine reminders on WhatsApp. Reply 1 to start, 2 for no. You can reply STOP any time.`
@@ -203,9 +223,67 @@ written by every tick. Neither was applied anywhere except the throwaway test da
 * **Bug fix found by the tests:** the check-in step ignored `phone_opt_outs`, so a number that said STOP could still get a daily check-in when another
   parent record carried it. It now checks like the dose step.
 
+## One reminder per time slot (2026-11-05)
+
+Production bug: three medicines at 20:00 were three reminders, the parent typed `1` once, and only the newest dose was confirmed.
+Now `SchedulerService.sendDueDoses` groups the due doses by **recipient + scheduled_at** (the grouping of `confirm_dose_slot` and of the
+missed alert; like the Python `send_slot_reminder`). Per slot: all doses are claimed together (pending -> sent), ONE message goes out,
+every dose gets the SAME `whatsapp_message_id`; a failed send hands them all back. Two people on one number (Papa and Mummy with one
+helper) still get one message each. Counters: `doses_sent` still counts doses.
+
+Photos: a slot with ONE medicine keeps the photo (image + the text as caption, as before; in poll mode the image goes first with the
+caption `💊 *Metformin*`, then the poll, best effort). A slot with several medicines sends NO photos (as Python did): the list shows each
+medicine's dose and pill look instead. The in-app WhatsApp preview shows the grouped message for the next slot.
+
+## Polls (one tap), behind `WHATSAPP_POLLS_ENABLED` (default off)
+
+`app.whatsapp.polls-enabled` / env `WHATSAPP_POLLS_ENABLED` (`true` = on; blank in the deploy keeps the box value; never set = off).
+Passed by `.github/workflows/backend-deploy.yml` and `api-java/deploy/aws/send-ssm-deploy.sh` like the other optional variables.
+Needs the gateway that returns the poll's `messageId` and sends `poll.vote` (gateway branch from 2026-11-05).
+
+**Sending.** `POST {gateway}/api/messages/{sessionId}/{jid}/poll` with `{question, options, selectableCount: 1}` (same `X-API-Key` and
+session as the text route, `WhatsAppSender.sendPoll`). The answer's top-level `messageId` (or `data.key.id`) is stored on every dose of
+the slot (or on the check-in). Dose reminders and the daily check-in become polls; the consent request stays text.
+
+| Poll | Question (example) | Options (index 0 / 1) |
+|---|---|---|
+| Dose, person | `नमस्ते Shivani 🙏 / 💊 रात 8:00 की दवाएं: Argipreg (1 sachet), Metformin 500 (1 गोली) / ले लीं?` | `✅ ले ली` / `⏰ थोड़ी देर में` (en `✅ Taken` / `⏰ Later`) |
+| Dose, one medicine | `Namaste Papa 🙏 / 💊 Medicine time: Ecosprin 150 (1 tablet, 🔵 Blue round tablet) / Taken it?` | as above |
+| Dose, helper | `Namaste Sunita ji 🙏 / 💊 Time for Papa's medicine: Metformin (500 mg) / Given it to Papa?` | `✅ दे दी` / `⏰ थोड़ी देर में` (en `✅ Given` / `⏰ Later`) |
+| Dose, family member | `... / Papa ने दवा ले ली?` / `Has Papa taken it?` | as for the person |
+| Check-in | `सुप्रभात Papa ☀️🙏 / आज आप कैसे हैं?` | `😊 ठीक हूँ` / `📞 फ़ोन कीजिए` (en `😊 I'm fine` / `📞 Please call me`) |
+
+The question has no WhatsApp formatting and stays within 255 characters (a long list ends in `+2 और` / `+2 more`). The labels live in
+ONE place (`ReminderTexts` constants); never rename one without keeping the old label in the vote lists (polls already sent keep it).
+
+**Fallback.** If the poll call fails (any error), the normal TEXT reminder is sent at once (failure logged once per process) and its id
+stored, so typed `1` works. If the gateway says OK but returns no `messageId` (an old gateway) the poll WAS delivered but its votes could
+never be matched: the text is sent as well (the parent sees both, once) and polls switch OFF until the backend restarts (WARN in the log).
+Typed answers (`1`, 👍 reaction, swipe-reply) always keep working on poll reminders too.
+
+**Votes** (`GatewayEventService.pollVote`, `ReplyRouter.routePollVote`). Event from the gateway:
+```
+{ "event": "poll.vote", "sessionId": "...", "timestamp": "...",
+  "data": { "pollKeyId": "3EB0...", "from": "919999900001@s.whatsapp.net", "remoteJid": "919999900001@s.whatsapp.net",
+            "selectedOptions": ["✅ Taken"], "selectedIndexes": [0], "timestamp": 1793779200 } }
+```
+* Empty arrays = vote removed: ignored (never undoes anything). More than one choice: ignored. A LID-only voter (no phone): ignored.
+* Idempotent: claim `gw:poll:<pollKeyId>:<sha256(voter|index|label), 16 hex>` in `whatsapp_events`, same transaction as the work. The
+  gateway does not dedupe; a resent vote is a duplicate, a CHANGED vote is a new event.
+* The voter's number must be the reminder number of the person (`whatsapp_phone`, consent given, not STOPped), poll sent in the last 12 h.
+* The option is read by label (either language) and index; a label and index that disagree, or a foreign label, are ignored.
+* Dose poll, option 0: the whole slot is confirmed (`taken`, or `taken_late` when already missed; stock once per dose; a repeat changes
+  nothing). The reply is the usual `ReplyTexts.doseTaken` without the "reply 1 again" / check-in hints.
+* Dose poll, option 1 (Later): no status change, reply `ठीक है 🙏 लेने के बाद ✅ चुन लीजिए` / `Okay 🙏 Tap ✅ once you have taken it.`
+  (helper: `... Papa को दवा देने के बाद ✅ चुन लीजिए`). The missed window still runs. Later AFTER the slot was confirmed: NOT undone, logged.
+* Check-in poll: option 0 = okay, option 1 = call me (`checkin_call_requested`, sent to the family at once). A vote changed from fine to
+  call me still tells the family, once per check-in (`gw:checkin-call:<id>` in `whatsapp_events`; a typed `2` after `1` still does not).
+
+No database migration: polls reuse `dose_events.whatsapp_message_id` (shared ids allowed since migration 0030) and
+`checkins.whatsapp_message_id` (0041).
+
 ## Not ported yet
 
 Appointment reminders; escalation (Safety net);
-love loop; slot grouping in the reminder itself (one message per medicine is sent; "all taken" confirms the slot); `/cron/tick`-style secret endpoint
-(the admin tick exists); delivery-failure detection; `parent_responded` after a family alert; distress words when no check-in is open;
-photo of the medicine in reminders (text only).
+love loop; `/cron/tick`-style secret endpoint
+(the admin tick exists); delivery-failure detection; `parent_responded` after a family alert; distress words when no check-in is open.

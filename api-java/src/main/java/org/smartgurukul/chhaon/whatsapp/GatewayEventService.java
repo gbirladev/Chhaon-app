@@ -70,6 +70,7 @@ public class GatewayEventService {
         return switch (event == null ? "" : event) {
             case "message.received" -> received(data);
             case "message.status" -> status(data);
+            case "poll.vote" -> pollVote(data);
             default -> "ignored:event"; // message.sent, connection.update, test, ...
         };
     }
@@ -171,6 +172,57 @@ public class GatewayEventService {
         return "handled:REACTION";
     }
 
+    // ---------------------------------------------------------------- poll.vote
+
+    /**
+     * A vote on one of our polls (gateway event {@code poll.vote}, contract agreed with the gateway):
+     * {@code data = {pollKeyId, from, remoteJid, selectedOptions: ["✅ Taken"], selectedIndexes: [0], timestamp}}; empty arrays =
+     * the vote was removed (ignored: a removed vote never undoes anything). The voter's number must be the reminder number of
+     * the person, exactly like a typed reply. Idempotent: {@code gw:poll:<pollKeyId>:<hash of voter + choice>} is claimed in
+     * the same transaction as the work, so a resent event does nothing, while a CHANGED vote (another choice) is a new event.
+     */
+    private String pollVote(JsonNode d) {
+        String pollKeyId = text(d, "pollKeyId");
+        if (pollKeyId == null || pollKeyId.length() > 128) return "ignored:no-id";
+        String remoteJid = text(d, "remoteJid");
+        if (remoteJid != null && (remoteJid.endsWith("@g.us") || remoteJid.endsWith("@newsletter") || remoteJid.equals("status@broadcast"))) {
+            return "ignored:not-one-to-one";
+        }
+        JsonNode indexes = d.path("selectedIndexes");
+        JsonNode options = d.path("selectedOptions");
+        int count = Math.max(indexes.isArray() ? indexes.size() : 0, options.isArray() ? options.size() : 0);
+        if (count == 0) return "ignored:vote-removed";
+        if (count > 1) return "ignored:vote-many";   // our polls allow one choice
+        Integer index = indexes.isArray() && indexes.size() == 1 && indexes.get(0).isIntegralNumber() ? indexes.get(0).asInt() : null;
+        String label = options.isArray() && options.size() == 1 && options.get(0).isTextual() ? options.get(0).asText() : null;
+        if (label != null && label.length() > 100) label = label.substring(0, 100);
+
+        String phone = firstPhone(text(d, "from"), text(d, "voter"), remoteJid);
+        if (phone == null) {
+            log.warn("poll vote ignored: voter has no phone number (LID only?) id={}", fingerprint(text(d, "from")));
+            return "ignored:no-phone";
+        }
+        String claimId = "gw:poll:" + pollKeyId + ":" + digest(phone + "|" + index + "|" + label);
+        InboundMessage message = new InboundMessage(claimId, phone, label == null ? "" : label, pollKeyId);
+        String finalLabel = label;
+        List<OutboundReply> replies;
+        try {
+            replies = tx.execute(status -> {
+                if (!claim(claimId)) return null; // the same vote delivered again
+                return handlers.handle(router.routePollVote(phone, pollKeyId, finalLabel, index), message);
+            });
+        } catch (DataIntegrityViolationException rejected) {
+            tx.executeWithoutResult(s -> claim(claimId));
+            log.warn("skipped a poll vote the database rejected ({})", rejected.getClass().getSimpleName());
+            return "skipped:rejected";
+        }
+        if (replies == null) return "duplicate";
+        send(replies);
+        scheduler.deliverAlertsNow();   // "📞 Please call me" goes to the family now
+        log.info("poll vote handled from {} replies={}", WhatsAppSender.mask(phone), replies.size());
+        return "handled:POLL";
+    }
+
     private void send(List<OutboundReply> replies) {
         for (OutboundReply r : replies) {
             try {
@@ -245,6 +297,16 @@ public class GatewayEventService {
         if (!v.isTextual()) return null;
         String s = v.asText();
         return s.isEmpty() ? null : s;
+    }
+
+    /** 16 hex characters of SHA-256: part of a claim id, so the voter's number is never stored in clear. */
+    private static String digest(String value) {
+        try {
+            byte[] d = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(d, 0, 8);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /** A short non-reversible tag for logs, so repeated unresolvable senders can be told apart without a number. */

@@ -84,6 +84,27 @@ public class GatewayClient {
         return root;
     }
 
+    /**
+     * A vote on one of our polls (gateway event poll.vote, contract agreed with the gateway): the poll's key id, the voter and
+     * the chosen option (label + index). {@code label == null && index == null} = the vote was removed (empty arrays).
+     */
+    public ObjectNode pollVote(String pollKeyId, String fromPhone, String label, Integer index) {
+        ObjectNode root = json.createObjectNode();
+        root.put("event", "poll.vote");
+        root.put("sessionId", "session-test");
+        root.put("timestamp", "2026-11-05T14:30:00.000Z");
+        ObjectNode data = root.putObject("data");
+        data.put("pollKeyId", pollKeyId);
+        data.put("from", jid(fromPhone));
+        data.put("remoteJid", jid(fromPhone));
+        var options = data.putArray("selectedOptions");
+        if (label != null) options.add(label);
+        var indexes = data.putArray("selectedIndexes");
+        if (index != null) indexes.add(index);
+        data.put("timestamp", 1793779200);
+        return root;
+    }
+
     public ObjectNode status(String keyId, String status) {
         ObjectNode root = json.createObjectNode();
         root.put("event", "message.status");

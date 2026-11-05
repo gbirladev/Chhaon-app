@@ -1,5 +1,8 @@
 package org.smartgurukul.chhaon.whatsapp.reply;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.whatsapp.ReminderTexts;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -35,9 +38,15 @@ import java.util.UUID;
  *
  * <p>What each intent can answer: a dose accepts YES / TAKEN / TAKEN_ALL (a bare "ok" never counts as taken; NO means
  * "not yet"); a check-in accepts YES / ACK / CHECKIN_OK (I am okay) and NO / CALL_ME (call me); consent accepts YES / ACK and NO.
+ * One reminder covers one time slot (every medicine of the person due at that moment), so a "yes" to a dose confirms the
+ * whole slot ({@code confirm_dose_slot}).
+ *
+ * <p>Poll votes ({@link #routePollVote}) answer exactly the poll they were cast on, like a reaction.
  */
 @Component
 public class ReplyRouter {
+
+    private static final Logger log = LoggerFactory.getLogger(ReplyRouter.class);
 
     static final int SENT_DOSE_HOURS = 12;
     static final int CHECKIN_HOURS = 12;
@@ -62,7 +71,11 @@ public class ReplyRouter {
     /** A caregiver answered the "turn on alerts?" question we sent to their own number (1 = on, 2 = no). */
     public record AlertOptIn(UUID profileId, boolean agree) implements Route {}
 
-    /** Confirm a dose; {@code wholeSlot} confirms every dose of that parent due at the same moment. */
+    /**
+     * Confirm a dose; {@code wholeSlot} confirms every dose of that parent due at the same moment. Since one reminder covers one
+     * time slot, every route below now confirms the whole slot; {@code wholeSlot = false} is kept for callers that need one dose.
+     * {@code via}: latest | quote | late | reaction | poll (a poll vote gets no "reply 1 again" hint).
+     */
     public record Dose(UUID doseId, boolean wholeSlot, String via) implements Route {}
 
     /**
@@ -76,6 +89,9 @@ public class ReplyRouter {
     }
 
     public record Checkin(UUID checkinId, boolean callMe, String via) implements Route {}
+
+    /** A poll vote "⏰ Later" on a dose reminder: nothing is recorded (the missed window still runs), a short friendly ack. */
+    public record DoseLater(UUID doseId) implements Route {}
 
     /** We could not tell what this answers. Rate-limited reply. */
     public record Help(String language, boolean consentPending) implements Route {}
@@ -141,8 +157,10 @@ public class ReplyRouter {
                         "and " + ACTIVE_OF_PHONE + " order by de.sent_at desc limit 1",
                 SENT_DOSE_HOURS, m.phone()));
         if (sentDose != null) {
-            if (intent == Intent.YES || intent == Intent.TAKEN) return new Dose((UUID) sentDose.get("id"), false, "latest");
-            if (intent == Intent.TAKEN_ALL) return new Dose((UUID) sentDose.get("id"), true, "latest");
+            // One reminder = one time slot: "1" confirms every medicine of that reminder (TAKEN_ALL means the same).
+            if (intent == Intent.YES || intent == Intent.TAKEN || intent == Intent.TAKEN_ALL) {
+                return new Dose((UUID) sentDose.get("id"), true, "latest");
+            }
             if (intent == Intent.NO) return new DoseNotYet((String) sentDose.get("language"), (UUID) sentDose.get("id"));
         }
 
@@ -161,7 +179,7 @@ public class ReplyRouter {
                 if (intent == Intent.YES) {
                     Map<String, Object> missed = missedDose(m.phone());
                     if (missed != null && ((Timestamp) missed.get("sent_at")).after((Timestamp) checkin.get("sent_at"))) {
-                        return new Dose((UUID) missed.get("id"), false, "late");
+                        return new Dose((UUID) missed.get("id"), true, "late");
                     }
                 }
                 boolean call = intent == Intent.NO || intent == Intent.CHECKIN_CALL_ME;
@@ -172,7 +190,7 @@ public class ReplyRouter {
         // (5b) a dose that was already marked missed a little while ago: a late "taken"
         if (intent == Intent.YES || intent == Intent.TAKEN || intent == Intent.TAKEN_ALL) {
             Map<String, Object> missed = missedDose(m.phone());
-            if (missed != null) return new Dose((UUID) missed.get("id"), intent == Intent.TAKEN_ALL, "late");
+            if (missed != null) return new Dose((UUID) missed.get("id"), true, "late");
         }
 
         // (6) we do not know what this answers
@@ -235,7 +253,7 @@ public class ReplyRouter {
                         "where de.whatsapp_message_id = ? and de.status in ('sent', 'missed') " +
                         "and coalesce(de.sent_at, de.scheduled_at) > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE +
                         " limit 1", target, REACTION_HOURS, m.phone()));
-        if (dose != null) return new Dose((UUID) dose.get("id"), false, "reaction");
+        if (dose != null) return new Dose((UUID) dose.get("id"), true, "reaction");
         if (checkinMessageIdsAvailable()) {
             Map<String, Object> checkin = firstOrNull(jdbc.queryForList(
                     "select c.id from checkins c join care_recipients r on r.id = c.recipient_id " +
@@ -253,6 +271,62 @@ public class ReplyRouter {
      */
     public static String consentMarker(String messageId, UUID recipientId) {
         return "gw:out:consent:" + recipientId + ":" + messageId;
+    }
+
+    // ---------------------------------------------------------------- poll vote
+
+    /** How long a vote on a reminder / check-in poll still counts (on when it was sent). Older: ignored. */
+    static final int POLL_HOURS = 12;
+
+    /**
+     * What a vote on one of our polls answers: ONLY that poll ({@code pollKeyId} = the message id stored on every dose of the
+     * slot, or on the check-in), sent to this number in the last {@value #POLL_HOURS} h. The option is read by label and index
+     * ({@link ReminderTexts#doseVote}); an option we cannot recognise is ignored.
+     * <ul>
+     *   <li>Dose poll, "✅ Taken / Given": the whole slot is confirmed (taken, or taken_late after missed).</li>
+     *   <li>Dose poll, "⏰ Later": nothing changes, a short ack. A vote changed to Later AFTER the slot was confirmed is NOT
+     *       undone (logged only).</li>
+     *   <li>Check-in poll: "😊 I'm fine" = okay, "📞 Please call me" = the family is told (also after an earlier "fine").</li>
+     * </ul>
+     * Numbers that said STOP, other numbers and unknown / old polls are ignored without any reply.
+     */
+    public Route routePollVote(String phone, String pollKeyId, String label, Integer index) {
+        if (pollKeyId == null) return new Ignore("vote without a poll id");
+        List<Map<String, Object>> recipients = jdbc.queryForList(
+                "select id, opted_out_at from care_recipients where whatsapp_phone = ?", phone);
+        if (recipients.isEmpty()) return new Ignore("unregistered number");
+        if (isOptedOut(phone) || recipients.stream().allMatch(r -> r.get("opted_out_at") != null)) {
+            return new Ignore("number opted out");
+        }
+        List<Map<String, Object>> doses = jdbc.queryForList(
+                "select de.id, de.status::text status from dose_events de " + DOSE_JOIN +
+                        "where de.whatsapp_message_id = ? and coalesce(de.sent_at, de.scheduled_at) > now() - make_interval(hours => ?) " +
+                        "and " + ACTIVE_OF_PHONE + " order by (de.status in ('sent', 'missed')) desc, de.scheduled_at",
+                pollKeyId, POLL_HOURS, phone);
+        if (!doses.isEmpty()) {
+            int choice = ReminderTexts.doseVote(label, index);
+            if (choice < 0) return new Ignore("unknown poll option");
+            UUID id = (UUID) doses.get(0).get("id");
+            boolean open = doses.stream().anyMatch(d -> "sent".equals(d.get("status")) || "missed".equals(d.get("status")));
+            if (choice == ReminderTexts.YES) return open ? new Dose(id, true, "poll") : new Ignore("slot already answered");
+            if (!open) {
+                log.info("a dose poll vote changed to Later after the slot was confirmed: kept as confirmed (not undone)");
+                return new Ignore("later after confirmed");
+            }
+            return new DoseLater(id);
+        }
+        if (checkinMessageIdsAvailable()) {
+            Map<String, Object> checkin = firstOrNull(jdbc.queryForList(
+                    "select c.id from checkins c join care_recipients r on r.id = c.recipient_id " +
+                            "where c.whatsapp_message_id = ? and c.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE +
+                            " limit 1", pollKeyId, POLL_HOURS, phone));
+            if (checkin != null) {
+                int choice = ReminderTexts.checkinVote(label, index);
+                if (choice < 0) return new Ignore("unknown poll option");
+                return new Checkin((UUID) checkin.get("id"), choice == ReminderTexts.SECOND, "poll");
+            }
+        }
+        return new Ignore("vote on an unknown or old poll");
     }
 
     // ---------------------------------------------------------------- caregiver alert question
@@ -297,8 +371,7 @@ public class ReplyRouter {
         if (dose != null) {
             UUID id = (UUID) dose.get("id");
             return switch (intent) {
-                case YES, TAKEN -> new Dose(id, false, "quote");
-                case TAKEN_ALL -> new Dose(id, true, "quote");
+                case YES, TAKEN, TAKEN_ALL -> new Dose(id, true, "quote");
                 case NO -> new DoseNotYet((String) dose.get("language"), id);
                 default -> new Help((String) dose.get("language"), false);
             };

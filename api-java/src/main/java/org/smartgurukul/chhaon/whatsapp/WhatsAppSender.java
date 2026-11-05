@@ -36,6 +36,12 @@ public class WhatsAppSender {
     private final String sessionName;
     private final RestClient client;
 
+    /** app.whatsapp.polls-enabled (env WHATSAPP_POLLS_ENABLED): dose reminders and the check-in as polls. Off by default. */
+    private volatile boolean pollsEnabled;
+    /** Set when the gateway accepted a poll but returned no message id (an older gateway): polls stay off until a restart. */
+    private volatile boolean pollsUnsupported;
+    private final java.util.concurrent.atomic.AtomicBoolean pollFailureLogged = new java.util.concurrent.atomic.AtomicBoolean();
+
     // cheap session-id cache (resolved by name)
     private volatile String cachedSessionId;
     private volatile long cachedAt;
@@ -50,6 +56,43 @@ public class WhatsAppSender {
         this.client = (baseUrl == null || baseUrl.isBlank())
                 ? null
                 : RestClient.builder().baseUrl(baseUrl).defaultHeader("X-API-Key", token).build();
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setPollsEnabled(@Value("${app.whatsapp.polls-enabled:false}") boolean pollsEnabled) {
+        this.pollsEnabled = pollsEnabled;
+        this.pollsUnsupported = false;
+        if (pollsEnabled) log.info("WhatsApp polls are ON: dose reminders and check-ins are sent as polls (text when a poll cannot be sent)");
+    }
+
+    /** True while reminders should be tried as polls. */
+    public boolean pollsOn() {
+        return pollsEnabled && !pollsUnsupported;
+    }
+
+    /**
+     * Sends {@code poll} when polls are on and returns its message id; returns {@code null} when it was NOT sent as a poll the
+     * caller can track (polls off, the call failed, or the gateway gave no message id), so the caller sends the plain text
+     * reminder instead. Never throws. A failure is logged once per process (with a safe reason, never the number).
+     * No message id although the gateway said OK = an older gateway: the parent DID get that poll (and now also the text), and
+     * polls are switched off until a restart so this happens only once.
+     */
+    public String trySendPoll(String toPhone, ReminderTexts.Poll poll) {
+        if (!pollsOn() || poll == null) return null;
+        try {
+            String id = sendPoll(toPhone, poll.question(), poll.options());
+            if (id != null) return id;
+            pollsUnsupported = true;
+            log.warn("the WhatsApp gateway sent a poll but returned no messageId (old gateway?): votes could not be matched, so polls "
+                    + "are OFF until the backend restarts and reminders go out as text; update the gateway");
+            return null;
+        } catch (Exception | LinkageError e) {
+            if (pollFailureLogged.compareAndSet(false, true)) {
+                log.warn("poll to {} not sent ({}), sending the text instead (further poll failures are not logged)",
+                        mask(toPhone), failureReason(e));
+            }
+            return null;
+        }
     }
 
     public boolean isLive() {
@@ -136,6 +179,36 @@ public class WhatsAppSender {
             }
         }
         return send(toPhone, text);
+    }
+
+    /**
+     * Send a one-choice WhatsApp poll (the gateway's poll route, body {@code {question, options, selectableCount: 1}}). Returns the
+     * poll's message key id (the gateway's top-level {@code messageId}, or {@code data.key.id}), which is what a later
+     * {@code poll.vote} carries as {@code pollKeyId}. Returns {@code null} when the gateway accepted the poll but gave no id (an
+     * older gateway): the poll WAS delivered, but its votes could never be matched. Throws on any failure.
+     */
+    public String sendPoll(String toPhone, String question, java.util.List<String> options) {
+        if (client == null) {
+            log.info("[WA dry-run] poll to={} question={} options={} (gateway not configured)", mask(toPhone), question, options);
+            return "dryrun-poll-" + UUID.randomUUID();
+        }
+        String jid = toJid(toPhone);
+        String sessionId = resolveSessionId();
+        JsonNode resp = client.post()
+                .uri("/api/messages/{session}/{jid}/poll", sessionId, jid)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("question", question, "options", options, "selectableCount", 1))
+                .retrieve()
+                .body(JsonNode.class);
+        if (resp == null || !resp.path("status").asBoolean(false)) {
+            cachedSessionId = null;
+            String why = resp == null ? "no answer" : resp.path("message").asText(resp.path("error").asText("no reason given"));
+            throw new IllegalStateException("WhatsApp gateway send failed: " + why);
+        }
+        String id = resp.path("messageId").asText("");
+        if (id.isBlank()) id = resp.path("data").path("messageId").asText("");
+        if (id.isBlank()) id = resp.path("data").path("key").path("id").asText("");
+        return id.isBlank() ? null : id;
     }
 
     /** Resolve the session id by its display name (prefer CONNECTED), cached for 5 minutes. */

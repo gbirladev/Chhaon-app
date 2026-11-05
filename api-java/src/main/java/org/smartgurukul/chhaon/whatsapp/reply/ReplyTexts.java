@@ -90,6 +90,13 @@ public final class ReplyTexts {
                 : "Okay 🙏 Please reply 1 once you have taken it.";
     }
 
+    /** A "⏰ Later" vote on a reminder poll: nothing is recorded; tap ✅ once taken. */
+    public static String dosePollLater(String lang) {
+        return hi(lang)
+                ? "ठीक है 🙏 लेने के बाद ✅ चुन लीजिए"
+                : "Okay 🙏 Tap ✅ once you have taken it.";
+    }
+
     /** Appended to a confirmation when another medicine is still waiting. */
     public static String nextDoseHint(String lang) {
         return hi(lang)

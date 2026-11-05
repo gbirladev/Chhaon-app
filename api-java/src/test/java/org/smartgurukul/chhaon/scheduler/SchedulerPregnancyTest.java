@@ -43,8 +43,8 @@ class SchedulerPregnancyTest extends DbTest {
         assertThat(wa.sentTo(f.phone())).hasSize(1);
         String text = wa.sentTo(f.phone()).get(0).text();
         assertThat(text).matches("(?s)Good (morning|afternoon|evening) Shivani .*")
-                .contains("\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\nDose: *1 tablet*")
-                .endsWith("Reply *1* or 👍 once you have taken it ✅")
+                .contains("\nWeek 24 starts today 💛\nMedicine time: *Iron + folic acid*\n1 tablet")
+                .endsWith("Taken it? Just reply *1*")
                 .doesNotContain("Papa").doesNotContain("Namaste");
     }
 
@@ -69,7 +69,7 @@ class SchedulerPregnancyTest extends DbTest {
         Med m = fx.medicine(g, "Iron + folic acid", "1 tablet", 20, LocalTime.of(3, 0));
         fx.dose(m.scheduleId(), Instant.now().minus(5, ChronoUnit.MINUTES), "pending", null, null);
         scheduler(g).scheduledTick();
-        assertThat(wa.sentTo(g.phone()).get(0).text()).doesNotContain("Week").contains("Dose: *1 tablet*");
+        assertThat(wa.sentTo(g.phone()).get(0).text()).doesNotContain("Week").contains("\n1 tablet\n");
     }
 
     @Test
@@ -97,6 +97,6 @@ class SchedulerPregnancyTest extends DbTest {
         scheduler(f).scheduledTick();
 
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\nDose: *500 mg*\n\nReply *1* or 👍 once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nMedicine time: *Metformin*\n500 mg\n\nTaken it? Just reply *1*");
     }
 }

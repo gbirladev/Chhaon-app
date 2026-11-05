@@ -17,8 +17,13 @@ public class RecordingWhatsAppSender extends WhatsAppSender {
 
     public record Image(String to, String caption, byte[] jpeg, String messageId) {}
 
+    public record Poll(String to, String question, List<String> options, String messageId) {}
+
     private final List<Sent> sent = Collections.synchronizedList(new ArrayList<>());
     private final List<Image> images = Collections.synchronizedList(new ArrayList<>());
+    private final List<Poll> polls = Collections.synchronizedList(new ArrayList<>());
+    /** ok | fail (the gateway refuses the poll) | no-id (an old gateway: delivered, but no messageId in the answer) */
+    private volatile String pollMode = "ok";
     private final AtomicInteger counter = new AtomicInteger();
     private volatile boolean failing;
     private volatile boolean failingMedia;
@@ -41,6 +46,29 @@ public class RecordingWhatsAppSender extends WhatsAppSender {
         images.add(new Image(toPhone, caption, jpeg, id));
         sent.add(new Sent(toPhone, caption));
         return id;
+    }
+
+    /** A poll is recorded in {@link #polls()} only (not in {@link #sent()}, which holds texts and image captions). */
+    @Override
+    public String sendPoll(String toPhone, String question, List<String> options) {
+        if (failing || "fail".equals(pollMode)) throw new IllegalStateException("WhatsApp gateway send failed: Failed to send poll");
+        String id = "no-id".equals(pollMode) ? null : "test-poll-" + counter.incrementAndGet();
+        polls.add(new Poll(toPhone, question, List.copyOf(options), id));
+        return id;
+    }
+
+    public List<Poll> polls() {
+        synchronized (polls) {
+            return new ArrayList<>(polls);
+        }
+    }
+
+    public List<Poll> pollsTo(String phone) {
+        return polls().stream().filter(p -> p.to().equals(phone)).toList();
+    }
+
+    public void pollMode(String mode) {
+        this.pollMode = mode;
     }
 
     public List<Sent> sent() {
@@ -71,6 +99,9 @@ public class RecordingWhatsAppSender extends WhatsAppSender {
     public void reset() {
         sent.clear();
         images.clear();
+        polls.clear();
+        pollMode = "ok";
+        setPollsEnabled(false);
         counter.set(0);
         failing = false;
         failingMedia = false;
