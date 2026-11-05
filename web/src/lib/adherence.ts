@@ -1,5 +1,4 @@
-import { supabase } from "./supabase";
-import { localDate } from "./format";
+import { apiFetch } from "./http";
 import type { Recipient } from "./api";
 
 /**
@@ -52,40 +51,10 @@ export function summarizeCheckins(statuses: string[]): { answered: number; total
   return { answered, total };
 }
 
-// PostgREST returns at most 1000 rows per request (the hosted default), so the history is read in pages.
-const PAGE = 1000;
-const MAX_PAGES = 10;
-
 export async function loadAdherence(recipient: Recipient, days = 30): Promise<Adherence> {
-  const now = new Date();
-  const from = new Date(now.getTime() - days * 24 * 3600_000);
-  const rows: DoseRow[] = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const { data, error } = await supabase
-      .from("dose_events")
-      .select("id, status, scheduled_at, medicine_schedules!inner(medicines!inner(id, recipient_id, name, dosage, active))")
-      .eq("medicine_schedules.medicines.recipient_id", recipient.id)
-      .gte("scheduled_at", from.toISOString())
-      .lte("scheduled_at", now.toISOString())
-      .order("scheduled_at", { ascending: true })
-      .order("id", { ascending: true })   // a stable order, so no row is read twice or skipped between pages
-      .range(page * PAGE, page * PAGE + PAGE - 1);
-    if (error) throw error;
-    for (const d of data) {
-      const m = d.medicine_schedules.medicines;
-      rows.push({ status: d.status, medicineId: m.id, name: m.name, dosage: m.dosage, active: m.active });
-    }
-    if (data.length < PAGE) break;
-  }
-
-  const { data: checkins, error: checkinError } = await supabase
-    .from("checkins").select("status")
-    .eq("recipient_id", recipient.id)
-    .gte("date", localDate(from, recipient.timezone))
-    .lte("date", localDate(now, recipient.timezone));
-  if (checkinError) throw checkinError;
-
-  const doses = summarizeDoses(rows);
-  const checks = summarizeCheckins(checkins.map((c) => c.status));
+  const resp = await apiFetch<{ doses: DoseRow[]; checkins: string[] }>(
+    `/api/v1/recipients/${recipient.id}/adherence?days=${days}`);
+  const doses = summarizeDoses(resp.doses);
+  const checks = summarizeCheckins(resp.checkins);
   return { days, ...doses, checkinsAnswered: checks.answered, checkinsTotal: checks.total };
 }

@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { apiFetch, ApiError } from "./http";
 import { authUserId } from "./auth";
 
 /** The love loop (docs/love-loop.md): small warm reactions that reach the parent on WhatsApp. The server sends them; this creates and reads them. */
@@ -19,29 +19,26 @@ export type Reaction = {
 export type ParentMessage = { id: string; kind: "text" | "emoji" | "button" | "other"; body: string | null; reactionId: string | null; createdAt: string };
 
 export async function loadLoveSettings(recipientId: string): Promise<LoveSettings> {
-  const { data, error } = await supabase.from("love_settings").select("enabled, parent_opted_out_at, pilot_group").eq("recipient_id", recipientId).maybeSingle();
-  if (error) throw error;
-  return data ? { enabled: data.enabled, parentOptedOut: !!data.parent_opted_out_at, control: data.pilot_group === "control" } : NO_LOVE;
+  return apiFetch<LoveSettings>(`/api/v1/recipients/${recipientId}/love`);
 }
 
 /** false with a reason when the family cannot turn it on (a control family of the pilot). */
 export async function setLoveEnabled(recipientId: string, enabled: boolean): Promise<{ ok: true } | { ok: false; reason: "unavailable" | "failed" }> {
-  const { error } = await supabase.rpc("set_love_enabled", { p_recipient: recipientId, p_enabled: enabled });
-  if (!error) return { ok: true };
-  return { ok: false, reason: /love_not_available/.test(error.message) ? "unavailable" : "failed" };
+  try {
+    await apiFetch(`/api/v1/recipients/${recipientId}/love`, { method: "POST", body: { enabled } });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: /love_not_available/.test((e as ApiError).message ?? "") ? "unavailable" : "failed" };
+  }
 }
 
 export async function loadMyCallName(circleId: string): Promise<string> {
-  const uid = authUserId();
-  if (!uid) return "";
-  const { data, error } = await supabase.from("care_circle_members").select("parent_calls_me").eq("circle_id", circleId).eq("user_id", uid).maybeSingle();
-  if (error) throw error;
-  return data?.parent_calls_me ?? "";
+  if (!authUserId()) return "";
+  return (await apiFetch<{ name: string }>(`/api/v1/circles/${circleId}/call-name`)).name ?? "";
 }
 
 export async function saveMyCallName(circleId: string, name: string): Promise<boolean> {
-  const { error } = await supabase.rpc("set_parent_calls_me", { p_circle: circleId, p_name: name });
-  return !error;
+  try { await apiFetch(`/api/v1/circles/${circleId}/call-name`, { method: "POST", body: { name } }); return true; } catch { return false; }
 }
 
 export async function myUserId(): Promise<string | null> {
@@ -50,22 +47,11 @@ export async function myUserId(): Promise<string | null> {
 
 /** Reactions of the last 3 days for this parent (the whole family's, newest first). */
 export async function loadReactions(recipientId: string): Promise<Reaction[]> {
-  const since = new Date(Date.now() - 3 * 24 * 3600_000).toISOString();
-  const { data, error } = await supabase.from("reactions")
-    .select("id, sender_id, source_type, source_id, type, emoji, text, status, fail_reason, queued_at, sent_at")
-    .eq("recipient_id", recipientId).gte("queued_at", since).order("queued_at", { ascending: false }).limit(100);
-  if (error) throw error;
-  return data.map((r) => ({
-    id: r.id, senderId: r.sender_id, sourceType: r.source_type as Reaction["sourceType"], sourceId: r.source_id, type: r.type as Reaction["type"],
-    emoji: r.emoji, text: r.text, status: r.status as ReactionStatus, failReason: r.fail_reason, queuedAt: r.queued_at, sentAt: r.sent_at,
-  }));
+  return apiFetch<Reaction[]>(`/api/v1/recipients/${recipientId}/reactions`);
 }
 
 export async function loadParentMessages(recipientId: string, limit = 3): Promise<ParentMessage[]> {
-  const { data, error } = await supabase.from("parent_messages").select("id, kind, body, reaction_id, created_at")
-    .eq("recipient_id", recipientId).in("kind", ["text", "emoji"]).order("created_at", { ascending: false }).limit(limit);
-  if (error) throw error;
-  return data.map((m) => ({ id: m.id, kind: m.kind as ParentMessage["kind"], body: m.body, reactionId: m.reaction_id, createdAt: m.created_at }));
+  return apiFetch<ParentMessage[]>(`/api/v1/recipients/${recipientId}/parent-messages?limit=${limit}`);
 }
 
 export type SendFailure = "off" | "optedOut" | "tooOld" | "already" | "badNote" | "failed";
@@ -73,18 +59,21 @@ export async function sendReaction(args: {
   recipientId: string; sourceType: "dose" | "checkin"; sourceId: string;
   type: "emoji" | "preset" | "custom"; emoji?: string; text?: string;
 }): Promise<{ ok: true } | { ok: false; reason: SendFailure }> {
-  const { error } = await supabase.rpc("send_reaction", {
-    p_recipient: args.recipientId, p_source_type: args.sourceType, p_source_id: args.sourceId, p_type: args.type,
-    p_emoji: args.emoji, p_text: args.text,
-  });
-  if (!error) return { ok: true };
-  const m = error.message ?? "";
-  if (error.code === "23505") return { ok: false, reason: "already" };
-  if (/love_off/.test(m)) return { ok: false, reason: "off" };
-  if (/love_parent_opted_out/.test(m)) return { ok: false, reason: "optedOut" };
-  if (/love_source_invalid/.test(m)) return { ok: false, reason: "tooOld" };
-  if (/love_text_invalid/.test(m) || error.code === "23514") return { ok: false, reason: "badNote" };
-  return { ok: false, reason: "failed" };
+  try {
+    await apiFetch(`/api/v1/recipients/${args.recipientId}/reactions`, { method: "POST", body: {
+      sourceType: args.sourceType, sourceId: args.sourceId, type: args.type, emoji: args.emoji ?? null, text: args.text ?? null,
+    } });
+    return { ok: true };
+  } catch (e) {
+    const err = e as ApiError;
+    const m = err.message ?? "";
+    if (err.status === 409 || /already/.test(m)) return { ok: false, reason: "already" };
+    if (/love_off/.test(m)) return { ok: false, reason: "off" };
+    if (/love_parent_opted_out/.test(m)) return { ok: false, reason: "optedOut" };
+    if (/love_source_invalid/.test(m)) return { ok: false, reason: "tooOld" };
+    if (/love_text_invalid/.test(m) || /check constraint/i.test(m)) return { ok: false, reason: "badNote" };
+    return { ok: false, reason: "failed" };
+  }
 }
 
 // ---------------------------------------------------------------- the owner's pilot numbers
@@ -97,8 +86,8 @@ export type LoveStats = {
 };
 
 export async function loadLoveStats(days = 14): Promise<LoveStats> {
-  const { data, error } = await supabase.rpc("love_stats", { p_days: days });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) throw error ?? new Error("bad stats");
+  const data = await apiFetch<unknown>(`/api/v1/admin/love-stats?days=${days}`);
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("bad stats");
   const r = data as unknown as {
     days: number; families: { love_on: number; love_group: number; control: number; parent_opted_out: number };
     reactions: LoveStats["reactions"]; parent_replies_to_reactions: number;

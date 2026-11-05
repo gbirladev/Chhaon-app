@@ -1,6 +1,6 @@
-import { supabase } from "./supabase";
 import { authUserId } from "./auth";
 import { loadMe } from "./api";
+import { apiFetch } from "./http";
 
 /** Pilot stats for the owner of the app (migration 0028). Totals only: the database never returns names, numbers or emails here. */
 export type DailyStat = { date: string; remindersSent: number; remindersTaken: number; newCaregivers: number };
@@ -31,8 +31,8 @@ type Raw = {
 };
 
 export async function loadPilotStats(days = 14): Promise<PilotStats> {
-  const { data, error } = await supabase.rpc("admin_stats", { p_days: days });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) throw error ?? new Error("bad stats");
+  const data = await apiFetch<unknown>(`/api/v1/admin/stats?days=${days}`);
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("bad stats");
   const r = data as unknown as Raw;
   return {
     generatedAt: r.generated_at,

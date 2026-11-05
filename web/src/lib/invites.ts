@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { apiFetch, ApiError } from "./http";
 
 /** Family invites (step 9). Every rule is enforced in the database (migration 0017); this file only calls it. */
 
@@ -30,9 +30,9 @@ export const inviteLink = (token: string) => `${window.location.origin}/app/#/jo
 
 export type InviteFailure = "invalid" | "expired" | "revoked" | "used" | "member" | "circle_full" | "too_many_invites" | "no_parent" | "error";
 
-/** The database reports why it refused in the error hint. */
-const failure = (err: { hint?: string; code?: string } | null): InviteFailure => {
-  const hint = err?.hint;
+/** The database reports why it refused in the error hint, which the Java API relays as the error detail. */
+const failure = (err: unknown): InviteFailure => {
+  const hint = err instanceof ApiError ? err.message : (err as { hint?: string } | null)?.hint;
   return hint === "invalid" || hint === "expired" || hint === "revoked" || hint === "used" || hint === "member" || hint === "circle_full" || hint === "too_many_invites" || hint === "no_parent" ? hint : "error";
 };
 
@@ -41,8 +41,8 @@ export type InvitePreview =
   | { status: Exclude<InviteFailure, "circle_full" | "too_many_invites" | "error"> };
 
 export async function previewInvite(token: string): Promise<InvitePreview> {
-  const { data, error } = await supabase.rpc("preview_family_invite", { p_token: token });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) throw error ?? new Error("bad preview");
+  const data = await apiFetch<unknown>("/api/v1/invites/preview", { method: "POST", body: { token } });
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("bad preview");
   const d = data as { status: string; inviter?: string | null; parent_first_name?: string; relation?: string | null; call_name?: string | null };
   // A parent that was deleted leaves no name to show: say so clearly instead of "invited you to care for <empty>".
   if (d.status === "ok" && !(d.parent_first_name ?? "").trim() && !(d.call_name ?? "").trim()) return { status: "no_parent" };
@@ -53,39 +53,33 @@ export async function previewInvite(token: string): Promise<InvitePreview> {
 
 /** Returns the parent's id on success, or the reason it was refused. */
 export async function acceptInvite(token: string): Promise<{ recipientId: string } | { failure: InviteFailure }> {
-  const { data, error } = await supabase.rpc("accept_family_invite", { p_token: token });
-  if (error) return { failure: failure(error) };
-  return { recipientId: data as string };
+  try {
+    const d = await apiFetch<{ recipientId: string }>("/api/v1/invites/accept", { method: "POST", body: { token } });
+    return { recipientId: d.recipientId };
+  } catch (e) { return { failure: failure(e) }; }
 }
 
 export async function createInvite(circleId: string): Promise<{ token: string } | { failure: InviteFailure }> {
-  const { data, error } = await supabase.rpc("create_family_invite", { p_circle: circleId });
-  if (error) return { failure: failure(error) };
-  return { token: data as string };
+  try {
+    return await apiFetch<{ token: string }>(`/api/v1/circles/${circleId}/invites`, { method: "POST" });
+  } catch (e) { return { failure: failure(e) }; }
 }
 
 export type PendingInvite = { id: string; createdAt: string; expiresAt: string; by: string | null };
 
 export async function loadPendingInvites(circleId: string): Promise<PendingInvite[]> {
-  const { data, error } = await supabase
-    .from("family_invites").select("id, created_at, expires_at, profiles!family_invites_created_by_fkey(name)")
-    .eq("circle_id", circleId).is("revoked_at", null).is("accepted_at", null).gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data.map((i) => ({ id: i.id, createdAt: i.created_at, expiresAt: i.expires_at, by: i.profiles?.name ?? null }));
+  const rows = await apiFetch<{ id: string; createdAt: string; expiresAt: string; by: string }[]>(`/api/v1/circles/${circleId}/invites`);
+  return rows.map((i) => ({ id: i.id, createdAt: i.createdAt, expiresAt: i.expiresAt, by: i.by || null }));
 }
 
 export async function revokeInvite(id: string): Promise<boolean> {
-  const { error } = await supabase.rpc("revoke_family_invite", { p_invite: id });
-  return !error;
+  try { await apiFetch(`/api/v1/invites/${id}`, { method: "DELETE" }); return true; } catch { return false; }
 }
 
 export async function removeMember(circleId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase.rpc("remove_circle_member", { p_circle: circleId, p_user: userId });
-  return !error;
+  try { await apiFetch(`/api/v1/circles/${circleId}/members/${userId}`, { method: "DELETE" }); return true; } catch { return false; }
 }
 
 export async function leaveCircle(circleId: string): Promise<boolean> {
-  const { error } = await supabase.rpc("leave_circle", { p_circle: circleId });
-  return !error;
+  try { await apiFetch(`/api/v1/circles/${circleId}/leave`, { method: "POST" }); return true; } catch { return false; }
 }

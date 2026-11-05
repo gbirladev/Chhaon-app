@@ -1,34 +1,24 @@
-import { supabase } from "./supabase";
+import { apiFetch } from "./http";
 
 /** Doctor visits (step 8). Times are entered and shown in the PARENT's time zone and stored in UTC. */
 export type Appointment = { id: string; doctor: string; at: string; location: string | null; notes: string | null; remind: boolean };
 
 export async function loadAppointments(recipientId: string): Promise<Appointment[]> {
-  const { data, error } = await supabase
-    .from("appointments")
-    .select("id, doctor_name, datetime, location, notes, remind")
-    .eq("recipient_id", recipientId)
-    .order("datetime", { ascending: true })
-    .limit(200);
-  if (error) throw error;
-  return data.map((a) => ({ id: a.id, doctor: a.doctor_name, at: a.datetime, location: a.location, notes: a.notes, remind: a.remind }));
+  return apiFetch<Appointment[]>(`/api/v1/recipients/${recipientId}/appointments`);
 }
 
 export type AppointmentInput = { doctor: string; at: string; location: string | null; notes: string | null; remind: boolean };
 
 export async function createAppointment(recipientId: string, input: AppointmentInput): Promise<boolean> {
-  const { error } = await supabase.from("appointments").insert({ recipient_id: recipientId, doctor_name: input.doctor, datetime: input.at, location: input.location, notes: input.notes, remind: input.remind });
-  return !error;
+  try { await apiFetch(`/api/v1/recipients/${recipientId}/appointments`, { method: "POST", body: input }); return true; } catch { return false; }
 }
 
 export async function updateAppointment(id: string, input: AppointmentInput): Promise<boolean> {
-  const { data, error } = await supabase.from("appointments").update({ doctor_name: input.doctor, datetime: input.at, location: input.location, notes: input.notes, remind: input.remind }).eq("id", id).select("id");
-  return !error && !!data?.length;
+  try { await apiFetch(`/api/v1/appointments/${id}`, { method: "PUT", body: input }); return true; } catch { return false; }
 }
 
 export async function deleteAppointment(id: string): Promise<boolean> {
-  const { data, error } = await supabase.from("appointments").delete().eq("id", id).select("id");
-  return !error && !!data?.length;
+  try { await apiFetch(`/api/v1/appointments/${id}`, { method: "DELETE" }); return true; } catch { return false; }
 }
 
 /** Offset (ms) of a time zone from UTC at a given instant. */
