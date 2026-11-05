@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { emergencyLinkUrl, enableEmergencyLink, loadEmergencyLink, revokeEmergencyLink, rotateEmergencyLink, type EmergencyLink as Link } from "../lib/emergency";
 import { QrCode } from "./QrCode";
+import { formatDateTime } from "../lib/format";
 
 type Props = { recipientId: string; name: string; share: (title: string, text: string) => unknown; toast: (message: string) => void };
 
@@ -31,7 +32,7 @@ export function EmergencyLinkPanel({ recipientId, name, share, toast }: Props) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); toast(t("copied")); } catch { window.prompt(t("copy"), url); }
   };
-  const when = link?.lastViewedAt ? new Date(link.lastViewedAt).toLocaleString(locale === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : null;
+  const when = link?.lastViewedAt ? formatDateTime(new Date(link.lastViewedAt), locale) : null;
 
   return (
     <section className="card emergency-link" aria-labelledby="emergency-link-title" style={{ marginTop: 16, padding: 16 }}>

@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Icon, useDialog } from "../App";
 import { loadTodayLayout, saveTodayLayout } from "../lib/api";
-import { DoseRoute, type RouteStop } from "./DoseRoute";
+import { ClockText, ClockTime, DoseRoute, type RouteStop } from "./DoseRoute";
+import { joinClock } from "../lib/format";
 import "./layouts.css";
 
 /** Preview of several ways to show Today's medicines, so one can be chosen. Same data for all of them. */
@@ -91,7 +92,7 @@ function Timeline({ stops, avatar, nextLabel }: Props) {
         <li key={s.id} className={`lt-row ${s.state}${i === nx ? " next" : ""}`}>
           <span className="lt-dot" aria-hidden="true">{dot(s, i === nx, avatar)}</span>
           <div className="lt-body">
-            <div className="lt-top"><strong>{s.time}</strong><small>{s.suffix}</small>{i === nx && <em>{nextLabel}</em>}<span className="lt-pill">{s.pill}</span></div>
+            <div className="lt-top"><ClockTime stop={s} strong space={false} />{i === nx && <em>{nextLabel}</em>}<span className="lt-pill">{s.pill}</span></div>
             <h3>{s.name}</h3>
             {s.dose && <p>{s.dose}</p>}
           </div>
@@ -120,8 +121,8 @@ function Arc({ stops, avatar, startLabel, endLabel, nextLabel }: Props) {
         {stops.map((s, i) => { const p = pos(s.tod ?? 0); return <g key={s.id} className={`arc-dot ${s.state}${i === nx ? " next" : ""}`}><circle cx={p.x} cy={p.y} r={i === nx ? 13 : 9} />{i === nx && <text x={p.x} y={p.y + 4.5} textAnchor="middle">{avatar}</text>}{s.state === "done" && <path d={`M ${p.x - 4} ${p.y} l 3 3 l 5 -6`} className="arc-tick" />}</g>; })}
         <text x="4" y="195" textAnchor="start" className="arc-text">{startLabel}</text><text x="316" y="195" textAnchor="end" className="arc-text">{endLabel}</text>
       </svg>
-      {nx >= 0 && <div className="arc-next"><small>{nextLabel}</small><strong>{stops[nx].time} {stops[nx].suffix}</strong><span>{stops[nx].name}</span></div>}
-      <ul className="arc-chips">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}><b>{s.time}</b> {s.suffix} · {s.name}</li>)}</ul>
+      {nx >= 0 && <div className="arc-next"><small>{nextLabel}</small><strong><ClockText stop={stops[nx]} /></strong><span>{stops[nx].name}</span></div>}
+      <ul className="arc-chips">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}><b><ClockText stop={s} /></b> · {s.name}</li>)}</ul>
     </div>
   );
 }
@@ -150,7 +151,7 @@ function Focus({ stops, avatar, nextLabel }: Props) {
         {next ? (
           <div className="fc-next">
             <em>{nextLabel}</em>
-            <strong>{next.time} <small>{next.suffix}</small></strong>
+            <strong><ClockTime stop={next} /></strong>
             <h3>{next.name}</h3>
             <p>{next.dose}{next.dose && when ? " · " : ""}{when}</p>
           </div>
@@ -164,7 +165,7 @@ function Focus({ stops, avatar, nextLabel }: Props) {
             <li key={s.id} className={s.state}>
               <span className="fc-dot" aria-hidden="true">{dot(s, false, avatar)}</span>
               <span className="fc-name"><strong>{s.name}</strong> <small>{s.dose}</small></span>
-              <span className="fc-time">{s.time} <small>{s.suffix}</small></span>
+              <span className="fc-time"><ClockTime stop={s} /></span>
               <span className="sr-only">{s.pill}</span>
             </li>
           ))}
@@ -188,8 +189,8 @@ function Ring({ stops, avatar, nextLabel }: Props) {
         <svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r={R} className="fc-track" /><circle cx="80" cy="80" r={R} className="fc-arc" strokeDasharray={`${(done / Math.max(total, 1)) * C} ${C}`} transform="rotate(-90 80 80)" /></svg>
         <span><strong>{done}/{total}</strong><small>{hi ? "ली गईं" : "taken"}</small></span>
       </div>
-      {nx >= 0 && <p className="rg-next"><em>{nextLabel}</em> <strong>{stops[nx].time} {stops[nx].suffix}</strong> · {stops[nx].name}</p>}
-      <ul className="rg-dots">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`} title={`${s.time} ${s.suffix} ${s.name}`}><span aria-hidden="true">{dot(s, i === nx, avatar)}</span><small>{s.time}</small><span className="sr-only">{s.name} {s.pill}</span></li>)}</ul>
+      {nx >= 0 && <p className="rg-next"><em>{nextLabel}</em> <strong><ClockText stop={stops[nx]} /></strong> · {stops[nx].name}</p>}
+      <ul className="rg-dots">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`} title={`${joinClock(s, hi ? "hi" : "en")} ${s.name}`}><span aria-hidden="true">{dot(s, i === nx, avatar)}</span><small>{s.time}</small><span className="sr-only">{s.name} {s.pill}</span></li>)}</ul>
     </div>
   );
 }
@@ -203,7 +204,7 @@ function PillBox({ stops, avatar }: Props) {
         <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}>
           <span className="pb-lid" aria-hidden="true" />
           <span className="pb-pill" aria-hidden="true">{dot(s, i === nx, avatar)}</span>
-          <strong>{s.time}<small>{s.suffix}</small></strong>
+          <strong><ClockTime stop={s} space={false} /></strong>
           <span className="pb-name">{s.name}</span>
           <span className="sr-only">{s.pill}</span>
         </li>
@@ -219,7 +220,7 @@ function Ladder({ stops, nextLabel }: Props) {
     <ul className="lay-ladder">
       {stops.map((s, i) => (
         <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}>
-          <span className="ld-time"><strong>{s.time}</strong><small>{s.suffix}</small></span>
+          <span className="ld-time"><ClockTime stop={s} strong space={false} /></span>
           <span className="ld-main"><strong>{s.name}</strong><small>{s.dose}</small></span>
           <span className="ld-state">{i === nx ? <em>{nextLabel}</em> : s.pill}</span>
         </li>
@@ -243,9 +244,9 @@ function Clock({ stops, avatar, nextLabel }: Props) {
         <line x1="100" y1="100" x2={hand.x} y2={hand.y} className="ck-hand" /><circle cx="100" cy="100" r="3.5" className="ck-hub" />
         {stops.map((s, i) => { const p = at(s.tod ?? 0, 72); return <g key={s.id} className={`ck-dot ${s.state}${i === nx ? " next" : ""}`}><circle cx={p.x} cy={p.y} r={i === nx ? 11 : 8} />{i === nx && <text x={p.x} y={p.y + 4} textAnchor="middle">{avatar}</text>}{s.state === "done" && <path d={`M ${p.x - 3.5} ${p.y} l 2.5 2.5 l 4.5 -5`} className="arc-tick" />}</g>; })}
       </svg>
-      {nx >= 0 && <div className="ck-next"><small>{nextLabel}</small><strong>{stops[nx].time} {stops[nx].suffix}</strong><span>{stops[nx].name}</span></div>}
+      {nx >= 0 && <div className="ck-next"><small>{nextLabel}</small><strong><ClockText stop={stops[nx]} /></strong><span>{stops[nx].name}</span></div>}
       </div>
-      <ul className="arc-chips">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}><b>{s.time}</b> {s.suffix} · {s.name}</li>)}</ul>
+      <ul className="arc-chips">{stops.map((s, i) => <li key={s.id} className={`${s.state}${i === nx ? " next" : ""}`}><b><ClockText stop={s} /></b> · {s.name}</li>)}</ul>
     </div>
   );
 }
@@ -258,7 +259,7 @@ function Chat({ stops }: Props) {
     <div className="lay-chat">
       {stops.map((s) => (
         <div key={s.id} className={`ch-pair ${s.state}`}>
-          <div className="ch-in"><span>{text.time} <strong>{s.name}</strong>{s.dose && <small> ({s.dose})</small>}</span><time>{s.time} {s.suffix}</time></div>
+          <div className="ch-in"><span>{text.time} <strong>{s.name}</strong>{s.dose && <small> ({s.dose})</small>}</span><time><ClockText stop={s} /></time></div>
           {s.state === "done" && <div className="ch-out ok">{text.taken}</div>}
           {s.state === "missed" && <div className="ch-out bad">{text.missed}</div>}
           {s.state === "current" && <div className="ch-out wait">{text.due}</div>}

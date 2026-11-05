@@ -11,7 +11,7 @@ import {
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockLabel, clockParts, describeTimes, formatClock, formatDate, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { clockLabel, clockParts, describeTimes, formatClock, formatDate, formatDateTime, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -44,6 +44,9 @@ import { isManual } from "./lib/doseGiven";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
+import { PersonBadge } from "./screens/PersonBadge";
+import { personKindOf, usePersonLine } from "./lib/person";
+import "./screens/firstImpressions.css";
 import type { PillColour, PillShape } from "./lib/pillLook";
 import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
 import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
@@ -337,6 +340,12 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [example, setExample] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setExample((n) => (n + 1) % 3), 3500);
+    return () => window.clearInterval(id);
+  }, []);
   const continueLogin = async () => {
     setError("");
     const phone = normalizePhone(value);
@@ -358,8 +367,9 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
           <Icon name="heart" size={64} strokeWidth={1.6} />
           {/* Optional photo: drop web/public/welcome-parent.jpg in. Without the file the heart above stays. */}
           <img className="welcome-photo" src="/welcome-parent.jpg" alt={t("photoAlt")} onError={(event) => { event.currentTarget.style.display = "none"; }} />
-          <span className="floating-chip chip-one">{t("chipTaken")}</span>
-          <span className="floating-chip chip-two">{t("chipOkay")}</span>
+          {/* Three examples in turn (an older parent first, then a pregnancy, then a baby); still for reduced motion. */}
+          <span className="floating-chip chip-one" key={`a${example}`} aria-hidden="true">{t(example === 0 ? "chipTaken" : example === 1 ? "chipTaken2" : "chipTaken3")}</span>
+          <span className="floating-chip chip-two" key={`b${example}`} aria-hidden="true">{t(example === 0 ? "chipOkay" : example === 1 ? "chipOkay2" : "chipOkay3")}</span>
         </div>
       </div>
       <div className="welcome-copy">
@@ -712,13 +722,38 @@ function SwipeRow({ onRemove, label, className, children }: { onRemove: () => vo
   );
 }
 
-function NotificationSheet({ notifications, medicineNames, callFor, onDelete, onClose }: { notifications: AppNotification[]; medicineNames: Record<string, string>; callFor: (recipientId?: string) => string; onDelete: (id: string) => void; onClose: () => void }) {
+type NotifEntry = { key: string; items: AppNotification[] };
+const notifPayload = (n: AppNotification) => (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string; count?: number; days?: number; reason?: string };
+const notifKey = (n: AppNotification) => {
+  const p = notifPayload(n);
+  return `${n.type}|${p.recipient_id ?? ""}|${n.type === "refill_needed" || n.type === "out_of_stock" ? p.medicine_id ?? "" : ""}`;
+};
+/** Repeats of the same alert about the same person (and medicine) become one row from 3 on: "Papa · 27 reminders could not be sent". */
+const NOTIF_GROUP_FROM = 3;
+function groupNotifications(list: AppNotification[]): NotifEntry[] {
+  const byKey = new Map<string, AppNotification[]>();
+  for (const n of list) byKey.set(notifKey(n), [...(byKey.get(notifKey(n)) ?? []), n]);
+  const entries: NotifEntry[] = [];
+  const done = new Set<string>();
+  for (const n of list) {   // newest first: a group sits where its newest item is
+    const key = notifKey(n);
+    const items = byKey.get(key) ?? [n];
+    if (items.length < NOTIF_GROUP_FROM) entries.push({ key: n.id, items: [n] });
+    else if (!done.has(key)) { done.add(key); entries.push({ key, items }); }
+  }
+  return entries;
+}
+
+function NotificationSheet({ notifications, recipients, currentId, medicineNames, callFor, onDelete, onMarkAllRead, onClose }: { notifications: AppNotification[]; recipients: Recipient[]; currentId: string | null; medicineNames: Record<string, string>; callFor: (recipientId?: string) => string; onDelete: (ids: string[]) => void; onMarkAllRead: () => void; onClose: () => void }) {
   const t = useTranslations("notif");
   const tv = useTranslations("vaccines");
   const language = useLocale() as Language;
   const dialog = useDialog(onClose);
+  const [onlyCurrent, setOnlyCurrent] = useState(false);
+  const [open, setOpen] = useState<string[]>([]);
+  const current = recipients.find((r) => r.id === currentId) ?? null;
   const text = (n: AppNotification) => {
-    const payload = (n.payload ?? {}) as { medicine_id?: string; recipient_id?: string; count?: number; days?: number; reason?: string };
+    const payload = notifPayload(n);
     const call = callFor(payload.recipient_id);  // the parent THIS alert is about, not necessarily the one on screen
     const name = payload.medicine_id ? medicineNames[payload.medicine_id] : undefined;
     if (n.type === "refill_needed") return name ? t("refill_needed", { name }) : t("refill_needed_generic");
@@ -731,19 +766,64 @@ function NotificationSheet({ notifications, medicineNames, callFor, onDelete, on
     if (n.type === "reminder_not_sent") return name ? t("reminder_not_sent_named", { call, name }) : t("reminder_not_sent", { call });
     return t.has(n.type) ? t(n.type, { call }) : t("unknown");
   };
+  const when = (n: AppNotification) => formatDateTime(new Date(n.created_at), language);
+  /** Whose alert this is: a small avatar + the name (only when the family cares for more than one person). */
+  const chip = (n: AppNotification) => {
+    const r = recipients.find((x) => x.id === notifPayload(n).recipient_id);
+    if (!r || recipients.length < 2) return null;
+    const call = parentCall(r, language);
+    return <span className="person-chip"><PersonBadge name={call} kind={personKindOf(r)} size="sm" lazy /><b>{call}</b></span>;
+  };
+  const mineCount = current ? notifications.filter((n) => notifPayload(n).recipient_id === current.id).length : 0;
+  const shown = onlyCurrent && current ? notifications.filter((n) => notifPayload(n).recipient_id === current.id) : notifications;
+  const entries = groupNotifications(shown);
+  const unread = notifications.some((n) => !n.read_at);
+  const groupText = (items: AppNotification[]) => {
+    const key = `group_${items[0].type}`;
+    return t.has(key) ? t(key, { count: items.length }) : `${text(items[0])} (${t("group_other", { count: items.length })})`;
+  };
+  const toggle = (key: string) => setOpen((list) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]));
   return (
     <div className="sheet-backdrop" onClick={onClose}>
-      <section className="sheet" ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("title")} onClick={(event) => event.stopPropagation()}>
-        <div className="sheet-head"><h3>{t("title")}</h3><button className="sheet-x" aria-label={t("close")} onClick={onClose}>×</button></div>
-        {notifications.length > 0 && <p className="sheet-hint">{t("swipeHint")}</p>}
-        {notifications.length === 0 ? <p className="sheet-empty">{t("empty")}</p> : (
+      <section className="sheet notif-sheet" ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("title")} onClick={(event) => event.stopPropagation()}>
+        <div className="sheet-head"><h3>{t("title")}</h3>{unread && <button type="button" className="notif-mark" onClick={onMarkAllRead}>{t("markAllRead")}</button>}<button className="sheet-x" aria-label={t("close")} onClick={onClose}>×</button></div>
+        {current && recipients.length > 1 && notifications.length > 0 && (
+          <div className="notif-filter" role="group" aria-label={t("filterLabel")}>
+            <button type="button" className={onlyCurrent ? "" : "selected"} aria-pressed={!onlyCurrent} onClick={() => setOnlyCurrent(false)}>{t("everyone")} <span>{notifications.length}</span></button>
+            <button type="button" className={onlyCurrent ? "selected" : ""} aria-pressed={onlyCurrent} onClick={() => setOnlyCurrent(true)}>
+              <PersonBadge name={parentCall(current, language)} kind={personKindOf(current)} size="sm" /><b>{parentCall(current, language)}</b> <span>{mineCount}</span>
+            </button>
+          </div>
+        )}
+        {shown.length > 0 && <p className="sheet-hint">{t("swipeHint")}</p>}
+        {notifications.length === 0 ? <p className="sheet-empty">{t("empty")}</p> : shown.length === 0 ? <p className="sheet-empty">{t("noneForPerson", { call: current ? parentCall(current, language) : "" })}</p> : (
           <ul className="notif-list">
-            {notifications.map((n) => (
-              <SwipeRow key={n.id} className={n.read_at ? "" : "unread"} label={t("delete")} onRemove={() => onDelete(n.id)}>
-                <span>{text(n)}</span>
-                <small>{formatDate(new Date(n.created_at), language, { day: "numeric", month: "short" })}, {formatClock(new Date(n.created_at), Intl.DateTimeFormat().resolvedOptions().timeZone, language)}</small>
-              </SwipeRow>
-            ))}
+            {entries.flatMap((entry) => {
+              const first = entry.items[0];
+              if (entry.items.length === 1) return [
+                <SwipeRow key={first.id} className={first.read_at ? "" : "unread"} label={t("delete")} onRemove={() => onDelete([first.id])}>
+                  {chip(first)}
+                  <span>{text(first)}</span>
+                  <small>{when(first)}</small>
+                </SwipeRow>,
+              ];
+              const expanded = open.includes(entry.key);
+              const oldest = entry.items[entry.items.length - 1];
+              return [
+                <SwipeRow key={entry.key} className={`notif-group${entry.items.some((n) => !n.read_at) ? " unread" : ""}`} label={t("deleteGroup", { count: entry.items.length })} onRemove={() => onDelete(entry.items.map((n) => n.id))}>
+                  {chip(first)}
+                  <span>{groupText(entry.items)}</span>
+                  <small>{t("since", { date: formatDate(new Date(oldest.created_at), language, { day: "numeric", month: "short" }) })} · {t("latest", { when: when(first) })}</small>
+                  <button type="button" className="notif-more" aria-expanded={expanded} onClick={() => toggle(entry.key)}>{expanded ? t("seeLess") : t("seeAll", { count: entry.items.length })}</button>
+                </SwipeRow>,
+                ...(expanded ? entry.items.map((n) => (
+                  <SwipeRow key={n.id} className={`notif-child${n.read_at ? "" : " unread"}`} label={t("delete")} onRemove={() => onDelete([n.id])}>
+                    <span>{text(n)}</span>
+                    <small>{when(n)}</small>
+                  </SwipeRow>
+                )) : []),
+              ];
+            })}
           </ul>
         )}
         <button className="primary-button" onClick={onClose}>{t("close")}</button>
@@ -757,6 +837,7 @@ function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd
   const t = useTranslations("parents");
   const dialog = useDialog(onClose);
   const current = recipients.find((r) => r.id === selectedId);
+  const line = usePersonLine();
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <section className="sheet" ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={t("title")} onClick={(event) => event.stopPropagation()}>
@@ -765,8 +846,8 @@ function ParentSheet({ recipients, selectedId, language, onSelect, onEdit, onAdd
           {recipients.map((r) => (
             <li key={r.id}>
               <button className={`parent-option${r.id === selectedId ? " selected" : ""}`} aria-pressed={r.id === selectedId} onClick={() => onSelect(r.id)}>
-                <span className="initials-avatar" aria-hidden="true">{([...r.name][0] ?? "?").toUpperCase()}</span>
-                <span><strong>{parentCall(r, language)}</strong><small>{r.is_self ? t("selfTag") : [r.name, r.city].filter(Boolean).join(" • ")}</small></span>
+                <PersonBadge name={parentCall(r, language)} kind={personKindOf(r)} />
+                <span><strong>{parentCall(r, language)}</strong><small>{line(r, parentCall(r, language))}</small></span>
                 {r.id === selectedId && <span className="parent-check" aria-hidden="true">✓</span>}
               </button>
             </li>
@@ -980,7 +1061,7 @@ function AlertsSheet({ initial, onClose, onDone }: { initial: string; onClose: (
 /** How long a due reminder may wait before the family is told that reminders are delayed. */
 const DELAYED_AFTER_MS = 20 * 60_000;
 
-function Today({ go, language, setLanguage, recipient, recipients, notifications, medicineNames, medicines, onNotificationsSeen, onDeleteNotification, onSelectParent }: { go: (screen: Screen) => void; language: Language; setLanguage: (language: Language) => void; recipient: Recipient | null; recipients: Recipient[]; notifications: AppNotification[]; medicineNames: Record<string, string>; medicines: Medicine[]; onNotificationsSeen: (ids: string[]) => void; onDeleteNotification: (id: string) => void; onSelectParent: (id: string) => void }) {
+function Today({ go, language, setLanguage, recipient, recipients, notifications, medicineNames, medicines, onNotificationsSeen, onDeleteNotification, onSelectParent }: { go: (screen: Screen) => void; language: Language; setLanguage: (language: Language) => void; recipient: Recipient | null; recipients: Recipient[]; notifications: AppNotification[]; medicineNames: Record<string, string>; medicines: Medicine[]; onNotificationsSeen: (ids: string[]) => void; onDeleteNotification: (ids: string[]) => void; onSelectParent: (id: string) => void }) {
   const t = useTranslations();
   const header = parentGreeting(recipient, language, t);
   const { call } = header;
@@ -1122,7 +1203,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {recipient && isChild(recipient) ? <ChildHome recipient={recipient} go={go} unread={unread} onLanguage={() => setLanguage(language === "en" ? "hi" : "en")} onBell={() => setSheetOpen(true)} onPeople={() => setParentsOpen(true)} /> : (
       <header className="home-header">
         <button className="parent-profile" aria-haspopup="dialog" onClick={() => setParentsOpen(true)}>
-          <span className="initials-avatar" aria-hidden="true">{([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()}</span>
+          <PersonBadge name={header.call} kind={personKindOf(recipient)} />
           <span><small>{recipient && isPregnancy(recipient) ? t("pregnancyHome.label") : header.hello}</small><strong>{header.call} <Icon name="down" size={16} /></strong><em>{header.where}</em></span>
         </button>
         <div className="header-actions">
@@ -1152,7 +1233,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
       {!isChild(recipient) && <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
-      {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
+      {sheetOpen && <NotificationSheet notifications={notifications} recipients={recipients} currentId={recipient?.id ?? null} onMarkAllRead={() => onNotificationsSeen(notifications.map((n) => n.id))} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
       {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onAddSelf={() => { setParentsOpen(false); go("addSelf"); }} onClose={() => setParentsOpen(false)} />}
 
       {lastMissed && !recipient?.is_self && (
@@ -1852,7 +1933,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
     <main className="scroll-page">
       <AppHeader title={t("title")} subtitle={t("subtitle")} action={<ThemeButton />} />
       {!recipient?.is_self && <section className="family-hero">
-        <div className="avatar-stack">{members.slice(0, 3).map((m) => <span key={m.userId}>{initials(m)}</span>)}</div>
+        <div className="hero-people">{recipient && <PersonBadge name={call} kind={personKindOf(recipient)} size="lg" />}<div className="avatar-stack">{members.slice(0, 3).map((m) => <span key={m.userId}>{initials(m)}</span>)}</div></div>
         <h2>{t("heroTitle", { count: members.length, call })}</h2>
         <p>{t("heroBody")}</p>
         <button onClick={() => setInviteOpen(true)} disabled={!circleId}><Icon name="plus" size={18} /> {t("invite")}</button>
@@ -2140,9 +2221,12 @@ export default function App() {
     setToastLeaving(true);
     toastTimer.current = window.setTimeout(() => { setToastMessage(""); setToastLeaving(false); }, 320);
   };
-  const showToast = (message: string) => {
+  const [toastBottom, setToastBottom] = useState(false);
+  /** `bottom`: above the bottom bar instead of the top right, where it would cover the bell (the "Now showing Mummy." toast). */
+  const showToast = (message: string, bottom = false) => {
     window.clearTimeout(toastTimer.current);
     setToastMessage(message);
+    setToastBottom(bottom);
     setToastLeaving(false);
     toastTimer.current = window.setTimeout(() => hideToast(), 3000);
   };
@@ -2190,7 +2274,7 @@ export default function App() {
     setMembers([]);
     setSelectedMedicineId(null);
     try { if (userId) localStorage.setItem(`carelink-parent-${userId}`, id); } catch { /* storage blocked */ }
-    showToast(MESSAGES[language].parents.switched.replace("{call}", parentCall(next, language)));
+    showToast(MESSAGES[language].parents.switched.replace("{call}", parentCall(next, language)), true);
   };
   const refreshMedicines = async (recipientId = recipient?.id, quiet = false) => {
     if (!recipientId) return setMedicines([]);
@@ -2307,9 +2391,9 @@ export default function App() {
     if (list) setNotifications(list);
   };
 
-  const deleteNotification = async (id: string) => {
-    setNotifications((list) => list.filter((n) => n.id !== id));
-    await deleteNotificationRow(id);
+  const deleteNotification = async (ids: string[]) => {
+    setNotifications((list) => list.filter((n) => !ids.includes(n.id)));
+    await Promise.all(ids.map((id) => deleteNotificationRow(id)));  // a group of repeats is removed together
     const list = await loadNotifications();
     if (list) setNotifications(list);
   };
@@ -2461,7 +2545,7 @@ export default function App() {
         {ready && !loadFailed && hasNav && <BottomNav screen={screen} go={go} unread={notifications.filter((n) => !n.read_at).length} />}
         {PRIVACY_ENABLED && ready && !loadFailed && <ConsentGate signedIn={signedIn} screen={screen} go={go} onSignOut={() => void signOut()} />}
         <OfflineBanner />
-        {toastMessage && <div className={`toast${toastLeaving ? " leaving" : ""}`} key={toastMessage} role="status" onClick={hideToast}><span className="toast-text">{toastMessage}</span></div>}
+        {toastMessage && <div className={`toast${toastBottom ? " bottom" : ""}${toastLeaving ? " leaving" : ""}`} key={toastMessage} role="status" onClick={hideToast}><span className="toast-text">{toastMessage}</span></div>}
       </div>
     </div>
     </SessionContext.Provider>

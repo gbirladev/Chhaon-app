@@ -1,0 +1,26 @@
+/* PersonBadge: initial + care-type colour + a small 3D icon at the corner. Colours are theme tokens (light/dark/palettes). */
+.person-badge { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 50px; height: 50px; border-radius: 16px;
+  background: var(--s-e3f3ef); color: var(--primary-text); font-weight: 800; font-size: 1.25rem; line-height: 1; }
+.person-badge.pregnant { background: var(--s-fdecea); color: var(--t-b4443a); }
+.person-badge.child { background: var(--s-f6f1e6); color: var(--t-5c4a14); }
+.person-badge.self { background: var(--field); color: var(--text); }
+.person-badge.sm { width: 28px; height: 28px; border-radius: 50%; font-size: 0.8125rem; }
+.person-badge.lg { width: 60px; height: 60px; border-radius: 19px; font-size: 1.5rem; }
+.person-type { position: absolute; right: -5px; bottom: -5px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); box-shadow: 0 1px 4px var(--sh-173d3a-a2); overflow: hidden; }
+.person-type img { width: 19px; height: 19px; display: block; }
+.person-emoji { font-size: 14px; line-height: 1; }
+.person-badge.sm .person-type { right: -4px; bottom: -4px; width: 16px; height: 16px; box-shadow: 0 0 0 1.5px var(--surface); }
+.person-badge.sm .person-type img { width: 13px; height: 13px; }
+.person-badge.sm .person-emoji { font-size: 10px; }
+.person-badge.lg .person-type { width: 28px; height: 28px; }
+.person-badge.lg .person-type img { width: 22px; height: 22px; }
+@media (forced-colors: active) { .person-badge { border: 1px solid CanvasText; } }
+/* Containers style their own spans (".parent-profile span" is a flex column, ".parent-option span:nth-child(2)" grows): the badge keeps its own layout. */
+.person-badge.person-badge { display: inline-grid; flex: 0 0 auto; }
+.person-badge > .person-initial.person-initial { display: block; flex: none; }
+.person-badge > .person-type.person-type { display: grid; flex: none; min-width: 0; }
+
+/* A person's name as a small chip (notifications) */
+.person-chip { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; min-width: 0; font-size: max(0.8125rem, 12px); font-weight: 700; color: var(--text); }
+.person-chip > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
