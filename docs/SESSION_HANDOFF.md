@@ -1,11 +1,54 @@
 # Session handoff: everything needed to continue on a different Claude account
 
-Written 2026-11-04 at the end of a long session, for Ganesh and for the next Claude. **Read this file first, then `CLAUDE.md`, then
+Written 2026-11-04, updated 2026-11-05 (see section 0, which is the newest and overrides sections 4, 5 and 7 where they differ), for Ganesh and for the next Claude. **Read this file first, then `CLAUDE.md`, then
 `docs/TODO.md`.** The previous Claude's private memory is not available to a different account, so the important parts of it are
 copied here (section 2). Nothing in this file is a secret: no keys, no passwords, no tokens. Never put any into the repo or a chat.
 
 Suggested first message to the new Claude: "Read docs/SESSION_HANDOFF.md, CLAUDE.md and docs/TODO.md, then tell me where we are and
 what you suggest next. Do not push anything."
+
+---
+
+## 0. UPDATE 2026-11-05: read this first (newest state, overrides older sections)
+
+### 0.1 The situation right now
+- **The WhatsApp number linked to the self-hosted gateway was BANNED by WhatsApp** (reported by the owner on 2026-11-05, shortly after reminders were switched on for everyone). The gateway is the unofficial route (Baileys, `whatsapp-gateway/`, https://wa.chhaon.site). This is the risk that was accepted to save cost. Details of the ban (exact wording, whether "Request a review" is offered) were not yet collected.
+- **The scheduler is probably still ON in production** (GitHub secrets `CHHAON_SCHEDULER_ENABLED` = `true`, `CHHAON_SCHEDULER_ONLY_RECIPIENT` = `all`). **First action for the next session: confirm with the owner that `CHHAON_SCHEDULER_ENABLED` is set to `false` in GitHub Actions secrets and that Backend Deploy has been run afterwards** (a blank value keeps the old value on the server, so it must be the word `false`). Until then the backend keeps trying to send from a banned number and may mark doses "sent" that were never delivered.
+- Before the ban the full chain worked: the consent request reached the owner's phone, typed `1` was received through the webhook, the parent was recorded as agreed and the "Thank you" reply came back; at least 3 dose reminders were sent (`dose_events.status = 'sent'`). One open observation: the owner replied `1` to a dose reminder and the app still showed "0 of 1 taken"; not investigated (likely several test profiles share one phone number, so the reply went to another profile's dose; the diagnostic query is in 0.6).
+
+### 0.2 Decision needed: how to send WhatsApp messages (the unofficial route is not safe for real families)
+| Option | State |
+|---|---|
+| **A. Meta's official WhatsApp Cloud API** (real tap buttons, no ban risk, approved templates, per-message fee) | Recommended by the previous Claude for anything beyond the pilot. The deploy workflow still passes `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` (may still exist as GitHub secrets from the Render days). The Java backend has NO Meta sender or Meta webhook yet. Spec to port: `api/app/whatsapp/*.py`, `api/app/services/messaging.py`, `docs/whatsapp-setup.md`, `docs/whatsapp-templates.md`, `docs/whatsapp-templates.json`. Estimated about 350 lines plus tests; the owner does the Meta setup. Known earlier Meta issues: delivery errors 132018 (Hindi photo template had no image header) and 131049 (Meta declined to deliver some Marketing-category messages), see `docs/TODO.md`. |
+| B. WhatsApp poll via the gateway | Analysed, NOT built, not recommended now: the gateway never forwards votes (see `docs/TODO.md`, "tap-to-answer"). |
+| C. Typed replies through a gateway number | Built and working (texts re-laid-out 2026-11-05). Only acceptable if a number survives; ban risk remains. |
+| Appeal | If WhatsApp offers "Request a review", press it on the phone; do not relink the same number to the gateway before it is cleared. |
+The owner had said "keeping typed reply for the pilot" before the ban; that choice must be revisited.
+
+### 0.3 Everything done on 2026-11-04/05 (all pushed to origin/main unless marked)
+- **SEO (live):** keyword titles/descriptions, canonical links, social preview image `web/public/og-image.jpg`, structured data, `robots.txt`, `sitemap.xml` (5 pages), Hindi home page `/hi/` (GENERATED from `web/public/home.html` by `web/scripts/build-hindi-home.mjs`; legal pages by `build-legal-pages.mjs`), favicon `.ico` + 96 px PNG + SVG, old "Vatsalaya" pages `/privacy.html` and `/about.html` now redirect to `/legal/privacy.html` and `/`, Play Store doc points to `/legal/privacy.html`. Google Search Console (Domain, verified by DNS TXT at Hostinger, owner `gbirla.dev.rnd@gmail.com`) with the sitemap submitted and indexing requested, Bing imported. Google's result still shows an old snapshot (login-screen text) until it re-crawls; the favicon in results takes 1 to 3 weeks.
+- **Backend deploy pipeline:** Backend Deploy is green again. The red mark earlier was only the last step (smoke test) because the GitHub secret `HEALTH_CHECK_URL` was wrong; it must be exactly `https://api.chhaon.site/actuator/health`. The server's env file is written from GitHub secrets at each deploy (empty secrets keep the value on the box). New secrets wired through `.github/workflows/backend-deploy.yml` and `api-java/deploy/aws/send-ssm-deploy.sh`: `WHATSAPP_WEBHOOK_SECRET`, `CHHAON_SCHEDULER_ENABLED`, `CHHAON_SCHEDULER_ONLY_RECIPIENT`. Other secrets used by the gateway: `WHATSAPP_GATEWAY_URL` (now `https://wa.chhaon.site`), `WHATSAPP_GATEWAY_TOKEN` (a `wag_` API key), `WHATSAPP_SENDER_SESSION_NAME`.
+- **Three real bugs fixed in the Java backend** that made every web call fail: (1) no CORS (the browser's pre-flight got 403), now `https://chhaon.site` is allowed (`app.cors.allowed-origins`, env `CORS_ALLOWED_ORIGINS`); (2) the Sydney Supabase project signs login tokens with **ES256**, the backend only knew HS256, so every real token got 401; now `SupabaseJwtVerifier` verifies against the project's public JWKS (`app.supabase.jwks-url`), only `role=authenticated` tokens count; (3) consent send failures now return a safe reason in the 502 (`[gateway_unreachable]`, `[gateway_key_rejected_401]`, `[session_name_not_found]`, `[gateway_refused: ...]`). 432 Java tests pass.
+- **WhatsApp texts we start** were re-laid-out (greeting, news, answers on their own lines with bold numbers) and the Hindi consent grammar was fixed (`MessageTexts.java`); `docs/hindi-review.md` notes it; parent-reply texts (`ReplyTexts.java`) are unchanged.
+- **Scheduler can run for ONE recipient first** (`chhaon.scheduler.only-recipient`; an unreadable value runs nothing; `all` or empty = everyone). Note: `chhaon.scheduler.enabled` must never be written in `application.properties` (a test checks that); it comes from the env var.
+- **Production data changes done by hand (test data, owner's decisions):** 13 stale `pending` doses marked `taken` (ids in `docs/TODO.md`, stock untouched); 8 profiles marked as agreed (`consent_at = now()`: Vijay, Sunil Meena, Test, Mamma, Abc, Mishrilal choudhary, Rajan, Shivani) plus 5 older agreements from the Meta days left as they were. The owner stated these are test profiles with numbers they control. **Before real families join, agreement must come from the parent's own `1` reply; never set it by hand.**
+- **Webhook and gateway state:** the gateway webhook `Chhaon backend` was created in the gateway dashboard (URL `https://api.chhaon.site/webhooks/whatsapp-gateway`, events `message.received`, `message.status`) after the owner's account was given access by the buddy (the gateway lets only SUPERADMIN, the session owner, or a shared-access user manage a session). The webhook secret was regenerated and set in GitHub and in the gateway; an HMAC-signed test request got `ignored:event` HTTP 200.
+- **Consent resend rule explained:** one request per phone number per 10 minutes across all families/accounts (`claim_consent_request`); a 10 minute countdown in the app is normal.
+
+### 0.4 Local commits not yet pushed (docs only): `0c4ef43`, `eb7017d`, plus the commit of this file. A push of docs-only changes triggers no deploy of the backend (paths filter) but the web workflow only runs on `web/**`.
+
+### 0.5 What to do next (suggested order)
+1. Make sure the scheduler is OFF (0.1). Tell the pilot families reminders are paused (still true).
+2. Collect the exact ban wording from the owner; if "Request a review" exists, use it.
+3. Decide the sending route (0.2). If A: ask the owner for the Meta status (is the WhatsApp Business account and the approved template list intact? are the four `WHATSAPP_*` secrets still valid?), then port the sender + webhook to Java on a branch with tests (never push without being asked).
+4. Investigate "0 of 1 taken" (0.6).
+5. Re-run the switch-on checklist in `docs/TODO.md` only on a route that cannot be banned.
+
+### 0.6 Useful read-only queries (Sydney SQL Editor; it shows only the LAST result of several statements)
+- `select public.scheduler_health();` (null = no tick recorded yet; otherwise `seconds_ago` under about 400 means the scheduler is alive)
+- `select status, count(*) from public.dose_events where scheduled_at > now() - interval '12 hours' group by status order by status;`
+- Which profile a reply was applied to: join `dose_events d` with `medicine_schedules s on s.id = d.schedule_id`, `medicines m on m.id = s.medicine_id`, `care_recipients r on r.id = m.recipient_id`, selecting `r.name, d.scheduled_at, d.status, d.responded_at` for the last 12 hours.
+- `select requested_at from public.consent_requests order by requested_at desc limit 5;` (consent requests log, no phone numbers shown)
 
 ---
 
