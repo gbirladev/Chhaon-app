@@ -5,10 +5,10 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const SITE = "https://chhaon.site";
-const TITLE_EN = "Chhaon: WhatsApp medicine reminders for your parents";
-const TITLE_HI = "छाँव: माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर";
-const DESC_EN = "Gentle WhatsApp medicine reminders and a daily check-in for your parents, and an alert to you if they miss one. Parents install nothing.";
-const DESC_HI = "माता-पिता को WhatsApp पर दवा के समय प्यार भरा रिमाइंडर और रोज़ सुबह हाल-चाल का संदेश। दवा छूटे तो आपको पता चल जाता है। माता-पिता को कुछ इंस्टॉल नहीं करना।";
+const TITLE_EN = "Chhaon: WhatsApp medicine reminders for elderly parents";
+const TITLE_HI = "छाँव: बुज़ुर्ग माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर";
+const DESC_EN = "WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install.";
+const DESC_HI = "बुज़ुर्ग माता-पिता, गर्भावस्था या बच्चे के लिए WhatsApp पर दवा के रिमाइंडर। खुराक की पुष्टि न हो तो परिवार को सूचना, और रोज़ का हाल-चाल। कुछ भी इंस्टॉल नहीं करना।"
 
 let s = readFileSync("public/home.html", "utf8");
 const swap = (from, to, min = 1) => {
@@ -16,7 +16,26 @@ const swap = (from, to, min = 1) => {
   if (n < min) throw new Error(`build-hindi-home: expected "${from.slice(0, 60)}" in home.html (found ${n})`);
   s = s.split(from).join(to);
 };
-swap('<html lang="en">', '<html lang="hi">');
+// Every English text in home.html sits next to its Hindi one (<span class="en">…</span><span class="hi">…</span>, or the
+// "btns … en" / "btns … hi" pairs). A missing Hindi twin would show nothing on /hi/, so the counts must match.
+const count = (re) => (s.match(re) || []).length;
+const enCount = count(/class="(?:[^"]* )?en(?: [^"]*)?"/g), hiCount = count(/class="(?:[^"]* )?hi(?: [^"]*)?"/g);
+if (enCount !== hiCount) throw new Error(`build-hindi-home: ${enCount} English texts but ${hiCount} Hindi texts in home.html`);
+// The page script (public/site-home.js) sets document.title when the language switches: it must say the same as the <title> tags.
+const pageScript = readFileSync("public/site-home.js", "utf8");
+if (!pageScript.includes(`"${TITLE_EN}"`) || !pageScript.includes(`"${TITLE_HI}"`)) throw new Error("build-hindi-home: document.title in public/site-home.js is out of step with TITLE_EN / TITLE_HI");
+swap('<html lang="en" data-site="home">', '<html lang="hi" data-site="home">');
+// Labels that live in attributes (screen readers read them; the <span class="hi"> twins cannot reach them).
+const ARIA_HI = {
+  "Switch language": "भाषा बदलें",
+  "Main": "मुख्य",
+  "Footer": "फ़ुटर",
+  "Who it is for": "किसके लिए",
+  "Example WhatsApp chat": "WhatsApp चैट का उदाहरण",
+};
+for (const [en, hi] of Object.entries(ARIA_HI)) swap(`aria-label="${en}"`, `aria-label="${hi}"`);
+const leftover = [...s.matchAll(/aria-label="([^"]*[A-Za-z][^"]*)"/g)].map((m) => m[1]).filter((v) => v !== "Chhaon" && !/[ऀ-ॿ]/.test(v));
+if (leftover.length) throw new Error(`build-hindi-home: English aria-label(s) without Hindi: ${leftover.join(", ")}`);
 swap(`<title>${TITLE_EN}</title>`, `<title>${TITLE_HI}</title>`);
 swap(`content="${TITLE_EN}"`, `content="${TITLE_HI}"`, 2);   // og:title, twitter:title
 swap(`content="${DESC_EN}"`, `content="${DESC_HI}"`, 3);     // description, og:description, twitter:description

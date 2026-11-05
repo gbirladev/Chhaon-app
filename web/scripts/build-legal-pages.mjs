@@ -33,8 +33,12 @@ const page = (kind, other) => {
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
 <link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
+<meta name="theme-color" content="#faf8fc" />
+<!-- Colours shared with the home page and the app's appearance setting (light / dark, Chhaon / Classic). -->
+<link rel="stylesheet" href="/site-theme.css" />
+<script src="/site-theme.js"></script>
 <style>
-  :root { --teal:#247c72; --ink:#173d3a; --muted:#566966; --bg:#f8faf8; }
+  :root { --teal: var(--pt); }
   * { box-sizing: border-box; }
   body { margin:0; font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari",sans-serif; color:var(--ink); background:var(--bg); }
   main { max-width: 720px; margin: 0 auto; padding: 28px 18px 64px; }
@@ -43,10 +47,10 @@ const page = (kind, other) => {
   nav a { color:var(--teal); font-weight:600; margin-left:14px; text-decoration:none; }
   h1 { font-size: 1.9rem; margin: 18px 0 2px; } h2 { font-size: 1.15rem; margin: 26px 0 4px; }
   .version { color:var(--muted); margin:0 0 12px; }
-  p, li { color:#243f3c; } ul { padding-left: 1.2rem; } li { margin: 6px 0; }
-  hr { border:0; border-top:1px solid #dce7e4; margin: 44px 0 8px; }
+  p, li { color:var(--ink); } ul { padding-left: 1.2rem; } li { margin: 6px 0; }
+  hr { border:0; border-top:1px solid var(--line); margin: 44px 0 8px; }
   #hindi h1, #hindi h2, #hindi p, #hindi li { font-family: "Noto Sans Devanagari", system-ui, sans-serif; }
-  footer { margin-top: 40px; color:var(--muted); font-size:.9rem; }
+  footer { margin-top: 40px; color:var(--muted); font-size:.9rem; } footer a { color:var(--teal); }
 </style>
 </head>
 <body>
