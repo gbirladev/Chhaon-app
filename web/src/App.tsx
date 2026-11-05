@@ -346,9 +346,8 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
         <label htmlFor="login-input">{t("phoneLabel")}</label>
         <div className="phone-input">
           {!/^\s*(\+|00)/.test(value) && <span>+91</span>}
-          <input id="login-input" aria-invalid={error ? true : undefined} aria-describedby="login-hint" value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("phonePlaceholder")} inputMode="tel" />
+          <input id="login-input" aria-invalid={error ? true : undefined} value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("phonePlaceholder")} inputMode="tel" />
         </div>
-        <p id="login-hint" className="login-hint">{t("outsideIndia")}</p>
         {error && <p role="alert" className="form-error">{error}</p>}
         <button className="primary-button" onClick={continueLogin} disabled={busy}>{busy ? t("sending") : t("continue")}</button>
         {PRIVACY_ENABLED && <LegalLinks go={go} />}

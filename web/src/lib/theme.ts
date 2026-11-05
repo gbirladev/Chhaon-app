@@ -8,8 +8,8 @@ export const THEME_CHOICES: ThemeChoice[] = ["system", "light", "dark"];
 
 const KEY = "chhaon-theme";
 /** Same colours as public/theme.js. The browser's own top bar: brand teal in light, the page colour in dark. */
-const BAR_LIGHT = "#247c72";
-const BAR_DARK = "#0f1716";
+const BAR_LIGHT = "#7c3aed";
+const BAR_DARK = "#110d19";
 
 export function readThemeChoice(): ThemeChoice {
   try {

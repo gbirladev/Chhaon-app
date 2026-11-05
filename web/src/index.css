@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 :root {
-  font-family: "DM Sans Variable", "Noto Sans Devanagari", system-ui, sans-serif;
+  font-family: "Poppins", "Mukta", "Noto Sans Devanagari", system-ui, sans-serif;
   color: var(--text);
   background: var(--bg-outer);
   font-synthesis: none;
