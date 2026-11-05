@@ -229,7 +229,7 @@ class AdminMonitorApiTest extends DbTest {
 
         JsonNode h = getJson("/api/v1/admin/health");
         assertThat(h.path("overall").asText()).isIn("green", "amber", "red");
-        assertThat(h.path("checks").size()).isEqualTo(9);
+        assertThat(h.path("checks").size()).isEqualTo(10);
         assertThat(h.path("server").path("git_sha").asText()).isNotBlank();
         assertThat(h.path("server").path("uptime_seconds").asLong()).isGreaterThanOrEqualTo(0);
         JsonNode gw = null;

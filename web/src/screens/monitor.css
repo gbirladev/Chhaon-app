@@ -62,6 +62,7 @@
 .level-pill.green { color: var(--m-green); background: var(--m-green-bg); }
 .level-pill.amber { color: var(--m-amber); background: var(--m-amber-bg); }
 .level-pill.red { color: var(--m-red); background: var(--m-red-bg); }
+.level-pill.grey { color: var(--text-soft); background: var(--line-soft); }
 .monitor-page .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; background: var(--text-muted); }
 .green > .dot, .dot.green { background: var(--m-green); }
 .amber > .dot, .dot.amber { background: var(--m-amber); }
@@ -75,6 +76,7 @@
 .check-detail { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border-left: 4px solid var(--m-green); background: var(--m-green-bg); }
 .check-detail.amber { border-left-color: var(--m-amber); background: var(--m-amber-bg); }
 .check-detail.red { border-left-color: var(--m-red); background: var(--m-red-bg); }
+.check-detail.grey { border-left-color: var(--text-muted); background: var(--line-soft); }
 .check-detail strong { color: var(--text); }
 .check-detail p { margin: 4px 0 0; color: var(--text-soft); font-size: max(0.875rem, 12px); line-height: 1.45; }
 .check-detail .todo { font-weight: 600; color: var(--text); }
@@ -148,7 +150,7 @@
 .badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
 .badge { padding: 3px 8px; border-radius: 10px; font-size: max(0.75rem, 12px); font-weight: 700; background: var(--m-amber-bg); color: var(--m-amber); }
 .badge.b-no_reply_2d, .badge.b-send_failed, .badge.b-checkin_missed { background: var(--m-red-bg); color: var(--m-red); }
-.badge.b-opted_out, .badge.b-paused_by_plan { background: var(--line-soft); color: var(--text-soft); }
+.badge.b-opted_out, .badge.b-paused_by_plan, .badge.b-canary { background: var(--line-soft); color: var(--text-soft); }
 
 /* feedback */
 .feedback-item { padding: 10px 0; border-top: 1px solid var(--line-soft); }

@@ -7,10 +7,12 @@ import { apiFetch } from "./http";
  */
 
 export type Level = "green" | "amber" | "red";
+/** A check that has nothing to watch (for example no canary family yet): shown grey, never an alert. */
+export type CheckLevel = Level | "grey";
 
 export type HealthCheck = {
   key: string;
-  status: Level;
+  status: CheckLevel;
   reason: string;
   detail: string;
   since: string | null;
@@ -19,7 +21,7 @@ export type HealthCheck = {
 
 export type ServerInfo = { git_sha: string; version: string | null; build_time: string | null; started_at: string; uptime_seconds: number; java: string };
 export type VolumeDay = { date: string; count: number };
-export type Volume = { today: number; last_7_days: number; daily_average_7d: number; amber_per_day: number; daily: VolumeDay[] };
+export type Volume = { today: number; last_7_days: number; daily_average_7d: number; amber_per_day: number; daily: VolumeDay[]; canary_today?: number };
 export type Rejection = { reason: string; http_status: number; n: number; last_at: string };
 
 export type Health = {
@@ -59,7 +61,7 @@ export type FamilyRow = {
   reminder_to: "person" | "caregiver" | "helper"; reminder_name: string | null; reminder_relation: string | null;
   reminder_user_name: string | null; reminder_user_phone: string | null;
   consent_at: string | null; consent_requested_at: string | null; opted_out_at: string | null; phone_opted_out: boolean;
-  checkin_enabled: boolean; created_at: string; caregivers: Caregiver[]; plan: string | null; paused_by_plan: boolean;
+  checkin_enabled: boolean; created_at: string; is_canary?: boolean; caregivers: Caregiver[]; plan: string | null; paused_by_plan: boolean;
   active_medicines: number; low_stock: number; today_total: number; today_confirmed: number; today_missed: number; today_waiting: number;
   checkin_today: string | null; last_reply_at: string | null; sent_48h: number; replied_48h: number;
   median_reply_minutes_7d: number | null; messages_today: number; messages_7d: number; failed_24h: number;
@@ -95,4 +97,4 @@ export const loadFeedbackInbox = (limit = 50) => apiFetch<FeedbackItem[]>(`/api/
 export const loadGateway = (fresh = false) => apiFetch<GatewayStatus>(`/api/v1/admin/gateway?fresh=${fresh}`);
 
 /** Badge codes the backend sends, in the order the filter shows them. */
-export const BADGES = ["no_reply_2d", "consent_pending", "checkin_missed", "low_stock", "send_failed", "paused_by_plan", "opted_out"] as const;
+export const BADGES = ["no_reply_2d", "consent_pending", "checkin_missed", "low_stock", "send_failed", "paused_by_plan", "opted_out", "canary"] as const;

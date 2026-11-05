@@ -17,17 +17,19 @@
 ## Stability sprint before marketing (agreed 2026-11-05)
 
 Feature freeze after polls + admin Monitor; no new screens, themes or website work until the core loop is stable.
-- [ ] Canary family: dummy caregiver "Chhaon Test" + parent "Test Papa" on a SECOND WhatsApp number (spare SIM) linked as a
-      2nd gateway session that auto-answers its reminder poll. A "Test tablet" every 3-4 h; the Monitor goes red if it is not
-      marked taken within 5 min. Hidden from stats. Needs: the spare SIM (owner).
+- [x] Canary family BUILT (2026-11-06, docs/canary.md): caregiver "Chhaon Canary" + "Test Papa" on a spare SIM linked as a 2nd
+      gateway session (no webhook) that auto-answers the TEXT reminder (never a poll) with "1" (AutoReply rule: contains
+      "Medicine time"). "Test tablet" at 02/06/10/14/18/22 IST; Monitor "Canary" check + card: red when not answered within
+      10 min or nothing sent for 5 h. Left out of stats, totals, activity, weekly summaries and every alert.
+- [ ] Canary: owner to switch it on. Sydney SQL `20261106000055_canary.sql` first, then push, then the spare SIM + gateway
+      session + AutoReply rule, then `supabase/maintenance/canary_setup.sql` with the SIM's number (docs/canary.md).
 - [ ] Release checklist: one release a week; SQL on Sydney first, then push, then smoke test (canary green + one reminder on the owner's phone).
 - [ ] Migration tracking table on Sydney (which supabase/migrations files have run).
 - [ ] Gateway runbook: number change / phone unlinked / ban (webhook URL, secret, session name, test). Later: backend registers its own webhook.
 - [ ] Burn-in: 7 days, owner's family + 5-10 friendly families, zero silent failures, then start marketing.
 - [ ] Meanwhile: "Join the first 50 families" waitlist on the website.
 - [ ] Long term: plan the move to Meta's WhatsApp API once families pay.
-- [ ] Admin Monitor, later additions (after a few days of use): canary status card (last canary reminder answered within 5 min);
-      poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
+- [ ] Admin Monitor, later additions (after a few days of use): (canary card done, see above); poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
       (amber at 70%); which migrations have run on Sydney (from the migration tracking table).
 
 ## WhatsApp replies lost after the number change (found and fixed 2026-11-05)

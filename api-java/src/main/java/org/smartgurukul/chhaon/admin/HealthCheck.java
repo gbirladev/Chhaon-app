@@ -8,7 +8,7 @@ import java.util.Map;
  * One Monitor health check.
  *
  * @param key    stable id ("scheduler", "replies_in", ...), also the admin_alerts.check_key
- * @param status "green", "amber" or "red"
+ * @param status "green", "amber" or "red"; "grey" = not applicable (nothing to watch yet, e.g. no canary family): never an alert
  * @param reason a short code the web app translates ("stale", "silent", ...)
  * @param detail one English sentence for logs-free reading (no phone numbers, no health data)
  * @param since  when the current state began, when known
@@ -19,9 +19,10 @@ public record HealthCheck(String key, String status, String reason, String detai
     public static final String GREEN = "green";
     public static final String AMBER = "amber";
     public static final String RED = "red";
+    public static final String GREY = "grey";
 
     public boolean problem() {
-        return !GREEN.equals(status);
+        return AMBER.equals(status) || RED.equals(status);
     }
 
     static int rank(String status) {

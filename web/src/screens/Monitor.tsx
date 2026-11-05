@@ -129,7 +129,7 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
           <button key={x} type="button" className={tab === x ? "on" : ""} aria-pressed={tab === x} onClick={() => setTab(x)}>
             {t(`tab.${x}`)}
             {x === "overview" && h && h.overall !== "green" && <span className={`tab-dot ${h.overall}`} aria-hidden="true" />}
-            {x === "families" && data.families && <span className="tab-count">{data.families.length}</span>}
+            {x === "families" && data.families && <span className="tab-count">{data.families.filter((f) => !f.is_canary).length}</span>}
           </button>
         ))}
       </nav>
@@ -154,15 +154,15 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
                     </button>
                   ))}
                 </div>
-                {h.checks.filter((c) => c.key === openCheck || (openCheck === null && c.status !== "green")).map((c) => (
+                {h.checks.filter((c) => c.key === openCheck || (openCheck === null && c.status !== "green" && c.status !== "grey")).map((c) => (
                   <div key={c.key} className={`check-detail ${c.status}`}>
                     <strong>{t(`check.${c.key}`)} · {t(`level.${c.status}`)}</strong>
                     <p>{checkText(c)}</p>
                     {c.since && <p className="muted">{t("since", { time: time(c.since) })}</p>}
-                    {c.status !== "green" && t.has(`todo.${c.key}`) && <p className="todo">{t(`todo.${c.key}`)}</p>}
+                    {(c.status === "amber" || c.status === "red") && t.has(`todo.${c.key}`) && <p className="todo">{t(`todo.${c.key}`)}</p>}
                   </div>
                 ))}
-                {openCheck === null && h.checks.every((c) => c.status === "green") && <p className="all-good">{t("allGood")}</p>}
+                {openCheck === null && h.checks.every((c) => c.status === "green" || c.status === "grey") && <p className="all-good">{t("allGood")}</p>}
               </>
             )}
           </section>
@@ -189,6 +189,7 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
           </section>
 
           {h && <GatewayCard health={h} time={time} />}
+          {h && <CanaryCard health={h} time={time} />}
 
           {data.overview && (
             <section className="monitor-card span-2" aria-label={t("todayTitle")}>
@@ -332,6 +333,32 @@ function GatewayCard({ health, time }: { health: Health; time: (iso: string | nu
         <dt>{t("g.version")}</dt><dd><code>{s.git_sha === "unknown" ? t("g.unknown") : s.git_sha.slice(0, 7)}</code></dd>
         <dt>{t("g.uptime")}</dt><dd>{t("g.uptimeValue", { hours: uptimeH, minutes: Math.floor((s.uptime_seconds % 3600) / 60) })} · {time(s.started_at)}</dd>
       </dl>
+    </section>
+  );
+}
+
+/** The canary family (docs/canary.md): a spare number that answers its own reminder, proving the whole chain every 4 hours. */
+function CanaryCard({ health, time }: { health: Health; time: (iso: string | null | undefined, withDate?: boolean) => string }) {
+  const t = useTranslations("monitor");
+  const c = health.checks.find((x) => x.key === "canary");
+  if (!c) return null;
+  const f = c.facts as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" ? v : 0);
+  return (
+    <section className="monitor-card" aria-label={t("canaryTitle")}>
+      <div className="card-head">
+        <h2>{t("canaryTitle")}</h2>
+        <span className={`level-pill ${c.status}`}>{t(`level.${c.status}`)}</span>
+      </div>
+      {c.reason === "not_set_up" ? <p className="muted">{t("c.notSetUp")}</p> : (
+        <dl className="facts">
+          <dt>{t("c.lastSent")}</dt><dd>{time(f.last_sent_at as string | null)}</dd>
+          <dt>{t("c.answered")}</dt><dd className={c.status === "red" ? "lvl-red" : ""}>{f.answered_at ? time(f.answered_at as string) : t("c.noAnswer")}</dd>
+          <dt>{t("c.roundTrip")}</dt><dd>{typeof f.round_trip_seconds === "number" ? t("c.seconds", { count: f.round_trip_seconds }) : "–"}</dd>
+          <dt>{t("c.day")}</dt><dd className={num(f.ok_24h) < num(f.sent_24h) ? "lvl-amber" : ""}>{t("c.dayValue", { ok: num(f.ok_24h), sent: num(f.sent_24h) })}</dd>
+          <dt>{t("c.messagesToday")}</dt><dd>{health.volume.canary_today ?? 0}</dd>
+        </dl>
+      )}
     </section>
   );
 }

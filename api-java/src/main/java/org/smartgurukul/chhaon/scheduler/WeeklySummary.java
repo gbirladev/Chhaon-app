@@ -61,6 +61,8 @@ public class WeeklySummary {
 
     /** Counted statuses: confirmed = taken + taken_late; missed = not confirmed. pending / sent / skipped are not counted. */
     private static final Set<String> CONFIRMED = Set.of("taken", "taken_late");
+    /** Never a summary about the Monitor's canary family (docs/canary.md); read defensively (column from migration 0055). */
+    private static final String NOT_CANARY = "not coalesce((to_jsonb(r) ->> 'is_canary')::boolean, false)";
     /** confirm_source values that mean "the reply on WhatsApp" (anything else with no confirmed_by is "the family, in the app"). */
     private static final Set<String> WHATSAPP_SOURCES = Set.of("whatsapp", "reply", "wa", "button");
 
@@ -130,7 +132,7 @@ public class WeeklySummary {
                         "where p.alert_consent_at is not null and p.alert_phone is not null " +
                         "and not exists (select 1 from phone_opt_outs o where o.phone = p.alert_phone) " +
                         "and exists (select 1 from care_circle_members m join care_recipients r on r.circle_id = m.circle_id " +
-                        "            where m.user_id = p.id and not r.is_self" + scopeSql + ")", p.toArray());
+                        "            where m.user_id = p.id and not r.is_self and " + NOT_CANARY + scopeSql + ")", p.toArray());
         for (Map<String, Object> cg : caregivers) {
             ZonedDateTime local = now.atZone(zone(cg.get("timezone")));
             if (local.getDayOfWeek() != DayOfWeek.SUNDAY || local.getHour() < fromHour || local.getHour() >= untilHour) continue;
@@ -204,7 +206,7 @@ public class WeeklySummary {
             p.add(scope);
         }
         return jdbc.queryForList(RECIPIENT_COLUMNS + "from care_recipients r join care_circle_members m on m.circle_id = r.circle_id " +
-                "where m.user_id = ? and not r.is_self" + scopeSql + " order by r.created_at", p.toArray());
+                "where m.user_id = ? and not r.is_self and " + NOT_CANARY + scopeSql + " order by r.created_at", p.toArray());
     }
 
     private static final String RECIPIENT_COLUMNS = "select r.id, r.name, r.call_name, r.timezone, r.is_self, r.whatsapp_phone, " +

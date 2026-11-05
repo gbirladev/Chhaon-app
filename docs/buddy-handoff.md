@@ -97,9 +97,10 @@ every 5 minutes, so it looks like a ~30 minute gap. Please look at the logs arou
 (was the backend restarting or deploying, was the database slow, or was the gateway down so sends failed and were retried?).
 
 ### 3. (Owner, FYI) Second WhatsApp session for the "canary" test family
-The owner links the spare SIM as a second session in the gateway dashboard (QR) and gives it a webhook; nothing for you on AWS. A dummy
-parent "Test Papa" on that number answers its own reminder automatically every few hours, so the admin Monitor turns red within minutes
-if anything in the chain breaks.
+The owner links the spare SIM as a second session in the gateway dashboard (QR) with an AutoReply rule and **no webhook** (its incoming
+messages are our own reminders; the canary's "1" reaches us through the main session's webhook). Nothing for you on AWS. A dummy
+parent "Test Papa" on that number answers its own reminder automatically every 4 hours, so the admin Monitor turns red within minutes
+if anything in the chain breaks. Steps: `docs/canary.md`.
 
 ### 4. (Owner, FYI) Number changes and sessions: the lesson from 2026-11-05
 The owner manages sessions and webhooks in the gateway dashboard (`https://wa.chhaon.site`). Only the server (code, build, restart,

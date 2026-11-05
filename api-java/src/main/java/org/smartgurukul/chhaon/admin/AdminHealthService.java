@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.smartgurukul.chhaon.admin.HealthCheck.AMBER;
 import static org.smartgurukul.chhaon.admin.HealthCheck.GREEN;
+import static org.smartgurukul.chhaon.admin.HealthCheck.GREY;
 import static org.smartgurukul.chhaon.admin.HealthCheck.RED;
 
 /**
@@ -50,6 +51,7 @@ public class AdminHealthService {
         out.add(safe("scheduler", this::scheduler));
         out.add(safe("reminders_on_time", this::remindersOnTime));
         out.add(safe("replies_in", this::repliesIn));
+        out.add(safe("canary", this::canary));
         out.add(safe("gateway", this::gatewayCheck));
         out.add(safe("webhook_rejections", this::webhookRejections));
         out.add(safe("failed_sends", this::failedSends));
@@ -163,6 +165,81 @@ public class AdminHealthService {
                     sent24h + " reminders went out in 24 hours and no WhatsApp message came in.", lastIn, f);
         }
         return new HealthCheck("replies_in", GREEN, "ok", in3h + " message(s) came in during the last 3 hours.", lastIn, f);
+    }
+
+    // ---------------------------------------------------------------- canary (docs/canary.md)
+
+    /** A canary reminder must be answered within this many minutes (the spare SIM answers automatically in seconds). */
+    static final int CANARY_ANSWER_MINUTES = 10;
+    /** Slots are every 4 hours: no canary reminder for 5 hours means the scheduler or the send is broken. */
+    static final int CANARY_SILENT_HOURS = 5;
+
+    /** The canary's doses (one medicine, so one dose per 4-hourly slot), as a FROM clause with alias de. */
+    private static final String CANARY_DOSES = "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
+            "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id where r.is_canary ";
+    /** Answered on WhatsApp (never a tick in the app) within the limit. */
+    private static final String CANARY_ANSWERED_IN_TIME = "(de.status in ('taken', 'taken_late') " +
+            "and coalesce(de.confirm_source, 'whatsapp') = 'whatsapp' and de.responded_at is not null " +
+            "and de.responded_at <= de.sent_at + make_interval(mins => " + CANARY_ANSWER_MINUTES + "))";
+    /** Settled: answered, or old enough that it should have been. */
+    private static final String CANARY_SETTLED = "(de.sent_at <= now() - make_interval(mins => " + CANARY_ANSWER_MINUTES + ") " +
+            "or de.status in ('taken', 'taken_late'))";
+
+    /**
+     * The canary family (a spare WhatsApp number that answers its own "Test tablet" reminder automatically) proves the whole
+     * chain end to end: scheduler, gateway send, phone, auto-reply, gateway webhook, our reply handling. Judges the latest canary
+     * reminder that was answered or is older than 10 minutes. Grey (never an alert) when no canary is set up, or it was set up
+     * less than 5 hours ago and nothing has gone out yet.
+     */
+    HealthCheck canary() {
+        Map<String, Object> r = jdbc.queryForMap(
+                "select (select count(*) from care_recipients where is_canary) canaries, " +
+                "(select min(created_at) from care_recipients where is_canary) created_at, " +
+                "(select max(de.sent_at) " + CANARY_DOSES + ") last_sent, " +
+                "(select count(*) " + CANARY_DOSES + "and de.sent_at > now() - interval '24 hours' and " + CANARY_SETTLED + ") sent24h, " +
+                "(select count(*) " + CANARY_DOSES + "and de.sent_at > now() - interval '24 hours' and " + CANARY_ANSWERED_IN_TIME + ") ok24h");
+        long canaries = Rows.num(r.get("canaries"));
+        if (canaries == 0) {
+            return new HealthCheck("canary", GREY, "not_set_up", "No canary family is set up (docs/canary.md).", null, facts("canaries", 0));
+        }
+        Instant created = instant(r.get("created_at"));
+        Instant lastSent = instant(r.get("last_sent"));
+        List<Map<String, Object>> settled = jdbc.queryForList(
+                "select de.sent_at, de.responded_at, de.status::text status, " + CANARY_ANSWERED_IN_TIME + " in_time " + CANARY_DOSES +
+                "and de.sent_at is not null and " + CANARY_SETTLED + " order by de.sent_at desc limit 1");
+        Map<String, Object> last = settled.isEmpty() ? Map.of() : settled.get(0);
+        Instant sentAt = instant(last.get("sent_at"));
+        Instant answeredAt = instant(last.get("responded_at"));
+        Long roundTrip = sentAt != null && answeredAt != null ? Math.max(0, Duration.between(sentAt, answeredAt).getSeconds()) : null;
+        Map<String, Object> f = facts("canaries", canaries, "last_sent_at", lastSent, "checked_sent_at", sentAt, "answered_at", answeredAt,
+                "round_trip_seconds", roundTrip, "last_status", last.get("status"),
+                "sent_24h", Rows.num(r.get("sent24h")), "ok_24h", Rows.num(r.get("ok24h")),
+                "answer_minutes", CANARY_ANSWER_MINUTES, "silent_hours", CANARY_SILENT_HOURS);
+        Instant now = Instant.now();
+        if (lastSent == null || lastSent.isBefore(now.minus(Duration.ofHours(CANARY_SILENT_HOURS)))) {
+            boolean young = created != null && created.isAfter(now.minus(Duration.ofHours(CANARY_SILENT_HOURS)));
+            if (lastSent == null && young) {
+                return new HealthCheck("canary", GREY, "waiting_first", "The canary was set up recently; its first reminder is not due yet.",
+                        created, f);
+            }
+            return new HealthCheck("canary", RED, "not_sent",
+                    "No canary reminder went out in the last " + CANARY_SILENT_HOURS + " hours: the reminder job or the send is broken.",
+                    lastSent != null ? lastSent : created, f);
+        }
+        if (sentAt == null) {
+            return new HealthCheck("canary", GREY, "waiting_first", "The first canary reminder just went out; waiting for its answer.",
+                    lastSent, f);
+        }
+        if (Boolean.TRUE.equals(last.get("in_time"))) {
+            return new HealthCheck("canary", GREEN, "ok", "The last canary reminder was answered after " + roundTrip + " seconds.",
+                    answeredAt, f);
+        }
+        if ("taken".equals(last.get("status")) || "taken_late".equals(last.get("status"))) {
+            return new HealthCheck("canary", AMBER, "slow", "The last canary reminder was answered, but only after "
+                    + (roundTrip == null ? "?" : String.valueOf(roundTrip / 60)) + " minutes.", answeredAt, f);
+        }
+        return new HealthCheck("canary", RED, "no_answer", "The last canary reminder got no answer within " + CANARY_ANSWER_MINUTES
+                + " minutes: replies are not reaching us.", sentAt, f);
     }
 
     // ---------------------------------------------------------------- gateway
@@ -286,7 +363,20 @@ public class AdminHealthService {
         m.put("daily_average_7d", Math.round(avg * 10) / 10.0);
         m.put("amber_per_day", volumeAmberPerDay);
         m.put("daily", series);
+        // The canary's reminders are real messages from our number (they count above, for the ban risk); shown on their own too.
+        m.put("canary_today", canaryRemindersToday());
         return m;
+    }
+
+    /** Canary reminders sent today (IST); 0 when the canary column does not exist yet. */
+    private long canaryRemindersToday() {
+        try {
+            Long n = jdbc.queryForObject("select count(*) " + CANARY_DOSES + "and (de.sent_at at time zone 'Asia/Kolkata')::date = " +
+                    "(now() at time zone 'Asia/Kolkata')::date", Long.class);
+            return n == null ? 0 : n;
+        } catch (org.springframework.dao.DataAccessException e) {
+            return 0;
+        }
     }
 
     HealthCheck volumeCheck() {

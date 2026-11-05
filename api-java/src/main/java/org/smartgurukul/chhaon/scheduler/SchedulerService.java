@@ -240,6 +240,8 @@ public class SchedulerService {
                 ReceiverTexts.languageSql("r") + " language, " +   // a helper may read another language (R1's reminder_language)
                 "r.call_name, r.name recipient_name, r.timezone, r.care_type, r.due_date, " +
                 "r.name person_name, r.reminder_to, r.reminder_name, " +   // who gets the reminder (migration 0044)
+                // the Monitor's canary family (migration 0055, docs/canary.md); read defensively: false when the column is missing
+                "coalesce((to_jsonb(r) ->> 'is_canary')::boolean, false) is_canary, " +
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
                 "m.id medicine_id, m.name medicine_name, m.dosage, m.photo_url, " +
@@ -284,13 +286,18 @@ public class SchedulerService {
         return sent;
     }
 
-    /** Sends one slot's reminder (poll when on, else text; photo rules above) and returns the message id to store. */
+    /**
+     * Sends one slot's reminder (poll when on, else text; photo rules above) and returns the message id to store.
+     * The canary family (docs/canary.md) ALWAYS gets the plain text, never a poll or a photo: its phone answers with a
+     * keyword auto-reply, which reads only text messages and cannot vote in a poll.
+     */
     private String sendSlot(List<Map<String, Object>> rows, List<UUID> claimed) {
         Map<String, Object> first = rows.get(0);
         String phone = (String) first.get("whatsapp_phone");
         Instant now = Instant.now();
         Integer week = pregnant(first) && !ReceiverTexts.notThePerson((String) first.get("reminder_to")) ? weekToSay(first, claimed) : null;
         String text = slotText(rows, week, now);
+        if (Boolean.TRUE.equals(first.get("is_canary"))) return wa.send(phone, text);
         // With the medicine photo when the slot has ONE medicine; any photo problem sends the text alone (never throws here).
         byte[] photo = photos == null || rows.size() != 1 ? null
                 : photos.reminderJpeg((UUID) first.get("recipient_id"), (String) first.get("photo_url")).orElse(null);

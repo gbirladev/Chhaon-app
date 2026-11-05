@@ -28,6 +28,16 @@ public class AdminMonitorService {
     private static final String ALERT_TYPES = "('dose_missed','checkin_missed','checkin_call_requested','parent_stopped','parent_declined'," +
             "'parent_consented','parent_resumed','whatsapp_failed','reminder_not_sent','refill_needed','out_of_stock')";
 
+    /**
+     * Is care recipient {@code r} the Monitor's canary family (docs/canary.md, migration 0055)? Read through to_jsonb so the
+     * Monitor keeps working on a database where that migration has not run yet (then nobody is the canary).
+     */
+    private static final String R_CANARY = "coalesce((to_jsonb(r) ->> 'is_canary')::boolean, false)";
+
+    /** The canary family's schedules: left out of the day's totals. */
+    private static final String CANARY_SCHEDULES = "(select s.id from medicine_schedules s join medicines m on m.id = s.medicine_id " +
+            "join care_recipients r on r.id = m.recipient_id where " + R_CANARY + ")";
+
     private final JdbcTemplate jdbc;
     private final int doseMissedMinutes;
     private final int checkinMissedMinutes;
@@ -56,7 +66,8 @@ public class AdminMonitorService {
                 "count(*) filter (where status = 'missed') missed, " +
                 "count(*) filter (where status = 'skipped') skipped, " +
                 "count(*) filter (where sent_at - scheduled_at > interval '15 minutes') sent_late " +
-                "from dose_events where (scheduled_at at time zone 'Asia/Kolkata')::date = ?", day)));
+                "from dose_events where (scheduled_at at time zone 'Asia/Kolkata')::date = ? " +
+                "and schedule_id not in " + CANARY_SCHEDULES, day)));   // the canary has its own check and card
         out.put("checkins", Rows.clean(jdbc.queryForMap(
                 "select count(*) filter (where sent_at is not null) sent, " +
                 "count(*) filter (where status = 'replied') answered, " +
@@ -110,7 +121,7 @@ public class AdminMonitorService {
     private static final String FAMILIES_SQL = (
                 "select r.id recipient_id, r.circle_id, r.name, r.call_name, r.relation, r.care_type, r.is_self, r.whatsapp_phone, " +
                 "r.timezone, r.language, r.reminder_to, r.reminder_name, r.reminder_relation, ru.name reminder_user_name, " +
-                "ru.phone reminder_user_phone, r.consent_at, r.consent_requested_at, r.opted_out_at, r.checkin_enabled, r.created_at, " +
+                "ru.phone reminder_user_phone, r.consent_at, r.consent_requested_at, r.opted_out_at, r.checkin_enabled, r.created_at, " + R_CANARY + " is_canary, " +
                 "exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone) phone_opted_out, " +
                 "(select coalesce(jsonb_agg(jsonb_build_object('user_id', p.id, 'name', p.name, 'email', p.email, 'phone', p.phone, " +
                 "    'role', m.role, 'plan', p.plan) order by m.role, p.name), '[]'::jsonb) " +
@@ -161,11 +172,12 @@ public class AdminMonitorService {
                 "        union all select c.sent_at from checkins c where c.recipient_id = r.id and c.sent_at > now() - interval '7 days' " +
                 "        union all select ap.reminded_day_before_at from appointments ap where ap.recipient_id = r.id and ap.reminded_day_before_at > now() - interval '7 days' " +
                 "        union all select ap.reminded_morning_at from appointments ap where ap.recipient_id = r.id and ap.reminded_morning_at > now() - interval '7 days') z) v " +
-                "order by r.created_at");
+                "order by " + R_CANARY + ", r.created_at");   // the canary family (docs/canary.md) last
 
     /** Warning badges of one families row (codes the web app translates). */
     static List<String> badges(Map<String, Object> row) {
         List<String> b = new ArrayList<>();
+        if (Boolean.TRUE.equals(row.get("is_canary"))) b.add("canary");   // the test family (docs/canary.md), not a client
         boolean optedOut = row.get("opted_out_at") != null || Boolean.TRUE.equals(row.get("phone_opted_out"));
         if (optedOut) b.add("opted_out");
         if (!optedOut && row.get("consent_at") == null && row.get("whatsapp_phone") != null) b.add("consent_pending");
@@ -233,7 +245,7 @@ public class AdminMonitorService {
     public List<Map<String, Object>> activity(int limit) {
         int n = Math.max(1, Math.min(limit, 200));
         String doseFrom = "from dose_events de join medicine_schedules s on s.id = de.schedule_id join medicines m on m.id = s.medicine_id " +
-                "join care_recipients r on r.id = m.recipient_id ";
+                "join care_recipients r on r.id = m.recipient_id and not " + R_CANARY + " ";   // the canary would fill the list every 4 h
         return Rows.clean(jdbc.queryForList(
                 "select * from (" +
                 " (select 'dose_sent' kind, de.sent_at at_time, r.id recipient_id, r.name recipient_name, m.name detail " + doseFrom +
@@ -251,7 +263,7 @@ public class AdminMonitorService {
                 "   join care_recipients r on r.id = c.recipient_id where c.status = 'missed' and c.sent_at > now() - interval '7 days' " +
                 "   order by c.sent_at desc limit ?)" +
                 " union all (select 'consent_given', r.consent_at, r.id, r.name, null from care_recipients r " +
-                "   where r.consent_at > now() - interval '30 days' order by r.consent_at desc limit ?)" +
+                "   where not " + R_CANARY + " and r.consent_at > now() - interval '30 days' order by r.consent_at desc limit ?)" +
                 " union all (select 'opted_out', r.opted_out_at, r.id, r.name, null from care_recipients r " +
                 "   where r.opted_out_at > now() - interval '30 days' order by r.opted_out_at desc limit ?)" +
                 " union all (select 'alert', a.created_at, rr.id, rr.name, a.type from (" +
@@ -260,7 +272,7 @@ public class AdminMonitorService {
                 "     order by type, payload::text, date_trunc('minute', created_at), created_at) a " +
                 "   left join care_recipients rr on rr.id::text = a.rid order by a.created_at desc limit ?)" +
                 " union all (select 'sign_up', p.created_at, null, null, p.name from profiles p " +
-                "   where p.created_at > now() - interval '30 days' order by p.created_at desc limit ?)" +
+                "   where not coalesce((to_jsonb(p) ->> 'is_canary')::boolean, false) and p.created_at > now() - interval '30 days' order by p.created_at desc limit ?)" +
                 " union all (select 'message_in', e.received_at, null, null, null from whatsapp_events e " +
                 "   where e.id like 'gw:in:%' and e.received_at > now() - interval '7 days' order by e.received_at desc limit ?)" +
                 ") x where at_time is not null order by at_time desc limit ?",
