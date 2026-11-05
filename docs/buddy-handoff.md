@@ -1,38 +1,29 @@
 # Handoff for the backend owner (AWS and WhatsApp gateway)
 
-Updated 2026-11-05 (first written 2026-11-04). What is done, what is open for you, and what is coming. Nothing secret is in this file:
-secrets are exchanged privately, never in the repository or a chat group.
+Updated 2026-11-05 late evening (first written 2026-11-04). What is done, what is open for you, and what is coming. Nothing secret is
+in this file: secrets are exchanged privately, never in the repository or a chat group.
 
-## Done (thank you)
+## Open tasks for you (in this order)
 
-- Webhook secret set on the server and in the gateway; gateway webhook `Chhaon backend` points to
-  `https://api.chhaon.site/webhooks/whatsapp-gateway` with events `message.received` and `message.status` (signed test = 200).
-- Backend Deploy is green (the smoke test needs `HEALTH_CHECK_URL` = `https://api.chhaon.site/actuator/health`).
-- Phone-OTP login, Java data API (phase 1 and 2) and the "Playful Blocks" theme are live.
-- The old WhatsApp number was banned on 2026-11-05. A **new number** is linked to the same gateway and the scheduler runs for everyone
-  (`CHHAON_SCHEDULER_ENABLED` = `true`, `CHHAON_SCHEDULER_ONLY_RECIPIENT` = `all`).
+### 1. Deploy the gateway update: poll answers + 👍 reactions (about 30 minutes) — MOST IMPORTANT
 
-## Open tasks for you
+Our pipeline does NOT deploy `whatsapp-gateway/`; only you can. The backend side is already live and waits for it.
 
-### 1. Deploy the gateway change "poll answers" (about 45 minutes) — NEW, replaces the poll test
+**What it adds**
+- **Poll answers:** parents answer a reminder by tapping a WhatsApp poll option instead of typing "1".
+  - The poll route answers with the sent poll's id: `{"status":true, "messageId":"3EB0...", "data":{"key":{"id":"3EB0...", ...}}}`.
+  - Every poll the gateway sends is kept for 30 days in a new table `SentPoll` (a vote can only be decrypted with the poll's secret),
+    and the socket gets a `getMessage` that returns it.
+  - A vote is decrypted and sent to the webhook as a NEW event `poll.vote`. It goes to every webhook with `poll.vote` OR
+    `message.received` ticked, so the existing `Chhaon backend` webhook needs no change. Our Baileys (7.0.0-rc.9) has its own vote
+    decryption switched off, so the gateway does it itself (it tries the phone and the LID form of both numbers).
+- **👍 reactions:** a long-press 👍 on a reminder is forwarded as `message.received` with `type: "REACTION"` (today it is dropped).
 
-Parents will answer a reminder by tapping a WhatsApp **poll** option instead of typing. This gateway change (`whatsapp-gateway/`, which
-our pipeline does NOT deploy) does three things:
-- the poll route now answers with the sent poll's id: `{"status":true, "messageId":"3EB0...", "data":{"key":{"id":"3EB0...", ...}}}`;
-- every poll the gateway sends is kept for 30 days in a new table `SentPoll` (a vote can only be read with the poll's secret, so this
-  must survive a restart), and the socket gets a `getMessage` that returns it;
-- a vote is decrypted and sent to the webhook as a NEW event `poll.vote`. It goes to every webhook that has `poll.vote` OR
-  `message.received` ticked, so the existing `Chhaon backend` webhook needs no change.
+Files: `src/lib/poll.ts`, `poll-decrypt.ts`, `poll.test.ts`, `reaction.ts`, `reaction.test.ts`, `src/modules/whatsapp/poll-votes.ts`,
+`src/lib/webhook.ts`, `src/modules/whatsapp/store/index.ts`, `instance.ts`, the poll route, `prisma/schema.prisma` (model `SentPoll`),
+`package.json` (`npm test`), and the event lists (dashboard, swagger, API docs).
 
-Our Baileys version (7.0.0-rc.9) does not decrypt votes itself (that code is switched off inside Baileys), so the gateway does it:
-it tries the phone and the LID form of both numbers, because WhatsApp uses either depending on the chat.
-
-Files: `src/lib/poll.ts`, `src/lib/poll-decrypt.ts`, `src/lib/poll.test.ts`, `src/modules/whatsapp/poll-votes.ts` (all new),
-`src/lib/webhook.ts` (`poll.vote` event, `onPollVote`), `src/modules/whatsapp/store/index.ts` (votes and sent polls),
-`src/modules/whatsapp/instance.ts` (`getMessage`), the poll route, `prisma/schema.prisma` (model `SentPoll`), `package.json`
-(`npm test` runs the poll tests too), and the event lists (dashboard, swagger, API docs). It includes the 👍 reaction change (1b).
-
-The webhook body for one tap (example number):
+Webhook body for one tap (example number):
 ```json
 {"event":"poll.vote","sessionId":"<session>","timestamp":"2026-11-05T08:00:00.000Z",
  "data":{"pollKeyId":"3EB0POLL0000000001","from":"919999900001@s.whatsapp.net","remoteJid":"919999900001@s.whatsapp.net",
@@ -41,90 +32,125 @@ The webhook body for one tap (example number):
 A changed vote sends the new choice; a removed vote sends empty lists. Votes on polls the gateway did not send (or older than 30 days)
 and votes in groups are ignored.
 
-Steps:
-1. On the gateway server, update the code to this branch's `whatsapp-gateway/` (the same way you installed it).
-2. `npm install` (only if `node_modules` is missing), then **`npm run db:push`** (adds the new table `SentPoll`; it changes nothing
-   else; with Docker the container already runs `prisma db push` at start).
-3. `npm test` (18 tests, no database needed) and `npm run build`.
-4. Restart the gateway process (pm2 / docker, as you run it). The WhatsApp session stays linked (auth is on disk).
-5. Real test: send a poll to your own phone (replace the placeholders; the API key goes in the `X-API-Key` header):
+**Where it runs:** EC2 `i-06c5527278a02b5df` (Sydney), code in `/opt/whatsapp-gateway`, systemd service `chhaon-wa` (user `ec2-user`,
+`Restart=always`), `.env` in that folder. The WhatsApp login is stored in the gateway database (schema `wa_akg` on Supabase Sydney),
+not on disk, so the session stays linked through the update.
+
+**When:** a quiet time, not within 30 minutes of a dose time (avoid around 08:00 and 20:00 IST). The gateway is off for 5-10 minutes;
+a reminder due in that window is retried at the next tick.
+
+**Steps** (AWS Console → EC2 → the instance → Connect → Session Manager, or your usual access)
+```bash
+# 1. stop and back up
+sudo su - ec2-user
+sudo systemctl stop chhaon-wa
+cp -a /opt/whatsapp-gateway /opt/whatsapp-gateway.bak-$(date +%Y%m%d)
+
+# 2. new code from the repo (main), keeping .env and node_modules; then install
+#    (e.g. git archive of whatsapp-gateway/ uploaded to s3://chhaon-deploys-304485839057/, then:)
+aws s3 cp s3://chhaon-deploys-304485839057/whatsapp-gateway-polls.tar.gz /tmp/gw.tar.gz --region ap-southeast-2
+tar xzf /tmp/gw.tar.gz --strip-components=1 -C /opt/whatsapp-gateway
+cd /opt/whatsapp-gateway && npm ci
+
+# 3. new table + tests (prisma must only ADD SentPoll; if it mentions data loss, answer No and stop)
+set -a; . ./.env; set +a
+npx prisma db push && npx prisma generate
+npm test                      # 18 tests pass
+
+# 4. build and start (the build needs the .env for NEXT_PUBLIC_*; the memory cap protects the backend on this 2 GB box)
+NODE_OPTIONS=--max-old-space-size=1024 npm run build
+sudo systemctl start chhaon-wa
+sudo systemctl status chhaon-wa --no-pager | head -5
+sudo journalctl -u chhaon-wa -n 40 --no-pager
+```
+Rollback: `sudo systemctl stop chhaon-wa; rm -rf /opt/whatsapp-gateway; mv /opt/whatsapp-gateway.bak-<date> /opt/whatsapp-gateway; sudo systemctl start chhaon-wa`
+(the extra `SentPoll` table can stay).
+
+**Checks**
+1. `https://wa.chhaon.site`: the session is CONNECTED without a new QR.
+2. Typed replies still work: a test parent sends `1` to an open reminder, the dose turns "taken".
+3. Poll: send one to your own phone (dashboard chat, or the API with the `X-API-Key` header):
    ```
    curl -s -X POST "https://wa.chhaon.site/api/messages/<sessionId>/<91XXXXXXXXXX@s.whatsapp.net>/poll" \
      -H "X-API-Key: <gateway api key>" -H "Content-Type: application/json" \
      -d '{"question":"💊 Papa, time for Metformin (blue round tablet)","options":["✅ Taken","⏰ Later"],"selectableCount":1}'
    ```
-   The answer must contain a `messageId`.
-6. On the phone, tap **✅ Taken**. In the dashboard webhook log a `poll.vote` appears with `"pollKeyId"` = that `messageId` and
-   `"selectedOptions":["✅ Taken"]`. Change the vote to **⏰ Later**: a second `poll.vote` with `["⏰ Later"]` and `[1]`. Remove the
-   vote: `[]`. (Until the Java side handles `poll.vote` our backend may answer it with an error or ignore it; that is fine for now.)
-7. Do it once from an Android phone and once from an iPhone.
-8. Tell the product owner: did each tap give a `poll.vote` with the right option (Android / iPhone), and if not, the gateway log
-   lines with `[Poll]` (for example "Could not decrypt a vote on our poll ..."), with the phone number masked.
+   The answer contains a `messageId`. Tap **✅ Taken**: the webhook log shows `poll.vote` with that `pollKeyId` and `["✅ Taken"]`, and
+   our backend answers **200** (a test poll that is not a reminder is simply ignored by the backend). Change the vote, then remove it.
+4. Reaction: long-press an open reminder on a test parent's phone and tap 👍: `message.received` with `"type":"REACTION"`, the dose
+   turns taken. ❤️ does nothing.
+5. Do 3 and 4 once from Android and once from iPhone.
 
-Planned poll answers (one choice per poll; a changed vote counts the last one; typed STOP still works):
+**Then switch polls on** (or tell the owner): GitHub secret `WHATSAPP_POLLS_ENABLED` = `true`, then Actions → Backend Deploy → Run
+workflow. From the next time slot reminders and the morning check-in go out as polls; if a poll cannot be sent the backend falls back to
+the text reminder by itself.
 
-| Message | English | Hindi |
-|---|---|---|
-| Dose reminder | ✅ Taken / ⏰ Later | ✅ ले ली / ⏰ थोड़ी देर में |
-| Morning check-in | 😊 I'm fine / 📞 Please call me | 😊 ठीक हूँ / 📞 फ़ोन कीजिए |
-| Consent (first message) | ✅ Yes, start / ❌ No, thanks | ✅ हाँ, शुरू करें / ❌ नहीं चाहिए |
+**Report to the owner:** did each tap give a `poll.vote` with the right option (Android / iPhone)? If not, the gateway log lines with
+`[Poll]` (for example "Could not decrypt a vote on our poll ..."), with phone numbers masked.
 
-### 1b. Deploy the gateway change "👍 reaction" (about 20 minutes) — NEW
+### 2. Why were two doses sent 30 minutes late on 2026-11-05?
+The 14:00 and 14:15 IST doses (08:30 / 08:45 UTC) were sent at 14:31 IST; doses at 17:30 and 19:30 went out on time. The scheduler runs
+every 5 minutes, so it looks like a ~30 minute gap. Please look at the logs around 08:25-09:05 UTC:
+`sudo journalctl -u chhaon-backend --since "2026-11-05 08:20" --until "2026-11-05 09:10" --no-pager | grep -iE "tick|scheduler|error|start"`
+(was the backend restarting or deploying, was the database slow, or was the gateway down so sends failed and were retried?).
 
-Branch `f6-thumbs-reaction` changes the gateway (`whatsapp-gateway/`), which our pipeline does NOT deploy. Until you deploy it, a
-👍 reaction simply does nothing (typed replies keep working; the backend and the gateway can be deployed in any order).
-Files: `src/lib/reaction.ts` (new), `src/lib/reaction.test.ts` (new), `src/lib/webhook.ts` (`onReactionReceived`),
-`src/modules/whatsapp/store/index.ts` (reactions are forwarded instead of dropped), `package.json` (`"test"` script).
-No database (Prisma) change, no new webhook event: it is `message.received` with `type: "REACTION"`, so the existing webhook
-subscription is enough.
+### 3. Second WhatsApp session for the "canary" test family (when the owner has a spare SIM)
+A dummy parent "Test Papa" on a second number that answers its own reminder automatically every few hours, so the admin Monitor turns red
+within minutes if anything in the chain breaks. Your part: register WhatsApp on the spare SIM and link it as a second session in the
+gateway (QR), give it a webhook like the main one. The backend part is built by us.
 
-Steps:
-1. On the gateway server, update the code to this branch's `whatsapp-gateway/` (the same way you installed it).
-2. `npm install` (only if `node_modules` is missing), then `npm test` (5 tests, no database needed) and `npm run build`.
-3. Restart the gateway process (pm2 / docker, as you run it). The WhatsApp session stays linked (auth is on disk).
-4. Check: from your own phone (registered as a test parent with an open reminder), long-press the reminder and tap 👍. The
-   gateway webhook log shows a `message.received` with `"type":"REACTION"` and our backend answers `handled:REACTION`; the app
-   shows the dose as taken and you get "Thank you 🙏 Noted: ...". Tap ❤️ on another message: nothing happens.
-5. Tell the product owner whether it worked on Android and iPhone (and the masked webhook body if it did not).
+### 4. Number changes and sessions: the lesson from 2026-11-05
+After the switch to the new number, the new session had **no webhook**, so from about 08:00 to 20:00 IST no parent reply reached the
+backend (reminders still went out). The owner fixed it by hand: a new webhook on the new session to
+`https://api.chhaon.site/webhooks/whatsapp-gateway` (`message.received`, plus `message.status` if you like) with a **new secret**,
+the same value set as the GitHub secret `WHATSAPP_WEBHOOK_SECRET`, then a backend deploy. The old webhook was deleted.
+- Every new session needs its own webhook. Check `WHATSAPP_SENDER_SESSION_NAME` is the name of the session in use.
+- The new admin Monitor (coming) shows "webhooks for replies: 0" in red when this happens.
+- Login codes also go out over this number: a ban stops logins as well as reminders. Keep a spare number ready.
+- Lower the ban risk: messages only to parents who agreed, low volume at first, no bursts, no links.
 
-### 2. Two Java tests fail on `main`
+### 5. Two Java tests fail on `main`
 - `DataApiTest.activityReturnsWhatWasSent` (line 108): it inserts a check-in with status `"ok"`, which the `checkin_status` type does not
   allow (pending / sent / replied / missed). Probably `"replied"` was meant.
 - `OtpServiceTest`: `aWrongCodeIsRejectedAndBurnsAfterTooManyAttempts` and sometimes `requestThenVerifyLogsInAndCreatesAProfileForANewPhone`.
-  Not looked into.
 
-### 3. Phone login finds accounts only by the exact number `+91…` (low priority)
+### 6. Phone login finds accounts only by the exact number `+91…` (low priority)
 `OtpService.verify` looks a profile up by `phone` exactly. Profiles saved as `91…` (without `+`) or with no phone (old email sign-ups)
-get a NEW empty account at the first phone login. Today only the owner's own family is affected (fixed by hand), so this can wait,
-but please handle it before real families join (match the old formats, or let an email account link a phone).
+get a NEW empty account at the first phone login. Please handle it before real families join (match the old formats, or let an email
+account link a phone).
 
-### 4. New WhatsApp number: keep it alive
-- Check that `WHATSAPP_SENDER_SESSION_NAME` is the name of the NEW session.
-- Login codes also go out over this number: a ban stops logins as well as reminders. Keep a spare number ready.
-- Lower the ban risk: messages only to parents who agreed (replied 1), low volume at first, no bursts, no links.
+## Done (thank you)
+
+- Backend Deploy is green (smoke test `HEALTH_CHECK_URL` = `https://api.chhaon.site/actuator/health`).
+- Phone-OTP login, Java data API, theme picker, tablet colour and shape (migration 0042 and the 0043-0053 bundle applied on Sydney) are live.
+- **Live since 2026-11-05 evening:** one WhatsApp reminder per time slot (all medicines due together in one message, one "1" confirms
+  all), clearer reminder text ("दवा ले ली? जवाब में बस *1* लिखें"), the poll code (off until task 1), and an outside heartbeat.
+- **Outside monitoring (Better Stack, free):** monitors on `chhaon.site`, `api.chhaon.site/actuator/health` and `wa.chhaon.site`, plus a
+  scheduler heartbeat (`BETTERSTACK_HEARTBEAT_URL`, pinged after every tick). Alerts go to the owner by e-mail.
 
 ## Coming soon (heads-up)
 
-- **Tablet colour and shape** (merged on the owner's local `main`, not pushed): the backend now reads two new columns
-  `medicines.pill_colour` and `medicines.pill_shape`, and with `ddl-auto=validate` it will **refuse to start** if they are missing.
-  Order: the owner pastes `supabase/migrations/20261105000042_pill_look.sql` into the Sydney SQL editor FIRST, then pushes.
-- **Reply fix** (merged locally): a late plain `1` now answers the missed dose that was sent after the check-in, not the check-in.
-- **Theme picker** (live since 2026-11-05): Family page, top right. The default is called "Chhaon": your Smart Gurukul violet, slightly
-  softened (same hue and brightness, less saturation; `DEFAULT_SOFTEN` in `web/scripts/build-palettes.mjs`, `theme.css` untouched).
-  Users can also pick Classic (the first teal), Teal, Blue, Saffron, Rose or their own colour.
+- **Admin Monitor** (built, on the owner's local `main`): an admin-only page with health checks (scheduler, on-time sends, replies coming
+  in, gateway connected + webhooks, refused webhooks, failed sends, volume), every family, activity and feedback. Order: the owner pastes
+  `supabase/migrations/20261105000054_admin_monitor.sql` into the Sydney SQL editor FIRST, then pushes. It reads the gateway's session
+  and webhook list with the backend's gateway API key.
+- Stability sprint before marketing (see `docs/TODO.md`): canary family, weekly releases with a checklist, migration tracking, nightly
+  database backup, gateway runbook.
 
 ## Answered
 
 **Storage files from the old Mumbai project:** not copied before the move, so the old medicine photos and report files are LOST
-(confirmed 2026-11-05). Only the owner's own family/test data is affected; the dangling links in the database are being cleaned up.
+(confirmed 2026-11-05). Only the owner's own family/test data is affected.
 
 ## Rules that still apply
 
 - **Database (Sydney):** it has no migration history table. Apply SQL in the SQL editor, never `supabase db push`. If the database is
   ever copied again, keep the permissions (for example `pg_dump` without `--no-acl`) and run
-  `supabase/maintenance/table_permissions_check.sql` afterwards (26 expected lines).
+  `supabase/maintenance/table_permissions_check.sql` afterwards.
 - **Accounts:** do not use the owner's admin account (`gbirla.dev.rnd@gmail.com`) for setup or tests; it holds live data.
+- **Test data:** only obviously fake phone numbers (`+91 9999x xxxxx`), never real or random-looking ones, in tests, seeds and demos.
 - **Deploys:** a push that touches `api-java/**` deploys the backend to production; a push that touches `web/**` deploys the website.
+  `whatsapp-gateway/**` is deployed by hand (task 1).
 
 Known gaps on the Java side: a sender the gateway cannot turn into a phone number (`@lid` without a number) is ignored, even if it says
 STOP; the gateway never retries, so a 500 from us loses that reply; caregiver WhatsApp alerts and appointment reminders are not ported
