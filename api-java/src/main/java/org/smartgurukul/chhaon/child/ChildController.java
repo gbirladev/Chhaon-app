@@ -2,6 +2,7 @@ package org.smartgurukul.chhaon.child;
 
 import org.smartgurukul.chhaon.child.ChildService.ChildInfo;
 import org.smartgurukul.chhaon.child.ChildService.ChildInput;
+import org.smartgurukul.chhaon.child.ChildService.GivenEarlierInput;
 import org.smartgurukul.chhaon.child.ChildService.VaccineInput;
 import org.smartgurukul.chhaon.child.ChildService.VaccineRow;
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
@@ -27,6 +28,8 @@ import java.util.UUID;
  * PUT  /api/v1/recipients/{id}/child            {dob, guardianConfirmed}  (confirmation required the first time)
  * GET  /api/v1/recipients/{id}/vaccines         the plan (sorted by date), with a status per dose
  * POST /api/v1/recipients/{id}/vaccines/plan    make the plan from the date of birth (idempotent)
+ * POST /api/v1/recipients/{id}/vaccines/given-earlier  {given: [ids], notGivenYet: [ids]}: past doses already given (date not
+ *                                               recorded) or not given yet, in one call (idempotent); returns the plan
  * PUT  /api/v1/vaccines/{vaccineId}             {status: given|not_given|due, givenOn, dueDate, notes, resetDueDate}
  * </pre>
  */
@@ -58,6 +61,12 @@ public class ChildController {
     @PostMapping("/recipients/{id}/vaccines/plan")
     public List<VaccineRow> makePlan(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
         return service.makePlan(user.id(), id);
+    }
+
+    @PostMapping("/recipients/{id}/vaccines/given-earlier")
+    public List<VaccineRow> givenEarlier(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id,
+                                         @RequestBody GivenEarlierInput in) {
+        return service.givenEarlier(user.id(), id, in);
     }
 
     @PutMapping("/vaccines/{vaccineId}")

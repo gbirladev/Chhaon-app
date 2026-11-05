@@ -72,6 +72,21 @@ The existing "Me" profile (`is_self`) stays as it is.
   "How are you feeling today?" and the week; the family is still alerted when there is no reply. A per-person switch is a TODO.
 - WhatsApp texts for a pregnancy greet by the time of day on her clock and keep the usual replies (*1* taken / fine, *2* call me).
 
+## Vaccines: "which ones were already given?" (2026-11-05, branch `f1-vaccines-given`, migration 0046)
+
+- A child set up after birth (say at 5 months) has many doses whose suggested date has passed; most were given in hospital or at the
+  clinic. Such a dose is NOT called overdue: the Vaccines screen lists it under "Earlier vaccines" as "Suggested for <date> · Already
+  given?" and offers the step "Which ones were already given?" (opens by itself right after the plan is made, and from the screen while
+  such doses exist): checkboxes grouped by age, all unticked, "Tick all up to <age>", "Tick what is on the vaccination card".
+- **Save**: ticked = given, unticked = "not given yet" (only these say "Overdue since <date>"). **Not sure**: saves only what is ticked
+  and leaves the rest to ask again later. "Mark as not done yet" on a past dose also counts as "not given yet".
+- **Given, date not recorded**: stored as `given_on` = the plan date (a placeholder, so every "is it given?" check keeps working) plus
+  `given_date_unknown = true`; the app shows "Given (date not recorded)" and never shows the placeholder as the date given. The family can
+  add the real date later (clears the flag). `not_yet_given_at` records the "not given yet" answer.
+- API: `POST /api/v1/recipients/{id}/vaccines/given-earlier` `{given: [ids], notGivenYet: [ids]}`; each row of the plan now also has
+  `givenDateUnknown` and `askIfGiven` (the `status` values are unchanged: a past open dose is still `overdue`, so check `askIfGiven`
+  before calling it overdue anywhere).
+
 ## Sources
 - PMSMA (MoHFW): https://pmsma.mohfw.gov.in/about-scheme/ , NHM PMSMA guideline PDF:
   https://nhm.gov.in/images/pdf/programmes/maternal-health/guidelines/Pradhan_Mantri_Surakshit_Matritva_Abhiyan.pdf

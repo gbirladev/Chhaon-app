@@ -29,3 +29,21 @@
 .vaccine-sheet .vaccine-state { font-weight: 600; margin: 0 0 12px; }
 .vaccine-rule { border: 0; border-top: 1px solid var(--b-e0ece8); margin: 14px 0; }
 .vaccine-sheet .inline-link { min-height: 44px; }
+/* "Which ones were already given?" (past doses of a child set up after birth): neutral, never alarming. */
+.vaccine-card.overdue.ask .vaccine-icon { background: var(--s-e6f2ee); color: var(--primary-text); }
+.vaccine-ask-banner { padding: 12px 14px; border-radius: 14px; background: var(--s-f4f8f7); display: flex; flex-direction: column; gap: 10px; }
+.vaccine-ask-banner p { margin: 0; line-height: 1.5; font-size: max(0.875rem, 12px); }
+.vaccines-page .vaccine-ask-link { align-self: flex-start; min-height: 44px; }
+.vaccine-given-step h2 { font-size: 1.0625rem; margin: 0 0 8px; }
+.vaccine-given-note { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: var(--s-e6f2ee); color: var(--primary-text); font-weight: 600; line-height: 1.45; }
+.vaccine-given-group { border: 0; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.vaccine-given-group legend { font-size: max(0.8125rem, 12px); font-weight: 700; color: var(--text-muted); padding: 0; margin-bottom: 2px; }
+.vaccine-given-group .inline-link { align-self: flex-start; min-height: 44px; }
+.vaccine-given-row { display: flex; gap: 12px; align-items: center; min-height: 56px; padding: 8px 12px; border: 1px solid var(--b-dce7e4); border-radius: 14px; background: var(--surface); }
+.vaccine-given-row input { width: 24px; height: 24px; flex: none; accent-color: var(--primary-text); }
+.vaccine-given-row span { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.vaccine-given-row strong em { font-style: normal; font-weight: 600; color: var(--text-muted); }
+.vaccine-given-row small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.vaccine-given-hint { margin: 0 0 8px; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.5; }
+.vaccine-given-step .stack { margin-top: 14px; }
+.vaccine-sheet .vaccine-gap { margin-bottom: 12px; }

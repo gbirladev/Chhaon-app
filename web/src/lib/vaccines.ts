@@ -21,6 +21,10 @@ export type Vaccine = {
   id: string; key: string; vaccine: string; vaccineEn: string; vaccineHi: string; dose: string; group: string | null;
   note: string | null; suggestedDueDate: string; dueDate: string; dueDateByFamily: boolean; givenOn: string | null;
   notGiven: boolean; notes: string | null; status: VaccineStatus; edition: string;
+  /** Given, but the date was not recorded ("already given?" step): givenOn is only the plan date, never shown as the date given. */
+  givenDateUnknown?: boolean;
+  /** The date has passed and the family has not said "not given yet": ask "was it given?" instead of calling it overdue. */
+  askIfGiven?: boolean;
 };
 
 export type VaccineChange = { status?: "given" | "not_given" | "due"; givenOn?: string; dueDate?: string; notes?: string; resetDueDate?: boolean };
@@ -35,6 +39,10 @@ export const loadVaccines = (recipientId: string) => apiFetch<Vaccine[]>(`/api/v
 
 /** Makes the plan from the date of birth. Safe to call again: only missing doses are added. */
 export const makeVaccinePlan = (recipientId: string) => apiFetch<Vaccine[]>(`/api/v1/recipients/${recipientId}/vaccines/plan`, { method: "POST" });
+
+/** "Which ones were already given?": marks past doses given (date not recorded) and others "not given yet", in one call. */
+export const vaccinesGivenEarlier = (recipientId: string, given: string[], notGivenYet: string[]) =>
+  apiFetch<Vaccine[]>(`/api/v1/recipients/${recipientId}/vaccines/given-earlier`, { method: "POST", body: { given, notGivenYet } });
 
 export const updateVaccine = (id: string, change: VaccineChange) => apiFetch<Vaccine>(`/api/v1/vaccines/${id}`, { method: "PUT", body: change });
 

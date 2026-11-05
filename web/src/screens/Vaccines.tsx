@@ -6,7 +6,7 @@ import type { Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
 import {
   ageGroup, childDetailsErrors, doseText, fmtPlainDate as fmt, isChild, loadChild, loadVaccines, localToday, makeVaccinePlan, saveChild,
-  updateVaccine, type ChildDetails, type ChildInfo, type Vaccine, type VaccineChange,
+  updateVaccine, vaccinesGivenEarlier, type ChildDetails, type ChildInfo, type Vaccine, type VaccineChange,
 } from "../lib/vaccines";
 
 /*
@@ -110,7 +110,8 @@ export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipie
   const dialog = useDialog(onClose);
   const doseLabel = useDoseLabel();
   const today = localToday(recipient.timezone ?? "Asia/Kolkata");
-  const [givenOn, setGivenOn] = useState(vaccine.givenOn ?? (vaccine.dueDate <= today ? vaccine.dueDate : today));
+  // A dose given with the date not recorded keeps only the plan date as a placeholder: never offer it as the date it was given.
+  const [givenOn, setGivenOn] = useState(vaccine.givenDateUnknown ? "" : vaccine.givenOn ?? (vaccine.dueDate <= today ? vaccine.dueDate : today));
   const [dueDate, setDueDate] = useState(vaccine.dueDate);
   const [notes, setNotes] = useState(vaccine.notes ?? "");
   const [error, setError] = useState("");
@@ -126,6 +127,12 @@ export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipie
     if (!givenOn || givenOn > today) { setError(t("errGivenDate")); return; }
     void send({ status: "given", givenOn, notes });
   };
+  const givenNoDate = async () => {
+    setBusy(true);
+    try { await vaccinesGivenEarlier(recipient.id, [vaccine.id], []); toast(t("saved")); onSaved(); }
+    catch { toast(t("errSave")); }
+    finally { setBusy(false); }
+  };
   const title = [vaccineName(vaccine, language), doseLabel(vaccine.dose)].filter(Boolean).join(" · ");
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -140,6 +147,8 @@ export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipie
             </Field>
             <div className="stack">
               <button className="primary-button" type="button" disabled={busy} onClick={markGiven}><Icon name="check" size={18} /> {t("markGiven")}</button>
+              {vaccine.askIfGiven && <button className="secondary-button" type="button" disabled={busy} onClick={() => void givenNoDate()}>{t("markGivenNoDate")}</button>}
+              {vaccine.askIfGiven && <button className="secondary-button" type="button" disabled={busy} onClick={() => void send({ status: "due", notes })}>{t("markNotYet")}</button>}
               <button className="secondary-button" type="button" disabled={busy} onClick={() => void send({ status: "not_given", notes })}>{t("markNotGiven")}</button>
             </div>
             <hr className="vaccine-rule" />
@@ -155,7 +164,17 @@ export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipie
           </>
         ) : (
           <>
-            <p className="vaccine-state">{vaccine.status === "given" && vaccine.givenOn ? t("givenOn", { date: fmt(vaccine.givenOn, language) }) : t("notGiven")}</p>
+            <p className="vaccine-state">{vaccine.status === "given" && vaccine.givenDateUnknown ? t("givenNoDate")
+              : vaccine.status === "given" && vaccine.givenOn ? t("givenOn", { date: fmt(vaccine.givenOn, language) }) : t("notGiven")}</p>
+            {vaccine.status === "given" && vaccine.givenDateUnknown && (
+              <>
+                <Field id="v-given" label={t("addGivenDate")} error={error}>
+                  <input id="v-given" type="date" min={recipient.dob ?? undefined} max={today} value={givenOn} onChange={(event) => { setGivenOn(event.target.value); setError(""); }}
+                    aria-invalid={!!error} aria-describedby={error ? "v-given-error" : undefined} />
+                </Field>
+                <button className="secondary-button vaccine-gap" type="button" disabled={busy || !givenOn} onClick={markGiven}>{t("saveDate")}</button>
+              </>
+            )}
             <button className="secondary-button" type="button" disabled={busy} onClick={() => void send({ status: "due", notes })}>{t("reopen")}</button>
           </>
         )}
@@ -166,6 +185,71 @@ export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipie
         <button className="secondary-button" type="button" disabled={busy || notes === (vaccine.notes ?? "")} onClick={() => void send({ notes })}>{t("saveNotes")}</button>
       </section>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------- "Which ones were already given?"
+
+/**
+ * For a child set up after birth: every open dose whose date has passed, grouped by age, all UNticked (nothing is assumed).
+ * Save = the ticked ones are given (date not recorded), the unticked ones "not given yet" (only then called overdue).
+ * "Not sure" = save only what is ticked (if anything) and leave the rest to ask again later.
+ */
+function GivenEarlierStep({ recipient, doses, onDone }: { recipient: Recipient; doses: Vaccine[]; onDone: (saved: boolean) => void }) {
+  const t = useTranslations("vaccines");
+  const language = useLocale() as Language;
+  const toast = useToast();
+  const doseLabel = useDoseLabel();
+  const ageLabel = useAgeLabel();
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set());
+  const [busy, setBusy] = useState(false);
+  const groups: { key: string; label: string; birth: boolean; items: Vaccine[] }[] = [];
+  for (const v of doses) {
+    const label = ageLabel(v.group) || fmt(v.dueDate, language);
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.items.push(v); else groups.push({ key: `${v.group ?? ""}-${v.id}`, label, birth: v.group === "birth", items: [v] });
+  }
+  const toggle = (id: string, on: boolean) => setTicked((prev) => { const next = new Set(prev); if (on) next.add(id); else next.delete(id); return next; });
+  const tickUpTo = (index: number) => setTicked((prev) => {
+    const next = new Set(prev);
+    for (const g of groups.slice(0, index + 1)) for (const v of g.items) next.add(v.id);
+    return next;
+  });
+  const save = async (restNotYet: boolean) => {
+    const given = doses.filter((v) => ticked.has(v.id)).map((v) => v.id);
+    const notYet = restNotYet ? doses.filter((v) => !ticked.has(v.id)).map((v) => v.id) : [];
+    if (!given.length && !notYet.length) { onDone(false); return; }
+    setBusy(true);
+    try { await vaccinesGivenEarlier(recipient.id, given, notYet); toast(t("saved")); onDone(true); }
+    catch { toast(t("errSave")); }
+    finally { setBusy(false); }
+  };
+  return (
+    <form className="vaccine-given-step" onSubmit={(event) => { event.preventDefault(); void save(true); }} noValidate>
+      <h2>{t("askTitle")}</h2>
+      <p className="vaccine-given-note"><Icon name="shield" size={18} /> <span>{t("askNote")}</span></p>
+      {groups.map((g, index) => (
+        <fieldset key={g.key} className="vaccine-given-group">
+          <legend>{g.label}</legend>
+          <button type="button" className="inline-link" onClick={() => tickUpTo(index)}>{g.birth ? t("tickBirth") : t("tickUpTo", { age: g.label })}</button>
+          {g.items.map((v) => (
+            <label key={v.id} className="vaccine-given-row">
+              <input type="checkbox" checked={ticked.has(v.id)} onChange={(event) => toggle(v.id, event.target.checked)} />
+              <span>
+                <strong>{vaccineName(v, language)}{v.dose && <em> · {doseLabel(v.dose)}</em>}</strong>
+                <small>{t("suggestedOn", { date: fmt(v.dueDate, language) })}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+      <p className="vaccine-given-hint">{t("askUnticked")}</p>
+      <p className="vaccine-given-hint">{t("askDoctor")}</p>
+      <div className="stack">
+        <button className="primary-button" type="submit" disabled={busy}>{busy ? t("making") : t("askSave")}</button>
+        <button className="secondary-button" type="button" disabled={busy} onClick={() => void save(false)}>{ticked.size ? t("askNotSureTicked") : t("askNotSure")}</button>
+      </div>
+    </form>
   );
 }
 
@@ -182,28 +266,33 @@ export function VaccinesScreen({ go, recipient }: { go: (screen: "family") => vo
   const [open, setOpen] = useState<Vaccine | null>(null);
   const [editingDob, setEditingDob] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [asking, setAsking] = useState(false);
   const recipientId = recipient?.id;
-  const refresh = async () => {
-    if (!recipientId) return;
+  const refresh = async (): Promise<Vaccine[] | null> => {
+    if (!recipientId) return null;
     try {
       const [i, l] = await Promise.all([loadChild(recipientId), loadVaccines(recipientId)]);
       setInfo(i); setList(l); setError(false);
-    } catch { setError(true); }
+      return l;
+    } catch { setError(true); return null; }
   };
-  useEffect(() => { setInfo(null); setList(null); void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recipientId]);
+  useEffect(() => { setInfo(null); setList(null); setAsking(false); void refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [recipientId]);
   if (!recipient) return null;
   const call = parentCall(recipient, language);
   const ready = info !== null && list !== null;
   const needsSetup = ready && (!info.guardianConfirmedAt || !info.dob || list.length === 0);
 
   const card = (v: Vaccine) => (
-    <button key={v.id} type="button" className={`vaccine-card ${v.status}`} onClick={() => setOpen(v)}>
+    <button key={v.id} type="button" className={`vaccine-card ${v.status}${v.askIfGiven ? " ask" : ""}`} onClick={() => setOpen(v)}>
       <span className="vaccine-icon" aria-hidden="true"><Icon name={v.status === "given" ? "check" : "calendar"} size={18} /></span>
       <span className="vaccine-body">
         <strong>{vaccineName(v, language)}{v.dose && <em> · {doseLabel(v.dose)}</em>}</strong>
         <small>
-          {v.status === "given" && v.givenOn ? t("givenOn", { date: fmt(v.givenOn, language) })
+          {v.status === "given" && v.givenDateUnknown ? t("givenNoDate")
+            : v.status === "given" && v.givenOn ? t("givenOn", { date: fmt(v.givenOn, language) })
             : v.status === "not_given" ? t("notGiven")
+            : v.status === "overdue" && v.askIfGiven ? t("suggestedAsk", { date: fmt(v.dueDate, language) })
+            : v.status === "overdue" ? t("overdueSince", { date: fmt(v.dueDate, language) })
             : t("dueOn", { date: fmt(v.dueDate, language) })}
           {v.dueDateByFamily && v.status !== "given" && v.status !== "not_given" ? ` · ${t("changedByFamily")}` : ""}
         </small>
@@ -211,7 +300,10 @@ export function VaccinesScreen({ go, recipient }: { go: (screen: "family") => vo
       <Icon name="chevron" size={18} />
     </button>
   );
-  const overdue = (list ?? []).filter((v) => v.status === "overdue");
+  // Past their date: "ask" until the family said "not given yet" (never called overdue before that); "overdue" after.
+  const pastOpen = (list ?? []).filter((v) => v.status === "overdue");
+  const ask = pastOpen.filter((v) => v.askIfGiven);
+  const overdue = pastOpen.filter((v) => !v.askIfGiven);
   const soon = (list ?? []).filter((v) => v.status === "due_soon");
   const later = (list ?? []).filter((v) => v.status === "later");
   const done = (list ?? []).filter((v) => v.status === "given" || v.status === "not_given");
@@ -231,7 +323,10 @@ export function VaccinesScreen({ go, recipient }: { go: (screen: "family") => vo
       {ready && !info.isSelf && (info.careType === null || info.careType === "child") && (
         <>
           {(needsSetup || editingDob)
-            ? <ChildSetup recipient={recipient} info={info} onDone={() => { setEditingDob(false); void refresh(); }} onCancel={editingDob ? () => setEditingDob(false) : undefined} />
+            ? <ChildSetup recipient={recipient} info={info} onCancel={editingDob ? () => setEditingDob(false) : undefined}
+                onDone={() => { setEditingDob(false); void refresh().then((l) => { if (l?.some((v) => v.askIfGiven)) setAsking(true); }); }} />
+            : asking && pastOpen.length > 0
+            ? <GivenEarlierStep recipient={recipient} doses={pastOpen} onDone={(saved) => { setAsking(false); if (saved) void refresh(); }} />
             : (
               <>
                 <div className="vaccine-dob">
@@ -242,7 +337,23 @@ export function VaccinesScreen({ go, recipient }: { go: (screen: "family") => vo
                   {t("safety", { edition: info.edition, call })}
                   {!info.reviewedByPaediatrician && <strong> {t("notReviewed")}</strong>}
                 </p>
-                {overdue.length > 0 && <section className="vaccine-section overdue" aria-labelledby="v-overdue"><h2 id="v-overdue">{t("overdue")}</h2>{overdue.map(card)}</section>}
+                {ask.length > 0 && (
+                  <section className="vaccine-section ask" aria-labelledby="v-ask">
+                    <h2 id="v-ask">{t("askSection")}</h2>
+                    <div className="vaccine-ask-banner">
+                      <p>{t("askBanner")}</p>
+                      <button type="button" className="primary-button" onClick={() => setAsking(true)}>{t("askButton")}</button>
+                    </div>
+                    {ask.map(card)}
+                  </section>
+                )}
+                {overdue.length > 0 && (
+                  <section className="vaccine-section overdue" aria-labelledby="v-overdue">
+                    <h2 id="v-overdue">{t("overdue")}</h2>
+                    {overdue.map(card)}
+                    {ask.length === 0 && <button type="button" className="inline-link vaccine-ask-link" onClick={() => setAsking(true)}>{t("askEdit")}</button>}
+                  </section>
+                )}
                 <section className="vaccine-section" aria-labelledby="v-soon"><h2 id="v-soon">{t("dueSoon")}</h2>{soon.length ? soon.map(card) : <p className="vaccine-empty">{t("emptyNext")}</p>}</section>
                 {laterGroups.length > 0 && (
                   <section className="vaccine-section" aria-labelledby="v-later">
