@@ -534,5 +534,7 @@ Idea from Dr. Deepak Birla (2026-11-05): parents and home helpers who cannot rea
 The buddy confirmed the medicine photos and report files of the old Mumbai project were not copied before the move to Sydney.
 Only the owner's own family/test data is affected. Clean-up: count the rows whose file is missing (medicines.photo_url not in
 storage.objects bucket `medicine-photos`; document_files.path not in bucket `reports`), then clear those photo links and delete report
-entries whose files are all gone. `supabase/maintenance/copy_storage.mjs` is no longer needed for this.
+entries whose files are all gone.
+- [x] DONE 2026-11-05 on Sydney: 6 medicine photo links cleared (Fur-XT, MGD3, Rekfa, Ecosprin 150, Argipreg, Carich) and 2 reports
+      deleted ("Logo", "Office"); all of them pointed to lost files. Migration 0042 (pill colour/shape columns) applied on Sydney too. `supabase/maintenance/copy_storage.mjs` is no longer needed for this.
 
