@@ -141,8 +141,9 @@ tests: `docs/java-tests.md`.
 
 Known gaps: a sender the gateway cannot turn into a phone number (`@lid` without a number) is ignored, even if it says STOP; the gateway
 never retries, so a 500 loses that reply; delivery failures are not visible (status maps errors to PENDING); real-phone behaviour is
-untested; `/alerts/whatsapp/request` (caregiver WhatsApp-alert opt-in from the web app) was removed, so that request does not work yet.
-**Not ported yet (needed for parity with the old Python flow):** WhatsApp alerts to caregivers (missed dose / no check-in), escalation
+untested. **Update (branch `family-alerts`, local only):** `/alerts/whatsapp/request` and WhatsApp alerts to caregivers are ported
+(see "WhatsApp alerts to the family" in `docs/java-whatsapp-replies.md`).
+**Not ported yet (needed for parity with the old Python flow):** escalation
 ladder, love loop, appointment reminders, delivery-failure detection, medicine photos in reminders, one grouped message per time slot.
 The Python spec: `api/app/services/{scheduler,inbound,appointments,messaging}.py`, `api/app/whatsapp/templates.py`, `docs/escalation.md`,
 `docs/scheduler.md`, `docs/slot-reminders.md`, `docs/love-loop.md`.

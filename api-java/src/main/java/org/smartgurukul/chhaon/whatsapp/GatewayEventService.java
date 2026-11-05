@@ -3,6 +3,7 @@ package org.smartgurukul.chhaon.whatsapp;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.scheduler.SchedulerService;
 import org.smartgurukul.chhaon.whatsapp.reply.CircleNotifier;
 import org.smartgurukul.chhaon.whatsapp.reply.InboundMessage;
 import org.smartgurukul.chhaon.whatsapp.reply.Intent;
@@ -49,15 +50,17 @@ public class GatewayEventService {
     private final ReplyHandlers handlers;
     private final CircleNotifier notifier;
     private final WhatsAppSender sender;
+    private final SchedulerService scheduler;
 
     public GatewayEventService(TransactionTemplate tx, JdbcTemplate jdbc, ReplyRouter router, ReplyHandlers handlers,
-                               CircleNotifier notifier, WhatsAppSender sender) {
+                               CircleNotifier notifier, WhatsAppSender sender, SchedulerService scheduler) {
         this.tx = tx;
         this.jdbc = jdbc;
         this.router = router;
         this.handlers = handlers;
         this.notifier = notifier;
         this.sender = sender;
+        this.scheduler = scheduler;
     }
 
     /** @return a short outcome label (for tests and logs), never anything personal. */
@@ -119,6 +122,9 @@ public class GatewayEventService {
         }
         if (replies == null) return "duplicate";
         send(replies);
+        // A reply can create a family notification ("call me", STOP): its WhatsApp alert goes out now, not at the next tick.
+        // After the commit, best effort, only while the scheduler is on (see SchedulerService.deliverAlertsNow).
+        scheduler.deliverAlertsNow();
         log.info("inbound reply handled from {} intent={} replies={}", WhatsAppSender.mask(phone), intent, replies.size());
         return "handled:" + intent;
     }

@@ -56,7 +56,8 @@ class SchedulerHeartbeatTest extends DbTest {
             }
         };
         SchedulerService withBrokenHeartbeat =
-                new SchedulerService(broken, wa, false, 60, 180, 120, 24, "");
+                new SchedulerService(broken, wa, new org.smartgurukul.chhaon.whatsapp.AlertDelivery(broken, wa, 6, 3, 6),
+                        false, 60, 180, 120, 24, "");
 
         Map<String, Integer> counters = withBrokenHeartbeat.tick(f.recipientId());
 

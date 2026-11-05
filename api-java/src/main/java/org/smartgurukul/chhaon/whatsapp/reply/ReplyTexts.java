@@ -60,6 +60,20 @@ public final class ReplyTexts {
                 : "Chhaon alerts are on again. Reply STOP to turn them off.";
     }
 
+    /** A caregiver typed 2 to "turn on alerts?". */
+    public static String alertsDeclined(String lang) {
+        return hi(lang)
+                ? "कोई बात नहीं 🙏 छाँव अलर्ट बंद रहेंगे। मन बदले तो ऐप में फिर से चालू कर सकते हैं।"
+                : "No problem 🙏 Chhaon alerts stay off. If you change your mind, you can turn them on in the app.";
+    }
+
+    /** START from a number that only had alerts asked (not a parent, never confirmed): it may be asked again now. */
+    public static String alertsMayAskAgain(String lang) {
+        return hi(lang)
+                ? "ठीक है 🙏 अब आप ऐप में WhatsApp अलर्ट फिर से चालू कर सकते हैं।"
+                : "Okay 🙏 You can now turn on WhatsApp alerts again in the app.";
+    }
+
     // ---- new for typed replies
 
     /** After a dose was recorded. {@code medicine} is the parent's own medicine name, shown back so they know what was noted. */

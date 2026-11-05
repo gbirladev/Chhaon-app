@@ -2,8 +2,10 @@ package org.smartgurukul.chhaon.scheduler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,9 +28,9 @@ import java.util.UUID;
  * a guarded conditional UPDATE (claim), so overlapping ticks never double-act. Uses the privileged
  * app DB connection (RLS-bypassing), matching the original service_role scheduler.
  *
- * WhatsApp sends go through {@link WhatsAppSender} (dry-run until that port lands). Not yet ported:
- * escalation ladder, alert delivery to caregivers' WhatsApp, appointment reminders, love loop,
- * slot grouping, and the inbound "Taken"/checkin reply transitions (WhatsApp webhook port).
+ * WhatsApp sends go through {@link WhatsAppSender} (dry-run while no gateway URL is set). The last step drains the
+ * caregiver alert outbox ({@link AlertDelivery}). Not yet ported: escalation ladder, appointment reminders, love loop,
+ * slot grouping of the reminder itself.
  */
 @Service
 public class SchedulerService {
@@ -37,6 +39,8 @@ public class SchedulerService {
 
     private final JdbcTemplate jdbc;
     private final WhatsAppSender wa;
+    /** null = no WhatsApp alerts to caregivers (tests that build the service by hand). */
+    private final AlertDelivery alerts;
 
     private final boolean enabled;
     private final int doseMissedMinutes;
@@ -48,8 +52,16 @@ public class SchedulerService {
     /** true when chhaon.scheduler.only-recipient holds something that is neither empty, "all" nor a recipient id: then NOTHING runs. */
     private final boolean onlyRecipientInvalid;
 
+    /** Without caregiver alerts (tests). */
+    public SchedulerService(JdbcTemplate jdbc, WhatsAppSender wa, boolean enabled, int doseMissedMinutes, int checkinMissedMinutes,
+                            int checkinStartWindowMinutes, int horizonHours, String onlyRecipient) {
+        this(jdbc, wa, null, enabled, doseMissedMinutes, checkinMissedMinutes, checkinStartWindowMinutes, horizonHours, onlyRecipient);
+    }
+
+    @Autowired
     public SchedulerService(JdbcTemplate jdbc,
                             WhatsAppSender wa,
+                            AlertDelivery alerts,
                             @Value("${chhaon.scheduler.enabled:false}") boolean enabled,
                             @Value("${chhaon.scheduler.dose-missed-minutes:60}") int doseMissedMinutes,
                             @Value("${chhaon.scheduler.checkin-missed-minutes:180}") int checkinMissedMinutes,
@@ -58,6 +70,7 @@ public class SchedulerService {
                             @Value("${chhaon.scheduler.only-recipient:}") String onlyRecipient) {
         this.jdbc = jdbc;
         this.wa = wa;
+        this.alerts = alerts;
         this.enabled = enabled;
         this.doseMissedMinutes = doseMissedMinutes;
         this.checkinMissedMinutes = checkinMissedMinutes;
@@ -116,9 +129,32 @@ public class SchedulerService {
         step(counters, "doses_missed", () -> markMissedDoses(scope));
         step(counters, "checkins_sent", () -> sendCheckins(scope));
         step(counters, "checkins_missed", () -> markMissedCheckins(scope));
+        // LAST, so the alerts created above go out in this same tick. Its failures never touch the steps above.
+        if (alerts != null) step(counters, "alerts_sent", () -> deliverAlerts(scope, counters));
         recordHeartbeat();
         log.info("tick(scope={}) {}", scope, counters);
         return counters;
+    }
+
+    private int deliverAlerts(UUID scope, Map<String, Integer> counters) {
+        Map<String, Integer> r = alerts.deliver(scope);
+        r.forEach((k, v) -> {
+            if (!"alerts_sent".equals(k)) counters.merge(k, v, Integer::sum);
+        });
+        return r.getOrDefault("alerts_sent", 0);
+    }
+
+    /**
+     * Sends waiting caregiver alerts now instead of at the next tick (called right after a parent's reply created one, such
+     * as "call me"). Same switch and scope as the tick: nothing at all while the scheduler is off. Never throws.
+     */
+    public void deliverAlertsNow() {
+        if (alerts == null || !enabled || onlyRecipientInvalid) return;
+        try {
+            alerts.deliver(onlyRecipient);
+        } catch (Exception e) {
+            log.warn("delivering alerts right after a reply failed: {}", e.getClass().getSimpleName());
+        }
     }
 
     /**
@@ -233,22 +269,31 @@ public class SchedulerService {
         List<Object> p = new ArrayList<>();
         p.add(doseMissedMinutes);
         // NOTE: escalation ladder not ported yet; escalating parents are not excluded here.
-        String sql = "select de.id dose_id, r.circle_id, r.is_self, r.opted_out_at, m.recipient_id, m.id medicine_id " +
+        String sql = "select de.id dose_id, de.scheduled_at, r.circle_id, r.is_self, r.opted_out_at, m.recipient_id, m.id medicine_id " +
                 "from dose_events de join medicine_schedules s on s.id=de.schedule_id " +
                 "join medicines m on m.id=s.medicine_id join care_recipients r on r.id=m.recipient_id " +
                 "where de.status='sent' and de.sent_at <= now() - make_interval(mins => ?)" +
-                scopeClause(scope, p, "r");
+                scopeClause(scope, p, "r") + " order by de.scheduled_at, m.name";
         int missed = 0;
+        // Doses of one parent due at the same moment that go missed together are ONE alert ("3 medicines"), like Python:
+        // three tablets at 8:00 must not become three WhatsApp messages to every caregiver.
+        Map<String, List<Map<String, Object>>> slots = new LinkedHashMap<>();
         for (Map<String, Object> row : jdbc.queryForList(sql, p.toArray())) {
             UUID doseId = (UUID) row.get("dose_id");
             if (jdbc.update("update dose_events set status='missed' where id=? and status='sent'", doseId) == 1) {
                 missed++;
-                if (row.get("opted_out_at") == null && !Boolean.TRUE.equals(row.get("is_self"))) {
-                    notifyCircle((UUID) row.get("circle_id"), "dose_missed",
-                            json("recipient_id", row.get("recipient_id"), "medicine_id", row.get("medicine_id"),
-                                    "dose_event_id", doseId));
-                }
+                slots.computeIfAbsent(row.get("recipient_id") + "|" + row.get("scheduled_at"), k -> new ArrayList<>()).add(row);
             }
+        }
+        for (List<Map<String, Object>> rows : slots.values()) {
+            Map<String, Object> first = rows.get(0);
+            if (first.get("opted_out_at") != null || Boolean.TRUE.equals(first.get("is_self"))) continue;
+            String payload = rows.size() > 1
+                    ? json("recipient_id", first.get("recipient_id"), "medicine_id", first.get("medicine_id"),
+                            "dose_event_id", first.get("dose_id"), "count", rows.size())
+                    : json("recipient_id", first.get("recipient_id"), "medicine_id", first.get("medicine_id"),
+                            "dose_event_id", first.get("dose_id"));
+            notifyCircle((UUID) first.get("circle_id"), "dose_missed", payload);
         }
         return missed;
     }
@@ -354,6 +399,7 @@ public class SchedulerService {
             sb.append('"').append(kv[i]).append("\":");
             Object v = kv[i + 1];
             if (v == null) sb.append("null");
+            else if (v instanceof Integer) sb.append(v); // a JSON number (the web reads payload.count as a number)
             else sb.append('"').append(v).append('"');
         }
         return sb.append('}').toString();

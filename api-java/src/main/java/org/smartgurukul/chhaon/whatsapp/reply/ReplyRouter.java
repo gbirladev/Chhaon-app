@@ -15,6 +15,8 @@ import java.util.UUID;
  * <p>Priority (first match wins):
  * <ol>
  *   <li>STOP always wins (START too, for opting back in).</li>
+ *   <li>A caregiver's "turn on alerts?" question is open for this number and is the LAST question we asked on it
+ *       (see {@code alertQuestion}): yes / no (or a bare ok) answers it.</li>
  *   <li>A consent question is open for this number: yes / no (or a bare ok) answers it.</li>
  *   <li>The message QUOTES one of our messages (swipe-reply): its id equals the stored whatsapp_message_id of a dose
  *       reminder or a daily check-in, so it answers exactly that one.</li>
@@ -53,6 +55,9 @@ public class ReplyRouter {
 
     public record Consent(UUID recipientId, boolean agree) implements Route {}
 
+    /** A caregiver answered the "turn on alerts?" question we sent to their own number (1 = on, 2 = no). */
+    public record AlertOptIn(UUID profileId, boolean agree) implements Route {}
+
     /** Confirm a dose; {@code wholeSlot} confirms every dose of that parent due at the same moment. */
     public record Dose(UUID doseId, boolean wholeSlot, String via) implements Route {}
 
@@ -83,6 +88,12 @@ public class ReplyRouter {
         if (intent == Intent.START) {
             // Typing START under the consent question means "yes, start".
             return pending != null ? new Consent((UUID) pending.get("id"), true) : new Start();
+        }
+
+        // (1b) a caregiver's "turn on alerts?" question (the number may ALSO be a parent's number: see alertQuestion)
+        if (intent == Intent.YES || intent == Intent.ACK || intent == Intent.NO) {
+            Route alert = alertQuestion(m, intent, pending);
+            if (alert != null) return alert;
         }
 
         if (recipients.isEmpty()) return new Ignore("unregistered number");
@@ -164,6 +175,38 @@ public class ReplyRouter {
                         "where de.status = 'missed' and de.scheduled_at > now() - make_interval(hours => ?) " +
                         "and " + ACTIVE_OF_PHONE + " order by de.scheduled_at desc limit 1",
                 LATE_DOSE_HOURS, phone));
+    }
+
+    // ---------------------------------------------------------------- caregiver alert question
+
+    /**
+     * An open "turn on alerts?" question for this number: a caregiver asked for alerts on it ({@code profiles.alert_phone},
+     * {@code alert_requested_at} set) and it has not answered yet. Only 1 / yes / ok and 2 / no answer it.
+     *
+     * <p>The same number can also be a parent's number (a caregiver who added themselves, or test data with one phone everywhere).
+     * Rule: <b>the reply answers the question we asked LAST.</b> The alert question wins only when it was sent after every
+     * question still open for the parent on that number: a pending consent request, a dose reminder or check-in sent in the
+     * last {@value #SENT_DOSE_HOURS} h that is still waiting (or was marked missed). A swipe-reply that quotes a dose reminder
+     * or check-in always answers that message. A number in {@code phone_opt_outs} is never answered here.
+     */
+    private Route alertQuestion(InboundMessage m, Intent intent, Map<String, Object> pendingConsent) {
+        Map<String, Object> ask = firstOrNull(jdbc.queryForList(
+                "select id, alert_requested_at from profiles where alert_phone = ? and alert_requested_at is not null " +
+                        "and alert_confirmed_at is null and alert_consent_at is null order by alert_requested_at desc limit 1",
+                m.phone()));
+        if (ask == null || isOptedOut(m.phone())) return null;
+        Timestamp asked = (Timestamp) ask.get("alert_requested_at");
+        if (pendingConsent != null && ((Timestamp) pendingConsent.get("consent_requested_at")).after(asked)) return null;
+        if (m.quotedId() != null && routeQuoted(m, intent) != null) return null;
+        Timestamp lastParentQuestion = jdbc.queryForObject(
+                "select greatest(" +
+                        "(select max(de.sent_at) from dose_events de " + DOSE_JOIN +
+                        " where de.status in ('sent', 'missed') and de.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE + "), " +
+                        "(select max(c.sent_at) from checkins c join care_recipients r on r.id = c.recipient_id " +
+                        " where c.status in ('sent', 'missed') and c.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE + "))",
+                Timestamp.class, SENT_DOSE_HOURS, m.phone(), CHECKIN_HOURS, m.phone());
+        if (lastParentQuestion != null && lastParentQuestion.after(asked)) return null;
+        return new AlertOptIn((UUID) ask.get("id"), intent != Intent.NO);
     }
 
     // ---------------------------------------------------------------- quote
