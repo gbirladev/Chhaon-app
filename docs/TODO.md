@@ -538,3 +538,21 @@ entries whose files are all gone.
 - [x] DONE 2026-11-05 on Sydney: 6 medicine photo links cleared (Fur-XT, MGD3, Rekfa, Ecosprin 150, Argipreg, Carich) and 2 reports
       deleted ("Logo", "Office"); all of them pointed to lost files. Migration 0042 (pill colour/shape columns) applied on Sydney too. `supabase/maintenance/copy_storage.mjs` is no longer needed for this.
 
+
+## Privacy: "Download my data" / "Delete my account" / "Delete this parent" ported to Java (2026-11-05, branch `privacy-port`, NOT pushed)
+`POST /privacy/delete-account`, `POST /privacy/recipients/{id}/delete` and `GET /privacy/export` now exist in `api-java/.../privacy/`
+(same paths, bodies and answers as the Python `api/app/routes/privacy.py`). Database rows are erased exactly as before
+(`erase_caregiver` + deleting the profile, which also removes the password credential, notifications and pending login codes).
+- [ ] **Stored files are NOT erased yet.** The Java backend has no Supabase Storage access (no Supabase URL / service-role key
+      in its settings), so when a parent or an account is deleted these files stay in the buckets, unreachable but not gone:
+      `medicine-photos/<recipient_id>/...`, `reports/<recipient_id>/...` (wallet documents and report photos/PDFs), and
+      `feedback/<user_id>/...` (feedback screenshots; their links in `feedback.images` ARE cleared). Python deleted them first.
+      To finish this, the backend needs two settings (new GitHub secrets wired into the deploy like the others): `SUPABASE_URL`
+      (`https://utjgegiioflwnmesmgcv.supabase.co`) and `SUPABASE_SERVICE_ROLE_KEY` (Sydney dashboard, Project Settings, API; a
+      secret: never paste in chat or commit). Then port `_purge_folder` / `purge_recipient_files` from `api/app/services/privacy.py`
+      (Storage REST: `POST /storage/v1/object/list/<bucket>` with a prefix, then `DELETE /storage/v1/object/<bucket>` with the
+      paths), call it before the database delete, and also use it for the two `TODO(port storage)` spots in
+      `CareRecipientService.delete` and `MedicineService` (medicine photo). Files from before 2026-11-04 are already lost (see above).
+      Until then: on a deletion request, the owner can remove the folders by hand in the Sydney Storage dashboard.
+- [ ] The old Supabase Auth user (email login) is removed too, best effort (`delete from auth.users`); if the database user of the
+      backend may not do that, the erasure still succeeds and a warning is logged (no phone or health data in it).
