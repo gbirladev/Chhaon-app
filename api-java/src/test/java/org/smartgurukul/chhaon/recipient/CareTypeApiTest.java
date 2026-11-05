@@ -165,9 +165,20 @@ class CareTypeApiTest extends DbTest {
     }
 
     @Test
-    void unknownOrNotYetOfferedCareTypesAreRefused() throws Exception {
+    void aChildCanBeAdded() throws Exception {
         UUID user = owner();
-        for (String bad : new String[] {"child", "baby", "Pregnant", ""}) {
+        mvc.perform(post("/api/v1/recipients").header("Authorization", bearer(user)).contentType("application/json")
+                        .content(body(",\"careType\":\"child\"")))
+                .andExpect(status().isCreated());
+        String type = fx.jdbc().queryForObject(
+                "select r.care_type from care_recipients r join care_circles c on c.id = r.circle_id where c.created_by = ?", String.class, user);
+        assertThat(type).isEqualTo("child");
+    }
+
+    @Test
+    void unknownCareTypesAreRefused() throws Exception {
+        UUID user = owner();
+        for (String bad : new String[] {"baby", "Pregnant", "kid", ""}) {
             mvc.perform(post("/api/v1/recipients").header("Authorization", bearer(user)).contentType("application/json")
                             .content(body(",\"careType\":\"" + bad + "\"")))
                     .andExpect(status().isBadRequest());

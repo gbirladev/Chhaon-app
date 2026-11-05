@@ -212,7 +212,7 @@ Check names and supplement names (`web/src/lib/pregnancyChecks.ts`; the suppleme
 
 Appointment reminders are not ported to the Java backend yet; their Hindi texts will need the same review once merged.
 
-## Part 7 (renumber at merge if taken): child profiles and vaccines (added 2026-11-05, branch `child-vaccines`)
+## Part 8: child profiles and vaccines (added 2026-11-05, branch `child-vaccines`)
 
 The Vaccines screen of a child's profile, the guardian confirmation when a child is added, and the in-app vaccine reminder.
 `vaccines.*` in `web/src/messages/hi.json`. {call} is what the family calls the child, {date} a date, {vaccine} a vaccine name, {n} a number.

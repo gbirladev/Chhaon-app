@@ -15,7 +15,7 @@ export function CareTypePicker({ value, onChange }: { value: CareType; onChange:
   const options: { type: CareType; emoji: string; label: string; soon?: boolean }[] = [
     { type: "older", emoji: "👴", label: t("careOlder") },
     { type: "pregnant", emoji: "🤰", label: t("carePregnant") },
-    { type: "child", emoji: "👶", label: t("careChild"), soon: true },
+    { type: "child", emoji: "👶", label: t("careChild") },
   ];
   return (
     <div className="field care-type">

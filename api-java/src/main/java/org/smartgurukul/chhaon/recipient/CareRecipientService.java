@@ -160,8 +160,8 @@ public class CareRecipientService {
 
     // --- helpers ---
 
-    /** Care types the app offers today. 'child' is in the database already but waits for step 3 (date of birth, guardian). */
-    private static final Set<String> OFFERED_CARE_TYPES = Set.of("older", "pregnant");
+    /** Care types the app offers. A child's date of birth and the guardian's confirmation are saved through ChildController. */
+    private static final Set<String> OFFERED_CARE_TYPES = Set.of("older", "pregnant", "child");
     /** A due date the family types must be plausible: up to about 10 months ahead, at most about 2 months past. */
     static final int DUE_DATE_MAX_AHEAD_DAYS = 300;
     static final int DUE_DATE_MAX_PAST_DAYS = 60;

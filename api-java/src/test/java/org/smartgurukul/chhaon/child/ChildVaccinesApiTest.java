@@ -38,6 +38,13 @@ class ChildVaccinesApiTest extends DbTest {
         return "Bearer " + jwt.issueToken(userId, false);
     }
 
+    /** A family whose person is a child (care_type, from the care-type feature). */
+    private Fixtures.Family childFamily() {
+        Fixtures.Family f = fx.family("en", false);
+        fx.jdbc().update("update care_recipients set care_type = 'child' where id = ?", f.recipientId());
+        return f;
+    }
+
     private static LocalDate today() {
         return LocalDate.now(ZoneId.of("Asia/Kolkata"));
     }
@@ -70,7 +77,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void theGuardianConfirmationIsNeededBeforeTheDateOfBirthOrAPlanIsSaved() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         LocalDate dob = today().minusMonths(2);
         mvc.perform(put("/api/v1/recipients/{id}/child", f.recipientId()).header("Authorization", bearer(f.userId()))
                         .contentType("application/json").content("{\"dob\":\"" + dob + "\"}"))
@@ -101,7 +108,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void aDateOfBirthMustBeAChildsAndTheOwnProfileIsNoChild() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         for (LocalDate bad : List.of(today().plusDays(2), today().minusYears(18), today().minusYears(40))) {
             mvc.perform(put("/api/v1/recipients/{id}/child", f.recipientId()).header("Authorization", bearer(f.userId()))
                             .contentType("application/json").content("{\"dob\":\"" + bad + "\",\"guardianConfirmed\":true}"))
@@ -115,7 +122,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void thePlanFollowsTheScheduleFileAndIsMadeOnlyOnce() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         LocalDate dob = today().minusDays(10);
         saveChild(f, dob);
         makePlan(f);
@@ -138,7 +145,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void theFamilyMarksGivenNotGivenAndChangesDatesAndTheirDatesAreNeverMoved() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         LocalDate dob = today().minusDays(10);
         saveChild(f, dob);
         makePlan(f);
@@ -176,7 +183,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void onlyTheFamilyCircleSeesOrChangesTheChildsData() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         saveChild(f, today().minusMonths(1));
         makePlan(f);
         Object bcg = dose(f, "bcg").get("id");
@@ -199,7 +206,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void theFamilyIsRemindedAFewDaysBeforeADueDateOnceAndAgainAfterADateChange() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         UUID aunt = fx.member(f, "Aunt");
         // Born 6 weeks minus 2 days ago: the 6-week doses are due in 2 days, the birth doses are past (not reminded).
         saveChild(f, today().minusWeeks(6).plusDays(2));
@@ -227,7 +234,7 @@ class ChildVaccinesApiTest extends DbTest {
 
     @Test
     void theDataExportIncludesTheVaccinePlan() throws Exception {
-        Fixtures.Family f = fx.family("en", false);
+        Fixtures.Family f = childFamily();
         saveChild(f, today().minusMonths(1));
         makePlan(f);
         String body = mvc.perform(get("/privacy/export").header("Authorization", bearer(f.userId())))

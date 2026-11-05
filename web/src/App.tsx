@@ -21,8 +21,8 @@ import { ThemeButton } from "./screens/Appearance";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
-import { NextVaccine, VaccinesLink, VaccinesScreen } from "./screens/Vaccines";
-import { vaccineDueText } from "./lib/vaccines";
+import { ChildDetailsFields, NextVaccine, VaccinesLink, VaccinesScreen } from "./screens/Vaccines";
+import { childDetailsErrors, loadChild, saveChildDetails, vaccineDueText, type ChildDetails } from "./lib/vaccines";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
 import { PlansScreen } from "./screens/Plans";
 import { StockField } from "./screens/StockField";
@@ -461,6 +461,17 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   const [careType, setCareType] = useState<CareType>(careTypeOf(recipient));
   const pregnant = !isSelf && careType === "pregnant";
   const [dueDate, setDueDate] = useState(recipient?.due_date ?? "");
+  // A child (migration 0045): date of birth + "I am the parent or legal guardian", saved through the child endpoint after the profile.
+  const child = !isSelf && careType === "child";
+  const [childDetails, setChildDetails] = useState<ChildDetails>({ dob: recipient?.dob ?? "", guardian: false });
+  const [guardianDone, setGuardianDone] = useState(false);
+  useEffect(() => {
+    if (!recipient || careTypeOf(recipient) !== "child") return;
+    loadChild(recipient.id).then((info) => {
+      if (info.guardianConfirmedAt) setGuardianDone(true);
+      if (info.dob) setChildDetails((d) => ({ ...d, dob: d.dob || (info.dob as string) }));
+    }).catch(() => { /* the form still works: the guardian box simply asks again */ });
+  }, [recipient]);
   const pk = (key: string) => (pregnant ? `${key}Pregnant` : key);   // the pregnancy wording of a label ("Her name")
   const chooseCareType = (next: CareType) => {
     setCareType(next);
@@ -520,6 +531,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (badTags(allergies)) found["f-allergies"] = t("errTags");
     // The due date is optional; when typed it must be plausible on HER calendar (the backend checks the same window).
     if (pregnant && dueDate && !dueDateOk(dueDate, todayIn(timezone))) found["f-dueDate"] = t("errDueDate");
+    if (child) Object.assign(found, childDetailsErrors(childDetails, todayIn(timezone), guardianDone, { errDob: tAll("vaccines.errDob"), errGuardian: tAll("vaccines.errGuardian") }));
     setErrors(found);
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
 
@@ -540,7 +552,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       bloodGroup: data.bloodGroup || null,
       ...(isSelf && !recipient ? { isSelf: true } : {}),
       // "" clears the due date; the backend also clears it whenever the profile is not a pregnancy.
-      ...(isSelf ? {} : { careType: pregnant ? "pregnant" : "older", dueDate: pregnant ? dueDate : "" }),
+      ...(isSelf ? {} : { careType: pregnant ? "pregnant" : child ? "child" : "older", dueDate: pregnant ? dueDate : "" }),
     };
     setBusy(true);
     let recipientId = recipient?.id;
@@ -557,6 +569,16 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       if (await sessionIsGone(err)) return expireSession();
       return setError(friendlyError(err, tAll));
     }
+    // A child's date of birth and the guardian's confirmation (needed before any of the child's health data is kept).
+    if (child && recipientId) {
+      try {
+        await saveChildDetails(recipientId, childDetails.dob);
+      } catch {
+        setBusy(false);
+        await onSaved(recipientId);
+        return setError(tAll("common.unexpected"));
+      }
+    }
     // A new parent, or a changed number, needs a fresh WhatsApp opt-in (the database resets consent on a number change).
     if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp)) void requestConsent(recipientId);
     await onSaved(recipientId);
@@ -568,6 +590,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       <form id="parent-form" className="form-card" onSubmit={saveProfile} noValidate>
         {!isSelf && <CareTypePicker value={careType} onChange={chooseCareType} />}
         {pregnant && <Field id="f-dueDate" label={t("dueDate")} error={errors["f-dueDate"]} hint={t("dueDateHint")}><input {...fieldProps("f-dueDate", errors)} name="dueDate" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></Field>}
+        {child && <ChildDetailsFields value={childDetails} onChange={setChildDetails} today={todayIn(zoneValue)} errors={errors} guardianLocked={guardianDone} />}
         <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
         {!isSelf && <div className="two-col">
           <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>
