@@ -5,6 +5,7 @@ import type { Database } from "./database.types";
 import { E164 } from "./countries";
 import { resolveLocalUrl } from "./hosts";
 import { localDate } from "./format";
+import { asPillColour, asPillShape, type PillColour, type PillShape } from "./pillLook";
 
 export type Recipient = Database["public"]["Tables"]["care_recipients"]["Row"];
 
@@ -50,6 +51,8 @@ export type Medicine = {
   active: boolean;
   photoUrl: string | null;
   critical: boolean;   // an unanswered reminder for this medicine alerts the family on the first miss (escalation ladder)
+  pillColour: PillColour | null;   // how the tablet looks, named in the WhatsApp reminder (migration 0042)
+  pillShape: PillShape | null;
 };
 
 export const PRESET_TIMES = { Morning: "08:00", Afternoon: "13:00", Night: "20:00" } as const;
@@ -106,6 +109,7 @@ type MedicineDto = {
   id: string; name: string; dose: string | null; times: string[]; stock: number | null;
   threshold: number | null; instructions: string | null; active: boolean; photoUrl: string | null;
   critical: boolean; createdAt: string;
+  pillColour?: string | null; pillShape?: string | null;   // absent from a backend older than the pill-look change
 };
 /** The old rows carried times as "HH:MM:SS"; keep that exact shape for the screens. */
 const toMedicine = (m: MedicineDto): Medicine => ({
@@ -113,6 +117,7 @@ const toMedicine = (m: MedicineDto): Medicine => ({
   times: (m.times ?? []).map((t) => (t.length === 5 ? `${t}:00` : t)),
   stock: m.stock ?? 0, threshold: m.threshold, instructions: m.instructions,
   active: m.active, photoUrl: m.photoUrl, critical: m.critical,
+  pillColour: asPillColour(m.pillColour), pillShape: asPillShape(m.pillShape),
 });
 
 export async function loadMedicines(recipientId: string): Promise<Medicine[]> {

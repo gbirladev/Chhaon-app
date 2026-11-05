@@ -80,6 +80,22 @@ layout rather than the old table rows.
 The rest of the Hindi page is the existing Hindi text of the home page (`web/public/home.html`, the `class="hi"` parts). The words people
 actually type into Google in Hindi matter here: if a reviewer knows better search words (for example दवा याद दिलाने वाला ऐप), tell us.
 
+## Part 4: tablet colour and shape (added 2026-11-05)
+
+The dose reminder now names how the tablet looks, on its own line under the medicine name. Colour words change with the noun
+(गोली is feminine, कैप्सूल masculine); please check that and the words themselves (`MessageTexts.pillLook` in the Java backend).
+
+| Example | Hindi |
+|---|---|
+| blue round tablet | 🔵 नीली गोल गोली |
+| blue capsule | 🔵 नीला कैप्सूल |
+| yellow long tablet | 🟡 पीली लंबी गोली |
+| red oval tablet | 🔴 लाल अंडाकार गोली |
+| green, no shape chosen | 🟢 रंग: हरा |
+
+The colours: सफ़ेद, पीला/पीली, नारंगी, गुलाबी, लाल, नीला/नीली, हरा/हरी, भूरा/भूरी, बैंगनी. App screen (`add.lookTitle`, `add.lookHint`,
+`medicine.look`): "दवा कैसी दिखती है? (ज़रूरी नहीं)", "इससे Papa बिना पढ़े सही दवा पहचान सकेंगे। WhatsApp रिमाइंडर में भी यही लिखा आएगा।", "पहचान".
+
 ## Still to come
 
 The alerts to caregivers (missed dose, no check-in) and appointment reminders are being ported to the Java backend; their Hindi texts will need the same review once merged.

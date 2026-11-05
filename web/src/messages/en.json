@@ -279,6 +279,12 @@
   },
   "add": {
     "title": "Add medicine",
+    "lookTitle": "How does it look? (optional)",
+    "lookHint": "Helps {call} pick the right one without reading. The WhatsApp reminder will say it too.",
+    "colour": "Colour",
+    "shape": "Shape",
+    "pillColours": { "white": "White", "yellow": "Yellow", "orange": "Orange", "pink": "Pink", "red": "Red", "blue": "Blue", "green": "Green", "brown": "Brown", "purple": "Purple" },
+    "pillShapes": { "round": "Round", "oval": "Oval", "long": "Long", "capsule": "Capsule" },
     "photoTitle": "Upload medicine strip photo",
     "photoHint": "Helps {call} recognise the right medicine",
     "openCamera": "Add photo",
@@ -635,6 +641,8 @@
   },
   "medicine": {
     "title": "Medicine details",
+    "look": "Looks like",
+    "noLook": "Not added",
     "dose": "Dosage",
     "times": "Timing",
     "instructions": "Instructions",
