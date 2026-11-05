@@ -629,3 +629,10 @@ else is shrunk). Only files in the person's own folder `medicine-photos/<recipie
       the text below it, and that a swipe-reply "1" to the picture marks the dose taken.
 - [ ] Possible duplicate: if the gateway sends the picture but its answer is lost (connection dropped after sending), the plain
       text follows too. Rare; acceptable (better twice than never).
+
+## Supabase legacy API keys retire in early 2027
+`SUPABASE_SERVICE_ROLE_KEY` (GitHub secret, set 2026-11-05) holds the LEGACY service_role JWT. The backend sends it as both `apikey` and
+`Authorization: Bearer` (MedicinePhotoStore, WalletStorage), which the new `sb_secret_...` keys do not support in the Bearer header.
+- [ ] Before early 2027: switch those calls to the new secret key (apikey header only, or mint a short service JWT), then move the secret.
+- Also `SUPABASE_JWT_SECRET` is Sydney's LEGACY JWT secret (HS256, "Previously used keys"); login hands out a Supabase-compatible token
+  signed with it. Do not revoke that key in the dashboard until the app no longer needs it.
