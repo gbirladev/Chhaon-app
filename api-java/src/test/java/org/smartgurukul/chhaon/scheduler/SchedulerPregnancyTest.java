@@ -44,7 +44,7 @@ class SchedulerPregnancyTest extends DbTest {
         String text = wa.sentTo(f.phone()).get(0).text();
         assertThat(text).matches("(?s)Good (morning|afternoon|evening) Shivani .*")
                 .contains("\nWeek 24 today 💛\nTime for your *Iron + folic acid* 💊")
-                .endsWith("Reply *1* once you have taken it ✅")
+                .endsWith("Reply *1* or 👍 once you have taken it ✅")
                 .doesNotContain("Papa").doesNotContain("Namaste");
     }
 
@@ -73,6 +73,6 @@ class SchedulerPregnancyTest extends DbTest {
         scheduler(f).scheduledTick();
 
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\n\nReply *1* once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\n\nReply *1* or 👍 once you have taken it ✅");
     }
 }

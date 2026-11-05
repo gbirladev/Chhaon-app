@@ -132,7 +132,7 @@ class ReminderReceiverTest extends DbTest {
         assertThat(asked.getResponse().getContentAsString()).contains("sent");
         String text = wa.sentTo(helper).get(0).text();
         assertThat(text).startsWith("Namaste Sunita ji 🙏").contains("Ganesh Sharma would like to send you reminders for Papa's medicines")
-                .contains("Reply *1* to start").contains("STOP").doesNotContain("http");
+                .contains("Reply *1* or 👍 to start").contains("STOP").doesNotContain("http");
 
         say(helper, "1");
         assertThat(receiver(id).get("consent_at")).isNotNull();

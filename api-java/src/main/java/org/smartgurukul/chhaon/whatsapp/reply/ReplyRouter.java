@@ -188,6 +188,73 @@ public class ReplyRouter {
                 LATE_DOSE_HOURS, phone));
     }
 
+    // ---------------------------------------------------------------- 👍 reaction (F6)
+
+    /** How long a reaction to a reminder / check-in still counts (on when it was sent). Older: ignored. */
+    static final int REACTION_HOURS = 12;
+
+    /**
+     * True when a reaction emoji means "yes": exactly the emoji a typed reply already reads as YES (👍 in any skin tone, ✅,
+     * ✔️, ☑️, 🆗) and nothing else. Deliberately NOT yes: ❤️ (affection, often put on any family message), 🙏 (thanks /
+     * namaste, read as THANKS when typed), 😂 😮 😢, and of course 👎 / ❌. Never letters or digits.
+     */
+    public static boolean reactionMeansYes(String emoji) {
+        return emoji != null && emoji.length() <= 16 && ReplyClassifier.wordsOf(emoji).isEmpty()
+                && ReplyClassifier.classify(emoji) == Intent.YES;
+    }
+
+    /**
+     * What a 👍 reaction answers: ONLY the message it was put on ({@code m.quotedId()} = the reacted message id), never "the
+     * latest open question". Checked in this order:
+     * <ol>
+     *   <li>a consent request still open for this number (its id was remembered when it was sent, {@link #consentMarker}) -> agree;</li>
+     *   <li>a dose reminder sent to this number in the last {@value #REACTION_HOURS} h, still sent or missed -> taken (taken_late);</li>
+     *   <li>a daily check-in sent to this number in the last {@value #REACTION_HOURS} h, still sent or missed -> "I am fine".</li>
+     * </ol>
+     * Anything else (an old, answered or unknown message, a number that said STOP) is ignored without any reply. A reaction
+     * never starts messages again (START must be typed) and never asks for a call.
+     */
+    public Route routeReaction(InboundMessage m) {
+        String target = m.quotedId();
+        if (target == null) return new Ignore("reaction without a target");
+        List<Map<String, Object>> recipients = jdbc.queryForList(
+                "select id, consent_at, opted_out_at, consent_requested_at from care_recipients where whatsapp_phone = ? " +
+                        "order by consent_requested_at desc nulls last", m.phone());
+        if (recipients.isEmpty()) return new Ignore("unregistered number");
+        if (isOptedOut(m.phone()) || recipients.stream().allMatch(r -> r.get("opted_out_at") != null)) {
+            return new Ignore("number opted out");
+        }
+        for (Map<String, Object> r : recipients) {
+            if (r.get("consent_at") != null || r.get("opted_out_at") != null || r.get("consent_requested_at") == null) continue;
+            Integer n = jdbc.queryForObject("select count(*) from whatsapp_events where id = ?", Integer.class,
+                    consentMarker(target, (UUID) r.get("id")));
+            if (n != null && n > 0) return new Consent((UUID) r.get("id"), true);
+        }
+        Map<String, Object> dose = firstOrNull(jdbc.queryForList(
+                "select de.id from dose_events de " + DOSE_JOIN +
+                        "where de.whatsapp_message_id = ? and de.status in ('sent', 'missed') " +
+                        "and coalesce(de.sent_at, de.scheduled_at) > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE +
+                        " limit 1", target, REACTION_HOURS, m.phone()));
+        if (dose != null) return new Dose((UUID) dose.get("id"), false, "reaction");
+        if (checkinMessageIdsAvailable()) {
+            Map<String, Object> checkin = firstOrNull(jdbc.queryForList(
+                    "select c.id from checkins c join care_recipients r on r.id = c.recipient_id " +
+                            "where c.whatsapp_message_id = ? and c.status in ('sent', 'missed') " +
+                            "and c.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE + " limit 1",
+                    target, REACTION_HOURS, m.phone()));
+            if (checkin != null) return new Checkin((UUID) checkin.get("id"), false, "reaction");
+        }
+        return new Ignore("reaction to an unknown, old or answered message");
+    }
+
+    /**
+     * The {@code whatsapp_events} row that remembers which WhatsApp message asked a parent for consent (no migration needed:
+     * the table already holds non-inbound keys such as the help rate limit). Written by ConsentService after the send.
+     */
+    public static String consentMarker(String messageId, UUID recipientId) {
+        return "gw:out:consent:" + recipientId + ":" + messageId;
+    }
+
     // ---------------------------------------------------------------- caregiver alert question
 
     /**

@@ -96,7 +96,7 @@ public final class ReceiverTexts {
                         ? p + " का परिवार आपको यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहता है।"
                         : by + " आपको यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहते हैं।";
             }
-            return hello + body + "\n\nशुरू करने के लिए *1* लिखें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
+            return hello + body + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         String body;
         if (CAREGIVER.equals(reminderTo)) {
@@ -106,7 +106,7 @@ public final class ReceiverTexts {
                     + possessive(p) + " medicines here on WhatsApp.";
         }
         return "Namaste" + greet(language, reminderTo, receiverName) + " 🙏\n" + body
-                + "\n\nReply *1* to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
+                + "\n\nReply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 
     // ---------------------------------------------------------------- answers to the receiver's replies

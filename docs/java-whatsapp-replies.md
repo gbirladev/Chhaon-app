@@ -59,7 +59,7 @@ Capitals, full-width letters, spaces, zero-width characters, emoji and punctuati
 
 | Meaning | English | Hindi / Hinglish |
 |---|---|---|
-| Yes / taken / okay | `1`, `yes`, `taken`, `done`, ✅, 👍 | `1`, `१`, `हाँ`, `haan`, `ले ली`, `le li`, `liya`, `ली` |
+| Yes / taken / okay | `1`, `yes`, `taken`, `done`, ✅, 👍 (typed, or a 👍 reaction on the message: see below) | `1`, `१`, `हाँ`, `haan`, `ले ली`, `le li`, `liya`, `ली` |
 | Everything taken | `all taken` | `sab le li`, `सब ले ली` |
 | Check-in: I am okay | `I am okay`, `fine`, `all good` | `theek hoon`, `ठीक हूँ`, `सब ठीक है` |
 | No / not yet / call me | `2`, `no`, `not yet`, `call me`, `help`, `not well`, ❌ | `2`, `nahi`, `नहीं`, `phone karo`, `फोन करो`, `तबीयत खराब` |
@@ -106,6 +106,49 @@ check-in); and `help` with no check-in open gets the help text, the family is no
   opted_out | too_soon | too_many | no_phone [, "retry_after": seconds]}`; 502 if WhatsApp is unavailable. Limits come from the database function
   `claim_consent_request`: one request per number per 10 minutes (`chhaon.consent.resend-minutes`) across all families, 10 per caregiver per day
   (`chhaon.consent.requests-per-day`). A failed send does not count.
+
+## Reply with a 👍 reaction (F6, branch `f6-thumbs-reaction`)
+
+An older parent (or helper) can long-press our message and tap 👍. That counts exactly like typing `1` **for that message**.
+
+**Gateway (needs a gateway deploy, see `docs/buddy-handoff.md`).** Before this change the gateway dropped reactions:
+`processAndSaveMessage` listed `reactionMessage` among the "technical" types and returned before any webhook
+(`whatsapp-gateway/src/modules/whatsapp/store/index.ts`, the `ignoredTypes` list), and `extractMessageContent` in
+`src/lib/webhook.ts` has no reaction case (it would have been `type TEXT`, empty content, no reacted key). Now
+`src/lib/reaction.ts` (`extractReaction`, `reactionPayload`, tests in `reaction.test.ts`, `npm test`) and
+`onReactionReceived` in `webhook.ts` send, for a NEW reaction from someone else (never history sync, never our own):
+
+```
+{ "event": "message.received", "data": { "key": { "id": "<reaction id>", "remoteJid": "<sender>", "fromMe": false },
+  "from": "...", "sender": "...", "isGroup": false, "chatType": "PERSONAL", "type": "REACTION", "content": "👍",
+  "quoted": null,
+  "reaction": { "text": "👍", "removed": false, "key": { "id": "<id of the message reacted to>", "remoteJid": "...", "fromMe": true } } } }
+```
+
+Removing a reaction sends the same with `text: ""`, `removed: true`. Reactions are not stored in the gateway's message table.
+An old backend ignores these (`type != TEXT`), and the new backend works with the old gateway (it simply never gets one), so
+the two can be deployed in any order.
+
+**Backend** (`GatewayEventService.reaction`, `ReplyRouter.routeReaction`):
+
+* Counts as yes: exactly the emoji a typed reply already reads as yes: 👍 (any skin tone), ✅, ✔️, ☑️, 🆗
+  (`ReplyRouter.reactionMeansYes`, reuses `ReplyClassifier`).
+* Ignored on purpose: ❤️ (affection, put on any family message), 🙏 (thanks / namaste; typed 🙏 is also only "thanks"),
+  😂 😮 😢, 👎 / ❌ (never "not taken" or "call me" either: a reaction cannot ask for help), and a **removed** reaction
+  (it never undoes a "taken").
+* What it answers: only the reacted message id, never "the latest open question":
+  1. a consent request still open for that number (the request's message id is remembered at send time as a
+     `whatsapp_events` row `gw:out:consent:<recipient id>:<message id>`, no migration) -> agree;
+  2. a dose reminder (`dose_events.whatsapp_message_id`) sent to that number in the last 12 h, still `sent` / `missed` ->
+     `taken` / `taken_late`, stock used once (the same `ReplyHandlers` path as a typed `1`);
+  3. a check-in (`checkins.whatsapp_message_id`) sent in the last 12 h, still `sent` / `missed` -> "I am fine".
+  Anything else (unknown, older than 12 h, already answered, another number, a number that said STOP) is ignored with
+  **no reply and no help text**.
+* Idempotent: the reaction's own id is claimed (`gw:in:<id>`) in the same transaction; a 👍 after a typed `1` (or a second 👍)
+  finds the dose already taken and does nothing (no second stock use, no second thank-you).
+* A shared number (one helper for Papa and Mummy) is no problem: the reacted id says whose reminder it was.
+* Not covered: the caregiver's "turn on alerts?" question (its message id is not remembered; typing 1 works), consent
+  requests sent before this release (typing 1 works), LID-only senders (as for typed replies).
 
 ## WhatsApp alerts to the family (branch `family-alerts`)
 

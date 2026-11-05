@@ -92,6 +92,7 @@ public class GatewayEventService {
         if (key.path("fromMe").asBoolean(false)) return "ignored:from-me";
 
         String type = text(d, "type");
+        if ("REACTION".equalsIgnoreCase(type)) return reaction(d, id, remoteJid);
         String content = text(d, "content");
         if (type != null && !"TEXT".equalsIgnoreCase(type)) return "ignored:not-text";
         if (content == null) return "ignored:empty";
@@ -127,6 +128,47 @@ public class GatewayEventService {
         scheduler.deliverAlertsNow();
         log.info("inbound reply handled from {} intent={} replies={}", WhatsAppSender.mask(phone), intent, replies.size());
         return "handled:" + intent;
+    }
+
+    // ---------------------------------------------------------------- message.received, type REACTION
+
+    /**
+     * A long-press reaction on one of our messages (gateway change F6: {@code type "REACTION"}, {@code reaction.text},
+     * {@code reaction.key.id} = the reacted message's id). Only a "yes" emoji ({@link ReplyRouter#reactionMeansYes}) counts,
+     * and only for exactly the message it was put on ({@link ReplyRouter#routeReaction}). A removed reaction, any other
+     * emoji, or a reaction to a message we do not track is ignored silently: no help text, nothing undone.
+     * Same claim ({@code gw:in:<reaction id>}) and transaction as a typed reply.
+     */
+    private String reaction(JsonNode d, String id, String remoteJid) {
+        JsonNode r = d.path("reaction");
+        String emoji = text(r, "text");
+        if (emoji == null || r.path("removed").asBoolean(false)) return "ignored:reaction-removed";
+        String target = text(r.path("key"), "id");
+        if (target == null) return "ignored:reaction-no-target";
+        if (!ReplyRouter.reactionMeansYes(emoji)) return "ignored:reaction-emoji";
+
+        String phone = firstPhone(text(d, "from"), remoteJid, d.path("sender").isTextual() ? d.path("sender").asText() : null);
+        if (phone == null) {
+            log.warn("reaction ignored: sender has no phone number (LID only?) id={}", fingerprint(text(d, "from")));
+            return "ignored:no-phone";
+        }
+        InboundMessage message = new InboundMessage(id, phone, emoji, target);
+        List<OutboundReply> replies;
+        try {
+            replies = tx.execute(status -> {
+                if (!claim("gw:in:" + id)) return null; // duplicate delivery
+                return handlers.handle(router.routeReaction(message), message);
+            });
+        } catch (DataIntegrityViolationException rejected) {
+            tx.executeWithoutResult(s -> claim("gw:in:" + id));
+            log.warn("skipped a reaction the database rejected ({})", rejected.getClass().getSimpleName());
+            return "skipped:rejected";
+        }
+        if (replies == null) return "duplicate";
+        send(replies);
+        scheduler.deliverAlertsNow();
+        log.info("reaction handled from {} replies={}", WhatsAppSender.mask(phone), replies.size());
+        return "handled:REACTION";
     }
 
     private void send(List<OutboundReply> replies) {

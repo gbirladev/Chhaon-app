@@ -69,6 +69,21 @@ public class GatewayClient {
         return root;
     }
 
+    /**
+     * A long-press reaction (gateway change F6, whatsapp-gateway/src/lib/reaction.ts): the same envelope as a text,
+     * type REACTION, the emoji in content and reaction.text ("" = removed) and the reacted message's key.
+     */
+    public ObjectNode reaction(String messageId, String fromPhone, String emoji, String reactedMessageId) {
+        ObjectNode root = received(messageId, jid(fromPhone), emoji, null);
+        ObjectNode data = (ObjectNode) root.get("data");
+        data.put("type", "REACTION");
+        ObjectNode r = data.putObject("reaction");
+        r.put("text", emoji);
+        r.put("removed", emoji.isEmpty());
+        r.putObject("key").put("id", reactedMessageId).put("remoteJid", jid(fromPhone)).put("fromMe", true).putNull("participant");
+        return root;
+    }
+
     public ObjectNode status(String keyId, String status) {
         ObjectNode root = json.createObjectNode();
         root.put("event", "message.status");

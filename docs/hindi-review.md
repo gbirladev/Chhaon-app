@@ -362,3 +362,18 @@ New words understood as "given": diya, de diya, de di, दिया, दे द�
 | today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
 | today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
 | emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |
+
+## Part 10: reply with a 👍 reaction (added 2026-11-05, branch `f6-thumbs-reaction`)
+
+A parent (or helper) can now long-press our message and tap 👍 instead of typing 1. The reply line of each question says so.
+"लिखें" (write) became "भेजें" (send) where 👍 was added, because an emoji is sent, not written. Please check that this reads
+naturally and that "*1* या 👍 भेजें" is clear to an older reader.
+
+| What | Hindi (new) | English (new) | OK? |
+|---|---|---|---|
+| Dose reminder (and pregnancy reminder), last line | लेने के बाद *1* या 👍 भेजिए ✅ | Reply *1* or 👍 once you have taken it ✅ | |
+| Daily check-in (and pregnancy check-in), "fine" line | ठीक हैं तो *1* या 👍 भेजें 😊 | Reply *1* or 👍 if you are fine 😊 | |
+| Consent request (parent, "Me", helper) | शुरू करने के लिए *1* या 👍 भेजें ✅ | Reply *1* or 👍 to start ✅ | |
+
+Unchanged: "फ़ोन चाहिए तो *2* लिखें 📞", "नहीं चाहिए तो *2* लिखें", the answers we send back, and the caregiver's alert question
+(a reaction does not answer that one).

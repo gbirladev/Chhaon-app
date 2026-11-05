@@ -11,6 +11,7 @@
     "db:push": "prisma db push && prisma generate",
     "db:studio": "prisma studio",
     "make-admin": "node scripts/setup-admin.js",
+    "test": "tsx --test src/lib/reaction.test.ts",
     "postinstall": "patch-package"
   },
   "dependencies": {
