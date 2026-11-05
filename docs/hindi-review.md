@@ -362,3 +362,24 @@ New words understood as "given": diya, de diya, de di, दिया, दे द�
 | today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
 | today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
 | emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |
+
+## Part 10: pregnancy timeline home on Today (added 2026-11-05, branch `f7-pregnancy-home`)
+
+When the selected person is a pregnancy, Today shows her own home: week hero, today's supplements, a checks timeline. Keys in
+`pregnancyHome` (hi.json). It also reuses the Part 7 `pregnancy` texts (trimester, days to go, week windows, "अभी", "जोड़ें").
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| pregnancyHome.label | गर्भावस्था | PREGNANCY | |
+| pregnancyHome.weeksWord | हफ़्ता / हफ़्ते ("24 हफ़्ते · दूसरी तिमाही") | week / weeks ("24 weeks · 2nd trimester") | |
+| pregnancyHome.progress | 40 में से हफ़्ता {week} | Week {week} of 40 | |
+| pregnancyHome.dueOn | संभावित तारीख़ {date} | Due {date} | |
+| pregnancyHome.noDueTitle | हफ़्ते देखने के लिए डिलीवरी की तारीख़ डालें | Add the due date to see the weeks | |
+| pregnancyHome.noDueBody | यह तारीख़ डॉक्टर बताते हैं। उनकी जानकारी में डालने के लिए दबाएँ। | The doctor gives this date. Tap to add it to her details. | |
+| pregnancyHome.todayTitle | आज | Today | |
+| pregnancyHome.noMedicines | अभी कोई दवा या सप्लीमेंट नहीं जोड़ा गया है। | No medicines or supplements added yet. | |
+| pregnancyHome.timelineTitle | जाँचों की टाइमलाइन | Checks timeline | |
+| pregnancyHome.done | हो गई ("हो गई · हफ़्ता 20") | Done ("Done · Week 20") | |
+| pregnancyHome.reportInReports | रिपोर्ट, रिपोर्ट टैब में | Report in Reports | |
+| pregnancyHome.delivery | डिलीवरी | Delivery | |
+| pregnancyHome.footer | आम जाँचें — डॉक्टर से पक्का करें। यह डॉक्टरी सलाह नहीं है। | Common checks — confirm with your doctor. Not medical advice. | |

@@ -40,7 +40,7 @@ export function NextAppointment({ recipient, go }: { recipient: Recipient; go: (
   );
 }
 
-function AppointmentSheet({ recipient, existing, prefill, onClose, onSaved }: { recipient: Recipient; existing: Appointment | null; prefill?: CheckPrefill; onClose: () => void; onSaved: () => void }) {
+export function AppointmentSheet({ recipient, existing, prefill, onClose, onSaved }: { recipient: Recipient; existing: Appointment | null; prefill?: CheckPrefill; onClose: () => void; onSaved: () => void }) {
   const t = useTranslations("appointments");
   const language = useLocale() as Language;
   const toast = useToast();

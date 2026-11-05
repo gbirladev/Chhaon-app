@@ -43,7 +43,8 @@ import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import type { PillColour, PillShape } from "./lib/pillLook";
 import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
-import { CareTypePicker, PregnancyCard, SupplementChips } from "./screens/Pregnancy";
+import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
+import { PregnancyHome } from "./screens/PregnancyHome";
 import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
 import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
@@ -1089,7 +1090,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       <header className="home-header">
         <button className="parent-profile" aria-haspopup="dialog" onClick={() => setParentsOpen(true)}>
           <span className="initials-avatar" aria-hidden="true">{([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()}</span>
-          <span><small>{header.hello}</small><strong>{header.call} <Icon name="down" size={16} /></strong><em>{header.where}</em></span>
+          <span><small>{recipient && isPregnancy(recipient) ? t("pregnancyHome.label") : header.hello}</small><strong>{header.call} <Icon name="down" size={16} /></strong><em>{header.where}</em></span>
         </button>
         <div className="header-actions">
           <button className="language-button" aria-label={t("common.switchLanguageLabel")} onClick={() => setLanguage(language === "en" ? "hi" : "en")}>{t("common.switchLanguage")}</button>
@@ -1131,7 +1132,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
       {checkinCard()}
 
-      {recipient && isPregnancy(recipient) && <PregnancyCard recipient={recipient} language={language} onChecks={() => go("appointments")} />}
+      {/* A pregnancy gets her own home (feature 7); everyone else keeps the Today below unchanged. */}
+      {recipient && isPregnancy(recipient) ? <PregnancyHome recipient={recipient} language={language} doses={doses === null ? null : visibleDoses} dosesError={dataError} medicineCount={medicines.length} go={go} alerts={<AlertsCard compact />} /> : <>
 
       {recipient && <LoveCard recipient={recipient} call={call} />}
 
@@ -1159,6 +1161,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
           </div>
         )}
       </section>
+      </>}
     </main>
   );
 }
