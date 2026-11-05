@@ -26,6 +26,9 @@ Feature freeze after polls + admin Monitor; no new screens, themes or website wo
 - [ ] Burn-in: 7 days, owner's family + 5-10 friendly families, zero silent failures, then start marketing.
 - [ ] Meanwhile: "Join the first 50 families" waitlist on the website.
 - [ ] Long term: plan the move to Meta's WhatsApp API once families pay.
+- [ ] Admin Monitor, later additions (after a few days of use): canary status card (last canary reminder answered within 5 min);
+      poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
+      (amber at 70%); which migrations have run on Sydney (from the migration tracking table).
 
 ## WhatsApp replies lost after the number change (found and fixed 2026-11-05)
 
