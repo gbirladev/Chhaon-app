@@ -69,7 +69,7 @@ public class SupabaseCompatibleTokenService {
                 .claim("role", "authenticated")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(expirySeconds)))
-                .signWith(key)
+                .signWith(key, Jwts.SIG.HS256)   // Supabase verifies its legacy secret as HS256; never let the key length pick HS384/512
                 .compact();
     }
 }

@@ -139,14 +139,33 @@ public class OtpService {
 
         Optional<Profile> existing = profiles.findByPhone(phone);
         Profile profile = existing.orElseGet(() -> createProfile(phone, now));
-        // Our own JWT (APP_JWT_SECRET) — the app talks only to this API, so no Supabase-shaped token is needed.
+        // Our own JWT (APP_JWT_SECRET) for this API; plus a Supabase-compatible one for the app's direct Supabase calls.
         String token = jwt.issueToken(profile.getId(), profile.isAdmin());
         return new OtpLoginResponse(
                 token,
                 profile.getId().toString(),
                 profile.getName(),
                 profile.getPlan(),
-                existing.isEmpty());
+                existing.isEmpty(),
+                supabaseTokenFor(profile.getId()));
+    }
+
+    private SupabaseCompatibleTokenService supabaseTokens;
+
+    /** Optional: when present, login also hands out a Supabase-compatible token for the app's direct Supabase calls. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSupabaseTokens(SupabaseCompatibleTokenService supabaseTokens) {
+        this.supabaseTokens = supabaseTokens;
+    }
+
+    /** Never blocks login: no secret configured (or any error) means no Supabase token, and only direct Supabase calls fail. */
+    private String supabaseTokenFor(java.util.UUID userId) {
+        if (supabaseTokens == null) return null;
+        try {
+            return supabaseTokens.issue(userId);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private Profile createProfile(String phone, OffsetDateTime now) {
