@@ -2158,7 +2158,19 @@ export default function App() {
   };
   const afterLogin = async () => {
     const next = await refreshRecipient();
-    if (next === "error") return setLoadFailed(true);
+    if (next === "error") {
+      // The code was right (we hold a token), but the first data load failed. If we are offline, let them retry;
+      // if we are online it means the login token was not accepted — never strand them on the code screen, send
+      // them back to sign in with a clear message instead of a blank/"something went wrong" dead end.
+      if (navigator.onLine) {
+        clearToken();
+        setSignedIn(false);
+        go("welcome", { replace: true });
+        showToast(MESSAGES[language].common.sessionExpired);
+        return;
+      }
+      return setLoadFailed(true);
+    }
     setSignedIn(true);
     go(next ? "today" : "profile", { replace: true });
   };
