@@ -107,6 +107,35 @@ check-in); and `help` with no check-in open gets the help text, the family is no
   `claim_consent_request`: one request per number per 10 minutes (`chhaon.consent.resend-minutes`) across all families, 10 per caregiver per day
   (`chhaon.consent.requests-per-day`). A failed send does not count.
 
+## WhatsApp alerts to the family (branch `family-alerts`)
+
+**Sign-up.** `POST /alerts/whatsapp/request` (login), body `{"phone": "+91..."}` (E.164, else 422). Answers `{"status": sent | opted_out |
+too_soon | too_many [, "retry_after"]}`, 502 if WhatsApp is down (nothing recorded, the attempt does not count). Same limits as the parent
+consent request (`claim_consent_request`). It sends `MessageTexts.alertOptIn` to that number and then sets `profiles.alert_phone`,
+`alert_requested_at`, clears `alert_confirmed_at` / `alert_consent_at` (a new number is a new person). Turning off in the app is the
+existing `PATCH /me {alertsOff: true}`.
+
+**The caregiver's answer** (ReplyRouter `AlertOptIn`, checked right after STOP/START): `1` / yes / ok / 👍 turns alerts on
+(`alert_consent_at`, `alert_confirmed_at`); `2` / no closes the question; for a number that is nobody's parent number it is also put in
+`phone_opt_outs` (never asked again until it types START, which then answers "you can turn alerts on again in the app"). STOP turns
+alerts off (and closes an unanswered question); START restores alerts that were once confirmed.
+
+**One number for a caregiver AND a parent:** the reply answers the question we asked LAST. The alert question wins only when it was sent
+after every question still open for the parent on that number (a pending consent request, a dose reminder or check-in sent in the last
+12 h still waiting or marked missed). A swipe-reply quoting a reminder or check-in always answers that message. `2` to the alert question
+on a parent's number never opts the number out (the parent's reminders go on). The "alerts on" reply adds "Reply 1 again for the next
+medicine" when a reminder is still waiting on that number.
+
+**Delivery.** The `notifications` table is the outbox (`whatsapp_sent_at`, `whatsapp_skipped_at`, `whatsapp_attempts`, migration
+20261011000015, no new migration). `AlertDelivery` runs as the LAST step of every tick (and right after a webhook reply, only while the
+scheduler is on, so "call me" goes out at once). Types: `dose_missed` (several medicines due together = one alert with a count, like
+Python), `checkin_missed`, `checkin_call_requested`, `refill_needed`, `out_of_stock` (database trigger), `reminder_not_sent`,
+`parent_stopped`, `parent_declined`. One WhatsApp text per caregiver of the circle whose own number confirmed; everyone else's copy is
+marked skipped. Claimed before sending (no duplicates), a failed send is retried up to 3 times then skipped, never sent when older than
+6 h, at most 6 per caregiver per hour (`chhaon.alerts.max-attempts`, `.lookback-hours`, `.per-hour`). The "Me" profile gets no alerts
+about itself except low stock / out of stock. No quiet hours (Python had none). The in-app notification is never lost: only the three
+WhatsApp columns change. Texts: `AlertTexts` (EN/HI, no links or numbers, end with "Reply STOP to turn off these alerts.").
+
 ## Environment and registration
 
 | Variable | Meaning |
@@ -133,7 +162,7 @@ written by every tick. Neither was applied anywhere except the throwaway test da
 
 ## Not ported yet
 
-Appointment reminders; WhatsApp alerts to caregivers (outbox, `/alerts/whatsapp/request` and the caregiver's "1" to confirm); escalation (Safety net);
+Appointment reminders; escalation (Safety net);
 love loop; slot grouping in the reminder itself (one message per medicine is sent; "all taken" confirms the slot); `/cron/tick`-style secret endpoint
 (the admin tick exists); delivery-failure detection; `parent_responded` after a family alert; distress words when no check-in is open;
 photo of the medicine in reminders (text only).

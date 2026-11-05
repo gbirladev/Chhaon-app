@@ -89,6 +89,37 @@ public class ConsentService {
         return new Result("sent", null);
     }
 
+    /**
+     * Asks a caregiver's own number to confirm WhatsApp alerts (port of {@code request_opt_in}): sent | opted_out | too_soon |
+     * too_many. The same limits as a parent's consent request (one request per number per window across all families, a daily
+     * cap per caregiver). A new number is a new person: alerts stay OFF until THIS number types 1 (ReplyRouter.AlertOptIn).
+     */
+    public Result requestAlertOptIn(UUID userId, String phone) {
+        if (phoneOptedOut(phone)) return new Result("opted_out", null); // that number said STOP / no: only it can lift that (START)
+        JsonNode claim = claim(phone, userId);
+        String status = claim.path("status").asText();
+        if (!"ok".equals(status)) {
+            return new Result(status, "too_soon".equals(status) ? retryAfter(phone) : null);
+        }
+        UUID logged = UUID.fromString(claim.path("id").asText());
+        Map<String, Object> profile = firstOrNull(jdbc.queryForList("select name, language from profiles where id = ?", userId));
+        String name = profile == null || profile.get("name") == null ? "" : ((String) profile.get("name")).trim();
+        String language = profile == null ? "en" : (String) profile.get("language");
+        String text = MessageTexts.alertOptIn(language, name.isEmpty() ? "" : name.split("\\s+")[0]);
+        try {
+            wa.send(phone, text);
+        } catch (Exception e) {
+            jdbc.update("delete from consent_requests where id = ?", logged); // the attempt does not count
+            String reason = WhatsAppSender.failureReason(e);
+            log.warn("alert opt-in could not be sent to {} ({})", WhatsAppSender.mask(phone), reason);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "WhatsApp is unavailable. Try again shortly. [" + reason + "]");
+        }
+        // Recorded only once the question really went out. Alerts stay off until this number answers.
+        jdbc.update("update profiles set alert_phone = ?, alert_requested_at = now(), alert_confirmed_at = null, " +
+                "alert_consent_at = null where id = ?", phone, userId);
+        return new Result("sent", null);
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private JsonNode claim(String phone, UUID userId) {

@@ -96,6 +96,38 @@ The dose reminder now names how the tablet looks, on its own line under the medi
 The colours: सफ़ेद, पीला/पीली, नारंगी, गुलाबी, लाल, नीला/नीली, हरा/हरी, भूरा/भूरी, बैंगनी. App screen (`add.lookTitle`, `add.lookHint`,
 `medicine.look`): "दवा कैसी दिखती है? (ज़रूरी नहीं)", "इससे Papa बिना पढ़े सही दवा पहचान सकेंगे। WhatsApp रिमाइंडर में भी यही लिखा आएगा।", "पहचान".
 
+## Part 5: WhatsApp alerts to the family (added 2026-11-05, branch `family-alerts`)
+
+Sent to a caregiver (son, daughter...) who turned on "Get alerts on WhatsApp" and confirmed by typing 1. The reader is an adult child, not
+the parent. {name} is what the family calls the parent (Papa, Mummy), {medicine} a medicine name, {time} like सुबह 8:00. Code:
+`AlertTexts.java` and `ReplyTexts.java` in the Java backend. Every alert starts with **छाँव अलर्ट 🔔** on its own line and ends with
+**ये अलर्ट बंद करने के लिए STOP लिखें।** (English: "Chhaon alert 🔔" ... "Reply STOP to turn off these alerts.").
+
+| Message | Hindi (middle part) | English meaning | OK / better wording |
+|---|---|---|---|
+| Dose missed | {name} ने {time} की दवा {medicine} लेने की पुष्टि नहीं की है। एक बार फ़ोन करके हाल पूछ लें। | {name} has not confirmed {medicine} (due {time}). You may want to give them a call. | |
+| Several doses missed together | {name} ने {time} की 3 दवाइयाँ लेने की पुष्टि नहीं की है। एक बार फ़ोन करके हाल पूछ लें। | {name} has not confirmed 3 medicines (due {time}). | |
+| Time when the caregiver lives in another time zone | सुबह 8:00 (उनके समय से) | 8:00 AM (their time) | |
+| Check-in not answered | {name} ने आज सुबह के चेक-इन का जवाब नहीं दिया है। एक बार फ़ोन करके पूछ लें कि वे ठीक हैं। | {name} has not replied to today's morning check-in. You may want to call to make sure they are okay. | |
+| Parent asked for a call | {name} ने आज के चेक-इन में फ़ोन करने को कहा है। जब हो सके, उन्हें फ़ोन कर लें। | {name} asked for a call in today's check-in. Please phone them when you can. | |
+| Medicine running low | {name} की दवा {medicine} कम बची है। दोबारा मँगाने का समय है। | {name}'s medicine {medicine} is running low. Time to arrange a refill. | |
+| Medicine run out | {name} की दवा {medicine} ख़त्म हो गई है। आज ही मँगा लें, ताकि कोई ख़ुराक न छूटे। | {name}'s medicine {medicine} has run out. Please arrange it today so that no dose is missed. | |
+| Reminder could not be sent | हम {name} को {medicine} का रिमाइंडर नहीं भेज पाए। कृपया उन्हें ख़ुद याद दिला दें या फ़ोन कर लें। | We could not send the reminder for {medicine} to {name}. Please remind them yourself or give them a call. | |
+| Parent typed STOP | {name} ने WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए रिमाइंडर और चेक-इन रुके हुए हैं। | {name} chose to stop Chhaon messages on WhatsApp, so reminders and check-ins are paused. | |
+| Parent said no to reminders | {name} ने WhatsApp पर छाँव के रिमाइंडर लेने से मना किया है, इसलिए कोई रिमाइंडर नहीं भेजा जाएगा। | {name} said no to Chhaon reminders on WhatsApp, so no reminders will be sent. | |
+| When the parent's name is unknown | आपके माता-पिता | your parent | |
+
+Replies to the caregiver's typed answer:
+
+| Message | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| alertsDeclined (typed 2) | कोई बात नहीं 🙏 छाँव अलर्ट बंद रहेंगे। मन बदले तो ऐप में फिर से चालू कर सकते हैं। | No problem 🙏 Chhaon alerts stay off. If you change your mind, you can turn them on in the app. | |
+| alertsMayAskAgain (typed START after 2) | ठीक है 🙏 अब आप ऐप में WhatsApp अलर्ट फिर से चालू कर सकते हैं। | Okay 🙏 You can now turn on WhatsApp alerts again in the app. | |
+
+App screen (`alerts.*` in `web/src/messages/hi.json`, changed because there are no buttons any more): "आपके जवाब का इंतज़ार",
+"हमने {phone} पर संदेश भेजा है। WhatsApp खोलकर 1 लिखकर भेजें, तब अलर्ट शुरू होंगे।", "इस नंबर की पुष्टि के लिए हम एक संदेश भेजेंगे।
+1 लिखकर भेजने के बाद ही अलर्ट शुरू होंगे।"
+
 ## Still to come
 
-The alerts to caregivers (missed dose, no check-in) and appointment reminders are being ported to the Java backend; their Hindi texts will need the same review once merged.
+Appointment reminders are not ported to the Java backend yet; their Hindi texts will need the same review once merged.

@@ -97,6 +97,54 @@ public class Fixtures {
         return new Family(userId, circleId, recipientId, phone, zone);
     }
 
+    /** The caregiver's own profile ("Me", is_self) in its own private circle, with its own number. */
+    public Family selfFamily(String phone, String language, boolean consented) {
+        UUID userId = user("Ananya");
+        UUID circleId = UUID.randomUUID();
+        jdbc.update("insert into care_circles (id, created_by) values (?, ?)", circleId, userId);
+        circles.add(circleId);
+        UUID recipientId = UUID.randomUUID();
+        ZoneId zone = ZoneId.of("Asia/Kolkata");
+        jdbc.update("insert into care_recipients (id, circle_id, name, relation, language, whatsapp_phone, timezone, is_self) " +
+                "values (?, ?, 'Ananya', 'self', ?, ?, ?, true)", recipientId, circleId, language, phone, zone.getId());
+        jdbc.update("update care_recipients set checkin_time = ? where id = ?",
+                ZonedDateTime.now(zone).plusHours(12).toLocalTime().withSecond(0).withNano(0), recipientId);
+        if (consented) consent(recipientId);
+        phones.add(phone);
+        return new Family(userId, circleId, recipientId, phone, zone);
+    }
+
+    /** Another family member in the parent's circle (role member). */
+    public UUID member(Family f, String name) {
+        UUID id = user(name);
+        jdbc.update("insert into care_circle_members (circle_id, user_id, role) values (?, ?, 'member')", f.circleId(), id);
+        return id;
+    }
+
+    /** WhatsApp alerts confirmed on this caregiver's number (as if they had typed 1 to our question a day ago). */
+    public void alertsOn(UUID userId, String phone) {
+        jdbc.update("update profiles set alert_phone = ?, alert_requested_at = now() - interval '1 day', " +
+                "alert_confirmed_at = now() - interval '1 day', alert_consent_at = now() - interval '1 day' where id = ?", phone, userId);
+        phones.add(phone);
+    }
+
+    /** A number used only by a test (so cleanup removes its opt-out / consent request rows). */
+    public String track(String phone) {
+        phones.add(phone);
+        return phone;
+    }
+
+    public Map<String, Object> alerts(UUID userId) {
+        return jdbc.queryForMap("select alert_phone, alert_requested_at, alert_confirmed_at, alert_consent_at from profiles where id = ?",
+                userId);
+    }
+
+    /** The WhatsApp bookkeeping of one user's notifications of one type. */
+    public List<Map<String, Object>> outbox(UUID userId, String type) {
+        return jdbc.queryForList("select id, payload::text payload, whatsapp_sent_at, whatsapp_skipped_at, whatsapp_attempts " +
+                "from notifications where user_id = ? and type = ? order by created_at", userId, type);
+    }
+
     public void consent(UUID recipientId) {
         jdbc.update("update care_recipients set consent_at = now() - interval '1 day', opted_out_at = null where id = ?",
                 recipientId);

@@ -52,6 +52,7 @@ public class ReplyHandlers {
             case ReplyRouter.Stop s -> stop(m, out);
             case ReplyRouter.Start s -> start(m, out);
             case Consent c -> consent(c, m, out);
+            case ReplyRouter.AlertOptIn a -> alertOptIn(a, m, out);
             case Dose d -> dose(d, m, out);
             case DoseNotYet n -> out.add(new OutboundReply(m.phone(), ReplyTexts.doseNotYet(n.language())));
             case Checkin c -> checkin(c, m, out);
@@ -83,12 +84,18 @@ public class ReplyHandlers {
             out.add(new OutboundReply(m.phone(), ReplyTexts.stopped((String) rows.get(0).get("language"))));
         } else if (!alerts.isEmpty()) {
             out.add(new OutboundReply(m.phone(), ReplyTexts.alertsOff((String) alerts.get(0).get("language"))));
+        } else {
+            // STOP under an alert question that was never answered: close it, and confirm (once, it is a fresh opt-out).
+            List<String> asked = jdbc.queryForList(
+                    "update profiles set alert_requested_at = null where alert_phone = ? and alert_requested_at is not null " +
+                            "and alert_consent_at is null and alert_confirmed_at is null returning language", String.class, m.phone());
+            if (!asked.isEmpty()) out.add(new OutboundReply(m.phone(), ReplyTexts.alertsOff(asked.get(0))));
         }
     }
 
     /** START from a parent who had opted out (STOP) or declined (No). Writing START is an explicit agreement. */
     private void start(InboundMessage m, List<OutboundReply> out) {
-        jdbc.update("delete from phone_opt_outs where phone = ?", m.phone());
+        int lifted = jdbc.update("delete from phone_opt_outs where phone = ?", m.phone());
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "select id, circle_id, language, consent_at from care_recipients " +
                         "where whatsapp_phone = ? and opted_out_at is not null", m.phone());
@@ -110,6 +117,11 @@ public class ReplyHandlers {
             out.add(new OutboundReply(m.phone(), ReplyTexts.resumed((String) rows.get(0).get("language"))));
         } else if (!alerts.isEmpty()) {
             out.add(new OutboundReply(m.phone(), ReplyTexts.alertsResumed((String) alerts.get(0).get("language"))));
+        } else if (lifted > 0) {
+            // A number that had only been asked for alerts (and said no / STOP): tell it the app can ask again.
+            List<String> asked = jdbc.queryForList("select language from profiles where alert_phone = ? limit 1",
+                    String.class, m.phone());
+            if (!asked.isEmpty()) out.add(new OutboundReply(m.phone(), ReplyTexts.alertsMayAskAgain(asked.get(0))));
         }
     }
 
@@ -142,6 +154,49 @@ public class ReplyHandlers {
                 notifier.notifyCircle(circleId, "parent_declined", Map.of("recipient_id", recipientId));
                 out.add(new OutboundReply(m.phone(), ReplyTexts.consentNo(language)));
             }
+        }
+    }
+
+    // ---------------------------------------------------------------- caregiver alerts (port of _handle_alert_optin)
+
+    /**
+     * The caregiver answered "turn on alerts?". Only the number we asked can answer; the update is guarded, so a repeated
+     * answer changes nothing and gets no second reply.
+     * <ul>
+     *   <li>1 / yes: alerts ON ({@code alert_consent_at}, {@code alert_confirmed_at}: a later STOP + START can restore them).</li>
+     *   <li>2 / no: alerts stay off and the question is closed. If the number belongs to nobody we look after (a number typed
+     *       in by someone else), it is also recorded in {@code phone_opt_outs} so it is never asked again until it types START
+     *       (like Python). If it is ALSO a parent's number, it is NOT opted out: "no alerts" must not stop that parent's
+     *       medicine reminders.</li>
+     * </ul>
+     */
+    private void alertOptIn(ReplyRouter.AlertOptIn a, InboundMessage m, List<OutboundReply> out) {
+        Map<String, Object> p = firstOrNull(jdbc.queryForList(
+                "select id, language, alert_phone from profiles where id = ?", a.profileId()));
+        if (p == null || !m.phone().equals(p.get("alert_phone"))) {
+            log.warn("ignored an alert reply from an unexpected number {}", WhatsAppSender.mask(m.phone()));
+            return;
+        }
+        String language = (String) p.get("language");
+        if (a.agree()) {
+            int claimed = jdbc.update("update profiles set alert_consent_at = now(), alert_confirmed_at = now() " +
+                    "where id = ? and alert_phone = ? and alert_consent_at is null and alert_confirmed_at is null", a.profileId(), m.phone());
+            if (claimed == 0) return;
+            String text = ReplyTexts.alertsOn(language);
+            // The same number may also have a dose reminder waiting (shared number): say how to answer that one.
+            if (remainingSentDoses(m.phone()) > 0) text += "\n" + ReplyTexts.nextDoseHint(language);
+            out.add(new OutboundReply(m.phone(), text));
+        } else {
+            int claimed = jdbc.update("update profiles set alert_consent_at = null, alert_requested_at = null " +
+                    "where id = ? and alert_phone = ? and alert_confirmed_at is null and alert_requested_at is not null",
+                    a.profileId(), m.phone());
+            if (claimed == 0) return;
+            Integer parents = jdbc.queryForObject("select count(*) from care_recipients where whatsapp_phone = ?",
+                    Integer.class, m.phone());
+            if (parents == null || parents == 0) {
+                jdbc.update("insert into phone_opt_outs (phone) values (?) on conflict (phone) do nothing", m.phone());
+            }
+            out.add(new OutboundReply(m.phone(), ReplyTexts.alertsDeclined(language)));
         }
     }
 
