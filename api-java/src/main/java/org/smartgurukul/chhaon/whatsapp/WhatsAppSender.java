@@ -69,7 +69,8 @@ public class WhatsAppSender {
                 .body(JsonNode.class);
         if (resp == null || !resp.path("status").asBoolean(false)) {
             cachedSessionId = null; // force re-resolve next time
-            throw new IllegalStateException("WhatsApp gateway send failed: " + resp);
+            String why = resp == null ? "no answer" : resp.path("message").asText(resp.path("error").asText("no reason given"));
+            throw new IllegalStateException("WhatsApp gateway send failed: " + why);
         }
         return resp.path("data").path("key").path("id").asText("sent");
     }
@@ -108,6 +109,27 @@ public class WhatsAppSender {
         String digits = phone == null ? "" : phone.replaceAll("[^0-9]", "");
         if (digits.length() <= 10) digits = "91" + digits; // assume India if no country code
         return digits + "@s.whatsapp.net";
+    }
+
+    /**
+     * A short, safe reason for a failed send, for the log and for the caregiver's error response: it never holds a phone number,
+     * an address or a key. Lets the owner tell "wrong address", "wrong key", "no such session" and "gateway refused" apart.
+     */
+    public static String failureReason(Throwable e) {
+        if (e instanceof org.springframework.web.client.ResourceAccessException) return "gateway_unreachable";
+        if (e instanceof org.springframework.web.client.RestClientResponseException h) {
+            int s = h.getStatusCode().value();
+            return (s == 401 || s == 403) ? "gateway_key_rejected_" + s : "gateway_http_" + s;
+        }
+        if (e instanceof IllegalStateException) {
+            String m = String.valueOf(e.getMessage());
+            if (m.startsWith("No WhatsApp session")) return "session_name_not_found";
+            if (m.startsWith("WhatsApp gateway send failed: ")) {
+                String why = m.substring("WhatsApp gateway send failed: ".length()).replaceAll("[0-9]", "#");
+                return "gateway_refused: " + (why.length() > 80 ? why.substring(0, 80) : why);
+            }
+        }
+        return "other_" + e.getClass().getSimpleName();
     }
 
     /** Phone numbers are never logged in full: only the last three digits. */

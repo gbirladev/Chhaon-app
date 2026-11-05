@@ -97,7 +97,9 @@ class ConsentRouteTest extends DbTest {
     void aFailedSendIs502_andDoesNotCountAgainstTheLimit() throws Exception {
         Family f = fx.family("en", false);
         wa.failSends(true);
-        assertThat(ask(f.userId(), f.recipientId()).getResponse().getStatus()).isEqualTo(502);
+        var failed = ask(f.userId(), f.recipientId()).getResponse();
+        assertThat(failed.getStatus()).isEqualTo(502);
+        assertThat(failed.getContentAsString()).contains("[other_IllegalStateException]");   // a safe reason the owner can read in the browser
         assertThat(fx.recipient(f.recipientId()).get("consent_requested_at")).isNull();
 
         wa.failSends(false);

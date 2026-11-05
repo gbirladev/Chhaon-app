@@ -81,8 +81,9 @@ public class ConsentService {
             wa.send(phone, text);
         } catch (Exception e) {
             jdbc.update("delete from consent_requests where id = ?", logged); // the attempt does not count
-            log.warn("consent request could not be sent to {} ({})", WhatsAppSender.mask(phone), e.getClass().getSimpleName());
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "WhatsApp is unavailable. Try again shortly.");
+            String reason = WhatsAppSender.failureReason(e);
+            log.warn("consent request could not be sent to {} ({})", WhatsAppSender.mask(phone), reason);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "WhatsApp is unavailable. Try again shortly. [" + reason + "]");
         }
         jdbc.update("update care_recipients set consent_requested_at = now() where id = ?", recipientId);
         return new Result("sent", null);
