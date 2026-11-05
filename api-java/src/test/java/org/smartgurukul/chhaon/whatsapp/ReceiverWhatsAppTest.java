@@ -149,7 +149,7 @@ class ReceiverWhatsAppTest extends DbTest {
         for (JsonNode msg : p.path("messages")) if ("dose".equals(msg.path("kind").asText())) dose = msg;
         assertThat(dose).isNotNull();
         assertThat(dose.path("text").asText()).isEqualTo(ReceiverTexts.doseReminder("hi", "helper", "Kamla", "Aarav", "Calpol syrup",
-                null, null, "2.5 ml")).contains("मात्रा: *2.5 ml*");
+                null, null, "2.5 ml")).contains("\n2.5 ml\n");
         assertThat(body).doesNotContain("\"kind\":\"checkin\"").contains("\"kind\":\"consent\"").contains("\"kind\":\"alert\"");
 
         // a stranger sees nothing
@@ -192,6 +192,6 @@ class ReceiverWhatsAppTest extends DbTest {
         new org.smartgurukul.chhaon.scheduler.SchedulerService(jdbc, wa, true, 60, 180, 120, 24, f.recipientId().toString()).scheduledTick();
         assertThat(wa.sentTo(f.phone())).hasSize(1);
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .isEqualTo("नमस्ते Kamla जी 🙏\nAarav की दवा का समय हो गया है 💊 *Calpol syrup*\nमात्रा: *2.5 ml*\n\nदवा देने के बाद *1* या 👍 भेजिए ✅");
+                .isEqualTo("नमस्ते Kamla जी 🙏\nAarav की दवा का समय: *Calpol syrup*\n2.5 ml\n\nAarav को दवा दे दी? जवाब में बस *1* लिखें");
     }
 }

@@ -33,7 +33,7 @@ class SchedulerPillLookTest extends DbTest {
         scheduler(f).scheduledTick();
 
         assertThat(wa.sentTo(f.phone())).hasSize(1);
-        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("*Amlodipine*\nमात्रा: *5 mg*\n🔵 नीली गोल गोली\n");
+        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("*Amlodipine*\n5 mg · 🔵 नीली गोल गोली\n");
     }
 
     @Test
@@ -44,6 +44,6 @@ class SchedulerPillLookTest extends DbTest {
 
         scheduler(f).scheduledTick();
 
-        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("*Metformin*\nDose: *500 mg*\n\nReply *1*");
+        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("*Metformin*\n500 mg\n\nTaken it? Just reply *1*");
     }
 }

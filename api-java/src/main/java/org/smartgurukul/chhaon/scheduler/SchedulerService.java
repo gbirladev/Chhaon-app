@@ -7,6 +7,7 @@ import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
 import org.smartgurukul.chhaon.whatsapp.MedicinePhotoStore;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.ReceiverTexts;
+import org.smartgurukul.chhaon.whatsapp.ReminderTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,8 +33,9 @@ import java.util.UUID;
  * app DB connection (RLS-bypassing), matching the original service_role scheduler.
  *
  * WhatsApp sends go through {@link WhatsAppSender} (dry-run while no gateway URL is set). The last step drains the
- * caregiver alert outbox ({@link AlertDelivery}). Not yet ported: escalation ladder, appointment reminders, love loop,
- * slot grouping of the reminder itself.
+ * caregiver alert outbox ({@link AlertDelivery}). One reminder per time slot (all medicines of one person due at the same
+ * moment), sent as a WhatsApp poll when {@code app.whatsapp.polls-enabled} is on (text otherwise, and as the fallback).
+ * Not yet ported: escalation ladder, appointment reminders, love loop.
  */
 @Service
 public class SchedulerService {
@@ -211,10 +213,20 @@ public class SchedulerService {
         return n == null ? 0 : n;
     }
 
+    /**
+     * Sends the due reminders, ONE message per time slot: every pending dose of one person due at the same moment
+     * (recipient + scheduled_at, the same grouping as {@code confirm_dose_slot} and the missed alert) goes out together, so three
+     * medicines at 20:00 are one reminder that one "1" (or one poll tap) confirms. All doses of the slot are claimed together
+     * (pending -> sent) before the send, all get the SAME whatsapp_message_id, and all are handed back if the send fails.
+     *
+     * <p>Photos: a slot with ONE medicine keeps its photo (the reminder is the image with the text as caption; in poll mode the
+     * image goes first with a short caption, then the poll). A slot with several medicines sends no photos (like the Python
+     * slot reminder): the list shows each medicine's dose and look instead.
+     */
     private int sendDueDoses(UUID scope, Map<String, Integer> counters) {
         List<Object> p = new ArrayList<>();
         p.add(doseMissedMinutes);
-        String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, " +
+        String sql = "select de.id dose_id, de.scheduled_at, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, " +
                 ReceiverTexts.languageSql("r") + " language, " +   // a helper may read another language (R1's reminder_language)
                 "r.call_name, r.name recipient_name, r.timezone, r.care_type, r.due_date, " +
                 "r.name person_name, r.reminder_to, r.reminder_name, " +   // who gets the reminder (migration 0044)
@@ -227,35 +239,73 @@ public class SchedulerService {
                 "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
                 "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id " +
                 "where de.status = 'pending' and de.scheduled_at <= now() " +
-                "and de.scheduled_at > now() - make_interval(mins => ?)" + scopeClause(scope, p, "r");
-        int sent = 0;
+                "and de.scheduled_at > now() - make_interval(mins => ?)" + scopeClause(scope, p, "r") +
+                " order by r.id, de.scheduled_at, lower(m.name), de.id";
+        Map<String, List<Map<String, Object>>> slots = new LinkedHashMap<>();
         for (Map<String, Object> row : jdbc.queryForList(sql, p.toArray())) {
-            UUID doseId = (UUID) row.get("dose_id");
-            boolean allowed = Boolean.TRUE.equals(row.get("allowed"));
-            if (!allowed) {
-                jdbc.update("update dose_events set status='skipped' where id=? and status='pending'", doseId);
-                counters.merge("doses_skipped", 1, Integer::sum);
+            slots.computeIfAbsent(row.get("recipient_id") + "|" + row.get("scheduled_at"), k -> new ArrayList<>()).add(row);
+        }
+        int sent = 0;
+        for (List<Map<String, Object>> slot : slots.values()) {
+            List<UUID> ids = slot.stream().map(r -> (UUID) r.get("dose_id")).toList();
+            if (!Boolean.TRUE.equals(slot.get(0).get("allowed"))) {
+                int n = jdbc.update("update dose_events set status='skipped' where id = any(cast(? as uuid[])) and status='pending'",
+                        uuidArray(ids));
+                counters.merge("doses_skipped", n, Integer::sum);
                 continue;
             }
-            int claimed = jdbc.update(
-                    "update dose_events set status='sent', sent_at=now() where id=? and status='pending'", doseId);
-            if (claimed != 1) continue; // another tick took it
+            List<UUID> claimed = jdbc.queryForList(
+                    "update dose_events set status='sent', sent_at=now() where id = any(cast(? as uuid[])) and status='pending' " +
+                    "returning id", UUID.class, uuidArray(ids));
+            if (claimed.isEmpty()) continue; // another tick took them
+            List<Map<String, Object>> mine = slot.stream().filter(r -> claimed.contains((UUID) r.get("dose_id"))).toList();
             try {
-                String text = ReceiverTexts.notThePerson((String) row.get("reminder_to")) ? receiverDoseText(row)
-                        : doseText(row, pregnant(row) ? weekToSay(row, doseId) : null, Instant.now());
-                // With the medicine photo when there is one; any photo problem sends this same text instead (never throws here).
-                byte[] photo = photos == null ? null
-                        : photos.reminderJpeg((UUID) row.get("recipient_id"), (String) row.get("photo_url")).orElse(null);
-                String msgId = wa.sendReminder((String) row.get("whatsapp_phone"), text, photo);
-                jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
-                sent++;
+                String msgId = sendSlot(mine, claimed);
+                jdbc.update("update dose_events set whatsapp_message_id=? where id = any(cast(? as uuid[]))", msgId, uuidArray(claimed));
+                sent += claimed.size();
             } catch (Exception sendEx) {
-                jdbc.update("update dose_events set status='pending', sent_at=null where id=? and status='sent'", doseId);
+                jdbc.update("update dose_events set status='pending', sent_at=null where id = any(cast(? as uuid[])) and status='sent'",
+                        uuidArray(claimed));
                 counters.merge("send_errors", 1, Integer::sum);
-                log.warn("dose reminder send failed for {}: {}", doseId, sendEx.toString());
+                log.warn("dose reminder send failed for {} dose(s) of {}: {}", claimed.size(), mine.get(0).get("recipient_id"),
+                        sendEx.toString());
             }
         }
         return sent;
+    }
+
+    /** Sends one slot's reminder (poll when on, else text; photo rules above) and returns the message id to store. */
+    private String sendSlot(List<Map<String, Object>> rows, List<UUID> claimed) {
+        Map<String, Object> first = rows.get(0);
+        String phone = (String) first.get("whatsapp_phone");
+        Instant now = Instant.now();
+        Integer week = pregnant(first) && !ReceiverTexts.notThePerson((String) first.get("reminder_to")) ? weekToSay(first, claimed) : null;
+        String text = slotText(rows, week, now);
+        // With the medicine photo when the slot has ONE medicine; any photo problem sends the text alone (never throws here).
+        byte[] photo = photos == null || rows.size() != 1 ? null
+                : photos.reminderJpeg((UUID) first.get("recipient_id"), (String) first.get("photo_url")).orElse(null);
+        if (wa.pollsOn()) {
+            if (photo != null) {
+                try {
+                    wa.sendImage(phone, photo, ReminderTexts.photoCaption((String) first.get("medicine_name")));
+                } catch (Exception | LinkageError e) {
+                    log.warn("medicine photo before the poll to {} not sent ({})", WhatsAppSender.mask(phone), WhatsAppSender.failureReason(e));
+                }
+            }
+            String pollId = wa.trySendPoll(phone, slotPoll(rows, week, now));
+            if (pollId != null) return pollId;
+            return wa.send(phone, text);   // the photo (if any) was already tried above
+        }
+        return wa.sendReminder(phone, text, photo);
+    }
+
+    private static String uuidArray(List<UUID> ids) {
+        StringBuilder sb = new StringBuilder("{");
+        for (int i = 0; i < ids.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(ids.get(i));
+        }
+        return sb.append('}').toString();
     }
 
     private int expireUnsentDoses(UUID scope) {
@@ -347,8 +397,10 @@ public class SchedulerService {
                     recipientId, today);
             if (claimed != 1) continue;
             try {
-                String msgId = wa.send((String) row.get("whatsapp_phone"),
-                        checkinText(row, today));
+                String phone = (String) row.get("whatsapp_phone");
+                // A poll when polls are on (one tap: 😊 / 📞); the text when off or when the poll could not be sent.
+                String msgId = wa.trySendPoll(phone, checkinPoll(row));
+                if (msgId == null) msgId = wa.send(phone, checkinText(row, today));
                 rememberCheckinMessageId(recipientId, today, msgId);
                 sent++;
             } catch (Exception sendEx) {
@@ -422,16 +474,17 @@ public class SchedulerService {
      * The new pregnancy week to say in this reminder, or null (R2: the week is said once a week, in the FIRST reminder sent on the
      * day a new week starts; MessageTexts#pregnancyDoseReminder). Best effort: any problem leaves the week out, never the reminder.
      */
-    private Integer weekToSay(Map<String, Object> row, UUID doseId) {
+    private Integer weekToSay(Map<String, Object> row, List<UUID> slotDoseIds) {
         try {
             ZoneId zone = zoneOf(row.get("timezone"));
             LocalDate today = Instant.now().atZone(zone).toLocalDate();
             Integer week = Pregnancy.week(dueDate(row), today);
             if (week == null || week.equals(Pregnancy.week(dueDate(row), today.minusDays(1)))) return null;
             // Another reminder already went out today (or in this same tick, claimed just before): it carried the week.
+            // The doses of THIS slot (claimed together a moment ago) do not count.
             Integer earlier = jdbc.queryForObject("select count(*) from dose_events d join medicine_schedules s on s.id = d.schedule_id " +
-                            "join medicines m on m.id = s.medicine_id where m.recipient_id = ? and d.id <> ? and d.sent_at >= ?",
-                    Integer.class, row.get("recipient_id"), doseId, java.sql.Timestamp.from(today.atStartOfDay(zone).toInstant()));
+                            "join medicines m on m.id = s.medicine_id where m.recipient_id = ? and d.id <> all(cast(? as uuid[])) and d.sent_at >= ?",
+                    Integer.class, row.get("recipient_id"), uuidArray(slotDoseIds), java.sql.Timestamp.from(today.atStartOfDay(zone).toInstant()));
             return earlier != null && earlier > 0 ? null : week;
         } catch (Exception e) {
             return null;
@@ -460,6 +513,60 @@ public class SchedulerService {
         String language = (String) row.get("language");
         if (!pregnant(row)) return MessageTexts.checkin(language, (String) row.get("call_name"));
         return MessageTexts.pregnancyCheckin(language, pregnancyName(row));
+    }
+
+    /** The daily check-in as a poll (😊 I'm fine / 📞 Please call me), used when polls are on. */
+    public static ReminderTexts.Poll checkinPoll(Map<String, Object> row) {
+        String language = (String) row.get("language");
+        return ReminderTexts.checkinPoll(pregnant(row) ? ReminderTexts.Reader.pregnancy(language, pregnancyName(row), null, 8)
+                : ReminderTexts.Reader.person(language, (String) row.get("call_name")));
+    }
+
+    /**
+     * Who reads one slot's reminder (from any row of the slot: the person's columns are the same on every row).
+     *
+     * @param newWeek pregnancy week to announce, or null
+     * @param at      when it goes out (the greeting's hour on the person's clock)
+     */
+    static ReminderTexts.Reader reader(Map<String, Object> row, Integer newWeek, Instant at) {
+        String language = (String) row.get("language");
+        String reminderTo = (String) row.get("reminder_to");
+        if (ReceiverTexts.notThePerson(reminderTo)) {
+            return ReminderTexts.Reader.receiver(language, reminderTo, (String) row.get("reminder_name"),
+                    ReceiverTexts.personName((String) row.get("call_name"), (String) row.get("person_name")));
+        }
+        if (pregnant(row)) {
+            return ReminderTexts.Reader.pregnancy(language, pregnancyName(row), newWeek, at.atZone(zoneOf(row.get("timezone"))).getHour());
+        }
+        return ReminderTexts.Reader.person(language, (String) row.get("call_name"));
+    }
+
+    private static List<ReminderTexts.Item> items(List<Map<String, Object>> rows) {
+        return rows.stream().map(r -> new ReminderTexts.Item((String) r.get("medicine_name"), (String) r.get("dosage"),
+                (String) r.get("pill_colour"), (String) r.get("pill_shape"))).toList();
+    }
+
+    /** "रात 8:00" / "8:00 pm": the slot's time on the person's clock (scheduled_at of the rows; {@code at} when missing). */
+    private static String slotTime(Map<String, Object> row, Instant at) {
+        Object v = row.get("scheduled_at");
+        Instant when = v instanceof java.sql.Timestamp ts ? ts.toInstant() : v instanceof Instant i ? i
+                : v instanceof java.time.OffsetDateTime o ? o.toInstant() : at;
+        return ReminderTexts.slotTime((String) row.get("language"), when.atZone(zoneOf(row.get("timezone"))).toLocalTime());
+    }
+
+    /**
+     * The text reminder for one time slot (one or several medicines). Public so the in-app WhatsApp preview shows exactly this.
+     * Rows carry the person's columns plus medicine_name, dosage, pill_colour, pill_shape and scheduled_at.
+     */
+    public static String slotText(List<Map<String, Object>> rows, Integer newWeek, Instant at) {
+        Map<String, Object> first = rows.get(0);
+        return ReminderTexts.doseText(reader(first, newWeek, at), items(rows), slotTime(first, at));
+    }
+
+    /** The same slot as a poll (✅ Taken / ⏰ Later; a helper: ✅ Given). */
+    public static ReminderTexts.Poll slotPoll(List<Map<String, Object>> rows, Integer newWeek, Instant at) {
+        Map<String, Object> first = rows.get(0);
+        return ReminderTexts.dosePoll(reader(first, newWeek, at), items(rows), slotTime(first, at));
     }
 
     /** The third-person reminder for a helper / the caregiver ("Time for Papa's medicine"), see docs/reminder-receiver.md. */

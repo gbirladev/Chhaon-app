@@ -26,20 +26,20 @@ class ReceiverTextsTest {
     void helperReminder_english_andHindi() {
         String en = ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", "white", "round");
         clean(en);
-        assertThat(en).isEqualTo("Namaste Sunita ji 🙏\nTime for Papa's medicine 💊 *Metformin*\n⚪ White round tablet\n\n"
-                + "Reply *1* or 👍 once you have given it ✅");
+        assertThat(en).isEqualTo("Namaste Sunita ji 🙏\nTime for Papa's medicine: *Metformin*\n⚪ White round tablet\n\n"
+                + "Given it to Papa? Just reply *1*");
         String hi = ReceiverTexts.doseReminder("hi", "helper", "सुनीता", "पापा", "Metformin", null, null);
         clean(hi);
-        assertThat(hi).isEqualTo("नमस्ते सुनीता जी 🙏\nपापा की दवा का समय हो गया है 💊 *Metformin*\n\nदवा देने के बाद *1* या 👍 भेजिए ✅");
+        assertThat(hi).isEqualTo("नमस्ते सुनीता जी 🙏\nपापा की दवा का समय: *Metformin*\n\nपापा को दवा दे दी? जवाब में बस *1* लिखें");
     }
 
     @Test
     void caregiverReminderUsesTheFirstNameAndAsksOnceTaken() {
         String en = ReceiverTexts.doseReminder("en", "caregiver", "Ganesh Sharma", "Papa", "Metformin", null, null);
         clean(en);
-        assertThat(en).startsWith("Namaste Ganesh 🙏").endsWith("Reply *1* or 👍 once Papa has taken it ✅").doesNotContain(" ji");
+        assertThat(en).startsWith("Namaste Ganesh 🙏").endsWith("Has Papa taken it? Just reply *1*").doesNotContain(" ji");
         String hi = ReceiverTexts.doseReminder("hi", "caregiver", "Ganesh", "पापा", "Metformin", null, null);
-        assertThat(hi).endsWith("\n\nजब पापा दवा ले लें, तो *1* या 👍 भेजें ✅").doesNotContain("के दवा");
+        assertThat(hi).endsWith("\n\nपापा ने दवा ले ली? जवाब में बस *1* लिखें").doesNotContain("के दवा");
         assertThat(ReceiverTexts.doseNotYet("hi", "caregiver", "पापा")).isEqualTo("ठीक है 🙏 जब पापा दवा ले लें, तो 1 लिखकर भेज दीजिए।");
     }
 
@@ -47,17 +47,17 @@ class ReceiverTextsTest {
     void everyReceiverReminderSaysTheDose() {
         String nani = ReceiverTexts.doseReminder("hi", "helper", "Kamla", "Aarav", "Calpol syrup", null, null, "2.5 ml");
         clean(nani);
-        assertThat(nani).isEqualTo("नमस्ते Kamla जी 🙏\nAarav की दवा का समय हो गया है 💊 *Calpol syrup*\nमात्रा: *2.5 ml*\n\n"
-                + "दवा देने के बाद *1* या 👍 भेजिए ✅");
+        assertThat(nani).isEqualTo("नमस्ते Kamla जी 🙏\nAarav की दवा का समय: *Calpol syrup*\n2.5 ml\n\n"
+                + "Aarav को दवा दे दी? जवाब में बस *1* लिखें");
         String maid = ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", "white", "round", "500 mg");
         clean(maid);
-        assertThat(maid).isEqualTo("Namaste Sunita ji 🙏\nTime for Papa's medicine 💊 *Metformin*\nDose: *500 mg*\n⚪ White round tablet\n\n"
-                + "Reply *1* or 👍 once you have given it ✅");
+        assertThat(maid).isEqualTo("Namaste Sunita ji 🙏\nTime for Papa's medicine: *Metformin*\n500 mg · ⚪ White round tablet\n\n"
+                + "Given it to Papa? Just reply *1*");
         String me = ReceiverTexts.doseReminder("hi", "caregiver", "Ganesh", "Papa", "Thyronorm", null, null, "1 tablet");
         clean(me);
-        assertThat(me).contains("\nमात्रा: *1 गोली*\n\nजब Papa दवा ले लें, तो *1* या 👍 भेजें ✅");
+        assertThat(me).contains("\n1 गोली\n\nPapa ने दवा ले ली? जवाब में बस *1* लिखें");
         // no dose stored: no dose line
-        assertThat(ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", null, null, null)).doesNotContain("Dose");
+        assertThat(ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", null, null, null)).doesNotContain("mg").doesNotContain(" · ");
         assertThat(ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", null, null, " ")).doesNotContain("Dose");
     }
 

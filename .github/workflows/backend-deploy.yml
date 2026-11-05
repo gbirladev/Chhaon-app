@@ -83,6 +83,8 @@ jobs:
           CHHAON_SCHEDULER_ENABLED: ${{ secrets.CHHAON_SCHEDULER_ENABLED }}
           # First switch-on for ONE parent: set to that recipient's id. Set to "all" to run for every family. Blank keeps the value on the box.
           CHHAON_SCHEDULER_ONLY_RECIPIENT: ${{ secrets.CHHAON_SCHEDULER_ONLY_RECIPIENT }}
+          # Reminders and the check-in as a WhatsApp poll: "true" on, "false" off. Blank keeps the value on the box (off when never set).
+          WHATSAPP_POLLS_ENABLED: ${{ secrets.WHATSAPP_POLLS_ENABLED }}
         run: bash deploy/aws/send-ssm-deploy.sh
 
       - name: Smoke test (public health)

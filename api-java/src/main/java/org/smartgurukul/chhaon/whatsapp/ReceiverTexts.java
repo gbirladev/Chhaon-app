@@ -69,9 +69,8 @@ public final class ReceiverTexts {
     // ---------------------------------------------------------------- messages we start
 
     /**
-     * The dose reminder to a helper or the caregiver, with the dose and the pill-look line when known:
-     * "Namaste Sunita ji 🙏 / Time for Papa's medicine 💊 *Metformin* / Dose: *500 mg* / 🔵 Blue round tablet /
-     * Reply *1* or 👍 once you have given it ✅".
+     * The dose reminder to a helper or the caregiver, with the dose and the pill look when known (wording in {@link ReminderTexts}):
+     * "Namaste Sunita ji 🙏 / Time for Papa's medicine: *Metformin* / 500 mg · 🔵 Blue round tablet / / Given it to Papa? Just reply *1*".
      */
     public static String doseReminder(String language, String reminderTo, String receiverName, String person, String medicine,
                                       String pillColour, String pillShape) {
@@ -80,22 +79,8 @@ public final class ReceiverTexts {
 
     public static String doseReminder(String language, String reminderTo, String receiverName, String person, String medicine,
                                       String pillColour, String pillShape, String dosage) {
-        String p = MessageTexts.clean(person, 40);
-        String med = MessageTexts.clean(medicine, 60);
-        String extra = MessageTexts.doseLine(language, dosage) + MessageTexts.lookLine(language, pillColour, pillShape);
-        boolean helper = !CAREGIVER.equals(reminderTo);
-        if (hi(language)) {
-            return "नमस्ते" + greet(language, reminderTo, receiverName) + " 🙏\n"
-                    + (p.isEmpty() ? "" : p + " की ") + "दवा का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                    + extra
-                    + (helper ? "\n\nदवा देने के बाद *1* या 👍 भेजिए ✅"
-                              : p.isEmpty() ? "\n\nदवा लेने के बाद *1* या 👍 भेजें ✅"
-                                            : "\n\nजब " + p + " दवा ले लें, तो *1* या 👍 भेजें ✅");
-        }
-        return "Namaste" + greet(language, reminderTo, receiverName) + " 🙏\nTime for " + possessive(p) + " medicine 💊"
-                + (med.isEmpty() ? "" : " *" + med + "*") + extra
-                + (helper ? "\n\nReply *1* or 👍 once you have given it ✅"
-                          : "\n\nReply *1* or 👍 once " + (p.isEmpty() ? "it has been taken" : p + " has taken it") + " ✅");
+        return ReminderTexts.doseText(ReminderTexts.Reader.receiver(language, reminderTo, receiverName, person),
+                java.util.List.of(new ReminderTexts.Item(medicine, dosage, pillColour, pillShape)), null);
     }
 
     /** The first message to a new receiver: on whose behalf, for whom, and how to agree. */
@@ -214,6 +199,19 @@ public final class ReceiverTexts {
         return hi(language)
                 ? "ठीक है 🙏 " + p + " को दवा देने के बाद 1 लिखकर भेज दीजिए।"
                 : "Okay 🙏 Please reply 1 once you have given " + p + " the medicine.";
+    }
+
+    /** A "⏰ Later" vote on a helper's / caregiver's reminder poll: tap ✅ once Papa has had the medicine. */
+    public static String dosePollLater(String language, String reminderTo, String person) {
+        String p = MessageTexts.clean(person, 40);
+        if (CAREGIVER.equals(reminderTo)) {
+            return hi(language)
+                    ? "ठीक है 🙏 जब " + p + " दवा ले लें, तो ✅ चुन लीजिए"
+                    : "Okay 🙏 Tap ✅ once " + p + " has taken the medicine.";
+        }
+        return hi(language)
+                ? "ठीक है 🙏 " + p + " को दवा देने के बाद ✅ चुन लीजिए"
+                : "Okay 🙏 Tap ✅ once you have given " + p + " the medicine.";
     }
 
     // ---------------------------------------------------------------- the family's alerts
