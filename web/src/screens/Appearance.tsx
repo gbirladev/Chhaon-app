@@ -1,7 +1,7 @@
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslations } from "use-intl";
-import { THEME_CHOICES, useThemeChoice } from "../lib/theme";
-import { DEFAULT_PALETTE, PALETTES, PALETTE_SWATCH, usePalette } from "../lib/palette";
+import { THEME_CHOICES, useThemeChoice, type ThemeChoice } from "../lib/theme";
+import { DEFAULT_PALETTE, PALETTES, PALETTE_SWATCH, swatchOf, usePalette } from "../lib/palette";
 import { useDialog } from "../App";
 import "./appearance.css";
 
@@ -47,24 +47,34 @@ export function ThemeButton() {
           <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
           <circle cx="7.5" cy="11.5" r="1.2" fill="currentColor" /><circle cx="10.5" cy="7.5" r="1.2" fill="currentColor" /><circle cx="15" cy="7.5" r="1.2" fill="currentColor" />
         </svg>
-        {palette !== DEFAULT_PALETTE && <span className="theme-dot" style={{ background: PALETTE_SWATCH[palette] }} aria-hidden="true" />}
+        {palette !== DEFAULT_PALETTE && <span className="theme-dot" style={{ background: swatchOf(palette) }} aria-hidden="true" />}
       </button>
       {open && <ThemeSheet onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-/** Colour theme (Smart Gurukul first, the default) and light/dark, in one sheet. Changes apply at once. */
+const MODE_ICONS: Record<ThemeChoice, ReactNode> = {
+  system: <><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M11 18.5h2" /></>,
+  light: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></>,
+  dark: <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
+};
+
+/** Colour theme (Chhaon first, the default; then ready-made colours and a custom one) and light/dark, in one sheet.
+ *  Every choice applies at once; "Back to default" returns to the Chhaon colours. */
 function ThemeSheet({ onClose }: { onClose: () => void }) {
   const t = useTranslations("appearance");
-  const [palette, setPalette] = usePalette();
+  const [palette, custom, setPalette] = usePalette();
+  const [mode, setMode] = useThemeChoice();
   const dialog = useDialog(onClose);
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <section className="sheet theme-sheet" ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="theme-sheet-title" onClick={(event) => event.stopPropagation()}>
         <h3 id="theme-sheet-title">{t("themesTitle")}</h3>
         <p className="theme-sheet-hint">{t("themesHint")}</p>
-        <div className="palette-grid" role="radiogroup" aria-labelledby="theme-sheet-title">
+
+        <p className="theme-label" id="theme-colour-label">{t("colourLabel")}</p>
+        <div className="theme-grid" role="radiogroup" aria-labelledby="theme-colour-label">
           {PALETTES.map((value) => (
             <button key={value} type="button" role="radio" aria-checked={palette === value} className={palette === value ? "on" : ""} onClick={() => setPalette(value)}>
               <span className="palette-swatch" style={{ background: PALETTE_SWATCH[value] }} aria-hidden="true">{palette === value && "✓"}</span>
@@ -72,10 +82,27 @@ function ThemeSheet({ onClose }: { onClose: () => void }) {
               {value === DEFAULT_PALETTE && <small>{t("defaultTag")}</small>}
             </button>
           ))}
+          <label className={`custom-tile${palette === "custom" ? " on" : ""}`}>
+            <input type="color" value={custom} aria-label={t("customPick")} onChange={(event) => setPalette("custom", event.target.value)} />
+            <span className="palette-swatch custom-swatch" style={palette === "custom" ? { background: swatchOf("custom") } : undefined} aria-hidden="true">{palette === "custom" ? "✓" : "+"}</span>
+            <span className="palette-name">{t("palettes.custom")}</span>
+          </label>
         </div>
+        <p className="theme-note">{t(palette === "custom" ? "customNote" : "colourNote")}</p>
         {palette !== DEFAULT_PALETTE && <button type="button" className="secondary-button theme-reset" onClick={() => setPalette(DEFAULT_PALETTE)}>{t("backToDefault")}</button>}
-        <AppearanceCard />
-        <button type="button" className="primary-button" onClick={onClose}>{t("done")}</button>
+
+        <p className="theme-label" id="theme-mode-label">{t("modeLabel")}</p>
+        <div className="theme-grid mode-grid" role="radiogroup" aria-labelledby="theme-mode-label">
+          {THEME_CHOICES.map((value) => (
+            <button key={value} type="button" role="radio" aria-checked={mode === value} className={mode === value ? "on" : ""} onClick={() => setMode(value)}>
+              <svg className="mode-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{MODE_ICONS[value]}</svg>
+              <span className="palette-name">{t(value)}</span>
+            </button>
+          ))}
+        </div>
+        <p className="theme-note">{t(`${mode}Note`)}</p>
+
+        <button type="button" className="primary-button theme-done" onClick={onClose}>{t("done")}</button>
       </section>
     </div>
   );

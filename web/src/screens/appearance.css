@@ -8,17 +8,23 @@
 .appearance-card small { display: block; margin-top: 10px; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
 @media (forced-colors: active) { .appearance-options button.on { outline: 2px solid Highlight; outline-offset: -2px; } }
 
-/* Theme button (Family page, top right) and the theme sheet. */
+/* Theme button (Family page, top right) and the theme sheet: colour tiles and light/dark tiles share one look. */
 .page-header .theme-button { position: relative; margin-left: auto; flex: 0 0 auto; width: 48px; height: 48px; color: var(--primary-text); }
 .theme-dot { position: absolute; right: 7px; bottom: 7px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--surface); }
-.theme-sheet .theme-sheet-hint { margin: -6px 0 14px; color: var(--text-muted); font-size: max(0.875rem, 12px); line-height: 1.4; }
-.palette-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.palette-grid button { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 96px; padding: 12px 6px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
-.palette-grid button.on { border-color: var(--primary); background: var(--field); }
-.palette-swatch { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #ffffff; font-weight: 700; font-size: 1.1rem; }
-.palette-name { font-size: max(0.875rem, 12px); font-weight: 700; text-align: center; overflow-wrap: anywhere; }
-.palette-grid small { margin-top: -4px; color: var(--text-muted); font-size: max(0.75rem, 12px); }
-.theme-reset { width: 100%; min-height: 48px; margin-top: 12px; }
-.theme-sheet .appearance-card { box-shadow: none; border: 1px solid var(--line); margin: 14px 0; }
-.theme-sheet .primary-button { width: 100%; }
-@media (forced-colors: active) { .palette-grid button.on { outline: 3px solid Highlight; } }
+.theme-sheet .theme-sheet-hint { margin: -6px 0 6px; color: var(--text-muted); font-size: max(0.875rem, 12px); line-height: 1.4; }
+.theme-label { margin: 16px 0 8px; color: var(--text-label); font-size: max(0.75rem, 12px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.theme-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.theme-grid.mode-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.theme-grid > button, .theme-grid > .custom-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 88px; padding: 10px 4px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.theme-grid > .on { border-color: var(--primary); background: var(--field); }
+.theme-grid .mode-icon { color: var(--primary-text); }
+.palette-swatch { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #ffffff; font-weight: 700; font-size: 1.05rem; }
+.custom-swatch { background: conic-gradient(#e5484d, #f5a524, #3fa865, #2f9e9a, #3f7fd6, #8a5cc7, #e0457b, #e5484d); text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.custom-tile input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.custom-tile:focus-within { outline: 3px solid var(--primary); outline-offset: 2px; }
+.palette-name { font-size: max(0.8125rem, 12px); font-weight: 700; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+.theme-grid small { margin-top: -4px; color: var(--text-muted); font-size: max(0.6875rem, 11px); }
+.theme-note { margin: 8px 2px 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
+.theme-reset { width: 100%; min-height: 48px; margin-top: 10px; }
+.theme-done { width: 100%; margin-top: 20px; }
+@media (forced-colors: active) { .theme-grid > .on { outline: 3px solid Highlight; } }

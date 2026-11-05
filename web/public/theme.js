@@ -11,6 +11,18 @@
   var palette = null;
   try { palette = localStorage.getItem("chhaon-palette"); } catch (e) { /* storage blocked */ }
   if (palette && /^(teal|blue|green|saffron|rose)$/.test(palette)) root.setAttribute("data-palette", palette);
+  if (palette === "custom") {
+    // the user's own colour: the CSS was made by src/lib/recolour.ts when they picked it
+    var css = null;
+    try { css = localStorage.getItem("chhaon-palette-css"); } catch (e) { /* storage blocked */ }
+    if (css) {
+      var style = document.createElement("style");
+      style.id = "chhaon-custom-palette";
+      style.textContent = css;
+      document.head.appendChild(style);
+      root.setAttribute("data-palette", "custom");
+    }
+  }
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", dark ? "#14101f" : "#faf8fd");
 })();

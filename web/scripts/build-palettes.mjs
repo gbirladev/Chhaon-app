@@ -102,6 +102,11 @@ ${changed(SYSTEM_DARK, palette, "      ")}
 }
 writeFileSync(join(src, "palettes.css"), css);
 
+// For the "Custom" colour (any colour the user picks): the tokens that belong to the violet family, with their default
+// values. src/lib/recolour.ts turns them to the picked hue in the browser with the same maths as above.
+const violetOnly = (list) => list.filter(([, value]) => recolour(value, { hue: 0, sat: 1 }) !== value);
+writeFileSync(join(src, "paletteTokens.json"), JSON.stringify({ light: violetOnly(LIGHT), dark: violetOnly(DARK), systemDark: violetOnly(SYSTEM_DARK) }));
+
 // A quick contrast report for the most important pair: white text on the primary button.
 const contrast = (a, b) => { const [x, y] = [luminance(hexToRgb(a)), luminance(hexToRgb(b))].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const primary = LIGHT.find(([n]) => n === "--primary")[1].slice(1);
