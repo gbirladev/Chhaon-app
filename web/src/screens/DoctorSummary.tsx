@@ -8,6 +8,10 @@ import { CLINIC_MAX, DOCTOR_MAX, cleanLine, cleanTyped, loadDoctorAddress, saveD
 import { describeTimes, formatDate, localizeDose, type Language, type T } from "../lib/format";
 import type { Medicine, Recipient } from "../lib/api";
 import { receiverLabel } from "../lib/reminderReceiver";
+import { isChild } from "../lib/vaccines";
+import { todayOn, yearsSince } from "../lib/keyFacts";
+import { factLines, useChildInfo } from "../lib/childFacts";
+import { KeyFactLines } from "./KeyFacts";
 
 const DAYS = 30;
 const INSTRUCTION_LABEL: Record<string, string> = { after_food: "add.afterFood", before_food: "add.beforeFood", with_food: "add.withFood" };
@@ -50,6 +54,7 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   }, [recipient?.id]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const ts = useMemo(() => createTranslator({ locale: sheetLanguage, messages: MESSAGES[sheetLanguage] }) as unknown as T, [sheetLanguage]);
+  const child = useChildInfo(recipient);
   if (!recipient) return null;
 
   const current = loaded?.id === recipient.id ? loaded : null;
@@ -60,7 +65,10 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   // Whose replies these are: the person, or the helper / family member who gets the reminders (named, never "you": the sheet is for the doctor).
   const note = ts("who.doctorNote", { name: receiverLabel(recipient, null, { call: recipient.name, you: "", someone: ts("who.someone") }) });
   const active = medicines.filter((m) => m.active);
-  const ageCity = [recipient.age ? ts("emergency.years", { count: recipient.age }) : null, recipient.city].filter(Boolean).join(" • ");
+  // The same key facts as the emergency card, in the sheet's language: pregnancy week + due date, a child's birth date, age, weight.
+  const facts = factLines(recipient, child.info, (key, values) => ts(`facts.${key}`, values), sheetLanguage);
+  const years = isChild(recipient) ? null : recipient.age ?? yearsSince(recipient.dob, todayOn(recipient.timezone));
+  const ageCity = [years !== null ? ts("emergency.years", { count: years }) : null, recipient.city].filter(Boolean).join(" • ");
   const prepared = sd("prepared", { date: formatDate(today, sheetLanguage, { day: "numeric", month: "short", year: "numeric" }) });
   // Stored as a key ("after_food"); shown in the sheet's language. Anything else is shown as it was typed.
   const instruction = (value: string | null) => (value ? (INSTRUCTION_LABEL[value] ? ts(INSTRUCTION_LABEL[value]) : value) : "");
@@ -82,6 +90,7 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   const shareText = [
     `${sd("sheetTitle")} — ${recipient.name}`,
     ...(preparedFor ? [preparedFor] : []),
+    ...facts,
     ageCity,
     `${ts("emergency.bloodGroup")}: ${recipient.blood_group ?? unknown}`,
     `${ts("emergency.conditions")}: ${recipient.conditions.join(", ") || unknown}`,
@@ -137,6 +146,7 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
         <header>
           <p className="ds-kicker">{sd("sheetTitle")}</p>
           <h2>{recipient.name}</h2>
+          <KeyFactLines lines={facts} className="ds-key-facts" />
           {ageCity && <p className="ds-sub">{ageCity}</p>}
           {preparedFor && <p className="ds-for-line">{preparedFor}</p>}
         </header>

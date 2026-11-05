@@ -11,6 +11,7 @@ body { background: var(--s-f4f7f6); }
 .pe-id { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pe-id h2 { font-size: 1.75rem; line-height: 1.15; }
 .pe-id p { color: var(--text-label); font-weight: 500; }
+.pe-id p.pe-fact { color: inherit; font-weight: 700; margin-top: 4px; }
 .pe-blood { text-align: center; background: var(--f-b3261e); color: var(--on-fill); border-radius: 16px; padding: 8px 16px; min-width: 96px; }
 .pe-blood small { display: block; font-size: .6875rem; letter-spacing: .6px; }
 .pe-blood strong { font-size: 2.5rem; line-height: 1.1; }

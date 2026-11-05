@@ -58,7 +58,7 @@ public class MedicineController {
     public StockResponse adjustStock(@AuthenticationPrincipal AuthenticatedUser user,
                                      @PathVariable UUID id,
                                      @RequestBody StockAdjustRequest request) {
-        return service.adjustStock(user.id(), id, request.delta());
+        return service.adjustStock(user.id(), id, request);
     }
 
     @PatchMapping("/api/v1/medicines/{id}")

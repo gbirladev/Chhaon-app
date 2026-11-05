@@ -5,6 +5,7 @@ import org.smartgurukul.chhaon.child.ChildService.ChildInput;
 import org.smartgurukul.chhaon.child.ChildService.GivenEarlierInput;
 import org.smartgurukul.chhaon.child.ChildService.VaccineInput;
 import org.smartgurukul.chhaon.child.ChildService.VaccineRow;
+import org.smartgurukul.chhaon.child.ChildService.WeightInput;
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,7 @@ import java.util.UUID;
  * <pre>
  * GET  /api/v1/recipients/{id}/child            date of birth, guardian confirmation, plan size, schedule edition
  * PUT  /api/v1/recipients/{id}/child            {dob, guardianConfirmed}  (confirmation required the first time)
+ * PUT  /api/v1/recipients/{id}/child/weight     {weightKg, weightOn}  (0.5-200 kg; both null clears; confirmation needed)
  * GET  /api/v1/recipients/{id}/vaccines         the plan (sorted by date), with a status per dose
  * POST /api/v1/recipients/{id}/vaccines/plan    make the plan from the date of birth (idempotent)
  * POST /api/v1/recipients/{id}/vaccines/given-earlier  {given: [ids], notGivenYet: [ids]}: past doses already given (date not
@@ -51,6 +53,11 @@ public class ChildController {
     @PutMapping("/recipients/{id}/child")
     public ChildInfo saveChild(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id, @RequestBody ChildInput in) {
         return service.saveChild(user.id(), id, in);
+    }
+
+    @PutMapping("/recipients/{id}/child/weight")
+    public ChildInfo saveWeight(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id, @RequestBody WeightInput in) {
+        return service.saveWeight(user.id(), id, in);
     }
 
     @GetMapping("/recipients/{id}/vaccines")

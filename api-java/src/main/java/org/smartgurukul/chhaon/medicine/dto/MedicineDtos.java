@@ -18,7 +18,7 @@ public final class MedicineDtos {
             @NotBlank @Size(max = 100) String name,
             @Size(max = 60) String dosage,
             String instructions,                 // after_food | before_food | with_food | null
-            Integer stock,
+            Integer stock,                       // null = stock not tracked (no refill or out-of-stock alerts)
             Integer refillThreshold,
             @NotEmpty List<LocalTime> times,     // 1..12 distinct
             String photoPath,                    // <recipientId>/<name>; null = none
@@ -39,8 +39,18 @@ public final class MedicineDtos {
             String pillShape) {                  // same rule as pillColour
     }
 
-    public record StockAdjustRequest(Integer delta) {}
+    /**
+     * One of: {@code delta} (add / take off, never below 0; nothing happens while stock is not tracked), {@code count} (the exact
+     * number, 0..100000; this also STARTS tracking a medicine whose stock was not tracked), or {@code untrack: true} (stop tracking:
+     * stock becomes null, no refill or out-of-stock alerts any more).
+     */
+    public record StockAdjustRequest(Integer delta, Integer count, Boolean untrack) {
+        public StockAdjustRequest(Integer delta) {
+            this(delta, null, null);
+        }
+    }
 
+    /** null = stock not tracked. */
     public record StockResponse(Integer stock) {}
 
     /** Partial flags; only non-null fields are applied. */
@@ -52,7 +62,7 @@ public final class MedicineDtos {
             String name,
             String dose,            // = dosage ?? ""
             List<LocalTime> times,
-            int stock,              // = stockCount ?? 0
+            Integer stock,          // = stockCount; null = not tracked (the family left the count empty)
             Integer threshold,      // = refillThreshold
             String instructions,
             boolean active,

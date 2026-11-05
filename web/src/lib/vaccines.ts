@@ -13,6 +13,8 @@ import { formatDate, type Language } from "./format";
 export type ChildInfo = {
   dob: string | null; guardianConfirmedAt: string | null; careType: string | null; isSelf: boolean;
   planDoses: number; edition: string; source: string; reviewedByPaediatrician: boolean;
+  /** The last weight the family recorded (migration 0052), a plain fact; absent from an older backend. */
+  weightKg?: number | null; weightOn?: string | null;
 };
 
 export type VaccineStatus = "given" | "not_given" | "overdue" | "due_soon" | "later";
@@ -35,7 +37,11 @@ export const loadChild = (recipientId: string) => apiFetch<ChildInfo>(`/api/v1/r
 export const saveChild = (recipientId: string, dob: string, guardianConfirmed: boolean) =>
   apiFetch<ChildInfo>(`/api/v1/recipients/${recipientId}/child`, { method: "PUT", body: { dob, guardianConfirmed } });
 
-export const loadVaccines = (recipientId: string) => apiFetch<Vaccine[]>(`/api/v1/recipients/${recipientId}/vaccines`);
+/** Records the child's weight (0.5 to 200 kg) and the day it was measured; null clears it. The guardian confirmation comes first. */
+export const saveChildWeight = (recipientId: string, weightKg: number | null, weightOn: string | null) =>
+  apiFetch<ChildInfo>(`/api/v1/recipients/${recipientId}/child/weight`, { method: "PUT", body: { weightKg, weightOn } });
+
+export const loadVaccines =(recipientId: string) => apiFetch<Vaccine[]>(`/api/v1/recipients/${recipientId}/vaccines`);
 
 /** Makes the plan from the date of birth. Safe to call again: only missing doses are added. */
 export const makeVaccinePlan = (recipientId: string) => apiFetch<Vaccine[]>(`/api/v1/recipients/${recipientId}/vaccines/plan`, { method: "POST" });

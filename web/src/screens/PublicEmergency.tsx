@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { createTranslator } from "use-intl";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
-import { fetchPublicCard, publicLinkToken, type CardResult } from "../lib/emergencyPublic";
+import { fetchPublicCard, publicLinkToken, type CardResult, type PublicCard } from "../lib/emergencyPublic";
+import { keyFactLines, todayOn } from "../lib/keyFacts";
 import "./publicEmergency.css";
 
 type Lang = "en" | "hi";
@@ -20,6 +21,16 @@ function initialLanguage(): Lang {
 
 const PRESETS: Record<string, "morning" | "afternoon" | "night"> = { "08:00": "morning", "13:00": "afternoon", "20:00": "night" };
 const WORDS = { en: { morning: "Morning", afternoon: "Afternoon", night: "Night", and: " & " }, hi: { morning: "सुबह", afternoon: "दोपहर", night: "रात", and: " और " } } as const;
+
+/** Pregnancy week + due date, a child's birth date (with age) and weight: the first lines staff read. */
+function factsOf(card: PublicCard, lang: Lang): string[] {
+  const tf = createTranslator({ locale: lang, messages: MESSAGES[lang], namespace: "facts" }) as unknown as (key: string, values?: Record<string, string | number>) => string;
+  const weight = card.child?.weight_kg;
+  return keyFactLines({
+    pregnancy: card.pregnancy ? { week: card.pregnancy.week ?? null, dueDate: card.pregnancy.due_date ?? null } : null,
+    child: card.child ? { born: card.child.born ?? null, weightKg: weight === null || weight === undefined ? null : Number(weight), weightOn: card.child.weight_on ?? null } : null,
+  }, tf, lang, todayOn(Intl.DateTimeFormat().resolvedOptions().timeZone));
+}
 
 function clock(time: string, lang: Lang) {
   const [h, m] = time.split(":").map(Number);
@@ -68,10 +79,11 @@ export default function PublicEmergency() {
       )}
       {result?.kind === "ok" && (() => {
         const c = result.card;
+        const facts = factsOf(c, lang);
         return (
           <main>
             <section className="pe-card pe-id">
-              <div><h2>{c.name}</h2>{c.age !== null && <p>{t("years", { count: c.age })}</p>}</div>
+              <div><h2>{c.name}</h2>{c.age !== null && <p>{t("years", { count: c.age })}</p>}{facts.map((line) => <p key={line} className="pe-fact">{line}</p>)}</div>
               <div className="pe-blood"><small>{t("bloodGroup")}</small><strong aria-label={`${t("bloodGroup")}: ${c.blood_group ?? t("unknown")}`}>{c.blood_group ?? "?"}</strong></div>
             </section>
             <section className="pe-card pe-alert"><h3>{t("allergies")}</h3><p>{c.allergies.length ? c.allergies.join(", ") : t("unknown")}</p></section>

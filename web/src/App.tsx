@@ -6,7 +6,7 @@ import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
   isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
-  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setMedicineFlags, deleteMedicineApi,
+  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
@@ -26,7 +26,10 @@ import { childDetailsErrors, isChild, loadChild, saveChildDetails, vaccineDueTex
 import { ChildHome } from "./screens/ChildHome";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
 import { PlansScreen } from "./screens/Plans";
-import { StockField } from "./screens/StockField";
+import { StockField, StockStart, parseStock } from "./screens/StockField";
+import { ChildWeightEditor, KeyFactLines } from "./screens/KeyFacts";
+import { factLines, useChildInfo } from "./lib/childFacts";
+import { yearsSince } from "./lib/keyFacts";
 import { StatsScreen } from "./screens/Stats";
 import { FeedbackScreen } from "./screens/Feedback";
 import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
@@ -1305,13 +1308,13 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
   const language = useLocale() as Language;
   const active = medicines.filter((medicine) => medicine.active);
   const outCount = active.filter((m) => m.stock === 0).length;
-  const lowCount = active.filter((m) => isLowStock(m) && m.stock > 0).length;
+  const lowCount = active.filter((m) => isLowStock(m) && m.stock !== 0).length;
   return (
     <main className="scroll-page">
       <AppHeader title={t("medicines.title")} subtitle={t("medicines.subtitle", { count: active.length })} />
       <div className="stock-summary"><Icon name="pill" /><div>
         <strong>{outCount ? t("medicines.summaryOut") : lowCount ? t("medicines.summaryLow") : active.length ? t("medicines.summaryTracked") : medicines.length ? t("medicines.summaryPaused") : t("medicines.summaryNone")}</strong>
-        <p>{outCount || lowCount ? [outCount ? t("medicines.outCount", { count: outCount }) : "", lowCount ? t("medicines.refillNeeded", { count: lowCount }) : ""].filter(Boolean).join(" • ") : active.length ? t("medicines.stockGood") : medicines.length ? t("medicines.summaryPausedHint") : t("medicines.addFirst")}</p>
+        <p>{outCount || lowCount ? [outCount ? t("medicines.outCount", { count: outCount }) : "", lowCount ? t("medicines.refillNeeded", { count: lowCount }) : ""].filter(Boolean).join(" • ") : active.length ? t(active.some((m) => m.stock !== null) ? "medicines.stockGood" : "medicines.stockNoneTracked") : medicines.length ? t("medicines.summaryPausedHint") : t("medicines.addFirst")}</p>
       </div></div>
       {error && <p role="alert" className="form-error">{t("medicines.loadFailed")}</p>}
       {loading && !medicines.length && <p className="form-note">{t("common.loading")}</p>}
@@ -1322,7 +1325,7 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           return (
           <article className={`med-card${medicine.active ? "" : " paused"}`} key={medicine.id} {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
             <div className={`med-visual ${color}`}><span /><span /><span /></div>
-            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}{medicine.critical && <span className="tag-critical">{t("medicines.critical")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), lookText(medicine.pillColour, medicine.pillShape), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
+            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}{medicine.critical && <span className="tag-critical">{t("medicines.critical")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), lookText(medicine.pillColour, medicine.pillShape), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p>{medicine.stock === null ? <small className="stock-untracked">{t("medicines.stockNotTracked")}</small> : <small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small>}</div>
             <span className="chevron-hint" aria-hidden="true"><Icon name="chevron" size={19} /></span>
           </article>
         )})}
@@ -1438,8 +1441,8 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
     const doseAmount = Math.round(Number(doseText.replace(",", ".")) * 100) / 100;
     if (!keepOldDose && (!DECIMAL_RE.test(doseText) || !(doseAmount > 0) || doseAmount > MAX_NUMBER)) found["f-dose"] = t("errDose");
     const stockText = String(data.get("stock") ?? "").trim();
-    const stock = Number(stockText);
-    if (!editing && (!INTEGER_RE.test(stockText) || stock > MAX_NUMBER)) found["f-stock"] = t("errStock");
+    const stock = stockText ? parseStock(stockText, MAX_NUMBER) : null;   // empty = not tracked (no "out of stock" for an uncounted medicine)
+    if (!editing && stockText && stock === null) found["f-stock"] = t("errStock");
     const remindText = String(data.get("remind") ?? "").trim();
     const threshold = Number(remindText);
     if (refill && (!INTEGER_RE.test(remindText) || threshold > MAX_NUMBER)) found["f-remind"] = t("errRemind");
@@ -1535,7 +1538,7 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
         </div>
         <Field id="f-instructions" label={t("instructions")}><select id="f-instructions" name="instructions" defaultValue={editing ? medicine?.instructions ?? "" : "after_food"}>{INSTRUCTION_OPTIONS.map(([value, key]) => <option key={value} value={value}>{t(key)}</option>)}</select></Field>
         <div className="two-col">
-          {!editing && <Field id="f-stock" label={t("stockLabel")} error={errors["f-stock"]}><input {...fieldProps("f-stock", errors)} name="stock" placeholder="30" inputMode="numeric" /></Field>}
+          {!editing && <Field id="f-stock" label={t("stockLabel")} error={errors["f-stock"]}><input {...fieldProps("f-stock", errors)} name="stock" placeholder="30" inputMode="numeric" defaultValue="" /><small className="form-note">{t("stockOptional")}</small></Field>}
           <Field id="f-remind" label={t("remindAt")} error={errors["f-remind"]}><input {...fieldProps("f-remind", errors)} name="remind" inputMode="numeric" defaultValue={medicine?.threshold ?? 5} disabled={!refill} /></Field>
         </div>
         <label className="toggle-row" style={{ minHeight: 48 }}><span><strong>{t("refillTitle")}</strong><small>{t("refillHint")}</small></span><input type="checkbox" role="switch" checked={refill} onChange={(event) => setRefill(event.target.checked)} /><i className={refill ? "" : "off"} /></label>
@@ -1569,7 +1572,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   const language = useLocale() as Language;
   const toast = useToast();
   const expireSession = useSessionExpired();
-  const [stock, setStock] = useState(medicine?.stock ?? 0);
+  const [stock, setStock] = useState<number | null>(medicine?.stock ?? null);   // null = not tracked
   const [active, setActive] = useState(medicine?.active ?? true);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -1584,7 +1587,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   }, [medicine?.photoUrl]);
   if (!medicine) return null;
 
-  const low = medicine.threshold !== null && stock <= medicine.threshold;
+  const low = stock !== null && medicine.threshold !== null && stock <= medicine.threshold;
   const instructionKey = { after_food: "afterFood", before_food: "beforeFood", with_food: "withFood" }[medicine.instructions ?? ""];
 
   /** A write that changed nothing (the record is gone) or failed is never presented as success. */
@@ -1593,23 +1596,25 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     toast(t(missing || isNotFound(err) || err?.status === 404 ? "medicine.gone" : "medicine.errSave"));
     void onChanged();  // refresh: if the medicine no longer exists we are taken back to the list
   };
-  const changeStock = async (delta: number) => {
-    if (busy || stock + delta < 0 || stock + delta > MAX_NUMBER) return;
+  /** A delta (the -/+ buttons, typed number), or start/stop counting ({ count }). */
+  const changeStock = async (delta: number, count?: { count: number | null }) => {
+    if (busy) return;
+    if (!count && (stock === null || stock + delta < 0 || stock + delta > MAX_NUMBER)) return;
     const previous = stock;
-    setStock(previous + delta);  // instant feedback; undone if saving fails
+    setStock(count ? count.count : (previous ?? 0) + delta);  // instant feedback; undone if saving fails
     setBusy(true);
     // A delta, not an absolute number: a dose the parent confirmed a moment ago must not be overwritten.
-    let data: number;
+    let data: number | null;
     try {
-      data = await adjustStockApi(medicine.id, delta);
+      data = count ? await setStockCountApi(medicine.id, count.count) : await adjustStockApi(medicine.id, delta);
     } catch (e) {
       setBusy(false); setStock(previous); return failed(e as ApiError);
     }
     setBusy(false);
     setStock(data);
     // The database alerts the whole family (bell) when stock reaches the refill level and again when it runs out.
-    // Say so here, because the bell is on another screen.
-    if (medicine.threshold !== null) {
+    // Say so here, because the bell is on another screen. Nothing is said for a medicine whose stock is not counted.
+    if (medicine.threshold !== null && data !== null && previous !== null) {
       if (data === 0 && previous > 0) toast(t("medicine.outAlertSent"));
       else if (data <= medicine.threshold && previous > medicine.threshold) toast(t("medicine.lowAlertSent"));
     }
@@ -1649,13 +1654,18 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
         <div className="meta-row"><span>{t("medicine.look")}</span><strong>{medicine.pillColour || medicine.pillShape ? <span className="pill-look-line"><PillGlyph colour={medicine.pillColour} shape={medicine.pillShape} />{lookText(medicine.pillColour, medicine.pillShape)}</span> : t("medicine.noLook")}</strong></div>
         <div className="meta-row"><span>{t("medicine.times")}</span><strong>{describeTimes(medicine.times, t, language)}</strong></div>
         <div className="meta-row"><span>{t("medicine.instructions")}</span><strong>{instructionKey ? t(`add.${instructionKey}`) : t("medicine.noInstructions")}</strong></div>
-        <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>
-        <div className="stepper" role="group" aria-label={t("medicine.stock")}>
-          <button type="button" onClick={() => changeStock(-1)} disabled={busy || stock <= 0} aria-label={t("medicine.decrease")}>−</button>
-          <StockField value={stock} max={MAX_NUMBER} disabled={busy} onCommit={(next) => changeStock(next - stock)} />
-          <button type="button" onClick={() => changeStock(1)} disabled={busy || stock >= MAX_NUMBER} aria-label={t("medicine.increase")}>+</button>
-        </div>
-        <p className="form-note" style={{ textAlign: "center" }}>{medicine.threshold === null ? t("medicine.refillOff") : t("medicine.refillAt", { count: medicine.threshold })}</p>
+        <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === null ? <span className="stock-untracked">{t("medicine.notTracked")}</span> : stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>
+        {stock === null ? <StockStart max={MAX_NUMBER} disabled={busy} onStart={(count) => changeStock(0, { count })} /> : (
+          <>
+            <div className="stepper" role="group" aria-label={t("medicine.stock")}>
+              <button type="button" onClick={() => changeStock(-1)} disabled={busy || stock <= 0} aria-label={t("medicine.decrease")}>−</button>
+              <StockField value={stock} max={MAX_NUMBER} disabled={busy} onCommit={(next) => changeStock(next - stock)} />
+              <button type="button" onClick={() => changeStock(1)} disabled={busy || stock >= MAX_NUMBER} aria-label={t("medicine.increase")}>+</button>
+            </div>
+            <p className="form-note" style={{ textAlign: "center" }}>{medicine.threshold === null ? t("medicine.refillOff") : t("medicine.refillAt", { count: medicine.threshold })}</p>
+            <p style={{ textAlign: "center", margin: "4px 0 0" }}><button type="button" className="inline-link" disabled={busy} onClick={() => changeStock(0, { count: null })}>{t("medicine.stopCounting")}</button></p>
+          </>
+        )}
       </section>
       <div className="stack" style={{ marginTop: 18 }}>
         <button className="primary-button" onClick={() => go("editMedicine")} disabled={busy}><Icon name="edit" size={18} /> {t("medicine.edit")}</button>
@@ -2016,18 +2026,24 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   const t = useTranslations();
   const language = useLocale() as Language;
   const toast = useToast();
+  const child = useChildInfo(recipient);
   if (!recipient) return null;
   const e = (key: string, values?: Record<string, string | number>) => t(`emergency.${key}`, values);
+  // Pregnancy week + due date, a child's birth date, age and weight: the first thing staff must see (round 2, R3).
+  const facts = factLines(recipient, child.info, (key, values) => t(`facts.${key}`, values), language);
+  // Age from the date of birth when no age is stored; a child's age is in the "Born ..." line instead.
+  const years = isChild(recipient) ? null : recipient.age ?? yearsSince(recipient.dob, todayIn(recipient.timezone ?? "Asia/Kolkata"));
   const notAdded = e("notAdded");
   const unknown = e("unknown");  // "not recorded" must never read as "none": staff may act on it
   const active = medicines.filter((m) => m.active);
   const family = members.filter((m) => m.phone).slice(0, 3);
-  const ageCity = [recipient.age ? e("years", { count: recipient.age }) : null, recipient.city].filter(Boolean).join(" • ");
+  const ageCity = [years !== null ? e("years", { count: years }) : null, recipient.city].filter(Boolean).join(" • ");
   const conditions = recipient.conditions;
   const allergies = recipient.allergies;
   const medicineLine = (m: Medicine) => [m.name, m.dose && localizeDose(m.dose, t)].filter(Boolean).join(" ");
   const shareText = [
     `${e("title")} — ${recipient.name}`,
+    ...facts,
     ageCity,
     `${e("bloodGroup")}: ${recipient.blood_group ?? unknown}`,
     `${e("allergies")}: ${allergies.join(", ") || unknown}`,
@@ -2061,7 +2077,8 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
         <Icon3D name="heart" size={32} eager />
       </header>
       <section className="emergency-id">
-        <div className="emergency-head"><span className="initials-avatar large" aria-hidden="true">{([...recipient.name][0] ?? "?").toUpperCase()}</span><div><h2>{recipient.name}</h2><p>{ageCity || notAdded}</p></div><span>{recipient.blood_group ?? "?"}</span></div>
+        <div className="emergency-head"><span className="initials-avatar large" aria-hidden="true">{([...recipient.name][0] ?? "?").toUpperCase()}</span><div><h2>{recipient.name}</h2>{ageCity && <p>{ageCity}</p>}</div>{recipient.blood_group && <span>{recipient.blood_group}</span>}</div>
+        <KeyFactLines lines={facts} />
         <div className="emergency-grid"><div><small>{e("bloodGroup")}</small><strong>{recipient.blood_group ?? unknown}</strong></div><div><small>{e("allergies")}</small><strong>{allergies.join(", ") || unknown}</strong></div></div>
         <div className="emergency-section"><small>{e("conditions")}</small>{conditions.length ? <div>{conditions.map((c) => <span key={c}>{c}</span>)}</div> : <strong>{unknown}</strong>}</div>
         <div className="emergency-section"><small>{e("medicines")}</small>{active.length ? <ul>{active.map((m) => <li key={m.id}>{medicineLine(m)} <span>{describeTimes(m.times, t, language)}</span></li>)}</ul> : <strong>{notAdded}</strong>}</div>
@@ -2075,6 +2092,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
         <button className="download-button" onClick={download}><Icon name="report" size={19} /> {e("download")}</button>
       </div>
       <p className="privacy-note"><Icon name="shield" size={16} /> {e("privacy")}</p>
+      {isChild(recipient) && <ChildWeightEditor recipient={recipient} info={child.info} onSaved={child.set} />}
       <EmergencyLinkPanel recipientId={recipient.id} name={recipient.name} share={(title, text) => shareContent(title, text, t)} toast={toast} />
     </main>
   );

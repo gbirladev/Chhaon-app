@@ -54,3 +54,29 @@ export function StockField({ value, max, disabled, onCommit }: { value: number; 
     </div>
   );
 }
+
+/** Stock not tracked (the family left the count empty): a neutral line and a box to start counting. Nothing is "out of stock". */
+export function StockStart({ max, disabled, onStart }: { max: number; disabled?: boolean; onStart: (count: number) => void }) {
+  const t = useTranslations("medicine");
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState(false);
+  const start = () => {
+    const next = parseStock(draft, max);
+    if (next === null) { setError(true); return; }
+    setError(false);
+    onStart(next);
+  };
+  return (
+    <div className="stock-start">
+      <p className="form-note">{t("notTrackedHint")}</p>
+      <div className="stock-start-row">
+        <input className="stock-input" type="text" inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" autoComplete="off" placeholder="30"
+          value={draft} disabled={disabled} aria-label={t("stockInput")} aria-invalid={error} aria-describedby={error ? "stock-start-error" : undefined}
+          onChange={(e) => { setDraft(e.target.value); setError(false); }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); start(); } }} />
+        <button type="button" className="secondary-button" disabled={disabled || !draft.trim()} onClick={start}>{t("addCount")}</button>
+      </div>
+      {error && <p id="stock-start-error" className="stock-error" role="alert">{t("errStockNumber", { max })}</p>}
+    </div>
+  );
+}

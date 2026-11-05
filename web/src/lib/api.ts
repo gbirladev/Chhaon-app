@@ -49,7 +49,7 @@ export type Medicine = {
   name: string;
   dose: string;
   times: string[];
-  stock: number;
+  stock: number | null;   // null = not tracked (the family left the count empty): never "out of stock"
   threshold: number | null;
   instructions: string | null;
   active: boolean;
@@ -119,7 +119,7 @@ type MedicineDto = {
 const toMedicine = (m: MedicineDto): Medicine => ({
   id: m.id, name: m.name, dose: m.dose ?? "",
   times: (m.times ?? []).map((t) => (t.length === 5 ? `${t}:00` : t)),
-  stock: m.stock ?? 0, threshold: m.threshold, instructions: m.instructions,
+  stock: m.stock ?? null, threshold: m.threshold, instructions: m.instructions,
   active: m.active, photoUrl: m.photoUrl, critical: m.critical,
   pillColour: asPillColour(m.pillColour), pillShape: asPillShape(m.pillShape),
 });
@@ -136,8 +136,14 @@ export async function updateMedicineApi(id: string, body: Record<string, unknown
   return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}`, { method: "PUT", body }));
 }
 
-export async function adjustStockApi(id: string, delta: number): Promise<number> {
-  return (await apiFetch<{ stock: number }>(`/api/v1/medicines/${id}/stock`, { method: "POST", body: { delta } })).stock;
+export async function adjustStockApi(id: string, delta: number): Promise<number | null> {
+  return (await apiFetch<{ stock: number | null }>(`/api/v1/medicines/${id}/stock`, { method: "POST", body: { delta } })).stock;
+}
+
+/** Starts counting (an exact number) or stops it (null: "not tracked", no refill or out-of-stock alerts). */
+export async function setStockCountApi(id: string, count: number | null): Promise<number | null> {
+  const body = count === null ? { untrack: true } : { count };
+  return (await apiFetch<{ stock: number | null }>(`/api/v1/medicines/${id}/stock`, { method: "POST", body })).stock;
 }
 
 export async function setMedicineFlags(id: string, flags: { active?: boolean; critical?: boolean }): Promise<Medicine> {
@@ -148,7 +154,7 @@ export async function deleteMedicineApi(id: string): Promise<void> {
   await apiFetch<void>(`/api/v1/medicines/${id}`, { method: "DELETE" });
 }
 
-export const isLowStock = (m: Medicine) => m.threshold !== null && m.stock <= m.threshold;
+export const isLowStock = (m: Medicine) => m.stock !== null && m.threshold !== null && m.stock <= m.threshold;
 
 export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_soon" | "no_phone" | "error";
 

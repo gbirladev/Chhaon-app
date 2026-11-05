@@ -1,0 +1,10 @@
+/* Key facts (pregnancy week, child's birth date and weight) at the top of the emergency card and the doctor summary. */
+.key-facts { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--s-fff7f6); border: 1px solid var(--b-f0b8b4); }
+.key-facts p { margin: 0; font-weight: 700; font-size: 15px; line-height: 1.45; }
+.key-facts p + p { margin-top: 4px; font-weight: 600; }
+.emergency-id .key-facts { margin: 0 16px 12px; }
+.key-weight .two-col { align-items: end; }
+.key-weight { margin-top: 16px; padding: 16px; }
+.key-weight h2 { margin: 0 0 4px; font-size: 17px; }
+.key-weight .form-note { margin: 0 0 10px; }
+.key-weight .secondary-button { width: 100%; min-height: 48px; }

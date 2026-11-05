@@ -10,6 +10,9 @@ export type PublicCard = {
   medicines: { name: string; dose: string; times: string[] }[];
   contacts: { name: string; phone: string }[];
   doctor: string | null;
+  /** Migration 0052: only for a pregnancy / a child, null otherwise (absent from an older database). */
+  pregnancy?: { week: number | null; due_date: string | null } | null;
+  child?: { born: string | null; weight_kg: number | null; weight_on: string | null } | null;
 };
 
 export type CardResult = { kind: "ok"; card: PublicCard } | { kind: "off" } | { kind: "busy" } | { kind: "error" };
