@@ -15,6 +15,13 @@ public class TestConfig {
         return new RecordingWhatsAppSender();
     }
 
+    /** Medicine photos never come from the real Supabase in tests; off unless a test switches it on. */
+    @Bean
+    @Primary
+    public FakeMedicinePhotoStore fakeMedicinePhotoStore() {
+        return new FakeMedicinePhotoStore();
+    }
+
     @Bean
     public Fixtures fixtures(JdbcTemplate jdbc) {
         return new Fixtures(jdbc);

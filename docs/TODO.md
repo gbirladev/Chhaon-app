@@ -585,3 +585,23 @@ entries whose files are all gone.
 - [ ] Gynaecologist reads the usual checks and supplement names (`web/src/lib/pregnancyChecks.ts`) before families are told.
 - [ ] Hindi reviewed by a native speaker (`docs/hindi-review.md`, Part 7).
 - [ ] Decide later: a per-person on/off for the daily check-in (today a pregnancy gets the check-in with the gentle wording).
+
+## Medicine photo in the WhatsApp reminder (feature 5, built 2026-11-05 on branch `f5-photo-reminder`, NOT pushed)
+When a medicine has a photo, the dose reminder is sent as an IMAGE with the usual reminder text as its caption (helper and pregnancy
+wording unchanged), so a parent or helper who cannot read the strip sees it. The gateway's message id is stored in
+`dose_events.whatsapp_message_id` as before, so swipe-replies still match. ANY photo problem (no photo, storage not configured, file
+missing, download error, not a readable image, cannot get under 1 MB, gateway refuses media) sends the plain text reminder in the
+same tick; nothing else changes. The photo is a JPEG of at most 1 MB (app photos are already 1280 px JPEG and go as they are; anything
+else is shrunk). Only files in the person's own folder `medicine-photos/<recipient_id>/...` are read. No migration.
+- [ ] **Owner/buddy: add two GitHub secrets** (repo Settings -> Secrets and variables -> Actions), then redeploy the backend:
+      `SUPABASE_URL` (the Sydney project address, `https://<project-ref>.supabase.co`, must be https) and
+      `SUPABASE_SERVICE_ROLE_KEY` (Sydney dashboard -> Project Settings -> API keys -> service_role, or a secret `sb_secret_...` key).
+      A secret: never paste it in chat, never commit it, never put it in the web app. These are the SAME two settings the
+      privacy note above needs for erasing stored files.
+      Until both are set, photos are off and every reminder is plain text (the start-up log says
+      "medicine photos in reminders: off"). Note: a blank secret in the deploy KEEPS the value already on the box; to switch photos
+      off again, remove the two lines from `/etc/chhaon/backend.env` on the box and restart.
+- [ ] After switching on: add a photo to one test medicine and check on a test phone that the reminder arrives as a picture with
+      the text below it, and that a swipe-reply "1" to the picture marks the dose taken.
+- [ ] Possible duplicate: if the gateway sends the picture but its answer is lost (connection dropped after sending), the plain
+      text follows too. Rare; acceptable (better twice than never).

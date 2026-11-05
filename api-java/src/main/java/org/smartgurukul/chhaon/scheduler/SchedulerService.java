@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartgurukul.chhaon.recipient.Pregnancy;
 import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
+import org.smartgurukul.chhaon.whatsapp.MedicinePhotoStore;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.ReceiverTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
@@ -43,6 +44,14 @@ public class SchedulerService {
     private final WhatsAppSender wa;
     /** null = no WhatsApp alerts to caregivers (tests that build the service by hand). */
     private final AlertDelivery alerts;
+    /** Medicine photos for the reminder; null = text only (tests that build the service by hand). */
+    private MedicinePhotoStore photos;
+
+    /** The medicine photo in the reminder (feature 5). Optional: without it every reminder is plain text. */
+    @Autowired(required = false)
+    public void setMedicinePhotoStore(MedicinePhotoStore photos) {
+        this.photos = photos;
+    }
 
     private final boolean enabled;
     private final int doseMissedMinutes;
@@ -210,7 +219,7 @@ public class SchedulerService {
                 "r.name person_name, r.reminder_to, r.reminder_name, " +   // who gets the reminder (migration 0044)
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
-                "m.id medicine_id, m.name medicine_name, " +
+                "m.id medicine_id, m.name medicine_name, m.photo_url, " +
                 // read through to_jsonb so a database without the colour columns (migration 0042 not applied yet)
                 // still sends reminders, just without the look line
                 "to_jsonb(m) ->> 'pill_colour' pill_colour, to_jsonb(m) ->> 'pill_shape' pill_shape " +
@@ -233,7 +242,10 @@ public class SchedulerService {
             try {
                 String text = doseText(row);
                 if (ReceiverTexts.notThePerson((String) row.get("reminder_to"))) text = receiverDoseText(row);
-                String msgId = wa.send((String) row.get("whatsapp_phone"), text);
+                // With the medicine photo when there is one; any photo problem sends this same text instead (never throws here).
+                byte[] photo = photos == null ? null
+                        : photos.reminderJpeg((UUID) row.get("recipient_id"), (String) row.get("photo_url")).orElse(null);
+                String msgId = wa.sendReminder((String) row.get("whatsapp_phone"), text, photo);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
                 sent++;
             } catch (Exception sendEx) {

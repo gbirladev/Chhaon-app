@@ -4,10 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 
@@ -73,6 +79,63 @@ public class WhatsAppSender {
             throw new IllegalStateException("WhatsApp gateway send failed: " + why);
         }
         return resp.path("data").path("key").path("id").asText("sent");
+    }
+
+    /**
+     * Send a JPEG with a caption (the gateway's media route: multipart file + type=image + caption). Returns the provider message
+     * id, like {@link #send}. Throws on any failure; callers that must not lose the message use {@link #sendReminder}.
+     */
+    public String sendImage(String toPhone, byte[] jpeg, String caption) {
+        if (jpeg == null || jpeg.length == 0) throw new IllegalArgumentException("no image");
+        if (client == null) {
+            log.info("[WA dry-run] image ({} bytes) to={} caption={} (gateway not configured)", jpeg.length, mask(toPhone), caption);
+            return "dryrun-" + UUID.randomUUID();
+        }
+        String jid = toJid(toPhone);
+        String sessionId = resolveSessionId();
+        HttpHeaders fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.IMAGE_JPEG);
+        HttpHeaders textHeaders = new HttpHeaders();
+        textHeaders.setContentType(new MediaType("text", "plain", StandardCharsets.UTF_8));   // Hindi and emoji intact
+        MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+        form.add("file", new HttpEntity<>(new ByteArrayResource(jpeg) {
+            @Override
+            public String getFilename() {
+                return "medicine.jpg";
+            }
+        }, fileHeaders));
+        form.add("type", new HttpEntity<>("image", textHeaders));
+        form.add("caption", new HttpEntity<>(caption == null ? "" : caption, textHeaders));
+        JsonNode resp = client.post()
+                .uri("/api/messages/{session}/{jid}/media", sessionId, jid)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(form)
+                .retrieve()
+                .body(JsonNode.class);
+        if (resp == null || !resp.path("status").asBoolean(false)) {
+            String why = resp == null ? "no answer" : resp.path("message").asText(resp.path("error").asText("no reason given"));
+            throw new IllegalStateException("WhatsApp gateway send failed: " + why);
+        }
+        String id = resp.path("data").path("key").path("id").asText("");
+        // Without the id a reply (a swipe-reply to this message) could not be matched to the reminder: treat it as failed.
+        if (id.isBlank()) throw new IllegalStateException("WhatsApp gateway send failed: no message id");
+        return id;
+    }
+
+    /**
+     * A dose reminder: with the medicine photo as an image (the text as its caption) when there is one, else plain text.
+     * ANY failure of the photo send falls back to the plain text at once, so a reminder is never lost because of a photo.
+     * Throws only when the plain text also fails (the caller then hands the dose back for the next tick).
+     */
+    public String sendReminder(String toPhone, String text, byte[] photoJpeg) {
+        if (photoJpeg != null && photoJpeg.length > 0) {
+            try {
+                return sendImage(toPhone, photoJpeg, text);
+            } catch (Exception | LinkageError e) {   // LinkageError: a missing library must not cost the reminder either
+                log.warn("photo reminder to {} not sent ({}), sending the plain text reminder instead", mask(toPhone), failureReason(e));
+            }
+        }
+        return send(toPhone, text);
     }
 
     /** Resolve the session id by its display name (prefer CONNECTED), cached for 5 minutes. */
