@@ -1,5 +1,7 @@
 package org.smartgurukul.chhaon.recipient;
 
+import org.smartgurukul.chhaon.profile.Profile;
+import org.smartgurukul.chhaon.profile.ProfileRepository;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.ContactDto;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.CreateRecipientRequest;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.RecipientResponse;
@@ -15,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,13 +41,17 @@ public class CareRecipientService {
     private final CareRecipientRepository recipients;
     private final CareCircleRepository circles;
     private final CareCircleMemberRepository members;
+    /** The caller's own number and name, for "send the reminders to me" (reminder_to = caregiver). */
+    private final ProfileRepository profiles;
 
     public CareRecipientService(CareRecipientRepository recipients,
                                 CareCircleRepository circles,
-                                CareCircleMemberRepository members) {
+                                CareCircleMemberRepository members,
+                                ProfileRepository profiles) {
         this.recipients = recipients;
         this.circles = circles;
         this.members = members;
+        this.profiles = profiles;
     }
 
     @Transactional(readOnly = true)
@@ -103,6 +110,7 @@ public class CareRecipientService {
         if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
         if (Boolean.TRUE.equals(req.caregiverAttested())) r.setCaregiverAttestedAt(now);
         applyCareType(r, req.careType(), req.dueDate());
+        applyReceiver(r, userId, null, req.reminderTo(), req.reminderName(), req.reminderRelation());
 
         try {
             recipients.saveAndFlush(r);
@@ -116,6 +124,7 @@ public class CareRecipientService {
     @Transactional
     public RecipientResponse update(UUID userId, UUID id, UpdateRecipientRequest req) {
         CareRecipient r = requireMemberRecipient(userId, id);
+        Receiver before = new Receiver(r.getReminderTo(), r.getReminderUserId(), r.getWhatsappPhone());
         // is_self and circle are immutable; relation forced to 'self' for a self profile.
         r.setRelation(r.isSelf() ? "self" : normalizeRelation(req.relation()));
         r.setCallName(r.isSelf() ? null : trimToNull(req.callName()));
@@ -136,6 +145,7 @@ public class CareRecipientService {
             r.setCaregiverAttestedAt(OffsetDateTime.now());
         }
         applyCareType(r, req.careType(), req.dueDate());
+        applyReceiver(r, userId, before, req.reminderTo(), req.reminderName(), req.reminderRelation());
         r.setUpdatedAt(OffsetDateTime.now());
         // DB triggers handle consent reset on phone change and dose clearing on timezone change.
         try {
@@ -156,6 +166,64 @@ public class CareRecipientService {
         }
         // TODO(port storage): purge medicine-photo and report files for this recipient first.
         recipients.delete(r); // ON DELETE CASCADE removes medicines, schedules, doses, reports, etc.
+    }
+
+    // --- who gets the WhatsApp reminders (docs/reminder-receiver.md) ---
+
+    /** What was stored before an edit (null when creating). */
+    private record Receiver(String to, UUID userId, String phone) {}
+
+    /**
+     * Sets reminder_to / reminder_name / reminder_relation / reminder_user_id, and for "Me" the number. Runs after the
+     * WhatsApp number from the request was applied: that number is the one that RECEIVES the reminders, whoever it belongs to.
+     * <ul>
+     *   <li>person (default): the person themself, exactly as before.</li>
+     *   <li>caregiver ("Me"): the caller. The number typed in the form wins; if none was typed, the caller's own login number,
+     *       else their confirmed alert number. Another family member who already gets the reminders keeps them while the
+     *       number is unchanged (a sibling saving the form does not take them over).</li>
+     *   <li>helper: a name (required, greeted in the messages) and a short relation (app only); the number is required.</li>
+     * </ul>
+     * {@code to == null} on an edit keeps what is stored (an older app version that does not know the choice).
+     * The database resets consent when the number or the receiver role changes, so the new receiver is asked again.
+     */
+    private void applyReceiver(CareRecipient r, UUID userId, Receiver before, String to, String name, String relation) {
+        String mode = to == null || to.isBlank() ? (before == null ? "person" : null) : to.trim();
+        if (r.isSelf()) mode = "person"; // your own profile: always your own reminders
+        if (mode == null) return;
+        switch (mode) {
+            case "person" -> setReceiver(r, "person", null, null, null);
+            case "helper" -> {
+                String helper = trimToNull(name);
+                if (helper == null) throw new ResponseStatusException(BAD_REQUEST, "Please enter the name of the person who gets the reminders");
+                if (r.getWhatsappPhone() == null) throw new ResponseStatusException(BAD_REQUEST, "Please enter their WhatsApp number");
+                setReceiver(r, "helper", limit(helper, 60), limit(trimToNull(relation), 30), null);
+            }
+            case "caregiver" -> {
+                if (before != null && "caregiver".equals(before.to()) && before.userId() != null && !before.userId().equals(userId)
+                        && Objects.equals(before.phone(), r.getWhatsappPhone())) {
+                    return; // someone else in the family gets them; saving the form does not move them to the caller
+                }
+                Profile me = profiles.findById(userId).orElse(null);
+                if (r.getWhatsappPhone() == null && me != null) {
+                    String own = me.getPhone() != null ? me.getPhone() : me.getAlertPhone();
+                    r.setWhatsappPhone(own == null ? null : PhoneNormalizer.normalize(own));
+                }
+                if (r.getWhatsappPhone() == null) throw new ResponseStatusException(BAD_REQUEST, "Please enter your WhatsApp number");
+                setReceiver(r, "caregiver", me == null ? null : limit(trimToNull(me.getName()), 60), null, userId);
+            }
+            default -> throw new ResponseStatusException(BAD_REQUEST, "Unknown reminder receiver: choose person, caregiver or helper");
+        }
+    }
+
+    private static void setReceiver(CareRecipient r, String to, String name, String relation, UUID userId) {
+        r.setReminderTo(to);
+        r.setReminderName(name);
+        r.setReminderRelation(relation);
+        r.setReminderUserId(userId);
+    }
+
+    private static String limit(String s, int max) {
+        return s == null || s.length() <= max ? s : s.substring(0, max).trim();
     }
 
     // --- helpers ---
@@ -300,6 +368,9 @@ public class CareRecipientService {
         if (msg.contains("self_circle")) {
             return new ResponseStatusException(CONFLICT, "A self profile cannot be shared.");
         }
+        if (msg.contains("care_recipients_reminder_receiver_valid") || msg.contains("care_recipients_reminder_to_known")) {
+            return new ResponseStatusException(BAD_REQUEST, "Invalid reminder receiver");
+        }
         if (msg.contains("care_recipients_whatsapp_phone_check")) {
             return new ResponseStatusException(BAD_REQUEST, "Invalid WhatsApp phone number");
         }
@@ -342,6 +413,10 @@ public class CareRecipientService {
                 r.getOptedOutAt(),
                 r.getConsentRequestedAt(),
                 r.getCreatedAt(),
-                r.getUpdatedAt());
+                r.getUpdatedAt(),
+                r.getReminderTo(),
+                r.getReminderName(),
+                r.getReminderRelation(),
+                r.getReminderUserId() == null ? null : r.getReminderUserId().toString());
     }
 }

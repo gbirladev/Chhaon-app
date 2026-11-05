@@ -108,4 +108,21 @@ public class CareRecipient {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    // --- Who gets the WhatsApp reminders on whatsapp_phone (migration 20261105000044, docs/reminder-receiver.md) ---
+    /** person (default) | caregiver | helper. */
+    @Column(name = "reminder_to", nullable = false)
+    private String reminderTo = "person";
+
+    /** The name the receiver is greeted with (helper, or the caregiver's own name); null for the person themself. */
+    @Column(name = "reminder_name")
+    private String reminderName;
+
+    /** A helper's relation in the family's words ("maid", "Nani"); app only, never sent on WhatsApp. */
+    @Column(name = "reminder_relation")
+    private String reminderRelation;
+
+    /** The family member who gets the reminders when reminderTo = caregiver. */
+    @Column(name = "reminder_user_id")
+    private UUID reminderUserId;
 }

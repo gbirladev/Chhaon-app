@@ -49,7 +49,8 @@ public class ConsentService {
     /** sent | already_consented | opted_out | too_soon | too_many | no_phone. 404 when the caller is not in that parent's circle. */
     public Result requestConsent(UUID userId, UUID recipientId) {
         Map<String, Object> r = firstOrNull(jdbc.queryForList(
-                "select id, circle_id, name, call_name, language, whatsapp_phone, consent_at, opted_out_at, is_self " +
+                "select id, circle_id, name, call_name, language, whatsapp_phone, consent_at, opted_out_at, is_self, " +
+                        "reminder_to, reminder_name " +
                         "from care_recipients where id = ?", recipientId));
         if (r == null || !isMember((UUID) r.get("circle_id"), userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"); // same answer: do not reveal other circles
@@ -76,6 +77,12 @@ public class ConsentService {
             String callName = r.get("call_name") != null && !((String) r.get("call_name")).isBlank()
                     ? (String) r.get("call_name") : (String) r.get("name");
             text = MessageTexts.consentRequest(language, callName, caregiverName(userId));
+        }
+        String reminderTo = (String) r.get("reminder_to");
+        if (!Boolean.TRUE.equals(r.get("is_self")) && ReceiverTexts.notThePerson(reminderTo)) {
+            // A helper or the caregiver gets the reminders: say for whom and on whose behalf (docs/reminder-receiver.md).
+            text = ReceiverTexts.consentRequest(language, reminderTo, (String) r.get("reminder_name"),
+                    ReceiverTexts.personName((String) r.get("call_name"), (String) r.get("name")), caregiverName(userId));
         }
         try {
             wa.send(phone, text);

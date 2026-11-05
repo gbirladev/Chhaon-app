@@ -308,3 +308,57 @@ Vaccine names (shown in Hindi mode; from `api-java/src/main/resources/vaccines/i
 | hpv | एचपीवी (HPV) | HPV | |
 | tdap | टीडैप (Tdap) | Tdap | |
 | td | टीडी (Td) | Td | |
+
+## Part 9: who gets the reminder: helper / "Me" (added 2026-11-05, branch `reminder-receiver`)
+
+When the family chooses that someone other than the person gets the WhatsApp reminders (a maid, an attendant, Nani, the
+husband, or the caregiver themself), the messages are written in the third person and always name the person. Code:
+`api-java/.../whatsapp/ReceiverTexts.java`, `AlertTexts.alert(..., receiver)`; app texts in `web/src/messages/hi.json`.
+Please check especially the possessives ("पापा की दवा", "पापा के दवा लेने के बाद") and the respectful "जी" added after a helper's name.
+
+**WhatsApp (to the helper / caregiver)**
+
+| What | Hindi | English | OK? |
+|---|---|---|---|
+| Reminder to a helper | नमस्ते सुनीता जी 🙏 / पापा की दवा का समय हो गया है 💊 *Metformin* / ⚪ सफ़ेद गोल गोली / दवा देने के बाद *1* या 👍 भेजिए ✅ | Namaste Sunita ji 🙏 / Time for Papa's medicine 💊 *Metformin* / ⚪ White round tablet / Reply *1* or 👍 once you have given it ✅ | |
+| Reminder to the caregiver ("Me") | नमस्ते Ganesh 🙏 / पापा की दवा का समय हो गया है 💊 *Metformin* / पापा के दवा लेने के बाद *1* या 👍 भेजिए ✅ | Namaste Ganesh 🙏 / Time for Papa's medicine 💊 *Metformin* / Reply *1* or 👍 once Papa has taken it ✅ | |
+| Consent, helper | नमस्ते सुनीता जी 🙏 / Ganesh आपको यहाँ WhatsApp पर पापा की दवाओं के रिमाइंडर भेजना चाहते हैं। / शुरू करने के लिए *1* लिखें ✅ / नहीं चाहिए तो *2* लिखें / कभी भी STOP लिखकर रोक सकते हैं। | Namaste Sunita ji 🙏 / Ganesh would like to send you reminders for Papa's medicines here on WhatsApp. / Reply *1* to start ✅ ... | |
+| Consent, helper, no caregiver name | पापा का परिवार आपको यहाँ WhatsApp पर पापा की दवाओं के रिमाइंडर भेजना चाहता है। | Papa's family would like to send you reminders for Papa's medicines here on WhatsApp. | |
+| Consent, caregiver | आपने पापा की दवाओं के रिमाइंडर यहाँ WhatsApp पर पाना चुना है। | You chose to get Papa's medicine reminders here on WhatsApp. | |
+| After "1" to consent | धन्यवाद 🙏 अब आपको यहाँ पापा की दवा के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें। | Thank you 🙏 You will now get Papa's medicine reminders here. Reply STOP any time to stop. | |
+| After "diya" / "1" | धन्यवाद 🙏 पापा की दवा Metformin नोट कर ली ✅ | Thank you 🙏 Noted for Papa: Metformin ✅ | |
+| After "2" (helper) | ठीक है 🙏 पापा को दवा देने के बाद 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once you have given Papa the medicine. | |
+| After "2" (caregiver) | ठीक है 🙏 पापा के दवा लेने के बाद 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once Papa has taken the medicine. | |
+
+New words understood as "given": diya, de diya, de di, दिया, दे दिया, दे दी, given, gave; and, only as the whole message, ho gaya / हो गया / हो गई.
+
+**WhatsApp alerts to the family (when a helper or a family member gets the reminders)**
+
+| What | Hindi | English | OK? |
+|---|---|---|---|
+| Missed dose | पापा की दवा *Metformin* (सुबह 8:00) की पुष्टि नहीं हुई। रिमाइंडर Sunita (maid) को भेजा गया था। / एक बार फ़ोन करके पूछ लें। | Papa's medicine *Metformin* (due 8:00 AM) was not confirmed. The reminder went to Sunita (maid). / You may want to give them a call. | |
+| Missed dose, to the caregiver who got it | ... रिमाइंडर आपको भेजा गया था। | ... The reminder went to you. | |
+| Reminder not sent | हम पापा की दवा *Metformin* का रिमाइंडर Sunita (maid) को नहीं भेज पाए। / कृपया ख़ुद याद दिला दें या फ़ोन कर लें। | We could not send the reminder for Papa's medicine *Metformin* to Sunita (maid). / Please make sure it is given, or give them a call. | |
+| STOP | पापा के रिमाइंडर पाने वाले Sunita (maid) ने WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए पापा के रिमाइंडर रुके हुए हैं। | Sunita (maid), who gets Papa's reminders, stopped Chhaon messages on WhatsApp, so Papa's reminders are paused. | |
+| Said no | Sunita (maid) ने WhatsApp पर पापा की दवा के रिमाइंडर लेने से मना किया है, इसलिए कोई रिमाइंडर नहीं भेजा जाएगा। | Sunita (maid) said no to getting Papa's medicine reminders on WhatsApp, so no reminders will be sent. | |
+
+**App (`profile`, `today`, `emergency` in hi.json)**
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| profile.receiverTitle | WhatsApp रिमाइंडर किसे मिलें? | Who gets the WhatsApp reminders? | |
+| profile.receiverMe / receiverHelper | मुझे / किसी और को | Me / Someone else | |
+| profile.receiverHintPerson | रिमाइंडर {call} के अपने WhatsApp पर जाएँगे। दवा लेने के बाद {call} 1 लिखकर जवाब देंगे। | Reminders go to {call}'s own WhatsApp. {call} replies 1 after taking the medicine. | |
+| profile.receiverHintMe | रिमाइंडर आपके WhatsApp पर {call} के नाम से आएँगे। {call} के दवा लेने के बाद 1 लिखें। तब रोज़ का चेक-इन नहीं होगा। | Reminders come to your WhatsApp, with {call}'s name. Reply 1 once {call} has taken the medicine. There is no daily check-in then. | |
+| profile.receiverHintHelper | घर की सहायिका, अटेंडेंट, आया या किसी रिश्तेदार के लिए, जो दवा देते हैं। दवा देने के बाद वे 1 लिखेंगे। तब रोज़ का चेक-इन नहीं होगा। | For a maid, attendant, nanny or relative who gives the medicine. They reply 1 once it is given. There is no daily check-in then. | |
+| profile.receiverHintOther | {call} के रिमाइंडर अभी {name} को जाते हैं। बदलने के लिए कोई दूसरा विकल्प चुनें। | Reminders for {call} now go to {name}. To change this, choose another option. | |
+| profile.helperName / helperRelation | उनका नाम / वे कौन हैं? (ज़रूरी नहीं) | Their name / Who are they? (optional) | |
+| profile.helperRelationPlaceholder | सहायिका, नानी, आया | maid, Nani, nanny | |
+| profile.whatsappHintHelper | हम पहले इस नंबर से WhatsApp पर अनुमति माँगेंगे। | We will first ask this number to agree on WhatsApp. | |
+| profile.sharedNumberMe | यही नंबर आपकी अपनी दवाओं के लिए भी है। कोई बात नहीं: हर रिमाइंडर में लिखा होगा कि दवा किसकी है। | This is also the number for your own medicines. That is fine: each reminder says whose medicine it is. | |
+| today.receiverOther | {call} के WhatsApp रिमाइंडर {name} को जाते हैं। रोज़ का चेक-इन नहीं होता। | WhatsApp reminders for {call} go to {name}. There is no daily check-in. | |
+| today.consentPendingTitleReceiver | {name} की सहमति का इंतज़ार | Waiting for {name} to agree | |
+| today.consentPendingReceiver | हमने {name} को {call} की दवा के रिमाइंडर भेजने की अनुमति माँगने के लिए WhatsApp संदेश भेजा है। ... | We sent {name} a WhatsApp message asking for permission to send {call}'s medicine reminders. ... | |
+| today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
+| today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
+| emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |

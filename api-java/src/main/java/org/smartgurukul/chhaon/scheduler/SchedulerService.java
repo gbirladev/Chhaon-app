@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.smartgurukul.chhaon.recipient.Pregnancy;
 import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
+import org.smartgurukul.chhaon.whatsapp.ReceiverTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -206,6 +207,7 @@ public class SchedulerService {
         p.add(doseMissedMinutes);
         String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, r.language, " +
                 "r.call_name, r.name recipient_name, r.timezone, r.care_type, r.due_date, " +
+                "r.name person_name, r.reminder_to, r.reminder_name, " +   // who gets the reminder (migration 0044)
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
                 "m.id medicine_id, m.name medicine_name, " +
@@ -230,6 +232,7 @@ public class SchedulerService {
             if (claimed != 1) continue; // another tick took it
             try {
                 String text = doseText(row);
+                if (ReceiverTexts.notThePerson((String) row.get("reminder_to"))) text = receiverDoseText(row);
                 String msgId = wa.send((String) row.get("whatsapp_phone"), text);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
                 sent++;
@@ -304,6 +307,8 @@ public class SchedulerService {
                 "from care_recipients r " +
                 "where r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 "and r.is_self = false " +
+                // "Are you okay?" is asked of the person only: no check-in when a helper or a family member gets the reminders
+                "and r.reminder_to = 'person' " +
                 // STOP belongs to the NUMBER: never a check-in to a number that opted out, even when another parent record carries it.
                 "and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)" + scopeClause(scope, p, "r");
         int sent = 0;
@@ -416,6 +421,14 @@ public class SchedulerService {
         String language = (String) row.get("language");
         if (!pregnant(row)) return MessageTexts.checkin(language, (String) row.get("call_name"));
         return MessageTexts.pregnancyCheckin(language, pregnancyName(row), Pregnancy.week(dueDate(row), localToday));
+    }
+
+    /** The third-person reminder for a helper / the caregiver ("Time for Papa's medicine"), see docs/reminder-receiver.md. */
+    private static String receiverDoseText(Map<String, Object> row) {
+        return ReceiverTexts.doseReminder((String) row.get("language"), (String) row.get("reminder_to"),
+                (String) row.get("reminder_name"),
+                ReceiverTexts.personName((String) row.get("call_name"), (String) row.get("person_name")),
+                (String) row.get("medicine_name"), (String) row.get("pill_colour"), (String) row.get("pill_shape"));
     }
 
     /** One notification row per circle member (payload carries ids only, never health data/phones). */

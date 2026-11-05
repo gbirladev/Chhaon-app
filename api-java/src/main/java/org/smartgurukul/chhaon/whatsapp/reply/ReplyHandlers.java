@@ -2,6 +2,7 @@ package org.smartgurukul.chhaon.whatsapp.reply;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.whatsapp.ReceiverTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
 import org.smartgurukul.chhaon.whatsapp.reply.ReplyRouter.Checkin;
 import org.smartgurukul.chhaon.whatsapp.reply.ReplyRouter.Consent;
@@ -54,7 +55,7 @@ public class ReplyHandlers {
             case Consent c -> consent(c, m, out);
             case ReplyRouter.AlertOptIn a -> alertOptIn(a, m, out);
             case Dose d -> dose(d, m, out);
-            case DoseNotYet n -> out.add(new OutboundReply(m.phone(), ReplyTexts.doseNotYet(n.language())));
+            case DoseNotYet n -> out.add(new OutboundReply(m.phone(), doseNotYetText(n)));
             case Checkin c -> checkin(c, m, out);
             case Help h -> help(h, m, out);
             case ReplyRouter.Silent s -> { }
@@ -129,7 +130,8 @@ public class ReplyHandlers {
 
     private void consent(Consent c, InboundMessage m, List<OutboundReply> out) {
         Map<String, Object> r = firstOrNull(jdbc.queryForList(
-                "select id, circle_id, language, whatsapp_phone from care_recipients where id = ?", c.recipientId()));
+                "select id, circle_id, language, whatsapp_phone, name, call_name, reminder_to from care_recipients where id = ?",
+                c.recipientId()));
         if (r == null || !m.phone().equals(r.get("whatsapp_phone"))) {
             log.warn("ignored a consent reply from an unexpected number {}", WhatsAppSender.mask(m.phone()));
             return;
@@ -144,7 +146,9 @@ public class ReplyHandlers {
                     "where id = ? and (consent_at is null or opted_out_at is not null)", r.get("id"));
             if (claimed > 0) {
                 notifier.notifyCircle(circleId, "parent_consented", Map.of("recipient_id", recipientId));
-                out.add(new OutboundReply(m.phone(), ReplyTexts.consentYes(language)));
+                out.add(new OutboundReply(m.phone(), ReceiverTexts.notThePerson((String) r.get("reminder_to"))
+                        ? ReceiverTexts.consentYes(language, personOf(r))
+                        : ReplyTexts.consentYes(language)));
             }
         } else {
             jdbc.update("insert into phone_opt_outs (phone) values (?) on conflict (phone) do nothing", m.phone());
@@ -211,7 +215,8 @@ public class ReplyHandlers {
 
     private void dose(Dose d, InboundMessage m, List<OutboundReply> out) {
         Map<String, Object> row = firstOrNull(jdbc.queryForList(
-                "select m.id medicine_id, m.name, m.dosage, r.language, r.whatsapp_phone " +
+                "select m.id medicine_id, m.name, m.dosage, r.language, r.whatsapp_phone, " +
+                        "r.name person_name, r.call_name, r.reminder_to " +
                         "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
                         "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id " +
                         "where de.id = ?", d.doseId()));
@@ -243,13 +248,34 @@ public class ReplyHandlers {
             }
         }
         if (noted.isEmpty()) return; // a repeated answer: nothing new, nothing to say
-        String text = ReplyTexts.doseTaken(language, String.join(", ", noted));
+        String text = ReceiverTexts.notThePerson((String) row.get("reminder_to"))
+                ? ReceiverTexts.doseTaken(language, ReceiverTexts.personName((String) row.get("call_name"), (String) row.get("person_name")),
+                        String.join(", ", noted))
+                : ReplyTexts.doseTaken(language, String.join(", ", noted));
         if (remainingSentDoses(m.phone()) > 0) {
             text += "\n" + ReplyTexts.nextDoseHint(language);
         } else if (openCheckin(m.phone())) {
             text += "\n" + ReplyTexts.checkinHint(language);
         }
         out.add(new OutboundReply(m.phone(), text));
+    }
+
+    /** "Okay, reply 1 once taken" - for a helper / the caregiver: "once you have given Papa the medicine". */
+    private String doseNotYetText(DoseNotYet n) {
+        if (n.doseId() != null) {
+            Map<String, Object> r = firstOrNull(jdbc.queryForList(
+                    "select r.language, r.name, r.call_name, r.reminder_to from dose_events de " +
+                            "join medicine_schedules s on s.id = de.schedule_id join medicines m on m.id = s.medicine_id " +
+                            "join care_recipients r on r.id = m.recipient_id where de.id = ?", n.doseId()));
+            if (r != null && ReceiverTexts.notThePerson((String) r.get("reminder_to"))) {
+                return ReceiverTexts.doseNotYet((String) r.get("language"), (String) r.get("reminder_to"), personOf(r));
+            }
+        }
+        return ReplyTexts.doseNotYet(n.language());
+    }
+
+    private static String personOf(Map<String, Object> recipientRow) {
+        return ReceiverTexts.personName((String) recipientRow.get("call_name"), (String) recipientRow.get("name"));
     }
 
     private void useStock(UUID medicineId, int units) {

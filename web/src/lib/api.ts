@@ -6,6 +6,7 @@ import { E164 } from "./countries";
 import { resolveLocalUrl } from "./hosts";
 import { localDate } from "./format";
 import { asPillColour, asPillShape, type PillColour, type PillShape } from "./pillLook";
+import { receiverRow } from "./reminderReceiver";
 
 export type Recipient = Database["public"]["Tables"]["care_recipients"]["Row"];
 
@@ -29,6 +30,7 @@ const toRecipient = (d: RecipientDto): Recipient => ({
   consent_at: d.consentAt, opted_out_at: d.optedOutAt, consent_requested_at: d.consentRequestedAt,
   created_at: d.createdAt, updated_at: d.updatedAt,
   care_type: d.careType === "pregnant" || d.careType === "child" ? d.careType : "older", due_date: d.dueDate ?? null,
+  ...receiverRow(d),   // who gets the WhatsApp reminders (lib/reminderReceiver.ts)
 } as unknown as Recipient);
 
 /** The caregiver's own profile from the Java API; shared by alerts/layout/privacy/admin reads. */

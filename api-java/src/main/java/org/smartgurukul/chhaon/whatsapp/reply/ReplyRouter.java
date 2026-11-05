@@ -26,7 +26,11 @@ import java.util.UUID;
  *   <li>Otherwise a dose that was marked missed in the last {@value #LATE_DOSE_HOURS} h, confirmed late ("taken_late").</li>
  *   <li>Otherwise unknown: one short friendly help text, at most once every few hours per number.</li>
  * </ol>
- * Only the number registered on a parent can be answered; any other sender is ignored without a reply. A number that
+ * Only the number registered on a parent can be answered; any other sender is ignored without a reply. That number is the
+ * one that RECEIVES the reminders (care_recipients.whatsapp_phone): the person, the caregiver ("Me") or a helper
+ * (docs/reminder-receiver.md). One number can receive reminders for several people (a maid for Papa and Mummy, a caregiver for
+ * a parent and for their own medicines): a reply answers the most recent open reminder sent to that number, whoever it is
+ * for, and the confirmation names the person. A number that
  * said STOP (or declined) gets no replies at all except to START.
  *
  * <p>What each intent can answer: a dose accepts YES / TAKEN / TAKEN_ALL (a bare "ok" never counts as taken; NO means
@@ -61,8 +65,15 @@ public class ReplyRouter {
     /** Confirm a dose; {@code wholeSlot} confirms every dose of that parent due at the same moment. */
     public record Dose(UUID doseId, boolean wholeSlot, String via) implements Route {}
 
-    /** "Not yet": nothing is recorded, the parent is gently told how to answer later. */
-    public record DoseNotYet(String language) implements Route {}
+    /**
+     * "Not yet": nothing is recorded, the parent is gently told how to answer later. {@code doseId} = the reminder it answers
+     * (so a helper is told whose medicine; may be null).
+     */
+    public record DoseNotYet(String language, UUID doseId) implements Route {
+        public DoseNotYet(String language) {
+            this(language, null);
+        }
+    }
 
     public record Checkin(UUID checkinId, boolean callMe, String via) implements Route {}
 
@@ -132,7 +143,7 @@ public class ReplyRouter {
         if (sentDose != null) {
             if (intent == Intent.YES || intent == Intent.TAKEN) return new Dose((UUID) sentDose.get("id"), false, "latest");
             if (intent == Intent.TAKEN_ALL) return new Dose((UUID) sentDose.get("id"), true, "latest");
-            if (intent == Intent.NO) return new DoseNotYet((String) sentDose.get("language"));
+            if (intent == Intent.NO) return new DoseNotYet((String) sentDose.get("language"), (UUID) sentDose.get("id"));
         }
 
         // (5) today's check-in awaiting a reply
@@ -221,7 +232,7 @@ public class ReplyRouter {
             return switch (intent) {
                 case YES, TAKEN -> new Dose(id, false, "quote");
                 case TAKEN_ALL -> new Dose(id, true, "quote");
-                case NO -> new DoseNotYet((String) dose.get("language"));
+                case NO -> new DoseNotYet((String) dose.get("language"), id);
                 default -> new Help((String) dose.get("language"), false);
             };
         }
