@@ -54,6 +54,29 @@ public class Profile {
     @Column(name = "is_admin", nullable = false)
     private boolean admin = false;
 
+    /** Which way today's medicines are drawn (null = default). Checked by the DB against the allowed names. */
+    @Column(name = "today_layout")
+    private String todayLayout;
+
+    @Column(name = "privacy_accepted_at")
+    private OffsetDateTime privacyAcceptedAt;
+
+    @Column(name = "policy_version")
+    private String policyVersion;
+
+    // Caregiver WhatsApp-alert settings (see migration 0015).
+    @Column(name = "alert_phone")
+    private String alertPhone;
+
+    @Column(name = "alert_requested_at")
+    private OffsetDateTime alertRequestedAt;
+
+    @Column(name = "alert_confirmed_at")
+    private OffsetDateTime alertConfirmedAt;
+
+    @Column(name = "alert_consent_at")
+    private OffsetDateTime alertConsentAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

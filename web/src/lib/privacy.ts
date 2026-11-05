@@ -1,7 +1,7 @@
-import { supabase } from "./supabase";
 import { resolveLocalUrl } from "./hosts";
 import { POLICY_VERSION } from "../content/legal";
 import { authToken, authUserId } from "./auth";
+import { loadMe, patchMe } from "./api";
 
 const api = (path: string) => `${resolveLocalUrl(import.meta.env.VITE_API_URL)}${path}`;
 const token = async () => authToken();
@@ -12,19 +12,20 @@ export type PrivacyState = { accepted: boolean; isNew: boolean };
 export async function loadPrivacyState(): Promise<PrivacyState | null> {
   const uid = authUserId();
   if (!uid) return null;
-  const { data, error } = await supabase.from("profiles").select("privacy_accepted_at, policy_version").eq("id", uid).maybeSingle();
-  if (error || !data) return null;
-  return {
-    accepted: !!data.privacy_accepted_at && data.policy_version === POLICY_VERSION,
-    isNew: !data.privacy_accepted_at,  // never agreed (any account age): consent is required. 'Not now' is only for a newer policy version.
-  };
+  try {
+    const me = await loadMe();
+    return {
+      accepted: !!me.privacyAcceptedAt && me.policyVersion === POLICY_VERSION,
+      isNew: !me.privacyAcceptedAt,  // never agreed (any account age): consent is required. 'Not now' is only for a newer policy version.
+    };
+  } catch { return null; }
 }
 
 export async function acceptPrivacy(): Promise<boolean> {
-  const uid = authUserId();
-  if (!uid) return false;
-  const { data, error } = await supabase.from("profiles").update({ privacy_accepted_at: new Date().toISOString(), policy_version: POLICY_VERSION }).eq("id", uid).select("id");
-  return !error && !!data?.length;
+  try {
+    await patchMe({ acceptPrivacy: true, policyVersion: POLICY_VERSION });
+    return true;
+  } catch { return false; }
 }
 
 /** Downloads everything the caregiver can access as a JSON file. Returns false on any failure. */

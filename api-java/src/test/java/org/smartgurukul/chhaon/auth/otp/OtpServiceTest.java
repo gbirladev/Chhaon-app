@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.smartgurukul.chhaon.auth.dto.AuthDtos.OtpLoginResponse;
 import org.smartgurukul.chhaon.profile.Profile;
 import org.smartgurukul.chhaon.profile.ProfileRepository;
-import org.smartgurukul.chhaon.security.SupabaseJwtVerifier;
+import org.smartgurukul.chhaon.security.JwtService;
 import org.smartgurukul.chhaon.support.DbTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ class OtpServiceTest extends DbTest {
     @Autowired OtpService otp;
     @Autowired OtpCodeRepository codes;
     @Autowired ProfileRepository profiles;
-    @Autowired SupabaseJwtVerifier supabaseVerifier;
+    @Autowired JwtService jwtService;
     @Autowired JdbcTemplate jdbc;
 
     private final List<String> usedPhones = new ArrayList<>();
@@ -71,11 +71,10 @@ class OtpServiceTest extends DbTest {
         assertThat(resp.token()).isNotBlank();
         assertThat(profiles.findByPhone(phone)).isPresent();
 
-        // The minted token is Supabase-compatible: it verifies under the Supabase secret with sub + role.
-        Claims claims = supabaseVerifier.tryParse(resp.token());
-        assertThat(claims).isNotNull();
+        // The minted token is one of OUR JWTs (APP_JWT_SECRET): the API's own filter accepts it.
+        Claims claims = jwtService.parse(resp.token());
         assertThat(claims.getSubject()).isEqualTo(resp.userId());
-        assertThat(claims.get("role", String.class)).isEqualTo("authenticated");
+        assertThat(claims.get("admin", Boolean.class)).isFalse();
     }
 
     @Test

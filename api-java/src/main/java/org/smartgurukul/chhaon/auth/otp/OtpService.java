@@ -6,6 +6,7 @@ import org.smartgurukul.chhaon.auth.dto.AuthDtos.OtpLoginResponse;
 import org.smartgurukul.chhaon.profile.Profile;
 import org.smartgurukul.chhaon.profile.ProfileRepository;
 import org.smartgurukul.chhaon.recipient.PhoneNormalizer;
+import org.smartgurukul.chhaon.security.JwtService;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,7 +42,7 @@ public class OtpService {
     private final ProfileRepository profiles;
     private final PasswordEncoder passwordEncoder;
     private final WhatsAppSender whatsApp;
-    private final SupabaseCompatibleTokenService tokens;
+    private final JwtService jwt;
 
     private final int codeLength;
     private final long expiryMinutes;
@@ -53,7 +54,7 @@ public class OtpService {
                       ProfileRepository profiles,
                       PasswordEncoder passwordEncoder,
                       WhatsAppSender whatsApp,
-                      SupabaseCompatibleTokenService tokens,
+                      JwtService jwt,
                       @Value("${app.otp.code-length:6}") int codeLength,
                       @Value("${app.otp.expiry-minutes:5}") long expiryMinutes,
                       @Value("${app.otp.request-cooldown-seconds:30}") long cooldownSeconds,
@@ -63,7 +64,7 @@ public class OtpService {
         this.profiles = profiles;
         this.passwordEncoder = passwordEncoder;
         this.whatsApp = whatsApp;
-        this.tokens = tokens;
+        this.jwt = jwt;
         this.codeLength = codeLength;
         this.expiryMinutes = expiryMinutes;
         this.cooldownSeconds = cooldownSeconds;
@@ -138,7 +139,8 @@ public class OtpService {
 
         Optional<Profile> existing = profiles.findByPhone(phone);
         Profile profile = existing.orElseGet(() -> createProfile(phone, now));
-        String token = tokens.issue(profile.getId());
+        // Our own JWT (APP_JWT_SECRET) — the app talks only to this API, so no Supabase-shaped token is needed.
+        String token = jwt.issueToken(profile.getId(), profile.isAdmin());
         return new OtpLoginResponse(
                 token,
                 profile.getId().toString(),

@@ -2,9 +2,11 @@ import { Component, createContext, useContext, useEffect, useRef, useState, type
 import { createTranslator, useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
 import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired } from "./lib/auth";
+import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
   isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
+  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setMedicineFlags, deleteMedicineApi,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
@@ -99,16 +101,19 @@ const focusFirstError = (errors: Record<string, string>) => {
   if (Object.keys(errors).length) window.setTimeout(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), 0);
 };
 
-/** Users never see raw backend text: it is English, technical and can echo what they typed. */
-const friendlyError = (err: { code?: string; hint?: string } | null | undefined, t: T) =>
-  err?.code === "22003" ? t("add.errStock")
-  : err?.hint === "too_many_medicines" ? t("add.errTooManyMedicines")
-  : err?.hint === "plan_parents" ? t("plans.errParents")
-  : err?.hint === "self_number" ? t("profile.errSelfNumber")
-  : err?.hint === "too_many_times" ? t("add.errTooManyTimes")
-  : err?.hint === "bad_name" ? t("add.errName")
-  : err?.hint === "bad_dosage" ? t("add.errDose")
+/** Users never see raw backend text: it is English, technical and can echo what they typed.
+ *  Works for the old Supabase error shape (hint) and the Java API's error detail (message). */
+const friendlyError = (err: { code?: string; hint?: string; message?: string } | null | undefined, t: T) => {
+  const tag = `${err?.hint ?? ""} ${err?.message ?? ""}`;
+  return err?.code === "22003" ? t("add.errStock")
+  : /too_many_medicines|maximum number of medicines/i.test(tag) ? t("add.errTooManyMedicines")
+  : /plan_parents|limit of parent profiles/i.test(tag) ? t("plans.errParents")
+  : /self_number/i.test(tag) ? t("profile.errSelfNumber")
+  : /too_many_times|times per medicine/i.test(tag) ? t("add.errTooManyTimes")
+  : /bad_name|invalid name/i.test(tag) ? t("add.errName")
+  : /bad_dosage|invalid dosage/i.test(tag) ? t("add.errDose")
   : t("common.unexpected");
+};
 
 /** Dialog behaviour: focus moves in, Tab stays inside, Escape closes, focus returns to the button that opened it. */
 export function useDialog(onClose: () => void) {
@@ -448,10 +453,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     let cancelled = false;
     const run = async () => {
       if (!typedPhone) { setSharedWith(null); return; }
-      let query = supabase.from("care_recipients").select("name, is_self").eq("whatsapp_phone", typedPhone).limit(1);
-      if (recipient) query = query.neq("id", recipient.id);
-      const { data } = await query;
-      if (!cancelled) setSharedWith(data?.[0] ? { name: data[0].name, isSelf: data[0].is_self } : null);
+      const list = await loadRecipients().catch(() => [] as Recipient[]);
+      const hit = list.find((r) => r.whatsapp_phone === typedPhone && (!recipient || r.id !== recipient.id));
+      if (!cancelled) setSharedWith(hit ? { name: hit.name, isSelf: hit.is_self } : null);
     };
     const id = window.setTimeout(() => void run(), 400);
     return () => { cancelled = true; window.clearTimeout(id); };
@@ -492,33 +496,38 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     setErrors(found);
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
 
-    const fields = {
+    const body = {
       name,
       relation: isSelf ? "self" : (RELATIONS as readonly string[]).includes(data.relation) ? data.relation : "other",
-      call_name: isSelf ? null : (data.callName ?? "").trim() || null,
+      callName: isSelf ? null : (data.callName ?? "").trim() || null,
       age,
+      dob: recipient?.dob ?? null,                                 // the form does not edit these: pass them through
+      doctorContacts: recipient?.doctor_contacts ?? null,
+      emergencyContacts: recipient?.emergency_contacts ?? null,
       city: data.city?.trim() || null,
-      whatsapp_phone: whatsapp,
+      whatsappPhone: whatsapp,
       timezone,
       language: data.language === "en" ? "en" : "hi",
       conditions,
       allergies,
-      blood_group: data.bloodGroup || null,
+      bloodGroup: data.bloodGroup || null,
+      ...(isSelf && !recipient ? { isSelf: true } : {}),
     };
     setBusy(true);
     let recipientId = recipient?.id;
-    let err;
-    if (recipient) {
-      // .select() returns the changed rows: zero rows means the parent record is gone, which is not a success.
-      const updated = await supabase.from("care_recipients").update(fields).eq("id", recipient.id).select("id");
-      err = updated.error;
-      if (!err && !updated.data?.length) { setBusy(false); void onSaved(); return setError(tAll("common.unexpected")); }
-    } else {
-      const created = await supabase.rpc("create_care_recipient", { p: { ...fields, age: fields.age === null ? "" : String(fields.age), ...(isSelf ? { is_self: true } : {}) } });
-      err = created.error;
-      recipientId = created.data ?? undefined;
+    try {
+      if (recipient) {
+        await updateRecipientApi(recipient.id, body);
+      } else {
+        recipientId = (await createRecipientApi(body)).id;
+      }
+    } catch (e) {
+      setBusy(false);
+      const err = e as ApiError;
+      if (recipient && err.status === 404) { void onSaved(); return setError(tAll("common.unexpected")); }
+      if (await sessionIsGone(err)) return expireSession();
+      return setError(friendlyError(err, tAll));
     }
-    if (err) { setBusy(false); if (await sessionIsGone(err)) return expireSession(); return setError(friendlyError(err, tAll)); }
     // A new parent, or a changed number, needs a fresh WhatsApp opt-in (the database resets consent on a number change).
     if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp)) void requestConsent(recipientId);
     await onSaved(recipientId);
@@ -1203,30 +1212,32 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
       const { error: uploadError } = await supabase.storage.from("medicine-photos").upload(photoPath, shrunk, { contentType: shrunk.type || "image/jpeg" });
       if (uploadError) { setBusy(false); return setError(t("errPhoto")); }
     }
-    const { error: err } = medicine
-      ? await supabase.rpc("update_medicine", {
-        p_medicine: medicine.id,
-        p_name: name,
-        p_dosage: keepOldDose ? medicine.dose : formatDose(doseAmount, doseUnit),
-        p_instructions: orNull(String(data.get("instructions") ?? "") || null) as string,
-        p_photo_url: orNull(photoPath),
-        p_refill_threshold: orNull(refill ? threshold : null),
-        p_times: chosen,
-      })
-      : await supabase.rpc("create_medicine", {
-        p_recipient: recipient.id,
-        p_name: name,
-        p_dosage: formatDose(doseAmount, doseUnit),
-        p_instructions: orNull(String(data.get("instructions") ?? "") || null) as string,
-        p_photo_url: orNull(photoPath),
-        p_stock: stock,
-        p_refill_threshold: orNull(refill ? threshold : null),
-        p_times: chosen,
-      });
-    if (err) {
+    try {
+      if (medicine) {
+        await updateMedicineApi(medicine.id, {
+          name,
+          dosage: keepOldDose ? medicine.dose : formatDose(doseAmount, doseUnit),
+          instructions: orNull(String(data.get("instructions") ?? "") || null),
+          photoPath: orNull(photoPath),
+          refillThreshold: orNull(refill ? threshold : null),
+          times: chosen,
+        });
+      } else {
+        await createMedicineApi(recipient.id, {
+          name,
+          dosage: formatDose(doseAmount, doseUnit),
+          instructions: orNull(String(data.get("instructions") ?? "") || null),
+          photoPath: orNull(photoPath),
+          stock,
+          refillThreshold: orNull(refill ? threshold : null),
+          times: chosen,
+        });
+      }
+    } catch (e) {
       if (photoPath) await supabase.storage.from("medicine-photos").remove([photoPath]);
       setBusy(false);
-      if (medicine && isNotFound(err)) return onMissing();
+      const err = e as ApiError;
+      if (medicine && err.status === 404) return onMissing();
       if (await sessionIsGone(err)) return expireSession();
       return setError(friendlyError(err, tAll));
     }
@@ -1323,9 +1334,9 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   const instructionKey = { after_food: "afterFood", before_food: "beforeFood", with_food: "withFood" }[medicine.instructions ?? ""];
 
   /** A write that changed nothing (the record is gone) or failed is never presented as success. */
-  const failed = async (err?: { code?: string; message?: string } | null, missing = false) => {
+  const failed = async (err?: { code?: string; message?: string; status?: number } | null, missing = false) => {
     if (!missing && await sessionIsGone(err)) return expireSession();
-    toast(t(missing || isNotFound(err) ? "medicine.gone" : "medicine.errSave"));
+    toast(t(missing || isNotFound(err) || err?.status === 404 ? "medicine.gone" : "medicine.errSave"));
     void onChanged();  // refresh: if the medicine no longer exists we are taken back to the list
   };
   const changeStock = async (delta: number) => {
@@ -1334,9 +1345,13 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     setStock(previous + delta);  // instant feedback; undone if saving fails
     setBusy(true);
     // A delta, not an absolute number: a dose the parent confirmed a moment ago must not be overwritten.
-    const { data, error } = await supabase.rpc("adjust_stock", { p_medicine: medicine.id, p_delta: delta });
+    let data: number;
+    try {
+      data = await adjustStockApi(medicine.id, delta);
+    } catch (e) {
+      setBusy(false); setStock(previous); return failed(e as ApiError);
+    }
     setBusy(false);
-    if (error || typeof data !== "number") { setStock(previous); return failed(error); }
     setStock(data);
     // The database alerts the whole family (bell) when stock reaches the refill level and again when it runs out.
     // Say so here, because the bell is on another screen.
@@ -1348,16 +1363,22 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   };
   const togglePause = async () => {
     setBusy(true);
-    const { data, error } = await supabase.from("medicines").update({ active: !active }).eq("id", medicine.id).select("id");
+    try {
+      await setMedicineFlags(medicine.id, { active: !active });
+    } catch (e) {
+      setBusy(false); return failed(e as ApiError);
+    }
     setBusy(false);
-    if (error || !data?.length) return failed(error, !error);
     setActive(!active);
     void onChanged();
   };
   const remove = async () => {
     setBusy(true);
-    const { data, error } = await supabase.from("medicines").delete().eq("id", medicine.id).select("id");
-    if (error || !data?.length) { setBusy(false); setConfirming(false); return failed(error, !error); }
+    try {
+      await deleteMedicineApi(medicine.id);
+    } catch (e) {
+      setBusy(false); setConfirming(false); return failed(e as ApiError);
+    }
     if (medicine.photoUrl) await supabase.storage.from("medicine-photos").remove([medicine.photoUrl]);
     await onChanged();
     setBusy(false);

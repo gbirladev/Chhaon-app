@@ -1,11 +1,43 @@
 import { supabase } from "./supabase";
 import { authToken, authUserId, authExpired } from "./auth";
+import { apiFetch } from "./http";
 import type { Database } from "./database.types";
 import { E164 } from "./countries";
 import { resolveLocalUrl } from "./hosts";
 import { localDate } from "./format";
 
 export type Recipient = Database["public"]["Tables"]["care_recipients"]["Row"];
+
+// ---- Java API payloads (camelCase) mapped onto the row shapes the screens already use ----
+type ContactDto = { name: string | null; phone: string | null };
+type RecipientDto = {
+  id: string; circleId: string; name: string; relation: string | null; callName: string | null;
+  age: number | null; dob: string | null; city: string | null; whatsappPhone: string | null;
+  timezone: string; language: string; conditions: string[] | null; allergies: string[] | null;
+  bloodGroup: string | null; doctorContacts: ContactDto[] | null; emergencyContacts: ContactDto[] | null;
+  checkinTime: string | null; isSelf: boolean; caregiverAttestedAt: string | null; consentAt: string | null;
+  optedOutAt: string | null; consentRequestedAt: string | null; createdAt: string; updatedAt: string;
+};
+const toRecipient = (d: RecipientDto): Recipient => ({
+  id: d.id, circle_id: d.circleId, name: d.name, relation: d.relation ?? "other", call_name: d.callName,
+  age: d.age, dob: d.dob, city: d.city, whatsapp_phone: d.whatsappPhone, timezone: d.timezone,
+  language: d.language, conditions: d.conditions ?? [], allergies: d.allergies ?? [],
+  blood_group: d.bloodGroup, doctor_contacts: d.doctorContacts ?? [], emergency_contacts: d.emergencyContacts ?? [],
+  checkin_time: d.checkinTime, is_self: d.isSelf, caregiver_attested_at: d.caregiverAttestedAt,
+  consent_at: d.consentAt, opted_out_at: d.optedOutAt, consent_requested_at: d.consentRequestedAt,
+  created_at: d.createdAt, updated_at: d.updatedAt,
+} as unknown as Recipient);
+
+/** The caregiver's own profile from the Java API; shared by alerts/layout/privacy/admin reads. */
+export type MeDto = {
+  userId: string; name: string | null; email: string | null; phone: string | null; language: string;
+  timezone: string; plan: string; isAdmin: boolean; todayLayout: string | null;
+  privacyAcceptedAt: string | null; policyVersion: string | null;
+  alertPhone: string | null; alertRequestedAt: string | null; alertConfirmedAt: string | null;
+  alertConsentAt: string | null;
+};
+export const loadMe = () => apiFetch<MeDto>("/api/v1/me");
+export const patchMe = (body: Record<string, unknown>) => apiFetch<MeDto>("/api/v1/me", { method: "PATCH", body });
 
 export type Medicine = {
   id: string;
@@ -51,36 +83,60 @@ export function normalizePhone(input: string): string | null {
  *  mistake a network problem for "no parent" (which would send them to the add-parent form and risk a duplicate). */
 export async function loadRecipients(): Promise<Recipient[]> {
   if (!authToken()) return [];
-  const { data, error } = await supabase.from("care_recipients").select("*").order("created_at", { ascending: true });
-  if (error) throw error;
-  return data;
+  return (await apiFetch<RecipientDto[]>("/api/v1/recipients")).map(toRecipient);
+}
+
+export async function createRecipientApi(body: Record<string, unknown>): Promise<Recipient> {
+  return toRecipient(await apiFetch<RecipientDto>("/api/v1/recipients", { method: "POST", body }));
+}
+
+export async function updateRecipientApi(id: string, body: Record<string, unknown>): Promise<Recipient> {
+  return toRecipient(await apiFetch<RecipientDto>(`/api/v1/recipients/${id}`, { method: "PUT", body }));
 }
 
 /** Medicine names by id for every parent (notifications about a parent that is not the one on screen still name the medicine). */
 export async function loadMedicineNames(): Promise<Record<string, string>> {
-  const { data } = await supabase.from("medicines").select("id, name");
-  return Object.fromEntries((data ?? []).map((m) => [m.id, m.name]));
+  try {
+    const list = await apiFetch<{ id: string; name: string }[]>("/api/v1/medicine-names");
+    return Object.fromEntries(list.map((m) => [m.id, m.name]));
+  } catch { return {}; }
 }
 
+type MedicineDto = {
+  id: string; name: string; dose: string | null; times: string[]; stock: number | null;
+  threshold: number | null; instructions: string | null; active: boolean; photoUrl: string | null;
+  critical: boolean; createdAt: string;
+};
+/** The old rows carried times as "HH:MM:SS"; keep that exact shape for the screens. */
+const toMedicine = (m: MedicineDto): Medicine => ({
+  id: m.id, name: m.name, dose: m.dose ?? "",
+  times: (m.times ?? []).map((t) => (t.length === 5 ? `${t}:00` : t)),
+  stock: m.stock ?? 0, threshold: m.threshold, instructions: m.instructions,
+  active: m.active, photoUrl: m.photoUrl, critical: m.critical,
+});
+
 export async function loadMedicines(recipientId: string): Promise<Medicine[]> {
-  const { data, error } = await supabase
-    .from("medicines")
-    .select("id, name, dosage, instructions, stock_count, refill_threshold, active, photo_url, critical, created_at, medicine_schedules(time_of_day)")
-    .eq("recipient_id", recipientId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data.map((m) => ({
-    id: m.id,
-    name: m.name,
-    dose: m.dosage ?? "",
-    times: m.medicine_schedules.map((s) => s.time_of_day),
-    stock: m.stock_count ?? 0,
-    threshold: m.refill_threshold,
-    instructions: m.instructions,
-    active: m.active,
-    photoUrl: m.photo_url,
-    critical: m.critical,
-  }));
+  return (await apiFetch<MedicineDto[]>(`/api/v1/recipients/${recipientId}/medicines`)).map(toMedicine);
+}
+
+export async function createMedicineApi(recipientId: string, body: Record<string, unknown>): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/recipients/${recipientId}/medicines`, { method: "POST", body }));
+}
+
+export async function updateMedicineApi(id: string, body: Record<string, unknown>): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}`, { method: "PUT", body }));
+}
+
+export async function adjustStockApi(id: string, delta: number): Promise<number> {
+  return (await apiFetch<{ stock: number }>(`/api/v1/medicines/${id}/stock`, { method: "POST", body: { delta } })).stock;
+}
+
+export async function setMedicineFlags(id: string, flags: { active?: boolean; critical?: boolean }): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}`, { method: "PATCH", body: flags }));
+}
+
+export async function deleteMedicineApi(id: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/medicines/${id}`, { method: "DELETE" });
 }
 
 export const isLowStock = (m: Medicine) => m.threshold !== null && m.stock <= m.threshold;
@@ -109,12 +165,11 @@ export type AlertsResult = "sent" | "opted_out" | "too_soon" | "too_many" | "err
 
 /** The caregiver's own WhatsApp-alert settings. on = confirmed by that number and not switched off. */
 export async function loadMyAlerts(): Promise<AlertsState | null> {
-  const uid = authUserId();
-  if (!uid) return null;
-  const { data } = await supabase.from("profiles").select("phone, alert_phone, alert_requested_at, alert_confirmed_at, alert_consent_at").eq("id", uid).maybeSingle();
-  if (!data) return null;
-  const on = !!data.alert_consent_at;
-  return { userId: uid, phone: data.alert_phone, loginPhone: data.phone, on, waiting: !on && !!data.alert_phone && !data.alert_confirmed_at && !!data.alert_requested_at };
+  try {
+    const me = await loadMe();
+    const on = !!me.alertConsentAt;
+    return { userId: me.userId, phone: me.alertPhone, loginPhone: me.phone, on, waiting: !on && !!me.alertPhone && !me.alertConfirmedAt && !!me.alertRequestedAt };
+  } catch { return null; }
 }
 
 export async function requestAlerts(phone: string): Promise<AlertsResult> {
@@ -134,10 +189,7 @@ export async function requestAlerts(phone: string): Promise<AlertsResult> {
 }
 
 export async function turnOffAlerts(): Promise<boolean> {
-  const uid = authUserId();
-  if (!uid) return false;
-  const { error } = await supabase.from("profiles").update({ alert_consent_at: null }).eq("id", uid);
-  return !error;
+  try { await patchMe({ alertsOff: true }); return true; } catch { return false; }
 }
 
 // ---------------------------------------------------------------- reports
@@ -252,36 +304,34 @@ export async function signedReportUrl(path: string): Promise<string | null> {
 
 /** Which way the caregiver wants today's medicines drawn (null = the default). */
 export async function loadTodayLayout(): Promise<string | null> {
-  const uid = authUserId();
-  if (!uid) return null;
-  const { data } = await supabase.from("profiles").select("today_layout").eq("id", uid).maybeSingle();
-  return data?.today_layout ?? null;
+  try { return (await loadMe()).todayLayout; } catch { return null; }
 }
 
 export async function saveTodayLayout(layout: string): Promise<boolean> {
-  const uid = authUserId();
-  if (!uid) return false;
-  const { error } = await supabase.from("profiles").update({ today_layout: layout }).eq("id", uid);
-  return !error;
+  try { await patchMe({ todayLayout: layout }); return true; } catch { return false; }
 }
 
 export type AppNotification = Database["public"]["Tables"]["notifications"]["Row"];
 
 /** The newest alerts, or null when the load failed (callers keep what they already show). */
+type NotificationDto = { id: string; type: string; payload: unknown; readAt: string | null; createdAt: string };
 export async function loadNotifications(): Promise<AppNotification[] | null> {
   try {
-    const { data, error } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(30);
-    return error ? null : data ?? [];
+    const list = await apiFetch<NotificationDto[]>("/api/v1/notifications");
+    return list.map((n) => ({
+      id: n.id, user_id: authUserId() ?? "", type: n.type,
+      payload: n.payload as AppNotification["payload"], read_at: n.readAt, created_at: n.createdAt,
+    } as AppNotification));
   } catch { return null; }
 }
 
 export async function markNotificationsRead(ids: string[]): Promise<void> {
   if (!ids.length) return;
-  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids).is("read_at", null);
+  try { await apiFetch("/api/v1/notifications/read", { method: "POST", body: { ids } }); } catch { /* retried next load */ }
 }
 
 export async function deleteNotificationRow(id: string): Promise<void> {
-  await supabase.from("notifications").delete().eq("id", id);
+  try { await apiFetch(`/api/v1/notifications/${id}`, { method: "DELETE" }); } catch { /* reappears on refresh */ }
 }
 
 /** The account this browser is logged in as no longer exists or the login has ended (e.g. the database was reset). */
@@ -300,8 +350,9 @@ export function isAuthError(error: { code?: string; message?: string; hint?: str
 }
 
 /** Like isStaleSession, but a 42501 (our own "not found" or a plain permission denial) only counts when the login really is invalid. */
-export async function sessionIsGone(error: { code?: string; message?: string } | null | undefined): Promise<boolean> {
+export async function sessionIsGone(error: { code?: string; message?: string; status?: number } | null | undefined): Promise<boolean> {
   if (!error) return false;
+  if (typeof error.status === "number") return error.status === 401 || authExpired();
   if (isStaleSession(error)) return true;
   if (error.code !== "42501") return false;
   // A 42501 is only a login problem when our token is actually gone/expired; otherwise it is a plain
@@ -317,28 +368,24 @@ type DoseStatus = Database["public"]["Enums"]["dose_status"];
 export type TodayDose = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean };
 
 /** The parent's doses for THEIR local "today" (the day boundary is the parent's timezone, not the caregiver's). */
+type DoseDto = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean };
+type CheckinDto = { id: string; status: string; sentAt: string | null; respondedAt: string | null };
+type TodayDto = { doses: DoseDto[]; checkin: CheckinDto | null };
+
 export async function loadTodayDoses(recipient: Recipient): Promise<TodayDose[]> {
-  const from = new Date(Date.now() - 36 * 3600_000).toISOString();
-  const to = new Date(Date.now() + 36 * 3600_000).toISOString();
-  const { data, error } = await supabase
-    .from("dose_events")
-    .select("id, status, scheduled_at, medicine_schedules(medicines(recipient_id, name, dosage, active))")
-    .gte("scheduled_at", from).lte("scheduled_at", to).order("scheduled_at");
-  if (error) throw error;
+  const resp = await apiFetch<TodayDto>(`/api/v1/recipients/${recipient.id}/today`);
   const today = localDate(new Date(), recipient.timezone);
-  return data
-    .filter((d) => d.medicine_schedules.medicines.recipient_id === recipient.id && localDate(new Date(d.scheduled_at), recipient.timezone) === today)
-    .map((d) => ({ id: d.id, status: d.status, scheduledAt: d.scheduled_at, name: d.medicine_schedules.medicines.name, dosage: d.medicine_schedules.medicines.dosage, active: d.medicine_schedules.medicines.active }));
+  return resp.doses
+    .filter((d) => localDate(new Date(d.scheduledAt), recipient.timezone) === today)
+    .map((d) => ({ id: d.id, status: d.status, scheduledAt: d.scheduledAt, name: d.name, dosage: d.dosage, active: d.active }));
 }
 
 export type TodayCheckin = { id: string; status: Database["public"]["Enums"]["checkin_status"]; sent_at: string | null; responded_at: string | null } | null;
 
 export async function loadCheckin(recipient: Recipient): Promise<TodayCheckin> {
-  const { data, error } = await supabase
-    .from("checkins").select("id, status, sent_at, responded_at")
-    .eq("recipient_id", recipient.id).eq("date", localDate(new Date(), recipient.timezone)).maybeSingle();
-  if (error) throw error;
-  return data;
+  const resp = await apiFetch<TodayDto>(`/api/v1/recipients/${recipient.id}/today`);
+  const c = resp.checkin;
+  return c ? { id: c.id, status: c.status as NonNullable<TodayCheckin>["status"], sent_at: c.sentAt, responded_at: c.respondedAt } : null;
 }
 
 export type Activity =
@@ -346,22 +393,17 @@ export type Activity =
   | { kind: "checkin"; id: string; at: string; status: Database["public"]["Enums"]["checkin_status"]; respondedAt: string | null };
 
 /** What was really sent to the parent in the last few days, oldest first. Message text is not stored, only these records. */
+type ActivityDoseDto = { id: string; status: DoseStatus; sentAt: string | null; respondedAt: string | null; name: string; dosage: string | null };
 export async function loadRecentActivity(recipient: Recipient, days = 3): Promise<Activity[]> {
-  const from = new Date(Date.now() - days * 24 * 3600_000).toISOString();
-  const [doses, checkins] = await Promise.all([
-    supabase.from("dose_events")
-      .select("id, status, sent_at, responded_at, medicine_schedules(medicines(recipient_id, name, dosage))")
-      .not("sent_at", "is", null).gte("sent_at", from).order("sent_at", { ascending: false }).limit(300),
-    supabase.from("checkins").select("id, status, sent_at, responded_at")
-      .eq("recipient_id", recipient.id).not("sent_at", "is", null).gte("sent_at", from).order("sent_at", { ascending: false }).limit(50),
-  ]);
-  if (doses.error) throw doses.error;
-  if (checkins.error) throw checkins.error;
+  const resp = await apiFetch<{ doses: ActivityDoseDto[]; checkins: CheckinDto[] }>(
+    `/api/v1/recipients/${recipient.id}/activity?days=${days}`);
   const items: Activity[] = [
-    ...doses.data
-      .filter((d) => d.medicine_schedules.medicines.recipient_id === recipient.id && d.sent_at)
-      .map((d): Activity => ({ kind: "dose", id: d.id, at: d.sent_at as string, status: d.status, respondedAt: d.responded_at, name: d.medicine_schedules.medicines.name, dosage: d.medicine_schedules.medicines.dosage })),
-    ...checkins.data.map((c): Activity => ({ kind: "checkin", id: c.id, at: c.sent_at as string, status: c.status, respondedAt: c.responded_at })),
+    ...resp.doses
+      .filter((d) => d.sentAt)
+      .map((d): Activity => ({ kind: "dose", id: d.id, at: d.sentAt as string, status: d.status, respondedAt: d.respondedAt, name: d.name, dosage: d.dosage })),
+    ...resp.checkins
+      .filter((c) => c.sentAt)
+      .map((c): Activity => ({ kind: "checkin", id: c.id, at: c.sentAt as string, status: c.status as Database["public"]["Enums"]["checkin_status"], respondedAt: c.respondedAt })),
   ];
   return items.sort((a, b) => a.at.localeCompare(b.at));
 }
@@ -369,9 +411,7 @@ export async function loadRecentActivity(recipient: Recipient, days = 3): Promis
 export type CircleMember = { userId: string; role: "owner" | "member"; name: string | null; email: string | null; phone: string | null };
 
 export async function loadMembers(circleId: string): Promise<CircleMember[]> {
-  const { data, error } = await supabase
-    .from("care_circle_members").select("user_id, role, created_at, profiles(name, email, phone)")
-    .eq("circle_id", circleId).order("created_at");
-  if (error) throw error;
-  return data.map((m) => ({ userId: m.user_id, role: m.role, name: m.profiles?.name ?? null, email: m.profiles?.email ?? null, phone: m.profiles?.phone ?? null }));
+  const rows = await apiFetch<{ userId: string; role: string; name: string | null; email: string | null; phone: string | null }[]>(
+    `/api/v1/circles/${circleId}/members`);
+  return rows.map((m) => ({ userId: m.userId, role: m.role as CircleMember["role"], name: m.name, email: m.email, phone: m.phone }));
 }
