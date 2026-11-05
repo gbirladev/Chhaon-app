@@ -362,3 +362,61 @@ New words understood as "given": diya, de diya, de di, दिया, दे द�
 | today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
 | today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
 | emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |
+
+
+## Part F4: family activity feed (added 2026-11-05, branch `f4-activity-feed`)
+
+The read-only "Family activity" screen (Family tab, and "See all activity" on Today). Names, medicine names and the helper's relation
+("maid", "Nani") are shown as the family typed them. The sentences avoid gendered verbs where possible ("दवा दी" / "दवा ली" follow
+दवा, which is feminine); please check that they read naturally with every kind of name ("Sunita (maid) ने Mummy को दवा दी: Metformin").
+"{by}" is a first name, a helper label such as "Sunita (maid)", or "परिवार के एक सदस्य" / "मददगार" when no name is known.
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| activity.title | परिवार की गतिविधि | Family activity | |
+| activity.subtitle | पिछले 7 दिन, जिन सबकी आप देखभाल करते हैं | Last 7 days, everyone you care for | |
+| activity.filterLabel | किसकी गतिविधि देखें | Show activity for | |
+| activity.all | सभी | All | |
+| activity.me | मैं | Me | |
+| activity.today | आज | Today | |
+| activity.yesterday | कल | Yesterday | |
+| activity.loadFailed | गतिविधि नहीं खुल सकी। कृपया फिर से कोशिश करें। | Could not load the activity. Please try again. | |
+| activity.retry | फिर से कोशिश करें | Try again | |
+| activity.empty | पिछले 7 दिनों में अभी कुछ नहीं हुआ। | Nothing has happened in the last 7 days yet. | |
+| activity.showMore | और देखें | Show more | |
+| activity.loading | खुल रहा है... | Loading... | |
+| activity.heartGive | प्यार भेजें (अभी {count}) | Send love (now {count}) | |
+| activity.heartUndo | अपना प्यार वापस लें (अभी {count}) | Take back your love (now {count}) | |
+| activity.heartFailed | दिल सेव नहीं हो सका। कृपया फिर से कोशिश करें। | Could not save the heart. Please try again. | |
+| activity.heartNote | ♥ सिर्फ़ ऐप में आपके परिवार को दिखता है। यह WhatsApp पर नहीं भेजा जाता। | ♥ is seen only by your family in the app. It is not sent on WhatsApp. | |
+| activity.someone | कोई | Someone | |
+| activity.helper | मददगार | The helper | |
+| activity.familyMember | परिवार के एक सदस्य | A family member | |
+| activity.dueAt | समय {time} | Due {time} | |
+| activity.givenOn | {date} को लगा | Given on {date} | |
+| activity.doseLabel | खुराक {dose} | Dose {dose} | |
+| activity.onDate | {date} को | On {date} | |
+| activity.bothTimes | {time} (आपके यहाँ {mine}) | {time} ({mine} your time) | |
+| activity.linkTitle | परिवार की गतिविधि | Family activity | |
+| activity.linkSub | पिछले 7 दिनों में सबके लिए क्या हुआ | What happened for everyone in the last 7 days | |
+| activity.seeAll | सारी गतिविधि देखें | See all activity | |
+| activity.doseTaken.person | {call} ने दवा ली: {medicine} | {call} took {medicine} | |
+| activity.doseTaken.by | {by} ने {call} को दवा दी: {medicine} | {by} gave {call} {medicine} | |
+| activity.doseTaken.you | आपने {call} को दवा दी: {medicine} | You gave {call} {medicine} | |
+| activity.doseTaken.app | {call} की दवा दी गई (ऐप में दर्ज): {medicine} | {medicine} marked as given for {call} | |
+| activity.doseMissed | {call} की दवा की पुष्टि नहीं हुई: {medicine} | {call}'s {medicine} was not confirmed | |
+| activity.checkinFine | {call}: ठीक हूँ | {call}: I'm fine | |
+| activity.checkinCall | {call} ने कॉल करने को कहा | {call} asked for a call | |
+| activity.checkinMissed | {call} ने सुबह के हालचाल का जवाब नहीं दिया | {call} did not answer the morning check-in | |
+| activity.vaccineGiven | {call} को टीका लगा: {vaccine} | Vaccine given to {call}: {vaccine} | |
+| activity.appointmentAdded.by | {by} ने {call} के लिए अपॉइंटमेंट जोड़ा: {doctor} | {by} added an appointment for {call}: {doctor} | |
+| activity.appointmentAdded.you | आपने {call} के लिए अपॉइंटमेंट जोड़ा: {doctor} | You added an appointment for {call}: {doctor} | |
+| activity.appointmentAdded.none | {call} के लिए अपॉइंटमेंट जोड़ा गया: {doctor} | Appointment added for {call}: {doctor} | |
+| activity.medicineAdded | {call} के लिए नई दवा: {medicine} | New medicine for {call}: {medicine} | |
+| activity.medicinePaused | {call} की दवा रोकी गई: {medicine} | {call}'s {medicine} was paused | |
+| activity.consentGiven.person | {call} ने WhatsApp रिमाइंडर के लिए हाँ कहा | {call} agreed to get WhatsApp reminders | |
+| activity.consentGiven.by | {by} ने {call} के WhatsApp रिमाइंडर पाने के लिए हाँ कहा | {by} agreed to get {call}'s WhatsApp reminders | |
+| activity.consentGiven.you | आपने {call} के WhatsApp रिमाइंडर पाने के लिए हाँ कहा | You agreed to get {call}'s WhatsApp reminders | |
+| activity.consentStopped.person | {call} ने WhatsApp रिमाइंडर बंद किए | {call} stopped the WhatsApp reminders | |
+| activity.consentStopped.by | {by} ने {call} के WhatsApp रिमाइंडर बंद किए | {by} stopped {call}'s WhatsApp reminders | |
+| activity.consentStopped.you | आपने {call} के WhatsApp रिमाइंडर बंद किए | You stopped {call}'s WhatsApp reminders | |

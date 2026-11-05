@@ -1,0 +1,30 @@
+/* Family activity feed (feature 4): chips, day groups, items with one ♥. Mobile-first, works at 360 px, large tap targets. */
+.activity-page .feed-chips { display: flex; gap: 8px; margin: 12px -18px 4px; padding: 2px 18px 6px; overflow-x: auto; scrollbar-width: none; }
+.activity-page .feed-chips::-webkit-scrollbar { display: none; }
+.feed-chips button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; max-width: 70vw; padding: 0 14px; border-radius: 22px; border: 1px solid var(--b-d9e4e1); background: var(--surface); color: var(--text-soft); font-size: max(0.9375rem, 12px); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.feed-chips button.selected { background: var(--s-e1f2ee); border-color: var(--b-76b8ad); color: var(--t-1c7167); }
+.feed-initial { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8125rem; font-weight: 700; background: var(--s-e3f3ef); color: var(--primary-text); }
+.feed-initial.pregnant { background: var(--s-fdecea); color: var(--t-b4443a); }
+.feed-initial.child { background: var(--s-f6f1e6); color: var(--t-5c4a14); }
+
+.feed-day { margin-top: 18px; }
+.feed-day h2 { margin: 0 0 8px; font-size: max(0.9375rem, 12px); color: var(--text-muted); font-weight: 700; }
+.feed-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.feed-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--b-d9e4e1); }
+.feed-icon { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px; display: grid; place-items: center; background: var(--s-e3f3ef); color: var(--primary-text); }
+.feed-item.warn .feed-icon { background: var(--s-f6f1e6); color: var(--t-5c4a14); }
+.feed-item.info .feed-icon { background: var(--s-e1f2ee); color: var(--t-1c7167); }
+.feed-text { flex: 1; min-width: 0; }
+.feed-text p { margin: 0; line-height: 1.45; color: var(--text); font-size: max(1rem, 12px); overflow-wrap: anywhere; }
+.feed-text small { display: block; margin-top: 3px; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
+.feed-heart { flex: 0 0 auto; min-width: 48px; min-height: 48px; margin: -6px -4px -6px 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 14px; background: transparent; color: var(--text-muted); font-size: 1.375rem; cursor: pointer; }
+.feed-heart.on { color: var(--t-b4443a); }
+.feed-heart small { font-size: max(0.875rem, 12px); font-weight: 700; }
+.feed-heart:focus-visible { outline: 2px solid var(--primary-text); outline-offset: 1px; }
+
+.feed-empty, .feed-note { margin: 18px 2px; color: var(--text-soft); line-height: 1.5; font-size: max(0.9375rem, 12px); }
+.feed-note { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.feed-error { margin-top: 14px; }
+.feed-error p { color: var(--t-b4443a); }
+.feed-more { margin-top: 16px; }
+.feed-see-all { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: 0 0 6px; padding: 0 4px; border: 0; background: none; color: var(--primary-text); font-weight: 700; font-size: max(0.9375rem, 12px); cursor: pointer; }
