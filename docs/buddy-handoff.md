@@ -66,7 +66,7 @@ sudo journalctl -u chhaon-wa -n 40 --no-pager
 Rollback: `sudo systemctl stop chhaon-wa; rm -rf /opt/whatsapp-gateway; mv /opt/whatsapp-gateway.bak-<date> /opt/whatsapp-gateway; sudo systemctl start chhaon-wa`
 (the extra `SentPoll` table can stay).
 
-**Checks**
+**Checks** (1-2 right after the restart by you; 3-5 can be done by the owner in the gateway dashboard, which they can access)
 1. `https://wa.chhaon.site`: the session is CONNECTED without a new QR.
 2. Typed replies still work: a test parent sends `1` to an open reminder, the dose turns "taken".
 3. Poll: send one to your own phone (dashboard chat, or the API with the `X-API-Key` header):
@@ -94,12 +94,15 @@ every 5 minutes, so it looks like a ~30 minute gap. Please look at the logs arou
 `sudo journalctl -u chhaon-backend --since "2026-11-05 08:20" --until "2026-11-05 09:10" --no-pager | grep -iE "tick|scheduler|error|start"`
 (was the backend restarting or deploying, was the database slow, or was the gateway down so sends failed and were retried?).
 
-### 3. Second WhatsApp session for the "canary" test family (when the owner has a spare SIM)
-A dummy parent "Test Papa" on a second number that answers its own reminder automatically every few hours, so the admin Monitor turns red
-within minutes if anything in the chain breaks. Your part: register WhatsApp on the spare SIM and link it as a second session in the
-gateway (QR), give it a webhook like the main one. The backend part is built by us.
+### 3. (Owner, FYI) Second WhatsApp session for the "canary" test family
+The owner links the spare SIM as a second session in the gateway dashboard (QR) and gives it a webhook; nothing for you on AWS. A dummy
+parent "Test Papa" on that number answers its own reminder automatically every few hours, so the admin Monitor turns red within minutes
+if anything in the chain breaks.
 
-### 4. Number changes and sessions: the lesson from 2026-11-05
+### 4. (Owner, FYI) Number changes and sessions: the lesson from 2026-11-05
+The owner manages sessions and webhooks in the gateway dashboard (`https://wa.chhaon.site`). Only the server (code, build, restart,
+logs) needs you.
+
 After the switch to the new number, the new session had **no webhook**, so from about 08:00 to 20:00 IST no parent reply reached the
 backend (reminders still went out). The owner fixed it by hand: a new webhook on the new session to
 `https://api.chhaon.site/webhooks/whatsapp-gateway` (`message.received`, plus `message.status` if you like) with a **new secret**,
