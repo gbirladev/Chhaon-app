@@ -463,3 +463,22 @@ Details: `docs/java-whatsapp-replies.md`, tests: `docs/java-tests.md`. (The "URG
 6. Before any tick, silence the stale backlog (13+ doses are `pending` since 2 Nov 21:00 IST, so the first tick would notify every family "reminder not sent"): `update public.dose_events set status='skipped' where status='pending' and scheduled_at < now() - interval '60 minutes';` (count first with a `select count(*)`). Decide separately whether to tell pilot families reminders were paused.
 7. Scoped single-parent tick: `POST /api/v1/admin/tick?recipientId=<the test parent id>` with an admin token (works while the scheduler is disabled). Expect the dose reminder on that phone ending with "Reply 1 when you have taken it"; reply `1`; check the dose is `taken` and stock dropped. Check the daily check-in the next morning. Only this parent is touched.
 8. Only then set `CHHAON_SCHEDULER_ENABLED=true` in the env file and restart. Watch `select public.scheduler_health();` (seconds_ago stays under about 400) and the first morning's replies. To switch off: remove the variable and restart.
+
+## Upcoming: tap-to-answer for parents (analysed 2026-11-05, NOT decided, NOT started)
+
+**Why:** with the self-hosted WhatsApp gateway (unofficial, Baileys) parents must TYPE a number (`*1*` / `*2*`); with Meta's official API they tapped a real button. WhatsApp does not reliably show buttons from an unofficial sender, so a tap needs one of the options below. The typed texts were re-laid-out on 2026-11-05 (greeting, news, answers on their own lines with bold numbers) as the interim.
+
+| Option | What the parent sees | Effort | Catch |
+|---|---|---|---|
+| **A. Meta's official WhatsApp Cloud API** | real tap buttons ("Taken") like before | port the old Python sender + webhook to Java (about 350 lines incl. tests), Meta setup and approved templates (owner) | per-message fee (why the move away happened); needs a number registered with Meta |
+| **B. WhatsApp poll through the gateway** | a card with tappable options ("Taken" / "Not yet") | about 350 to 500 lines in total, 1.5 to 2 days incl. a real-phone test (see below) | the gateway never reports votes; vote decryption in Baileys 7.0.0-rc.9 is unproven; the gateway part is deployed by the buddy |
+| **C. Keep typed replies (done, polished)** | bold "Reply *1*" lines | none | typing a number is a hurdle for some older parents |
+
+**Recommendation:** C for the pilot; decide A (or B) once reply rates and willingness to pay are known. A also removes the ban risk of an unofficial sender.
+
+**Option B in detail (so it can be picked up later)**
+- The gateway already has a send-poll route (`whatsapp-gateway/src/app/api/messages/[sessionId]/[jid]/poll/route.ts`). It does NOT handle votes: `src/modules/whatsapp/store/index.ts` (`messages.update`) only forwards delivered/read status, and `src/lib/webhook.ts` has no poll event.
+- Gateway change (TypeScript, about 100 to 150 lines): keep the poll's original message and its secret when it is sent, decrypt each vote (`getAggregateVotesInPollMessage`), dispatch a new webhook event `poll.vote {pollKeyId, voter, selectedOptions}`, add it to the event list in the dashboard. The pipeline deploys only the Java backend, so the buddy deploys the gateway.
+- Java change (about 160 lines + 150 to 250 lines of tests): `WhatsAppSender.sendPoll(...)` using the gateway poll route; send dose reminder, check-in and consent as polls; store the poll message id in `dose_events.whatsapp_message_id` (and the check-in equivalent); handle `poll.vote` in `GatewayEventService` (map option to Taken / Not yet / OK / Call me, idempotent, a retracted vote = no answer).
+- Risks: vote decryption unproven; a vote can be changed or removed; senders the gateway cannot turn into a phone number (`@lid`) are still ignored; a poll cannot carry the medicine photo; the ban risk of an unofficial sender stays.
+- **Cheap feasibility test first (about 1 hour, buddy, no code from us):** send one poll to a phone with the gateway's poll route (`POST /api/messages/{sessionId}/{jid}/poll`, API key header `X-API-Key`), tap an option, and check whether anything about the vote reaches the gateway's webhook log. If a decrypted vote shows up, build B; if not, do not.
