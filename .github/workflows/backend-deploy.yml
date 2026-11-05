@@ -85,6 +85,8 @@ jobs:
           CHHAON_SCHEDULER_ONLY_RECIPIENT: ${{ secrets.CHHAON_SCHEDULER_ONLY_RECIPIENT }}
           # Reminders and the check-in as a WhatsApp poll: "true" on, "false" off. Blank keeps the value on the box (off when never set).
           WHATSAPP_POLLS_ENABLED: ${{ secrets.WHATSAPP_POLLS_ENABLED }}
+          # Better Stack heartbeat URL, pinged after every scheduler tick (a secret). Blank keeps the value on the box.
+          BETTERSTACK_HEARTBEAT_URL: ${{ secrets.BETTERSTACK_HEARTBEAT_URL }}
         run: bash deploy/aws/send-ssm-deploy.sh
 
       - name: Smoke test (public health)

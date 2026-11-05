@@ -14,6 +14,30 @@
 - [x] **Email login sends a code, not a link (fixed 2026-11-03).** Supabase's Magic Link and Confirm signup templates were still the stock "click this link" ones on the live project, even though the local `supabase/config.toml` + `supabase/templates/otp.html` already send `{{ .Token }}`. Fixed by hand in the dashboard (Authentication > Email Templates) to match `otp.html`. Reminder: never run `supabase config push` to do this (local config carries test login codes).
 - [x] **Custom SMTP configured 2026-11-03:** Gmail (`chhaon.app.mail@gmail.com`) via an App Password, `smtp.gmail.com:587`, set in Supabase Dashboard > Authentication > Settings > SMTP Settings. Fine for the pilot (~500 emails/day cap); move to a dedicated provider (SES, Brevo, Resend) if volume grows past that.
 
+## Stability sprint before marketing (agreed 2026-11-05)
+
+Feature freeze after polls + admin Monitor; no new screens, themes or website work until the core loop is stable.
+- [ ] Canary family: dummy caregiver "Chhaon Test" + parent "Test Papa" on a SECOND WhatsApp number (spare SIM) linked as a
+      2nd gateway session that auto-answers its reminder poll. A "Test tablet" every 3-4 h; the Monitor goes red if it is not
+      marked taken within 5 min. Hidden from stats. Needs: the spare SIM (owner).
+- [ ] Release checklist: one release a week; SQL on Sydney first, then push, then smoke test (canary green + one reminder on the owner's phone).
+- [ ] Migration tracking table on Sydney (which supabase/migrations files have run).
+- [ ] Gateway runbook: number change / phone unlinked / ban (webhook URL, secret, session name, test). Later: backend registers its own webhook.
+- [ ] Burn-in: 7 days, owner's family + 5-10 friendly families, zero silent failures, then start marketing.
+- [ ] Meanwhile: "Join the first 50 families" waitlist on the website.
+- [ ] Long term: plan the move to Meta's WhatsApp API once families pay.
+
+## WhatsApp replies lost after the number change (found and fixed 2026-11-05)
+
+The new number's gateway session had no webhook, so from about 08:00 to 20:00 IST no parent reply reached the backend
+(reminders still went out). Fixed by hand: new webhook to `https://api.chhaon.site/webhooks/whatsapp-gateway`
+(`message.received`), new `WHATSAPP_WEBHOOK_SECRET` in the gateway + GitHub, Backend Deploy. Secret kept in a password manager.
+- [ ] Optional: the backend registers its own webhook at startup (gateway API `/api/webhooks/{sessionId}`), so a number change
+      or a deleted webhook repairs itself. Plus a warning when reminders go out but no reply has arrived for many hours.
+- [ ] Reminder wording: one clear question, "दवा ले ली? जवाब में बस *1* लिखें" (proposed 2026-11-05, owner to decide).
+- [ ] Find why the 14:00 / 14:15 doses on 2026-11-05 were sent at 14:31 (scheduler gap?).
+- [ ] Admin monitor: email alerts to the owner later (Resend: `RESEND_API_KEY` + `ADMIN_ALERT_EMAIL`, sender `alerts@chhaon.site` once the domain is verified). For now the dashboard only.
+
 ## Open question: Supabase DB moved from Mumbai to Sydney (found 2026-11-03)
 `api-java/deploy/aws/INFRA.md` says the Supabase DB was moved to **Sydney (ap-southeast-2)** on 2026-11-02 to co-locate with the new AWS backend (the free-plan AWS account is region-locked to Sydney). This was done as part of the Java backend / AWS migration, without a corresponding decision recorded here. It contradicts every other doc (`CLAUDE.md`, this file, `docs/deploy.md`), which still say Mumbai, and `CLAUDE.md` ties the Mumbai choice specifically to **health data and the DPDP Act 2023** ("prefer servers in India"), not just latency.
 - [ ] **Decide deliberately:** is hosting Indian residents' health data in Australia acceptable for the pilot, or does the DB need to move back to Mumbai? Not yet decided; flagged, not acted on.

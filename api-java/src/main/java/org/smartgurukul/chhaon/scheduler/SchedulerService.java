@@ -55,6 +55,14 @@ public class SchedulerService {
         this.photos = photos;
     }
 
+    /** Outside watcher ping after each tick (Better Stack); null = none (tests that build the service by hand). */
+    private ExternalHeartbeat externalHeartbeat;
+
+    @Autowired(required = false)
+    public void setExternalHeartbeat(ExternalHeartbeat externalHeartbeat) {
+        this.externalHeartbeat = externalHeartbeat;
+    }
+
     private final boolean enabled;
     private final int doseMissedMinutes;
     private final int checkinMissedMinutes;
@@ -177,6 +185,8 @@ public class SchedulerService {
     private void recordHeartbeat() {
         try {
             jdbc.execute("select public.touch_scheduler_heartbeat()");
+            // Only after the database answered: a tick that cannot reach the database must look dead from outside too.
+            if (externalHeartbeat != null) externalHeartbeat.ping();
         } catch (Exception e) {
             log.warn("scheduler heartbeat could not be recorded: {}", e.getClass().getSimpleName());
         }
