@@ -49,6 +49,9 @@ public final class AuthDtos {
             String userId,
             String name,
             String plan,
-            boolean isNew) {
+            boolean isNew,
+            // A second, Supabase-compatible token (HS256, SUPABASE_JWT_SECRET, role=authenticated) for the app's direct
+            // Supabase calls (reports wallet, medicine photos, feedback pictures). null when not configured.
+            String supabaseToken) {
     }
 }

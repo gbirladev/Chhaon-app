@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import { resolveLocalUrl } from "./hosts";
-import { authToken } from "./auth";
+import { authToken, supabaseToken } from "./auth";
 
 /** A request that never answers (phone dropped off Wi-Fi, server restarting) must fail, not leave a button on "Saving…" forever. */
 const fetchWithTimeout: typeof fetch = (input, init) => {
@@ -21,6 +21,6 @@ export const supabase = createClient<Database>(
   import.meta.env.VITE_SUPABASE_ANON_KEY,
   {
     global: { fetch: fetchWithTimeout },
-    accessToken: async () => authToken() ?? "",
+    accessToken: async () => supabaseToken() ?? authToken() ?? "",   // Supabase accepts only its own kind of token
   },
 );

@@ -30,7 +30,25 @@ function setToken(token: string) {
 
 export function clearToken() {
   cached = null;
-  try { localStorage.removeItem(KEY); } catch { /* storage blocked */ }
+  sbCached = null;
+  try { localStorage.removeItem(KEY); localStorage.removeItem(SB_KEY); } catch { /* storage blocked */ }
+}
+
+/**
+ * The Supabase-compatible token (HS256, the project's legacy JWT secret, role=authenticated) the backend also hands out at
+ * login. The app's direct Supabase calls (reports wallet, photos, feedback pictures) must use it: Supabase does not accept
+ * our own API token. null on an older login: then the user logs in again to get one.
+ */
+const SB_KEY = "chhaon-sb-token";
+let sbCached: string | null | undefined;
+export function supabaseToken(): string | null {
+  if (sbCached !== undefined) return sbCached;
+  try { sbCached = localStorage.getItem(SB_KEY); } catch { sbCached = null; }
+  return sbCached ?? null;
+}
+function setSupabaseToken(token: string | null | undefined) {
+  sbCached = token ?? null;
+  try { if (token) localStorage.setItem(SB_KEY, token); else localStorage.removeItem(SB_KEY); } catch { /* storage blocked */ }
 }
 
 type Claims = { sub?: string; exp?: number };
@@ -91,8 +109,9 @@ export async function verifyOtp(phone: string, code: string): Promise<{ ok: true
       body: JSON.stringify({ phone, code }),
     });
     if (res.ok) {
-      const body = (await res.json()) as { token: string; isNew: boolean };
+      const body = (await res.json()) as { token: string; isNew: boolean; supabaseToken?: string | null };
       setToken(body.token);
+      setSupabaseToken(body.supabaseToken);
       return { ok: true, isNew: body.isNew };
     }
     if (res.status === 429) return { ok: false, error: "too_many" };

@@ -78,6 +78,27 @@ class OtpServiceTest extends DbTest {
     }
 
     @Test
+    void loginAlsoHandsOutASupabaseCompatibleHs256Token() throws Exception {
+        String phone = freshPhone();
+        otp.requestCode(phone);
+
+        OtpLoginResponse resp = otp.verify(phone, sentCode(phone));
+
+        // Supabase (PostgREST + Storage) only accepts HS256 tokens signed with the project's legacy JWT secret, with
+        // role = aud = "authenticated" and sub = the user id. Our own API token does not qualify.
+        String sb = resp.supabaseToken();
+        assertThat(sb).isNotBlank().isNotEqualTo(resp.token());
+        String header = new String(java.util.Base64.getUrlDecoder().decode(sb.split("\\.")[0]), java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(header).contains("\"alg\":\"HS256\"");
+        javax.crypto.SecretKey key = io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                "test-only-supabase-secret-0123456789-abcdefghijklmnop".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        Claims c = io.jsonwebtoken.Jwts.parser().verifyWith(key).build().parseSignedClaims(sb).getPayload();
+        assertThat(c.getSubject()).isEqualTo(resp.userId());
+        assertThat(c.get("role", String.class)).isEqualTo("authenticated");
+        assertThat(c.getAudience()).contains("authenticated");
+    }
+
+    @Test
     void verifyReturnsTheExistingProfileWhenThePhoneIsKnown() {
         String phone = freshPhone();
         UUID id = UUID.randomUUID();
