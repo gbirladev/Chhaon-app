@@ -3,6 +3,7 @@ package org.smartgurukul.chhaon.medicine;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.CreateMedicineRequest;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.MedicineFlagsRequest;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.MedicineResponse;
+import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.StockAdjustRequest;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.StockResponse;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.UpdateMedicineRequest;
 import org.smartgurukul.chhaon.recipient.CareRecipient;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -86,6 +88,7 @@ public class MedicineService {
         List<LocalTime> times = distinctTimes(req.times());
         String pillColour = validLook(req.pillColour(), PILL_COLOURS, "pill colour");
         String pillShape = validLook(req.pillShape(), PILL_SHAPES, "pill shape");
+        Integer stock = validStock(req.stock());
 
         if (medicines.countByRecipientId(recipientId) >= MAX_MEDICINES) {
             throw new ResponseStatusException(BAD_REQUEST, "This parent already has the maximum number of medicines.");
@@ -101,7 +104,7 @@ public class MedicineService {
         m.setDosage(dosage);
         m.setInstructions(instructions);
         m.setPhotoUrl(photo);
-        m.setStockCount(req.stock());
+        m.setStockCount(stock);   // null = not tracked: no "out of stock" for a family that skipped the count
         m.setRefillThreshold(req.refillThreshold());
         m.setPillColour(pillColour);
         m.setPillShape(pillShape);
@@ -156,16 +159,47 @@ public class MedicineService {
 
     @Transactional
     public StockResponse adjustStock(UUID userId, UUID medicineId, Integer delta) {
-        if (delta == null) throw new ResponseStatusException(BAD_REQUEST, "delta is required");
+        return adjustStock(userId, medicineId, new StockAdjustRequest(delta));
+    }
+
+    /**
+     * Stock changes from the medicine screen. A delta never creates a count from "not tracked" (null stays null, so a taken dose
+     * or a tap on minus can never make a medicine look "out of stock"); an exact count starts tracking; untrack stops it.
+     */
+    @Transactional
+    public StockResponse adjustStock(UUID userId, UUID medicineId, StockAdjustRequest req) {
+        if (req == null) throw new ResponseStatusException(BAD_REQUEST, "delta is required");
+        boolean untrack = Boolean.TRUE.equals(req.untrack());
+        int given = (req.delta() != null ? 1 : 0) + (req.count() != null ? 1 : 0) + (untrack ? 1 : 0);
+        if (given == 0) throw new ResponseStatusException(BAD_REQUEST, "delta is required");
+        if (given > 1) throw new ResponseStatusException(BAD_REQUEST, "send only one of delta, count, untrack");
         Medicine m = requireMedicine(userId, medicineId);
-        if (m.getStockCount() == null) {
-            return new StockResponse(0); // no stock tracked -> no-op, matching adjust_stock
+        Integer next;
+        if (untrack) {
+            next = null;
+        } else if (req.count() != null) {
+            next = validStock(req.count());
+        } else {
+            if (m.getStockCount() == null) {
+                return new StockResponse(null); // not tracked -> no-op, matching adjust_stock
+            }
+            next = (int) Math.min(Math.max((long) m.getStockCount() + req.delta(), 0L), MAX_STOCK);
         }
-        int next = Math.max(m.getStockCount() + delta, 0);
+        if (Objects.equals(next, m.getStockCount())) return new StockResponse(next);
         m.setStockCount(next);
         m.setUpdatedAt(OffsetDateTime.now());
-        medicines.saveAndFlush(m); // DB trigger notify_low_stock fires on stock_count change
+        medicines.saveAndFlush(m); // DB trigger notify_low_stock fires on stock_count change (never for null)
         return new StockResponse(next);
+    }
+
+    /** Most tablets a stock can hold (the app's limit too). */
+    static final int MAX_STOCK = 100_000;
+
+    /** null (not tracked) or a whole number 0..100000. */
+    private static Integer validStock(Integer stock) {
+        if (stock == null) return null;
+        if (stock < 0 || stock > MAX_STOCK) throw new ResponseStatusException(BAD_REQUEST, "stock must be between 0 and " + MAX_STOCK);
+        return stock;
     }
 
     @Transactional
@@ -332,7 +366,7 @@ public class MedicineService {
                 m.getName(),
                 m.getDosage() == null ? "" : m.getDosage(),
                 schedules.findTimesByMedicineId(m.getId()),
-                m.getStockCount() == null ? 0 : m.getStockCount(),
+                m.getStockCount(),
                 m.getRefillThreshold(),
                 m.getInstructions(),
                 m.isActive(),

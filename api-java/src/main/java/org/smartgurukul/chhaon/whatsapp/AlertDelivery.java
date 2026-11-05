@@ -109,7 +109,8 @@ public class AlertDelivery {
                 "select name, call_name, timezone, is_self, reminder_to, reminder_name, reminder_relation, reminder_user_id " +
                         "from care_recipients where id = ?::uuid", n.get("rid")));
         boolean selfQuiet = parent != null && Boolean.TRUE.equals(parent.get("is_self")) && SELF_QUIET.contains((String) n.get("type"));
-        if (profile == null || profile.get("alert_consent_at") == null || phone == null || phoneOptedOut(phone) || selfQuiet) {
+        if (profile == null || profile.get("alert_consent_at") == null || phone == null || phoneOptedOut(phone) || selfQuiet
+                || stockNoLongerTracked(n)) {
             jdbc.update("update notifications set whatsapp_skipped_at = now() where id = ? " +
                     "and whatsapp_sent_at is null and whatsapp_skipped_at is null", id);
             bump(counts, "alerts_skipped");
@@ -177,6 +178,19 @@ public class AlertDelivery {
                 (String) parent.get("reminder_name"), (String) parent.get("reminder_relation"),
                 parent.get("reminder_user_id") != null && parent.get("reminder_user_id").equals(n.get("user_id")));
         return AlertTexts.alert((String) n.get("type"), language, parentName, medicine, count, when, receiver);
+    }
+
+    /**
+     * A refill / out-of-stock alert about a medicine whose stock is not tracked (any more): the family left the count empty or
+     * stopped counting after the alert was made. The database never makes one for a null stock; this is the safety net, so the
+     * family is never told "has run out" about a medicine nobody counted.
+     */
+    private boolean stockNoLongerTracked(Map<String, Object> n) {
+        String type = (String) n.get("type");
+        if (!"refill_needed".equals(type) && !"out_of_stock".equals(type)) return false;
+        if (n.get("mid") == null) return false;
+        List<Map<String, Object>> rows = jdbc.queryForList("select stock_count from medicines where id = ?::uuid", n.get("mid"));
+        return !rows.isEmpty() && rows.get(0).get("stock_count") == null;
     }
 
     private boolean phoneOptedOut(String phone) {

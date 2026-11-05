@@ -19,6 +19,30 @@
 - [ ] **Decide deliberately:** is hosting Indian residents' health data in Australia acceptable for the pilot, or does the DB need to move back to Mumbai? Not yet decided; flagged, not acted on.
 - [ ] Once decided, update `CLAUDE.md`, `docs/deploy.md` and this file to match reality (they currently all say Mumbai).
 
+## Reports tab and the login token (found and fixed 2026-11-05, branch `r3-facts`)
+**Cause:** the Reports wallet (`web/src/lib/wallet.ts`) called Supabase directly (REST `documents`, `wallet_usage`, Storage
+`reports`) with the login token our Java backend mints (`SupabaseCompatibleTokenService`: HS256, signed with `SUPABASE_JWT_SECRET`).
+Supabase accepts that token only when the secret is the project's own legacy JWT secret and the project still trusts it; the Java API
+accepts it anyway, which is why only Reports failed. Checked locally: a token signed with the local Supabase JWT secret gets 200, any
+other secret gets REST **401 `PGRST301`** (Storage 400). The local demo backend therefore runs with a different `SUPABASE_JWT_SECRET`.
+**Production (reasoned, not called):** the same happens unless the GitHub secret `SUPABASE_JWT_SECRET` is the **Sydney** project's
+legacy secret (it may still be Mumbai's) and Sydney (which signs its own tokens with ES256) has not revoked that legacy key. Owner
+check: Sydney dashboard -> Project Settings -> JWT Keys (legacy secret in use / previously used, same value as the GitHub secret?),
+or open Reports / add a medicine photo in the live app.
+**Fix:** the wallet now goes through the Java API (`api-java/.../wallet/`): records as the signed-in caregiver (`UserScopedSql`, so
+RLS, the folder check and the plan/page/300 MB limits still apply); files through one-time signed upload addresses and 5-minute
+signed links made by the backend with the service-role key (paths chosen by the backend, only that person's saved files; deleting a
+report/page removes its files; unsaved uploads are discarded). If the backend's storage is not configured (503 `storage_off`) the
+web falls back to the old direct Storage calls.
+- [ ] **Owner setting (no new secret, already wired in backend-deploy.yml / send-ssm-deploy.sh / backend.env.example):** GitHub
+  secrets `SUPABASE_URL` (`https://utjgegiioflwnmesmgcv.supabase.co`) and `SUPABASE_SERVICE_ROLE_KEY` (Sydney service_role or
+  `sb_secret_` key), then Backend Deploy. Local demo backend: `SUPABASE_URL=http://host.docker.internal:54321`, the local
+  service_role key, and `SUPABASE_JWT_SECRET` = the local "JWT secret" from `npx supabase status`.
+- [ ] **Still direct (same risk):** medicine photos (upload/preview/remove in `App.tsx`) and feedback pictures (`lib/feedback.ts`).
+  Move them the same way if the production check fails.
+- [ ] Optional one-off: medicines with stock 0 that were never counted -> "not tracked": `supabase/maintenance/optional_untrack_zero_stock.sql`
+  (preview first; not run).
+
 ## Parked decisions
 - [ ] Caregiver alert channel beyond the in-app bell (missed dose / no check-in): WhatsApp message to the caregiver, web push, or email.
 - [ ] Real PWA install test over `https://` (needs a tunnel or a preview deploy; an ngrok tunnel was blocked, so the user runs it or approves a deploy).

@@ -41,8 +41,8 @@ grant select on c to anon;
 -- shape and privacy
 select isnt((select j from c), null, 'a valid token returns a card');
 select is((select array_agg(k order by k) from jsonb_object_keys((select j from c)) k),
-          array['age','allergies','blood_group','conditions','contacts','doctor','medicines','name'],
-          'only the minimal fields: no city, date of birth, phone, stock, ids');
+          array['age','allergies','blood_group','child','conditions','contacts','doctor','medicines','name','pregnancy'],
+          'only the minimal fields: no city, date of birth, phone, stock, ids (pregnancy and child are null here, migration 0052)');
 select is((select j ->> 'name' from c), 'Ramesh', 'first name only');
 select ok((select j::text from c) !~ '(Indore|9999999999|Kumar)', 'no city, no parent phone, no surname in the card');
 select is((select (j -> 'age')::int from c), 60, 'age is worked out from the date of birth when no age is stored');

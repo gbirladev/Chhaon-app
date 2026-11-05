@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -39,8 +40,17 @@ public class ChildService {
     /** "Due soon" on the screen = due within this many days. */
     public static final int DUE_SOON_DAYS = 30;
 
+    /** weightKg / weightOn: the last weight the family recorded (migration 0052), null when none. */
     public record ChildInfo(LocalDate dob, OffsetDateTime guardianConfirmedAt, String careType, boolean isSelf,
-                            int planDoses, String edition, String source, boolean reviewedByPaediatrician) {}
+                            int planDoses, String edition, String source, boolean reviewedByPaediatrician,
+                            BigDecimal weightKg, LocalDate weightOn) {}
+
+    /** The child's weight and the day it was measured. Both null = clear it. weightOn null with a weight = today. */
+    public record WeightInput(BigDecimal weightKg, LocalDate weightOn) {}
+
+    /** A recorded fact, nothing more: between these limits (the database checks the same). */
+    static final BigDecimal WEIGHT_MIN = new BigDecimal("0.5");
+    static final BigDecimal WEIGHT_MAX = new BigDecimal("200");
 
     public record ChildInput(LocalDate dob, Boolean guardianConfirmed) {}
 
@@ -58,7 +68,8 @@ public class ChildService {
     /** Most ids in one "already given?" call (the whole schedule has fewer doses). */
     static final int GIVEN_EARLIER_MAX = 100;
 
-    private record Recip(UUID id, String timezone, LocalDate dob, OffsetDateTime guardianAt, String careType, boolean isSelf) {
+    private record Recip(UUID id, String timezone, LocalDate dob, OffsetDateTime guardianAt, String careType, boolean isSelf,
+                         BigDecimal weightKg, LocalDate weightOn) {
         LocalDate today() {
             ZoneId z;
             try { z = ZoneId.of(timezone == null || timezone.isBlank() ? "Asia/Kolkata" : timezone); }
@@ -85,12 +96,13 @@ public class ChildService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Profile not found"));
         // care_type comes with migration 0043 (branch care-type). Read through to_jsonb so this works with and without that column.
         return db.asService(jdbc -> jdbc.queryForObject("""
-                        select r.id, r.timezone, r.dob, r.guardian_confirmed_at, to_jsonb(r) ->> 'care_type', r.is_self
+                        select r.id, r.timezone, r.dob, r.guardian_confirmed_at, to_jsonb(r) ->> 'care_type', r.is_self,
+                               (to_jsonb(r) ->> 'weight_kg')::numeric, (to_jsonb(r) ->> 'weight_on')::date
                         from care_recipients r where r.id = ?
                         """,
                 (rs, i) -> new Recip((UUID) rs.getObject(1), rs.getString(2),
                         rs.getDate(3) == null ? null : rs.getDate(3).toLocalDate(), odt(rs.getTimestamp(4)), rs.getString(5),
-                        rs.getBoolean(6)),
+                        rs.getBoolean(6), rs.getBigDecimal(7), rs.getDate(8) == null ? null : rs.getDate(8).toLocalDate()),
                 recipientId));
     }
 
@@ -110,7 +122,7 @@ public class ChildService {
         Integer n = db.asUser(userId, jdbc -> jdbc.queryForObject(
                 "select count(*) from child_vaccines where recipient_id = ?", Integer.class, recipientId));
         return new ChildInfo(r.dob(), r.guardianAt(), r.careType(), r.isSelf(), n == null ? 0 : n,
-                schedule.edition(), schedule.source(), schedule.reviewedByPaediatrician());
+                schedule.edition(), schedule.source(), schedule.reviewedByPaediatrician(), r.weightKg(), r.weightOn());
     }
 
     /**
@@ -137,6 +149,36 @@ public class ChildService {
             resuggest(jdbc, recipientId, dob, false);
             return null;
         });
+        return info(userId, recipientId);
+    }
+
+    /**
+     * Records the child's weight (shown on the emergency card and the doctor summary as a plain fact: no chart, no judgement,
+     * no advice). Child data: the guardian confirmation must be recorded first. 0.5 to 200 kg, at most 2 decimals; the day it was
+     * measured is not in the future and not before the date of birth (default: today on the child's clock). Both null clears it.
+     */
+    public ChildInfo saveWeight(UUID userId, UUID recipientId, WeightInput in) {
+        Recip r = load(userId, recipientId);
+        requireChildProfile(r);
+        if (r.guardianAt() == null) throw new ResponseStatusException(CONFLICT, "guardian_confirmation_required");
+        BigDecimal kg = in == null ? null : in.weightKg();
+        LocalDate on = in == null ? null : in.weightOn();
+        if (kg == null) {
+            if (on != null) throw new ResponseStatusException(BAD_REQUEST, "weight_invalid");
+        } else {
+            if (kg.compareTo(WEIGHT_MIN) < 0 || kg.compareTo(WEIGHT_MAX) > 0 || kg.stripTrailingZeros().scale() > 2) {
+                throw new ResponseStatusException(BAD_REQUEST, "weight_invalid");
+            }
+            LocalDate today = r.today();
+            if (on == null) on = today;
+            if (on.isAfter(today) || (r.dob() != null && on.isBefore(r.dob())) || on.getYear() < 1900) {
+                throw new ResponseStatusException(BAD_REQUEST, "weight_date_invalid");
+            }
+        }
+        BigDecimal kgFinal = kg;
+        Date onFinal = on == null ? null : Date.valueOf(on);
+        db.asUser(userId, jdbc -> jdbc.update("update care_recipients set weight_kg = ?, weight_on = ? where id = ?",
+                kgFinal, onFinal, recipientId));
         return info(userId, recipientId);
     }
 

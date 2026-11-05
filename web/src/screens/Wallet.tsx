@@ -4,7 +4,7 @@ import { AppHeader, Field, Icon, parentCall, useDialog, useSessionExpired, useTo
 import type { Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
 import {
-  CATEGORIES, MAX_PAGES, addPages, createDocument, deleteDocument, loadDocument, loadDocuments, loadWalletUsage, removePage, signedUrls, updateDocument, uploadFiles,
+  CATEGORIES, MAX_PAGES, addPages, createDocument, deleteDocument, loadDocument, loadDocuments, loadWalletUsage, removePage, updateDocument, uploadFiles, walletLinks,
   type Category, type DocFields, type WalletDoc,
 } from "../lib/wallet";
 import { ConfirmSheet } from "./Invites";
@@ -178,7 +178,7 @@ export function WalletScreen({ recipient, onOpen, onUpgrade }: { recipient: Reci
     try {
       const list = await loadDocuments(recipientId);
       setDocs(list); setError(false);
-      setThumbs(await signedUrls(list.map((d) => d.files[0]?.thumbPath ?? "").filter(Boolean)));
+      setThumbs(await walletLinks(recipientId, list.map((d) => d.files[0]?.thumbPath ?? "").filter(Boolean)).catch(() => ({})));  // no previews is fine: icons show
       setUsage(await loadWalletUsage(recipientId));
     } catch { setError(true); }
   };
@@ -268,7 +268,7 @@ export function WalletDetail({ go, documentId }: { go: (screen: "reports", optio
     try {
       const d = await loadDocument(documentId);
       setDoc(d); setError(false);
-      setUrls(d ? await signedUrls(d.files.map((f) => f.path)) : {});
+      setUrls(d ? await walletLinks(d.recipientId, d.files.map((f) => f.path)) : {});
     } catch { setError(true); }
   };
   useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [documentId]);
@@ -295,7 +295,7 @@ export function WalletDetail({ go, documentId }: { go: (screen: "reports", optio
       if (up.reason === "auth") return expireSession();
       return toast(t(up.reason === "type" ? "errType" : up.reason === "heic" ? "errHeic" : up.reason === "size" ? "errSize" : "errUpload"));
     }
-    const saved = await addPages(doc.id, doc.files.length, up.items);
+    const saved = await addPages(doc.id, doc.files.length, up.items, doc.recipientId);
     setBusy(false);
     if (!saved.ok) return toast(t(saved.reason === "pages" ? "errPages" : saved.reason === "storage" ? "errStorage" : "errSave"));
     toast(t("added"));
@@ -305,7 +305,7 @@ export function WalletDetail({ go, documentId }: { go: (screen: "reports", optio
     const file = doc?.files.find((f) => f.id === fileId);
     if (!doc || !file || busy) return;
     setBusy(true);
-    const ok = await removePage(file);
+    const ok = await removePage(doc.id, file);
     setBusy(false);
     if (!ok) return toast(t("errSave"));
     void load();

@@ -1,6 +1,8 @@
 import { compressImage } from "./image";
 import { supabase } from "./supabase";
 import { authToken } from "./auth";
+import { apiFetch, ApiError } from "./http";
+import { resolveLocalUrl } from "./hosts";
 
 /** Reports wallet (migration 0029): a parent's reports, prescriptions and other papers, stored as photos or PDFs. No reading or analysis. */
 export const CATEGORIES = ["lab", "prescription", "scan", "discharge", "vaccination", "insurance", "bill", "other"] as const;
@@ -16,30 +18,50 @@ export const MAX_FILE_BYTES = 15 * 1024 * 1024;
 export const MAX_PAGES = 10;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
-type Row = {
-  id: string; recipient_id: string; title: string; category: string; doc_date: string | null; doctor: string | null; notes: string | null; created_at: string;
-  document_files: { id: string; path: string; thumb_path: string | null; mime: string; size_bytes: number; position: number }[];
-};
-const SELECT = "id, recipient_id, title, category, doc_date, doctor, notes, created_at, document_files(id, path, thumb_path, mime, size_bytes, position)";
+/*
+ * Everything goes through our Java API (docs/TODO.md, "Reports tab and the login token"). The records are read and written by the backend AS the signed-in
+ * caregiver, so the database's own rules still apply; files go to the private bucket through one-time signed addresses the backend
+ * makes. Nothing here needs Supabase to accept our login token (that was why the Reports tab said "Could not load the reports").
+ * Fallback: a backend whose storage is not configured answers 503 "storage_off"; then files use the direct Storage calls as before.
+ */
+type FileDto = { id: string; path: string; thumbPath: string | null; mime: string; sizeBytes: number; position: number };
+type DocDto = { id: string; recipientId: string; title: string; category: string; docDate: string | null; doctor: string | null; notes: string | null; createdAt: string; files: FileDto[] };
 
-const toDoc = (r: Row): WalletDoc => ({
-  id: r.id, recipientId: r.recipient_id, title: r.title,
+const toDoc = (r: DocDto): WalletDoc => ({
+  id: r.id, recipientId: r.recipientId, title: r.title,
   category: (CATEGORIES as readonly string[]).includes(r.category) ? (r.category as Category) : "other",
-  docDate: r.doc_date, doctor: r.doctor, notes: r.notes, createdAt: r.created_at,
-  files: [...r.document_files].sort((a, b) => a.position - b.position).map((f) => ({ id: f.id, path: f.path, thumbPath: f.thumb_path, mime: f.mime, sizeBytes: f.size_bytes, position: f.position })),
+  docDate: r.docDate, doctor: r.doctor, notes: r.notes, createdAt: r.createdAt,
+  files: [...(r.files ?? [])].sort((a, b) => a.position - b.position),
 });
 
 export async function loadDocuments(recipientId: string): Promise<WalletDoc[]> {
-  const { data, error } = await supabase.from("documents").select(SELECT).eq("recipient_id", recipientId)
-    .order("doc_date", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(200);
-  if (error) throw error;
-  return (data as unknown as Row[]).map(toDoc);
+  return (await apiFetch<DocDto[]>(`/api/v1/recipients/${recipientId}/documents`)).map(toDoc);
 }
 
 export async function loadDocument(id: string): Promise<WalletDoc | null> {
-  const { data, error } = await supabase.from("documents").select(SELECT).eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data ? toDoc(data as unknown as Row) : null;
+  try {
+    return toDoc(await apiFetch<DocDto>(`/api/v1/documents/${id}`));
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+/** Storage addresses from the backend are relative to <Supabase URL>/storage/v1: this app's own Supabase address goes in front. */
+const storageUrl = (relative: string) => `${resolveLocalUrl(import.meta.env.VITE_SUPABASE_URL)}/storage/v1${relative}`;
+const storageOff = (e: unknown) => e instanceof ApiError && e.status === 503 && /storage_off/.test(e.message);
+
+/** Short-lived links to a report's files (thumbnails or pages), keyed by storage path. A path that cannot be signed is missing. */
+export async function walletLinks(recipientId: string, paths: string[]): Promise<Record<string, string>> {
+  const wanted = [...new Set(paths)].filter(Boolean);
+  if (!wanted.length) return {};
+  try {
+    const links = await apiFetch<Record<string, string>>(`/api/v1/recipients/${recipientId}/documents/links`, { method: "POST", body: { paths: wanted } });
+    return Object.fromEntries(Object.entries(links).map(([path, url]) => [path, storageUrl(url)]));
+  } catch (e) {
+    if (storageOff(e)) return signedUrls(wanted);
+    throw e;
+  }
 }
 
 /** Short-lived links for private files, keyed by storage path. A path that cannot be signed is simply missing. */
@@ -63,10 +85,33 @@ export const kindOf =(file: File) => {
 export type UploadResult = { ok: true; items: Uploaded[] } | { ok: false; reason: "type" | "heic" | "size" | "upload" | "auth" };
 
 /** Uploads the chosen photos / PDFs. Photos are shrunk first (and get a small preview); a failure removes whatever was already uploaded. */
+/** PUTs one file to a one-time signed upload address (no login token needed: the address itself is the permission). */
+async function putSigned(relative: string, body: Blob, contentType: string): Promise<boolean> {
+  try {
+    const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY);
+    const response = await fetch(storageUrl(relative), { method: "PUT", body, headers: { apikey: key, "Content-Type": contentType, "x-upsert": "false" } });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+type Slot = { path: string; uploadUrl: string; thumbPath: string | null; thumbUploadUrl: string | null };
+
+/** Where the backend wants this file (null = backend storage is off: upload directly as before). Throws on any other failure. */
+async function uploadSlot(recipientId: string, kind: string): Promise<Slot | null> {
+  try {
+    return await apiFetch<Slot>(`/api/v1/recipients/${recipientId}/documents/uploads`, { method: "POST", body: { kind } });
+  } catch (e) {
+    if (storageOff(e)) return null;
+    throw e;
+  }
+}
+
 export async function uploadFiles(recipientId: string, files: File[], onProgress?: (done: number) => void): Promise<UploadResult> {
   if (!authToken()) return { ok: false, reason: "auth" };
   const items: Uploaded[] = [];
-  const cleanup = async () => { await supabase.storage.from(BUCKET).remove(items.flatMap((i) => [i.path, ...(i.thumbPath ? [i.thumbPath] : [])])); };
+  const cleanup = async () => { await discardUploads(recipientId, items); };
   for (const [index, file] of files.entries()) {
     const kind = kindOf(file);
     if (file.size === 0 || (!kind.startsWith("image/") && kind !== "application/pdf")) { await cleanup(); return { ok: false, reason: "type" }; }
@@ -77,18 +122,24 @@ export async function uploadFiles(recipientId: string, files: File[], onProgress
     const mime = isPdf ? "application/pdf" : body.type;
     if (!ALLOWED.includes(mime)) { await cleanup(); return { ok: false, reason: /hei[cf]/i.test(`${mime} ${kind} ${file.name}`) ? "heic" : "type" }; }   // a photo format this browser cannot shrink (HEIC from some phones)
     if (body.size > MAX_FILE_BYTES) { await cleanup(); return { ok: false, reason: "size" }; }
-    const name = randomName();
     const ext = isPdf ? "pdf" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-    const path = `${recipientId}/${name}.${ext}`;
-    const main = await supabase.storage.from(BUCKET).upload(path, body, { contentType: mime });
-    if (main.error) { await cleanup(); return { ok: false, reason: "upload" }; }
+    let slot: Slot | null;
+    try { slot = await uploadSlot(recipientId, ext); } catch (e) {
+      await cleanup();
+      return { ok: false, reason: e instanceof ApiError && e.status === 401 ? "auth" : "upload" };
+    }
+    const name = randomName();
+    const path = slot?.path ?? `${recipientId}/${name}.${ext}`;
+    const saved = slot ? await putSigned(slot.uploadUrl, body, mime) : !(await supabase.storage.from(BUCKET).upload(path, body, { contentType: mime })).error;
+    if (!saved) { await cleanup(); return { ok: false, reason: "upload" }; }
     let thumbPath: string | null = null;
     if (!isPdf) {
       try {
         const thumb = await compressImage(typed, 360, 0.7);
-        const candidate = `${recipientId}/${name}-t.jpg`;
-        const up = await supabase.storage.from(BUCKET).upload(candidate, thumb, { contentType: "image/jpeg" });
-        if (!up.error) thumbPath = candidate;
+        const candidate = slot ? slot.thumbPath : `${recipientId}/${name}-t.jpg`;
+        const up = !candidate ? false : slot?.thumbUploadUrl ? await putSigned(slot.thumbUploadUrl, thumb, "image/jpeg")
+          : !(await supabase.storage.from(BUCKET).upload(candidate, thumb, { contentType: "image/jpeg" })).error;
+        if (up) thumbPath = candidate;
       } catch { /* a missing preview is fine: the list shows an icon */ }
     }
     items.push({ path, thumbPath, mime, sizeBytes: body.size });
@@ -99,67 +150,57 @@ export async function uploadFiles(recipientId: string, files: File[], onProgress
 
 export type SaveResult = { ok: true; id: string } | { ok: false; reason: "plan" | "limit" | "storage" | "pages" | "save" };
 
-const removeObjects = async (items: { path: string; thumbPath: string | null }[]) => {
+/** Uploaded files that were not saved into a report: the backend removes them (only unsaved files in this person's folder). */
+async function discardUploads(recipientId: string, items: { path: string; thumbPath: string | null }[]) {
   const paths = items.flatMap((i) => [i.path, ...(i.thumbPath ? [i.thumbPath] : [])]);
-  if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
-};
-
-export async function createDocument(recipientId: string, fields: DocFields, items: Uploaded[]): Promise<SaveResult> {
-  const { data: doc, error } = await supabase.from("documents")
-    .insert({ recipient_id: recipientId, title: fields.title, category: fields.category, doc_date: fields.docDate, doctor: fields.doctor, notes: fields.notes })
-    .select("id").single();
-  if (error || !doc) {
-    await removeObjects(items);
-    const hint = (error as { hint?: string } | null)?.hint;
-    return { ok: false, reason: hint === "plan_documents" ? "plan" : hint === "too_many_documents" ? "limit" : "save" };
-  }
-  const { error: filesError } = await supabase.from("document_files")
-    .insert(items.map((i, position) => ({ document_id: doc.id, path: i.path, thumb_path: i.thumbPath, mime: i.mime, size_bytes: i.sizeBytes, position })));
-  if (filesError) {
-    await supabase.from("documents").delete().eq("id", doc.id);
-    await removeObjects(items);
-    return { ok: false, reason: (filesError as { hint?: string }).hint === "storage_full" ? "storage" : "save" };
-  }
-  return { ok: true, id: doc.id };
+  if (!paths.length) return;
+  try { await apiFetch<void>(`/api/v1/recipients/${recipientId}/documents/discard`, { method: "POST", body: { paths } }); }
+  catch { /* a file left behind costs a little space, never data */ }
 }
 
-export async function addPages(documentId: string, existing: number, items: Uploaded[]): Promise<SaveResult> {
-  if (existing + items.length > MAX_PAGES) { await removeObjects(items); return { ok: false, reason: "pages" }; }
-  const { error } = await supabase.from("document_files")
-    .insert(items.map((i, k) => ({ document_id: documentId, path: i.path, thumb_path: i.thumbPath, mime: i.mime, size_bytes: i.sizeBytes, position: existing + k })));
-  if (error) {
-    await removeObjects(items);
-    const hint = (error as { hint?: string }).hint;
-    return { ok: false, reason: hint === "too_many_files" ? "pages" : hint === "storage_full" ? "storage" : "save" };
+/** The database's refusal (its hint, sent back by the backend as the reason) in the words the screen uses. */
+const saveReason = (e: unknown): Exclude<SaveResult, { ok: true }>["reason"] => {
+  const reason = e instanceof ApiError ? e.message : "";
+  return reason === "plan_documents" ? "plan" : reason === "too_many_documents" ? "limit" : reason === "too_many_files" ? "pages"
+    : reason === "storage_full" ? "storage" : "save";
+};
+const files = (items: Uploaded[]) => items.map((i) => ({ path: i.path, thumbPath: i.thumbPath, mime: i.mime, sizeBytes: i.sizeBytes }));
+
+/** Saves the report with its pages in one step; on a refusal the backend also removes the uploaded files. */
+export async function createDocument(recipientId: string, fields: DocFields, items: Uploaded[]): Promise<SaveResult> {
+  try {
+    const saved = await apiFetch<{ id: string }>(`/api/v1/recipients/${recipientId}/documents`, { method: "POST", body: { ...fields, files: files(items) } });
+    return { ok: true, id: saved.id };
+  } catch (e) {
+    return { ok: false, reason: saveReason(e) };
   }
-  return { ok: true, id: documentId };
+}
+
+export async function addPages(documentId: string, existing: number, items: Uploaded[], recipientId?: string): Promise<SaveResult> {
+  if (existing + items.length > MAX_PAGES) { if (recipientId) await discardUploads(recipientId, items); return { ok: false, reason: "pages" }; }
+  try {
+    await apiFetch<{ id: string }>(`/api/v1/documents/${documentId}/files`, { method: "POST", body: { files: files(items) } });
+    return { ok: true, id: documentId };
+  } catch (e) {
+    return { ok: false, reason: saveReason(e) };
+  }
 }
 
 export async function updateDocument(id: string, fields: DocFields): Promise<boolean> {
-  const { data, error } = await supabase.from("documents")
-    .update({ title: fields.title, category: fields.category, doc_date: fields.docDate, doctor: fields.doctor, notes: fields.notes }).eq("id", id).select("id");
-  return !error && !!data?.length;
+  try { await apiFetch(`/api/v1/documents/${id}`, { method: "PUT", body: fields }); return true; } catch { return false; }
 }
 
-export async function removePage(file: WalletFile): Promise<boolean> {
-  const { data, error } = await supabase.from("document_files").delete().eq("id", file.id).select("id");
-  if (error || !data?.length) return false;
-  await removeObjects([file]);
-  return true;
+/** Removes one page; the backend deletes its stored files. */
+export async function removePage(documentId: string, file: WalletFile): Promise<boolean> {
+  try { await apiFetch<void>(`/api/v1/documents/${documentId}/files/${file.id}`, { method: "DELETE" }); return true; } catch { return false; }
 }
 
-/** Deletes the record first (its pages go with it), then the stored files. */
+/** Deletes the record first (its pages go with it), then the backend deletes the stored files. */
 export async function deleteDocument(doc: WalletDoc): Promise<boolean> {
-  const { data, error } = await supabase.from("documents").delete().eq("id", doc.id).select("id");
-  if (error || !data?.length) return false;
-  await removeObjects(doc.files);
-  return true;
+  try { await apiFetch<void>(`/api/v1/documents/${doc.id}`, { method: "DELETE" }); return true; } catch { return false; }
 }
 
 /** How many reports this parent has and how many the plan allows (max null = no plan limit). */
 export async function loadWalletUsage(recipientId: string): Promise<{ used: number; max: number | null } | null> {
-  const { data, error } = await supabase.rpc("wallet_usage", { p_recipient: recipientId });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) return null;
-  const d = data as { used: number; max: number | null };
-  return { used: d.used, max: d.max };
+  try { return await apiFetch<{ used: number; max: number | null }>(`/api/v1/recipients/${recipientId}/documents/usage`); } catch { return null; }
 }

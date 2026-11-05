@@ -22,6 +22,13 @@ public class TestConfig {
         return new FakeMedicinePhotoStore();
     }
 
+    /** The Reports wallet's files never go to the real Supabase in tests. */
+    @Bean
+    @Primary
+    public FakeWalletStorage fakeWalletStorage() {
+        return new FakeWalletStorage();
+    }
+
     @Bean
     public Fixtures fixtures(JdbcTemplate jdbc) {
         return new Fixtures(jdbc);

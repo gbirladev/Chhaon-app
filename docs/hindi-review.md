@@ -619,3 +619,44 @@ reads naturally for a dose given by a helper as well as one the person took.
 | doseGiven.undoTooLate | वापस सिर्फ़ 10 मिनट तक ले सकते हैं। | Undo is only possible for 10 minutes. | |
 | doseGiven.undoNotPossible | इसे अब वापस नहीं लिया जा सकता। | This can no longer be undone. | |
 | doseGiven.failed | सेव नहीं हुआ। इंटरनेट देखकर फिर से कोशिश करें। | Could not save. Please check your internet and try again. | |
+
+## Part R3: facts that must be right (added 2026-11-05, branch `r3-facts`)
+
+App only (nothing new is sent on WhatsApp). Three groups: (1) a medicine whose stock was left empty is "not tracked" instead of
+"out of stock"; (2) the key facts at the top of the emergency card and the doctor summary (pregnancy week and due date, a child's
+date of birth, age and weight); (3) the emergency card's phone label no longer says "parent". "गर्भवती" is used as the plain word
+for "pregnant"; "डिलीवरी की संभावित तारीख़" for "due date" (the due date is an estimate). Please check both read naturally for a
+paramedic. "{date} को" after the weight is meant as "measured on {date}".
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| medicines.stockNotTracked | स्टॉक नहीं गिना जा रहा · गिनती जोड़ें | Stock not tracked · Add count | |
+| medicines.stockNoneTracked | स्टॉक नहीं गिना जा रहा। गिनती जोड़ने के लिए कोई दवा खोलें। | Stock is not being counted. Open a medicine to add a count. | |
+| add.stockOptional | ज़रूरी नहीं। गोलियाँ नहीं गिनते तो ख़ाली छोड़ दें (तब रीफ़िल अलर्ट नहीं आएँगे)। | Optional. Leave it empty if you do not count the tablets (then there are no refill alerts). | |
+| medicine.notTracked | गिना नहीं जा रहा | Not tracked | |
+| medicine.notTrackedHint | रीफ़िल अलर्ट के लिए अभी कितनी गोलियाँ हैं, वह संख्या डालें। | Enter how many tablets there are now to get refill alerts. | |
+| medicine.addCount | गिनती जोड़ें | Add count | |
+| medicine.stopCounting | स्टॉक गिनना बंद करें | Stop counting stock | |
+| emergency.parentPhone (changed) | फ़ोन (was: माता-पिता का फ़ोन) | PHONE (was: PARENT'S PHONE) | |
+| emergency.callParent (changed) | इस नंबर पर कॉल करें (was: माता-पिता को कॉल करें) | Call this number (was: Call parent) | |
+| emergency.timezoneLabel (changed) | टाइम ज़ोन (was: माता-पिता का टाइम ज़ोन) | Time zone (was: Parent's time zone) | |
+| facts.pregnantWeek | गर्भवती · {week} हफ़्ते (डिलीवरी की संभावित तारीख़ {date}) | PREGNANT · {week} weeks (due {date}) | |
+| facts.pregnantDue | गर्भवती (डिलीवरी की संभावित तारीख़ {date}) | PREGNANT (due {date}) | |
+| facts.pregnant | गर्भवती | PREGNANT | |
+| facts.born | जन्म {date} ({age}) | Born {date} ({age}) | |
+| facts.bornOnly | जन्म {date} | Born {date} | |
+| facts.age.days / weeks / months / years | {n} दिन / # हफ़्ता, # हफ़्ते / # महीना, # महीने / {n} साल | # day(s) / # week(s) / # month(s) / # year(s) | |
+| facts.weight | वज़न {kg} किलो ({date} को) | Weight {kg} kg, on {date} | |
+| facts.weightNoDate | वज़न {kg} किलो | Weight {kg} kg | |
+| facts.weightTitle | वज़न (आपातकालीन कार्ड के लिए) | Weight (for the emergency card) | |
+| facts.weightHint | आख़िरी बार नापा गया वज़न और वह दिन। यह आपातकालीन कार्ड और डॉक्टर सारांश में दिखेगा। | The last weight you know and the day it was measured. It is shown on the emergency card and the doctor summary. | |
+| facts.weightLabel | वज़न (किलो) | Weight (kg) | |
+| facts.weightOnLabel | किस दिन नापा | Measured on | |
+| facts.weightSave | वज़न सेव करें | Save weight | |
+| facts.saving | सेव हो रहा है… | Saving… | |
+| facts.weightSaved | वज़न सेव हो गया। | Weight saved. | |
+| facts.weightCleared | वज़न हटा दिया गया। | Weight removed. | |
+| facts.errWeight | वज़न किलो में डालें, 0.5 से 200 के बीच (जैसे 6.8)। | Enter the weight in kg, between 0.5 and 200 (for example 6.8). | |
+| facts.errWeightDate | जन्म की तारीख़ से आज तक का कोई दिन चुनें। | Choose a day from the date of birth until today. | |
+| facts.errWeightSave | वज़न सेव नहीं हो सका। फिर से कोशिश करें। | Could not save the weight. Please try again. | |
+| facts.weightNeedsDob | पहले टीकाकरण में जन्म की तारीख़ जोड़ें। फिर यहाँ वज़न लिख सकेंगे। | First add the date of birth in Vaccines. Then you can record the weight here. | |
