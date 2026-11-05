@@ -45,7 +45,7 @@ import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import { PersonBadge } from "./screens/PersonBadge";
-import { personKindOf, usePersonLine } from "./lib/person";
+import { initialOf, personKindOf, usePersonLine } from "./lib/person";
 import "./screens/firstImpressions.css";
 import type { PillColour, PillShape } from "./lib/pillLook";
 import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
@@ -1183,7 +1183,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         {doses !== null && visibleDoses.length > 0 && (
           <div className="layouts-wrap">
             <button className="style-badge" onClick={() => setStyleOpen(true)} aria-label={t("layoutPicker.title")}><Icon name="sliders" size={17} /></button>
-            <DoseLayouts layout={layout} stops={visibleDoses.map(routeStop)} avatar={([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()} startLabel={t("today.routeStart")} endLabel={t("today.routeEnd")} nextLabel={t("today.routeNext")} />
+            <DoseLayouts layout={layout} stops={visibleDoses.map(routeStop)} avatar={initialOf(header.call)} startLabel={t("today.routeStart")} endLabel={t("today.routeEnd")} nextLabel={t("today.routeNext")} />
           </div>
         )}
         {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}

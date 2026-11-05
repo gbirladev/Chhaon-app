@@ -650,7 +650,7 @@ naturally as a short line under a name.
 | welcome.headline | जिनकी आप देखभाल करते हैं, उनके लिए WhatsApp पर दवा की याद। | Medicine reminders on WhatsApp for the people you care for. | |
 | welcome.body | माता-पिता, गर्भावस्था, छोटा बच्चा। याद उन्हें, या उनकी मदद करने वाले को, WhatsApp पर मिलती है। कुछ भी इंस्टॉल नहीं करना। | Your parents, a pregnancy, a baby. Reminders reach them, or whoever helps them, on WhatsApp. Nothing to install. | |
 | welcome.chipTaken2 | ✓ आयरन की गोली ली | ✓ Iron tablet taken | |
-| welcome.chipOkay2 | रिमाइंडर सुनीता को गया | Reminder sent to Sunita | |
+| welcome.chipOkay2 | सुनीता को भेजा | Sent to Sunita | |
 | welcome.chipTaken3 | ✓ विटामिन D की बूँदें दीं | ✓ Vitamin D drops given | |
 | welcome.chipOkay3 | शुक्रवार को टीका | Vaccine due Friday | |
 | person.older | बुज़ुर्ग माता-पिता | Older parent | |
