@@ -22,7 +22,8 @@ import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
 import { ChildDetailsFields, NextVaccine, VaccinesLink, VaccinesScreen } from "./screens/Vaccines";
-import { childDetailsErrors, loadChild, saveChildDetails, vaccineDueText, type ChildDetails } from "./lib/vaccines";
+import { childDetailsErrors, isChild, loadChild, saveChildDetails, vaccineDueText, type ChildDetails } from "./lib/vaccines";
+import { ChildHome } from "./screens/ChildHome";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
 import { PlansScreen } from "./screens/Plans";
 import { StockField } from "./screens/StockField";
@@ -1088,6 +1089,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   return (
     <main className="scroll-page">
       <h1 className="sr-only">{t("nav.today")}</h1>
+      {recipient && isChild(recipient) ? <ChildHome recipient={recipient} go={go} unread={unread} onLanguage={() => setLanguage(language === "en" ? "hi" : "en")} onBell={() => setSheetOpen(true)} onPeople={() => setParentsOpen(true)} /> : (
       <header className="home-header">
         <button className="parent-profile" aria-haspopup="dialog" onClick={() => setParentsOpen(true)}>
           <span className="initials-avatar" aria-hidden="true">{([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()}</span>
@@ -1097,7 +1099,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
           <button className="language-button" aria-label={t("common.switchLanguageLabel")} onClick={() => setLanguage(language === "en" ? "hi" : "en")}>{t("common.switchLanguage")}</button>
           <button className="icon-button notification" aria-label={t("common.notifications")} onClick={() => setSheetOpen(true)}><Icon name="bell" />{unread > 0 && <i />}</button>
         </div>
-      </header>
+      </header>)}
 
       <TrialBanner go={go} />
       {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
@@ -1118,7 +1120,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       <InstallBanner />
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
-      <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />
+      {!isChild(recipient) && <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
       {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onAddSelf={() => { setParentsOpen(false); go("addSelf"); }} onClose={() => setParentsOpen(false)} />}
@@ -1139,7 +1141,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {recipient && <LoveCard recipient={recipient} call={call} />}
 
       {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
-      <NextVaccine go={go} recipient={recipient} />
+      {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
 
       <AlertsCard compact />
 

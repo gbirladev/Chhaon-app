@@ -1,0 +1,51 @@
+/* Today for a child (ChildHome.tsx). Colours come from the theme tokens, so every theme and dark mode work. */
+.child-home .child-kicker { text-transform: uppercase; }
+.child-home .child-avatar { background: var(--s-e3f3ef); color: var(--primary-text); }
+
+/* The hero: next vaccine / vaccines to check / set up. */
+.child-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; margin: 0 0 12px; padding: 16px; border: 0; border-radius: 20px;
+  background: var(--f-2d7a70); color: var(--on-fill); text-align: left; font: inherit; overflow-wrap: anywhere; min-height: 44px; cursor: pointer; }
+.child-hero strong { font-size: 1.25rem; line-height: 1.25; letter-spacing: -.2px; }
+.child-hero-kicker { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .85; }
+.child-hero-when { font-size: .9375rem; font-weight: 600; }
+.child-hero-sub { font-size: max(0.8125rem, 12px); opacity: .85; line-height: 1.45; }
+.child-hero-cta { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-weight: 700; font-size: .875rem; }
+.child-hero.check { background: var(--s-fff4e5); color: var(--t-8a5410); border: 1px solid var(--b-ecc88f); }
+.child-hero.setup, .child-hero.done { background: var(--surface); color: var(--text); border: 1px solid var(--b-e0ece8); }
+.child-hero.setup .child-hero-cta { color: var(--primary-text); }
+
+/* The vaccine card: one tile per dose of the current age band. */
+.child-card { margin: 0 0 12px; padding: 14px; border: 1px solid var(--b-e0ece8); border-radius: 18px; background: var(--surface); }
+.child-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.child-card-head h2 { margin: 0; font-size: 1rem; letter-spacing: -.2px; }
+.child-card-head p { margin: 2px 0 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.child-card-head .inline-link { min-height: 44px; margin: -10px -4px -10px 0; padding: 0 4px; flex: 0 0 auto; }
+.child-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+.child-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 48px; padding: 4px 2px;
+  border: 1px solid var(--b-e0ece8); border-radius: 10px; background: var(--s-f4f8f7); color: var(--text-muted); font: inherit; cursor: pointer; }
+.child-tile b { font-size: 12px; font-weight: 700; line-height: 1.1; }
+.child-tile small { font-size: 11px; line-height: 1; }
+.child-tile i { position: absolute; top: 2px; right: 3px; display: flex; }
+.child-tile.given { background: var(--f-2a7d58); border-color: var(--f-2a7d58); color: var(--on-fill); }
+.child-tile.next { background: var(--surface); border: 2px solid var(--primary-text); color: var(--primary-text); }
+.child-tile.check { background: var(--s-fff4e5); border: 2px dashed var(--b-ecc88f); color: var(--t-8a5410); }
+.child-tile.notgiven { background: var(--surface); border-style: dashed; text-decoration: line-through; }
+.child-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; margin: 12px 0 0; padding: 0; color: var(--text-muted); font-size: 12px; }
+.child-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.child-swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--b-e0ece8); background: var(--s-f4f8f7); }
+.child-swatch.given { background: var(--f-2a7d58); border-color: var(--f-2a7d58); }
+.child-swatch.next { background: var(--surface); border: 2px solid var(--primary-text); }
+.child-swatch.check { background: var(--s-fff4e5); border: 2px dashed var(--b-ecc88f); }
+.child-swatch.notgiven { background: var(--surface); border-style: dashed; }
+
+/* The two quick actions. */
+.child-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 0 8px; }
+.child-action { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 92px; padding: 12px; border: 1px solid var(--b-e0ece8); border-radius: 16px;
+  background: var(--surface); color: var(--text); text-align: left; font: inherit; overflow-wrap: anywhere; cursor: pointer; }
+.child-action > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.child-action strong { font-size: .875rem; line-height: 1.3; }
+.child-action small { color: var(--text-muted); font-size: 12px; }
+.child-action-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--s-e6f2ee); color: var(--primary-text); }
+.child-source { margin: 0 0 14px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.child-remind p { margin: 0 0 10px; line-height: 1.5; }
+.child-remind .stack { margin-top: 14px; }

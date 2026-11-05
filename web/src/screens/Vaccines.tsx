@@ -102,7 +102,7 @@ function ChildSetup({ recipient, info, onDone, onCancel }: { recipient: Recipien
 
 // ---------------------------------------------------------------- one dose
 
-function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipient: Recipient; vaccine: Vaccine; onClose: () => void; onSaved: () => void }) {
+export function VaccineSheet({ recipient, vaccine, onClose, onSaved }: { recipient: Recipient; vaccine: Vaccine; onClose: () => void; onSaved: () => void }) {
   const t = useTranslations("vaccines");
   const tn = useTranslations("vaccines.note");
   const language = useLocale() as Language;
