@@ -32,7 +32,9 @@ public class CareRecipientService {
 
     private static final Set<String> RELATIONS = Set.of(
             "father", "mother", "grandfather", "grandmother", "father_in_law", "mother_in_law",
-            "spouse", "uncle", "aunt", "brother", "sister", "other", "self");
+            "spouse", "uncle", "aunt", "brother", "sister", "other", "self",
+            // round 2 (migration 20261105000050): a child, a grandchild, a wife / husband
+            "son", "daughter", "grandson", "granddaughter", "wife", "husband");
     private static final Set<String> BLOOD_GROUPS = Set.of(
             "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-");
     private static final int MAX_LIST_ITEMS = 30;
@@ -111,6 +113,10 @@ public class CareRecipientService {
         if (Boolean.TRUE.equals(req.caregiverAttested())) r.setCaregiverAttestedAt(now);
         applyCareType(r, req.careType(), req.dueDate());
         applyReceiver(r, userId, null, req.reminderTo(), req.reminderName(), req.reminderRelation());
+        refuseChildReceiver(r);
+        // The daily check-in: a new pregnancy starts without it (gentle by default), everyone else with it.
+        r.setCheckinEnabled(req.checkinEnabled() != null ? req.checkinEnabled() : !"pregnant".equals(r.getCareType()));
+        applyReminderLanguage(r, req.reminderLanguage());
 
         try {
             recipients.saveAndFlush(r);
@@ -146,6 +152,9 @@ public class CareRecipientService {
         }
         applyCareType(r, req.careType(), req.dueDate());
         applyReceiver(r, userId, before, req.reminderTo(), req.reminderName(), req.reminderRelation());
+        refuseChildReceiver(r);
+        if (req.checkinEnabled() != null) r.setCheckinEnabled(req.checkinEnabled());
+        applyReminderLanguage(r, req.reminderLanguage());
         r.setUpdatedAt(OffsetDateTime.now());
         // DB triggers handle consent reset on phone change and dose clearing on timezone change.
         try {
@@ -213,6 +222,30 @@ public class CareRecipientService {
             }
             default -> throw new ResponseStatusException(BAD_REQUEST, "Unknown reminder receiver: choose person, caregiver or helper");
         }
+    }
+
+    /** A child never gets the reminders (docs/use-cases.md): the adult who gives the medicine does (me, or someone else). */
+    private static void refuseChildReceiver(CareRecipient r) {
+        if ("child".equals(r.getCareType()) && "person".equals(r.getReminderTo())) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "A child does not get the reminders: choose who gives the medicine (you or someone else)");
+        }
+    }
+
+    /**
+     * The language of the messages for the receiver when that is a helper or a family member (migration 20261105000050).
+     * null = keep what is stored (update) / none (create); "" = none (use the person's language); otherwise en | hi.
+     * When the person gets the reminders themself it is always cleared: their own "Language" field applies.
+     */
+    private static void applyReminderLanguage(CareRecipient r, String in) {
+        if ("person".equals(r.getReminderTo())) { r.setReminderLanguage(null); return; }
+        if (in == null) return;
+        String v = in.trim();
+        if (v.isEmpty()) { r.setReminderLanguage(null); return; }
+        if (!RecipientLanguage.SUPPORTED.contains(v)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Unknown language for the reminder receiver: choose en or hi");
+        }
+        r.setReminderLanguage(v);
     }
 
     private static void setReceiver(CareRecipient r, String to, String name, String relation, UUID userId) {
@@ -371,6 +404,9 @@ public class CareRecipientService {
         if (msg.contains("care_recipients_reminder_receiver_valid") || msg.contains("care_recipients_reminder_to_known")) {
             return new ResponseStatusException(BAD_REQUEST, "Invalid reminder receiver");
         }
+        if (msg.contains("care_recipients_reminder_language_known")) {
+            return new ResponseStatusException(BAD_REQUEST, "Unknown language for the reminder receiver");
+        }
         if (msg.contains("care_recipients_whatsapp_phone_check")) {
             return new ResponseStatusException(BAD_REQUEST, "Invalid WhatsApp phone number");
         }
@@ -417,6 +453,8 @@ public class CareRecipientService {
                 r.getReminderTo(),
                 r.getReminderName(),
                 r.getReminderRelation(),
-                r.getReminderUserId() == null ? null : r.getReminderUserId().toString());
+                r.getReminderUserId() == null ? null : r.getReminderUserId().toString(),
+                r.isCheckinEnabled(),
+                r.getReminderLanguage());
     }
 }

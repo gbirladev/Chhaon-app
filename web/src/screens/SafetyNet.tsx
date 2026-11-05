@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Icon, parentCall, useToast } from "../App";
 import type { Medicine, Recipient } from "../lib/api";
+import { authUserId } from "../lib/auth";
+import { hasCheckin, receiverValues } from "../lib/reminderReceiver";
 import {
   DEFAULT_POLICY, PRESETS, handleEscalation, loadOpenEscalations, loadPolicy, presetOf, savePolicy, setMedicineCritical, useFeatures,
   type Escalation, type Policy, type PresetKey,
@@ -22,6 +24,10 @@ export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }
   const [dirty, setDirty] = useState(false);
   const call = parentCall(recipient, language);
   const recipientId = recipient?.id;
+  // The reminders may go to a helper or to you: the sentences are about whoever gets them (lib/reminderReceiver.ts).
+  const tw = useTranslations("who");
+  const who = receiverValues(recipient, authUserId(), { call, you: tw("you"), someone: tw("someone") });
+  const checkin = hasCheckin(recipient);
 
   useEffect(() => {
     if (!recipientId) return;
@@ -51,12 +57,12 @@ export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }
   const active = medicines.filter((m) => m.active);
   return (
     <main className="scroll-page no-nav safety-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle", { call })} back={() => go("family")} />
+      <AppHeader title={t("title")} subtitle={tw("safetySubtitle", who)} back={() => go("family")} />
       {error && <p role="alert" className="form-error">{t("loadFailed")}</p>}
       {!policy && !error && <div className="skeleton card" aria-busy="true" />}
       {policy && (
         <>
-          <p className="safety-intro">{t("intro", { call })}</p>
+          <p className="safety-intro">{tw("safetyIntro", who)}</p>
           <label className="toggle-row">
             <span><strong>{t("toggleLabel", { call })}</strong><small>{policy.enabled ? t("toggleOn") : t("toggleOff")}</small></span>
             <input type="checkbox" role="switch" checked={policy.enabled} onChange={(event) => change({ enabled: event.target.checked })} /><i className={policy.enabled ? "" : "off"} />
@@ -69,7 +75,7 @@ export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }
                 <button key={k} type="button" className={preset === k ? "selected" : ""} aria-pressed={preset === k} onClick={() => change({ ...PRESETS[k] })}>{t(`preset.${k}`)}</button>
               ))}
             </div>
-            <p className="safety-note">{t("speedLine", { a: policy.doseNudgeMin, b: policy.doseAlertMin, c: policy.checkinNudgeMin, d: policy.checkinAlertMin })}</p>
+            <p className="safety-note">{checkin ? t("speedLine", { a: policy.doseNudgeMin, b: policy.doseAlertMin, c: policy.checkinNudgeMin, d: policy.checkinAlertMin }) : tw("safetySpeedLineNoCheckin", { a: policy.doseNudgeMin, b: policy.doseAlertMin })}</p>
           </section>
 
           <section className="safety-section" aria-labelledby="safety-alert">
@@ -81,7 +87,7 @@ export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }
                 </button>
               ))}
             </div>
-            <p className="safety-note">{t("alertHint")}</p>
+            <p className="safety-note">{checkin ? t("alertHint") : tw("safetyAlertHintNoCheckin")}</p>
           </section>
 
           <section className="safety-section" aria-labelledby="safety-critical">
@@ -97,13 +103,13 @@ export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }
           </section>
 
           <section className="safety-section" aria-labelledby="safety-silent">
-            <h2 id="safety-silent">{t("silentTitle", { call })}</h2>
-            <div className="choice-chips wrap" role="group" aria-label={t("silentTitle", { call })}>
+            <h2 id="safety-silent">{tw("safetySilentTitle", who)}</h2>
+            <div className="choice-chips wrap" role="group" aria-label={tw("safetySilentTitle", who)}>
               {[2, 3, 5, 7].map((n) => (
                 <button key={n} type="button" className={policy.silentStopDays === n ? "selected" : ""} aria-pressed={policy.silentStopDays === n} onClick={() => change({ silentStopDays: n })}>{t("days", { count: n })}</button>
               ))}
             </div>
-            <p className="safety-note">{t("silentHint", { days: policy.silentStopDays })}</p>
+            <p className="safety-note">{checkin ? t("silentHint", { days: policy.silentStopDays }) : tw("safetySilentHintNoCheckin", { days: policy.silentStopDays })}</p>
           </section>
 
           <aside className="safety-warning" role="note">

@@ -69,7 +69,8 @@ The existing "Me" profile (`is_self`) stays as it is.
 - **Week** = completed weeks from the due date (280-day term), same sum in Java (`recipient/Pregnancy.java`) and web
   (`web/src/lib/pregnancy.ts`). Trimesters: weeks 0-13, 14-27, 28+. No number shown before week 1 or after week 42.
 - **Daily check-in for a pregnancy:** kept ON (a per-person on/off is not built yet) but with the gentle wording
-  "How are you feeling today?" and the week; the family is still alerted when there is no reply. A per-person switch is a TODO.
+  "How are you feeling today?" and the week; the family is still alerted when there is no reply. Update (round 2, migration 0050): a
+  per-person switch now exists; a NEW pregnancy starts with it off, existing ones keep it on (see docs/reminder-receiver.md, "Round 2").
 - WhatsApp texts for a pregnancy greet by the time of day on her clock and keep the usual replies (*1* taken / fine, *2* call me).
 
 ## Vaccines: "which ones were already given?" (2026-11-05, branch `f1-vaccines-given`, migration 0046)

@@ -7,6 +7,7 @@ import { loadAdherence, type Adherence } from "../lib/adherence";
 import { CLINIC_MAX, DOCTOR_MAX, cleanLine, cleanTyped, loadDoctorAddress, saveDoctorAddress, withoutTitle, type DoctorAddress } from "../lib/doctorAddress";
 import { describeTimes, formatDate, localizeDose, type Language, type T } from "../lib/format";
 import type { Medicine, Recipient } from "../lib/api";
+import { receiverLabel } from "../lib/reminderReceiver";
 
 const DAYS = 30;
 const INSTRUCTION_LABEL: Record<string, string> = { after_food: "add.afterFood", before_food: "add.beforeFood", with_food: "add.withFood" };
@@ -56,6 +57,8 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   const failed = !!current && !current.adherence;
   const sd = (key: string, values?: Record<string, string | number>) => ts(`doctorSummary.${key}`, values);
   const unknown = ts("emergency.unknown");
+  // Whose replies these are: the person, or the helper / family member who gets the reminders (named, never "you": the sheet is for the doctor).
+  const note = ts("who.doctorNote", { name: receiverLabel(recipient, null, { call: recipient.name, you: "", someone: ts("who.someone") }) });
   const active = medicines.filter((m) => m.active);
   const ageCity = [recipient.age ? ts("emergency.years", { count: recipient.age }) : null, recipient.city].filter(Boolean).join(" • ");
   const prepared = sd("prepared", { date: formatDate(today, sheetLanguage, { day: "numeric", month: "short", year: "numeric" }) });
@@ -93,7 +96,7 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
          ...(adherence.checkinsTotal ? [sd("checkins", { answered: adherence.checkinsAnswered, total: adherence.checkinsTotal })] : [])]
       : [sd("noHistory")]),
     "",
-    sd("note", { name: recipient.name }),
+    note,
     prepared,
   ].join("\n");
 
@@ -184,7 +187,7 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
         </section>
 
         <footer>
-          <p className="ds-note">{sd("note", { name: recipient.name })}</p>
+          <p className="ds-note">{note}</p>
           <p className="ds-prepared">{prepared}</p>
         </footer>
       </article>

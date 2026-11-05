@@ -168,7 +168,8 @@ class CareTypeApiTest extends DbTest {
     void aChildCanBeAdded() throws Exception {
         UUID user = owner();
         mvc.perform(post("/api/v1/recipients").header("Authorization", bearer(user)).contentType("application/json")
-                        .content(body(",\"careType\":\"child\"")))
+                        // a child never gets the reminders: the adult who gives the medicine does (WhoAndHowApiTest)
+                        .content(body(",\"careType\":\"child\",\"reminderTo\":\"helper\",\"reminderName\":\"Kamla\",\"whatsappPhone\":\"+919000000055\"")))
                 .andExpect(status().isCreated());
         String type = fx.jdbc().queryForObject(
                 "select r.care_type from care_recipients r join care_circles c on c.id = r.circle_id where c.created_by = ?", String.class, user);

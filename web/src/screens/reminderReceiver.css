@@ -2,3 +2,5 @@
 .receiver-choice .choice-chips button { min-height: 44px; }
 .receiver-choice .hint { margin-top: 8px; }
 .receiver-note { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--s-e1f2ee); color: var(--t-1c7167); font-size: max(0.8125rem, 13px); line-height: 1.4; }
+/* The daily check-in switch on the person form (migration 0050). */
+.checkin-switch { gap: 12px; margin: 4px 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--s-e1f2ee); min-height: 44px; }
