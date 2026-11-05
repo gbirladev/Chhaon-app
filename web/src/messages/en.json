@@ -1281,6 +1281,21 @@
     "supplementsTitle": "Common supplements",
     "supplementsNote": "Fills in the name only. Use the dose your doctor prescribed."
   },
+  "pregnancyHome": {
+    "label": "PREGNANCY",
+    "weeksWord": "{count, plural, one {week} other {weeks}}",
+    "progress": "Week {week} of 40",
+    "dueOn": "Due {date}",
+    "noDueTitle": "Add the due date to see the weeks",
+    "noDueBody": "The doctor gives this date. Tap to add it to her details.",
+    "todayTitle": "Today",
+    "noMedicines": "No medicines or supplements added yet.",
+    "timelineTitle": "Checks timeline",
+    "done": "Done",
+    "reportInReports": "Report in Reports",
+    "delivery": "Delivery",
+    "footer": "Common checks — confirm with your doctor. Not medical advice."
+  },
   "appearance": {
     "colourLabel": "Colour",
     "modeLabel": "Light or dark",
