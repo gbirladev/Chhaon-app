@@ -374,10 +374,12 @@ export const isNotFound = (error: { code?: string; message?: string } | null | u
   error?.code === "42501" && /not found/i.test(error.message ?? "");
 
 type DoseStatus = Database["public"]["Enums"]["dose_status"];
-export type TodayDose = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean };
+export type TodayDose = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean } & DoseConfirm;
+/** Who confirmed a dose and how (migration 20261105000047): whatsapp | caregiver_in_person | caregiver_told. Absent on older backends. */
+type DoseConfirm = { respondedAt?: string | null; confirmSource?: string | null; confirmedBy?: string | null; confirmedByName?: string | null };
 
 /** The parent's doses for THEIR local "today" (the day boundary is the parent's timezone, not the caregiver's). */
-type DoseDto = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean };
+type DoseDto = { id: string; status: DoseStatus; scheduledAt: string; name: string; dosage: string | null; active: boolean } & DoseConfirm;
 type CheckinDto = { id: string; status: string; sentAt: string | null; respondedAt: string | null };
 type TodayDto = { doses: DoseDto[]; checkin: CheckinDto | null };
 
@@ -386,7 +388,8 @@ export async function loadTodayDoses(recipient: Recipient): Promise<TodayDose[]>
   const today = localDate(new Date(), recipient.timezone);
   return resp.doses
     .filter((d) => localDate(new Date(d.scheduledAt), recipient.timezone) === today)
-    .map((d) => ({ id: d.id, status: d.status, scheduledAt: d.scheduledAt, name: d.name, dosage: d.dosage, active: d.active }));
+    .map((d) => ({ id: d.id, status: d.status, scheduledAt: d.scheduledAt, name: d.name, dosage: d.dosage, active: d.active,
+      respondedAt: d.respondedAt ?? null, confirmSource: d.confirmSource ?? null, confirmedBy: d.confirmedBy ?? null, confirmedByName: d.confirmedByName ?? null }));
 }
 
 export type TodayCheckin = { id: string; status: Database["public"]["Enums"]["checkin_status"]; sent_at: string | null; responded_at: string | null } | null;
