@@ -16,6 +16,7 @@ import '@fontsource/noto-sans-devanagari/devanagari-700.css'
 import './theme.css'
 import './index.css'
 import './platform.css'
+import './playful.css'
 import { isPublicCardHash } from './lib/emergencyPublic'
 import { initTheme } from './lib/theme'
 

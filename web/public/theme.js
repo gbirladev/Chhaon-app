@@ -8,5 +8,5 @@
   if (choice === "light" || choice === "dark") { root.setAttribute("data-theme", choice); root.style.colorScheme = choice; }  // colorScheme: dark canvas even before the CSS arrives
   var dark = choice === "dark" || (choice !== "light" && !!window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
   var meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", dark ? "#110d19" : "#7c3aed");
+  if (meta) meta.setAttribute("content", dark ? "#14101f" : "#faf8fd");
 })();

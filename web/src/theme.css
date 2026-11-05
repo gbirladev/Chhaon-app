@@ -11,20 +11,20 @@
 
 :root {
   color-scheme: light;
-  --bg: #faf8fd;
-  --bg-outer: #eae6f1;
+  --bg: #faf8fd;        /* Paper (Playful Blocks) */
+  --bg-outer: #e9e3f7;  /* soft lavender around the frame */
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23604e7f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  --field: #fbfcfb;
-  --line: #e2dceb;
-  --line-soft: #edf1ef;
+  --field: #f5f0ff;      /* Violet 50: lavender-filled, borderless inputs */
+  --line: #e6e1ef;       /* Line */
+  --line-soft: #f1edf7;  /* hairline */
   --on-fill: #ffffff;
-  --primary: #7c3aed;
+  --primary: #6d28d9;      /* Violet 700: ONLY on primary buttons and the active tab */
   --primary-text: #6d28d9;
   --surface: #ffffff;
-  --text: #241242;
-  --text-label: #483864;
-  --text-muted: #566966;
-  --text-soft: #36294d;
+  --text: #1e1633;        /* Ink 900 */
+  --text-label: #564e6b;  /* Ink 600 */
+  --text-muted: #8c85a0;  /* Ink 400 */
+  --text-soft: #40385c;
   --b-173d3a: #241242;
   --b-1e443f-a08: rgba(42,24,74,0.08);
   --b-1f6f66: #3a1579;
@@ -407,20 +407,20 @@
 @media screen {
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #110d19;
-    --bg-outer: #0c0911;
+    --bg: #14101f;        /* SG dark paper */
+    --bg-outer: #0e0b16;
     --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9bbb7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    --field: #140f1d;
-    --line: #302740;
-    --line-soft: #2a2237;
+    --field: #241e34;      /* SG dark sunk */
+    --line: #322a45;
+    --line-soft: #2a2338;
     --on-fill: #ffffff;
     --primary: #8b5cf6;
     --primary-text: #c4b5fd;
-    --surface: #1b1525;
-    --text: #eae6f2;
-    --text-label: #cac1da;
-    --text-muted: #a9bbb7;
-    --text-soft: #d5cee2;
+    --surface: #1c1729;    /* SG dark surface */
+    --text: #ede9f5;       /* SG dark ink 900 */
+    --text-label: #c3bcd4;
+    --text-muted: #968fa8;
+    --text-soft: #d8d2e8;
     --b-173d3a: #513d74;
     --b-1e443f-a08: rgba(82,61,117,0.08);
     --b-1f6f66: #3c187b;
@@ -803,20 +803,20 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]):not([data-theme="dark"]) {
       color-scheme: dark;
-      --bg: #110d19;
-      --bg-outer: #0c0911;
+      --bg: #14101f;        /* SG dark paper */
+      --bg-outer: #0e0b16;
       --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9bbb7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-      --field: #140f1d;
-      --line: #302740;
-      --line-soft: #2a2237;
+      --field: #241e34;      /* SG dark sunk */
+      --line: #322a45;
+      --line-soft: #2a2338;
       --on-fill: #ffffff;
       --primary: #8b5cf6;
       --primary-text: #c4b5fd;
-      --surface: #1b1525;
-      --text: #eae6f2;
-      --text-label: #cac1da;
-      --text-muted: #a9bbb7;
-      --text-soft: #d5cee2;
+      --surface: #1c1729;    /* SG dark surface */
+      --text: #ede9f5;       /* SG dark ink 900 */
+      --text-label: #c3bcd4;
+      --text-muted: #968fa8;
+      --text-soft: #d8d2e8;
       --b-173d3a: #513d74;
       --b-1e443f-a08: rgba(82,61,117,0.08);
       --b-1f6f66: #3c187b;

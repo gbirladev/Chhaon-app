@@ -1,0 +1,86 @@
+/* "PLAYFUL BLOCKS" CHROME — the Smart Gurukul app theme (Gurukul_rn src/theme/colors.ts, Oct 2026
+   redesign "app-ui-redesign-deep-violet", direction C), applied over Chhaon's existing layout.
+
+   The rules of the theme: paper ground, content in tinted blocks; solid Violet 700 only on the primary
+   button and the selected tab; radius 16 for buttons/inputs, 24 for hero/list blocks, pill for chips;
+   NO gradients, NO drop shadows (a 1 px line instead); inputs are lavender-filled and borderless;
+   small labels are uppercase ink. Imported last, so it wins over the older component styles. */
+
+/* Ground: flat paper, no gradient. */
+.app-shell { background: var(--bg-outer) !important; }
+.phone-frame { background: var(--bg); box-shadow: none; }
+
+/* Primary button: the one solid violet, as a full pill, without a glow. */
+.primary-button {
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  font-weight: 700;
+}
+.primary-button:disabled { opacity: 0.55; }
+
+/* Inputs: lavender fill, borderless, radius 16; the focused one gets a violet ring. */
+.field input, .field select, .field textarea, textarea, .otp-input {
+  background: var(--field) !important;
+  border: 1px solid transparent !important;
+  border-radius: 16px !important;
+  color: var(--text) !important;
+  min-height: 52px;
+}
+.field input:focus, .field select:focus, .field textarea:focus, textarea:focus, .otp-input:focus {
+  border-color: var(--primary) !important;
+  outline: none;
+}
+.phone-input {
+  background: var(--field) !important;
+  border: 1px solid transparent !important;
+  border-radius: 16px !important;
+}
+.phone-input:focus-within { border-color: var(--primary) !important; }
+.phone-input span { border-right: 1px solid var(--line); color: var(--text); }
+.phone-input input { background: transparent !important; border: 0 !important; }
+
+/* Blocks: radius 24, a hairline instead of a shadow. */
+.form-card, .login-card, .notice, .consent-card {
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  border: 1px solid var(--line-soft);
+}
+
+/* Small labels: uppercase ink with a little tracking (Devanagari has no case, so Hindi is unaffected). */
+.field > label, .field-label, .login-card > label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Headings: heavy ink, like the "Sign in" block. */
+.onboarding h1, .onboarding h2 { font-weight: 800; color: var(--text); }
+
+/* Playful pastel blocks behind the welcome/code screens (the two soft circles of the sign-in). */
+.onboarding { position: relative; overflow: hidden; }
+.onboarding::before, .onboarding::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 0;
+}
+.onboarding::before { width: 280px; height: 280px; top: -90px; right: -110px; background: var(--f-soft-blob, #ede4fe); }
+.onboarding::after { width: 220px; height: 220px; top: 300px; left: -120px; background: var(--f-warm-blob, #fff1d0); }
+.onboarding > * { position: relative; z-index: 1; }
+:root[data-theme="dark"] .onboarding::before { background: #2c1f4f; }
+:root[data-theme="dark"] .onboarding::after { background: #3a2b0c; }
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .onboarding::before { background: #2c1f4f; }
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .onboarding::after { background: #3a2b0c; }
+}
+
+/* Chips and the text links: friendly pills, violet links. */
+.choice-chips button { border-radius: 999px; }
+.text-button { color: var(--primary-text); }
+
+@media print {
+  .onboarding::before, .onboarding::after { display: none; }
+}
