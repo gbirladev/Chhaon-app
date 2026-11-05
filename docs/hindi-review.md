@@ -362,3 +362,63 @@ New words understood as "given": diya, de diya, de di, दिया, दे द�
 | today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
 | today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
 | emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |
+
+## Part 10: the child home on Today (added 2026-11-05, branch `f8-vaccine-card`)
+
+When the selected person is a child, Today starts with the child's age, who gets the medicine reminders, the next vaccine, a small
+"vaccine card" of the current age band and two quick actions. Code: `web/src/screens/ChildHome.tsx`, texts under `childHome` in
+`web/src/messages/hi.json`. Please check especially: the kicker "उम्र · 5 महीने" (English says "Child · 5 months"; "बच्चा" was avoided
+because it is masculine), "देखना है" for a dose whose suggested date has passed, "लग गया / नहीं लगा" for given / not given, and
+"शिशु रोग विशेषज्ञ" for paediatrician. Vaccine short names on the tiles (BCG, OPV, HepB, DTP, Rota, Flu ...) stay in Latin letters in
+both languages, as on Indian vaccination cards.
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| childHome.kicker | उम्र · {age} | Child · {age} | |
+| childHome.kickerNoAge | बच्चे की प्रोफ़ाइल | Child | |
+| childHome.newborn | नवजात | Newborn | |
+| childHome.days | {count} दिन | {count, plural, one {# day} other {# days}} | |
+| childHome.weeks | {count, plural, one {# हफ़्ता} other {# हफ़्ते}} | {count, plural, one {# week} other {# weeks}} | |
+| childHome.months | {count, plural, one {# महीना} other {# महीने}} | {count, plural, one {# month} other {# months}} | |
+| childHome.years | {count} साल | {count, plural, one {# year} other {# years}} | |
+| childHome.receiverOther | दवा के रिमाइंडर {name} को जाते हैं | Medicine reminders go to {name} | |
+| childHome.receiverYou | दवा के रिमाइंडर आपको आते हैं | Medicine reminders come to you | |
+| childHome.receiverSomeone | किसी और | someone else | |
+| childHome.nextLabel | अगला टीका | Next vaccine | |
+| childHome.dueToday | आज · {date} | Today · {date} | |
+| childHome.dueTomorrow | कल · {date} | Tomorrow · {date} | |
+| childHome.inDays | {count} दिन में · लगभग {date} | In {count} days · around {date} | |
+| childHome.checkLabel | देखना है | To check | |
+| childHome.checkTitle | {count, plural, one {# टीका देखना है} other {# टीके देखने हैं}} | {count, plural, one {# vaccine to check} other {# vaccines to check}} | |
+| childHome.checkBody | सुझाई गई तारीख़ निकल गई है। सूची खोलकर हर टीके के लिए बताइए: लग गया या नहीं लगा। | One: "Its suggested date has passed. Open the list and mark it as given or not given." / more: "Their suggested dates have passed. Open the list and mark each one as given or not given." | |
+| childHome.checkNext | अगला: {vaccine} · लगभग {date} | Next: {vaccine} · around {date} | |
+| childHome.checkAction | अभी देखें | Check now | |
+| childHome.setupBody | जन्म की तारीख़ डालिए, हम तारीख़ें सुझाएँगे। | Add the date of birth and we suggest the dates. | |
+| childHome.setupAction | शुरू करें | Set up | |
+| childHome.allDone | प्लान में और कोई टीका नहीं है | No more vaccines in the plan | |
+| childHome.retry | फिर से कोशिश करें | Try again | |
+| childHome.band0 | पहला साल | First year | |
+| childHome.band1 | 1-2 साल | 1-2 years | |
+| childHome.band2 | 2-6 साल | 2-6 years | |
+| childHome.band3 | 7-18 साल | 7-18 years | |
+| childHome.cardCount | {total} में से {given} लग गए | {given} of {total} given | |
+| childHome.seeAll | सब देखें | See all | |
+| childHome.legendLabel | रंगों का मतलब | What the colours mean | |
+| childHome.legendGiven | लग गया | Given | |
+| childHome.legendNext | अगला | Next | |
+| childHome.legendCheck | देखना है | To check | |
+| childHome.legendLater | बाद में | Later | |
+| childHome.legendNotGiven | नहीं लगा | Not given | |
+| childHome.actionPhoto | अस्पताल के कार्ड की फ़ोटो | Photo of the hospital card | |
+| childHome.actionPhotoSub | रिपोर्ट में रखें | Keep it in Reports | |
+| childHome.actionRemind | 3 दिन पहले याद दिलाना | Reminder 3 days before | |
+| childHome.actionRemindSub | ऐप में, परिवार के लिए | In the app, for the family | |
+| childHome.remindTitle | टीके के रिमाइंडर | Vaccine reminders | |
+| childHome.remindBody | हर टीके से 3 दिन पहले, छाँव पर {call} के परिवार के सभी लोगों को यहाँ ऐप में (घंटी में) रिमाइंडर मिलता है। | 3 days before each vaccine, everyone in {call}'s family on Chhaon gets a reminder here in the app (the bell). | |
+| childHome.remindWhatsAppName | {name} को टीके के रिमाइंडर अभी WhatsApp पर नहीं जाते। दवा के रिमाइंडर पहले की तरह चलते रहेंगे। | {name} does not get vaccine reminders on WhatsApp yet. Medicine reminders are not affected. | |
+| childHome.remindWhatsApp | टीके के रिमाइंडर अभी WhatsApp पर नहीं जाते। | Vaccine reminders do not go on WhatsApp yet. | |
+| childHome.remindDates | टीकों वाली स्क्रीन पर हर तारीख़ बदली जा सकती है, जैसी डॉक्टर सलाह दें। | You can change any date on the Vaccines screen, as advised by your doctor. | |
+| childHome.openVaccines | टीके खोलें | Open vaccines | |
+| childHome.close | बंद करें | Close | |
+| childHome.source | {edition} टीकाकरण सूची | {edition} schedule | |
+| childHome.sourceUnreviewed | {edition} टीकाकरण सूची · शिशु रोग विशेषज्ञ से जाँच होनी बाकी | {edition} schedule · to be checked by a paediatrician | |
