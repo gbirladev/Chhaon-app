@@ -23,7 +23,9 @@ public final class MedicineDtos {
             @NotEmpty List<LocalTime> times,     // 1..12 distinct
             String photoPath,                    // <recipientId>/<name>; null = none
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate,
+            String pillColour,                   // white|yellow|...|purple; null or "" = not set
+            String pillShape) {                  // round|oval|long|capsule; null or "" = not set
     }
 
     public record UpdateMedicineRequest(
@@ -32,7 +34,9 @@ public final class MedicineDtos {
             String instructions,
             Integer refillThreshold,
             @NotEmpty List<LocalTime> times,
-            String photoPath) {                  // null = keep existing photo
+            String photoPath,                    // null = keep existing photo
+            String pillColour,                   // null (or absent) = keep, "" = clear, a listed value = set
+            String pillShape) {                  // same rule as pillColour
     }
 
     public record StockAdjustRequest(Integer delta) {}
@@ -54,6 +58,8 @@ public final class MedicineDtos {
             boolean active,
             String photoUrl,        // storage path
             boolean critical,
-            OffsetDateTime createdAt) {
+            OffsetDateTime createdAt,
+            String pillColour,      // null = not set
+            String pillShape) {     // null = not set
     }
 }

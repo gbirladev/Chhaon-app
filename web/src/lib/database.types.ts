@@ -387,14 +387,14 @@ isOneToOne: false
                   ]
                 },"medicines": {
                   Row: {
-                    "active": boolean,"created_at": string,"critical": boolean,"dosage": string | null,"id": string,"instructions": string | null,"name": string,"photo_url": string | null,"recipient_id": string,"refill_threshold": number | null,"stock_count": number | null,"updated_at": string
+                    "active": boolean,"created_at": string,"critical": boolean,"dosage": string | null,"id": string,"instructions": string | null,"name": string,"photo_url": string | null,"pill_colour": string | null,"pill_shape": string | null,"recipient_id": string,"refill_threshold": number | null,"stock_count": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name": string,"photo_url"?: string | null,"recipient_id": string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name": string,"photo_url"?: string | null,"pill_colour"?: string | null,"pill_shape"?: string | null,"recipient_id": string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name"?: string,"photo_url"?: string | null,"recipient_id"?: string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
+                    "active"?: boolean,"created_at"?: string,"critical"?: boolean,"dosage"?: string | null,"id"?: string,"instructions"?: string | null,"name"?: string,"photo_url"?: string | null,"pill_colour"?: string | null,"pill_shape"?: string | null,"recipient_id"?: string,"refill_threshold"?: number | null,"stock_count"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {

@@ -1,0 +1,11 @@
+/* Tablet colour + shape (PillLook.tsx). Colours of the tablet itself stay the same in dark mode: they describe a real object. */
+:root { --pill-outline: var(--t-6b7280); }
+
+.pill-look .pill-look-sub { margin: 10px 0 6px; font-size: .875rem; font-weight: 600; color: var(--text-muted); }
+.pill-look .choice-chips button { display: inline-flex; align-items: center; gap: 7px; min-height: 48px; }
+.pill-swatch { display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto; border: 1px solid transparent; }
+.pill-swatch.light { border-color: var(--pill-outline); }
+.pill-glyph { flex: 0 0 auto; }
+
+/* Medicine details and list: the drawing next to the words. */
+.pill-look-line { display: inline-flex; align-items: center; gap: 6px; }

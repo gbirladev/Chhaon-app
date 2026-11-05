@@ -1,5 +1,7 @@
 package org.smartgurukul.chhaon.whatsapp;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -39,13 +41,55 @@ public final class MessageTexts {
     }
 
     public static String doseReminder(String language, String callName, String medicine) {
+        return doseReminder(language, callName, medicine, null, null);
+    }
+
+    /** With how the tablet looks (migration 0042), so a parent who cannot read the strip can still pick it: "🔵 Blue round tablet". */
+    public static String doseReminder(String language, String callName, String medicine, String pillColour, String pillShape) {
         String med = clean(medicine, 60);
+        String look = pillLook(language, pillColour, pillShape);
+        String lookLine = look.isEmpty() ? "" : "\n" + look;
         if (hi(language)) {
             return "नमस्ते" + who(callName) + " 🙏\nदवा लेने का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                    + "\n\nलेने के बाद *1* लिखकर भेजिए ✅";
+                    + lookLine + "\n\nलेने के बाद *1* लिखकर भेजिए ✅";
         }
         return "Namaste" + who(callName) + " 🙏\nIt's time for your medicine 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                + "\n\nReply *1* once you have taken it ✅";
+                + lookLine + "\n\nReply *1* once you have taken it ✅";
+    }
+
+    // Colour words in English, Hindi with a feminine noun (गोली) and Hindi with a masculine noun (कैप्सूल), plus a coloured dot.
+    // Only these fixed values are used (the database refuses anything else), so no caregiver text reaches the parent here.
+    private static final Map<String, String[]> COLOURS = Map.of(
+            "white", new String[] {"White", "सफ़ेद", "सफ़ेद", "⚪"},
+            "yellow", new String[] {"Yellow", "पीली", "पीला", "🟡"},
+            "orange", new String[] {"Orange", "नारंगी", "नारंगी", "🟠"},
+            "pink", new String[] {"Pink", "गुलाबी", "गुलाबी", ""},   // no pink dot that older phones can show
+            "red", new String[] {"Red", "लाल", "लाल", "🔴"},
+            "blue", new String[] {"Blue", "नीली", "नीला", "🔵"},
+            "green", new String[] {"Green", "हरी", "हरा", "🟢"},
+            "brown", new String[] {"Brown", "भूरी", "भूरा", "🟤"},
+            "purple", new String[] {"Purple", "बैंगनी", "बैंगनी", "🟣"});
+    // English words, Hindi words (the noun is included), whether the Hindi noun is masculine.
+    private static final Map<String, String[]> SHAPES = Map.of(
+            "round", new String[] {"round tablet", "गोल गोली", ""},
+            "oval", new String[] {"oval tablet", "अंडाकार गोली", ""},
+            "long", new String[] {"long tablet", "लंबी गोली", ""},
+            "capsule", new String[] {"capsule", "कैप्सूल", "m"});
+
+    /** "🔵 Blue round tablet" / "🔵 नीली गोल गोली"; colour only: "🔵 Colour: blue"; nothing known: "". */
+    static String pillLook(String language, String pillColour, String pillShape) {
+        String[] c = pillColour == null ? null : COLOURS.get(pillColour);
+        String[] sh = pillShape == null ? null : SHAPES.get(pillShape);
+        if (c == null && sh == null) return "";
+        String dot = c == null || c[3].isEmpty() ? "" : c[3] + " ";
+        if (hi(language)) {
+            if (sh == null) return dot + "रंग: " + c[2];
+            String colour = c == null ? "" : ("m".equals(sh[2]) ? c[2] : c[1]) + " ";
+            return dot + colour + sh[1];
+        }
+        if (sh == null) return dot + "Colour: " + c[0].toLowerCase(Locale.ROOT);
+        String text = c == null ? sh[0] : c[0] + " " + sh[0];
+        return dot + Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
     public static String checkin(String language, String callName) {

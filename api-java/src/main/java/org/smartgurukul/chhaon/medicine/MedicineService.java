@@ -29,6 +29,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class MedicineService {
 
     private static final Set<String> INSTRUCTIONS = Set.of("after_food", "before_food", "with_food");
+    /** Fixed lists, the same as the check constraints of migration 0042 and web/src/lib/pillLook.ts. */
+    static final Set<String> PILL_COLOURS =
+            Set.of("white", "yellow", "orange", "pink", "red", "blue", "green", "brown", "purple");
+    static final Set<String> PILL_SHAPES = Set.of("round", "oval", "long", "capsule");
     private static final int MAX_TIMES = 12;
     private static final int MAX_MEDICINES = 30;
     private static final int MAX_PHOTO_LEN = 300;
@@ -60,6 +64,8 @@ public class MedicineService {
         String instructions = validInstructions(req.instructions());
         String photo = validPhotoPath(req.photoPath(), recipientId);
         List<LocalTime> times = distinctTimes(req.times());
+        String pillColour = validLook(req.pillColour(), PILL_COLOURS, "pill colour");
+        String pillShape = validLook(req.pillShape(), PILL_SHAPES, "pill shape");
 
         if (medicines.countByRecipientId(recipientId) >= MAX_MEDICINES) {
             throw new ResponseStatusException(BAD_REQUEST, "This parent already has the maximum number of medicines.");
@@ -77,6 +83,8 @@ public class MedicineService {
         m.setPhotoUrl(photo);
         m.setStockCount(req.stock());
         m.setRefillThreshold(req.refillThreshold());
+        m.setPillColour(pillColour);
+        m.setPillShape(pillShape);
         m.setActive(true);
         m.setCritical(false);
         m.setCreatedAt(now);
@@ -106,6 +114,10 @@ public class MedicineService {
         if (req.photoPath() != null) { // null keeps the existing photo
             m.setPhotoUrl(validPhotoPath(req.photoPath(), m.getRecipientId()));
         }
+        // Colour and shape: null (or left out, as an older app version does) keeps the saved value,
+        // "" clears it, a listed value sets it. So an old cached app never wipes what a newer one saved.
+        if (req.pillColour() != null) m.setPillColour(validLook(req.pillColour(), PILL_COLOURS, "pill colour"));
+        if (req.pillShape() != null) m.setPillShape(validLook(req.pillShape(), PILL_SHAPES, "pill shape"));
         m.setUpdatedAt(OffsetDateTime.now());
         // Note: stock and active are NOT changed here (separate endpoints), matching update_medicine.
 
@@ -235,6 +247,15 @@ public class MedicineService {
         return s;
     }
 
+    /** null or "" = not set; otherwise it must be one of the fixed values (anything else is a 400). */
+    private static String validLook(String value, Set<String> allowed, String field) {
+        if (value == null || value.isEmpty()) return null;
+        if (!allowed.contains(value)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid " + field);
+        }
+        return value;
+    }
+
     private static String validPhotoPath(String path, UUID recipientId) {
         if (path == null || path.isBlank()) return null;
         if (path.length() > MAX_PHOTO_LEN
@@ -267,6 +288,9 @@ public class MedicineService {
         if (msg.contains("bad_dosage") || msg.contains("medicines_dosage_clean")) {
             return new ResponseStatusException(BAD_REQUEST, "Invalid dosage");
         }
+        if (msg.contains("medicines_pill_colour") || msg.contains("medicines_pill_shape")) {
+            return new ResponseStatusException(BAD_REQUEST, "Invalid pill look");
+        }
         if (msg.contains("bad_photo")) {
             return new ResponseStatusException(BAD_REQUEST, "Invalid photo path");
         }
@@ -291,6 +315,8 @@ public class MedicineService {
                 m.isActive(),
                 m.getPhotoUrl(),
                 m.isCritical(),
-                m.getCreatedAt());
+                m.getCreatedAt(),
+                m.getPillColour(),
+                m.getPillShape());
     }
 }

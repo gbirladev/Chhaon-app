@@ -50,6 +50,14 @@ public class Medicine {
     @Column(name = "critical", nullable = false)
     private boolean critical = false;
 
+    /** How the tablet looks (migration 0042): one of MedicineService.PILL_COLOURS, or null = not set. */
+    @Column(name = "pill_colour")
+    private String pillColour;
+
+    /** round | oval | long | capsule, or null = not set. */
+    @Column(name = "pill_shape")
+    private String pillShape;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

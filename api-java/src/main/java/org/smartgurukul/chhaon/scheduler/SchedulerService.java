@@ -153,7 +153,10 @@ public class SchedulerService {
                 "r.call_name, " +
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
-                "m.id medicine_id, m.name medicine_name " +
+                "m.id medicine_id, m.name medicine_name, " +
+                // read through to_jsonb so a database without the colour columns (migration 0042 not applied yet)
+                // still sends reminders, just without the look line
+                "to_jsonb(m) ->> 'pill_colour' pill_colour, to_jsonb(m) ->> 'pill_shape' pill_shape " +
                 "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
                 "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id " +
                 "where de.status = 'pending' and de.scheduled_at <= now() " +
@@ -172,7 +175,8 @@ public class SchedulerService {
             if (claimed != 1) continue; // another tick took it
             try {
                 String text = MessageTexts.doseReminder((String) row.get("language"),
-                        (String) row.get("call_name"), (String) row.get("medicine_name"));
+                        (String) row.get("call_name"), (String) row.get("medicine_name"),
+                        (String) row.get("pill_colour"), (String) row.get("pill_shape"));
                 String msgId = wa.send((String) row.get("whatsapp_phone"), text);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
                 sent++;

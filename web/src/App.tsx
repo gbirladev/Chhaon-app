@@ -37,6 +37,8 @@ import { loadSchedulerAge, SCHEDULER_STALE_SECONDS } from "./lib/scheduler";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
+import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
+import type { PillColour, PillShape } from "./lib/pillLook";
 
 type Screen =
   | "welcome"
@@ -1068,6 +1070,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void }) {
   const t = useTranslations();
   const pausedByPlan = new Set((usePlanPauses()?.medicines ?? []).map((m) => m.id));
+  const lookText = usePillLookText();
   const language = useLocale() as Language;
   const active = medicines.filter((medicine) => medicine.active);
   const outCount = active.filter((m) => m.stock === 0).length;
@@ -1088,7 +1091,7 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           return (
           <article className={`med-card${medicine.active ? "" : " paused"}`} key={medicine.id} {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
             <div className={`med-visual ${color}`}><span /><span /><span /></div>
-            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}{medicine.critical && <span className="tag-critical">{t("medicines.critical")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
+            <div className="med-copy"><h3>{medicine.name}{!medicine.active && <span className="tag-low paused-tag">{t("medicines.paused")}</span>}{medicine.active && pausedByPlan.has(medicine.id) && <span className="tag-low paused-tag">{t("medicines.pausedByPlan")}</span>}{medicine.critical && <span className="tag-critical">{t("medicines.critical")}</span>}</h3><p>{[medicine.dose && localizeDose(medicine.dose, t), lookText(medicine.pillColour, medicine.pillShape), describeTimes(medicine.times, t, language)].filter(Boolean).join(" • ")}</p><small className={low || medicine.stock === 0 ? "low-stock" : ""}>{medicine.stock === 0 ?t("medicines.outOfStock") : t(low ? "medicines.stockLeft" : "medicines.stock", { count: medicine.stock })}</small></div>
             <span className="chevron-hint" aria-hidden="true"><Icon name="chevron" size={19} /></span>
           </article>
         )})}
@@ -1155,6 +1158,8 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
   const [error, setError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [doseUnit, setDoseUnit] = useState<string>(initialDose.unit);
+  const [pillColour, setPillColour] = useState<PillColour | null>(medicine?.pillColour ?? null);
+  const [pillShape, setPillShape] = useState<PillShape | null>(medicine?.pillShape ?? null);
   const expireSession = useSessionExpired();
   const [photoError, setPhotoError] = useState(false);
   /** Only a readable, non-empty image is accepted; anything else shows the photo error right away. */
@@ -1224,6 +1229,9 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
           photoPath: orNull(photoPath),
           refillThreshold: orNull(refill ? threshold : null),
           times: chosen,
+          // "" clears; the backend keeps the saved value only when the field is left out (older app versions).
+          pillColour: pillColour ?? "",
+          pillShape: pillShape ?? "",
         });
       } else {
         await createMedicineApi(recipient.id, {
@@ -1234,6 +1242,8 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
           stock,
           refillThreshold: orNull(refill ? threshold : null),
           times: chosen,
+          pillColour,
+          pillShape,
         });
       }
     } catch (e) {
@@ -1266,6 +1276,7 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
           </div>
           {editing && initialDose.unreadable && <small className="form-note">{t("doseUnreadable", { dose: medicine?.dose ?? "" })}</small>}
         </Field>
+        <PillLookPicker colour={pillColour} shape={pillShape} call={parentCall(recipient, language)} onColour={setPillColour} onShape={setPillShape} />
         <div className="field" role="group" aria-labelledby="f-times-label">
           <p className="field-label" id="f-times-label">{t("when")}</p>
           {usualTimes.length > 0 && (
@@ -1324,6 +1335,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const lookText = usePillLookText();
 
   useEffect(() => { if (!medicine) go("medicines", { replace: true }); }, [medicine, go]);
   useEffect(() => { if (medicine) { setStock(medicine.stock); setActive(medicine.active); } }, [medicine?.stock, medicine?.active]);
@@ -1395,6 +1407,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
       {!active && <p className="consent-card stopped" role="status">{t("medicine.pausedNote")}</p>}
       <section className="form-card">
         <div className="meta-row"><span>{t("medicine.dose")}</span><strong>{localizeDose(medicine.dose, t) || "-"}</strong></div>
+        <div className="meta-row"><span>{t("medicine.look")}</span><strong>{medicine.pillColour || medicine.pillShape ? <span className="pill-look-line"><PillGlyph colour={medicine.pillColour} shape={medicine.pillShape} />{lookText(medicine.pillColour, medicine.pillShape)}</span> : t("medicine.noLook")}</strong></div>
         <div className="meta-row"><span>{t("medicine.times")}</span><strong>{describeTimes(medicine.times, t, language)}</strong></div>
         <div className="meta-row"><span>{t("medicine.instructions")}</span><strong>{instructionKey ? t(`add.${instructionKey}`) : t("medicine.noInstructions")}</strong></div>
         <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>

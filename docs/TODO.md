@@ -502,3 +502,23 @@ The old gateway number was banned on 2026-11-05. The owner linked a NEW number t
 - [ ] Restart reminders for ONE parent first (CHHAON_SCHEDULER_ONLY_RECIPIENT), then everyone.
 - [ ] Lower ban risk: only consented parents, low volume at first, no burst sends, no links; keep a spare number ready.
 - [ ] Still open: the "0 of 1 taken" reply seen before the ban (SESSION_HANDOFF.md 0.6).
+
+## Tablet colour and shape ("neeli gol goli") (built 2026-11-05 on branch `pill-look-v2`, NOT pushed, NOT on Sydney)
+Idea from Dr. Deepak Birla (2026-11-05): parents and home helpers who cannot read the strip pick the tablet by colour and shape.
+- Medicine form: optional "How does it look?" with 9 colours and 4 shapes (round, oval, long, capsule); shown on the medicine list and details.
+- WhatsApp dose reminder gets one extra line, e.g. "🔵 Blue round tablet" / "🔵 नीली गोल गोली" (Hindi colour agrees with the noun).
+- Database: migration `20261105000042_pill_look.sql` (two columns `pill_colour`, `pill_shape` with fixed lists).
+- Saved and loaded through the Java API (`/api/v1/recipients/{id}/medicines`, `/api/v1/medicines/{id}`), fields `pillColour` / `pillShape`.
+  The backend checks the same fixed lists (anything else = 400). On create: null or "" = not set. On update (PUT): field left out or
+  null = KEEP the saved value, "" = clear, a listed value = set. The web form always sends both (its "no choice" is ""), and an older
+  cached app that does not know the fields never wipes them.
+- **Deploy order matters (the backend checks its tables at start-up, `ddl-auto=validate`; the new entity fields need the columns):**
+  1. [ ] Paste `supabase/migrations/20261105000042_pill_look.sql` into the Sydney SQL Editor (safe to run twice; the current backend and
+     web keep working with the extra columns, nothing reads them yet except the scheduler, which reads them through `to_jsonb`).
+  2. [ ] Then deploy the backend (Backend Deploy). If it is deployed BEFORE step 1 it fails to start (missing column `pill_colour`).
+  3. [ ] Then the web app. The web is safe with an old backend too (missing fields are read as "not set"), but saving a colour has no
+     effect until step 2 is live, so deploy it last.
+- [ ] Hindi words reviewed by a native speaker (`docs/hindi-review.md`, Part 4).
+- [ ] Later, if asked: show the colour on the Today screen and the emergency card; a "two colours" option for capsules.
+- Note: 2 Java tests (`OtpServiceTest`) fail on `main` too, before this change; not looked into yet.
+
