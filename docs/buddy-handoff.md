@@ -14,34 +14,52 @@ secrets are exchanged privately, never in the repository or a chat group.
 
 ## Open tasks for you
 
-### 1. Poll test: can parents answer with ONE TAP? (about 1 hour, no code needed) — NEW
+### 1. Deploy the gateway change "poll answers" (about 45 minutes) — NEW, replaces the poll test
 
-Today parents type a reply (`1`, "le li", 👍). A WhatsApp **poll** would let them tap an answer instead. The gateway can already SEND a
-poll (`whatsapp-gateway/src/app/api/messages/[sessionId]/[jid]/poll/route.ts`), but it does nothing with the votes: there is no poll
-event in `src/lib/webhook.ts`, `messages.update` only forwards delivery status (`src/modules/whatsapp/store/index.ts`, around line 170),
-and the socket has no `getMessage`, so Baileys cannot decrypt a vote. Before anyone builds this, please check whether a vote reaches
-the gateway at all.
+Parents will answer a reminder by tapping a WhatsApp **poll** option instead of typing. This gateway change (`whatsapp-gateway/`, which
+our pipeline does NOT deploy) does three things:
+- the poll route now answers with the sent poll's id: `{"status":true, "messageId":"3EB0...", "data":{"key":{"id":"3EB0...", ...}}}`;
+- every poll the gateway sends is kept for 30 days in a new table `SentPoll` (a vote can only be read with the poll's secret, so this
+  must survive a restart), and the socket gets a `getMessage` that returns it;
+- a vote is decrypted and sent to the webhook as a NEW event `poll.vote`. It goes to every webhook that has `poll.vote` OR
+  `message.received` ticked, so the existing `Chhaon backend` webhook needs no change.
+
+Our Baileys version (7.0.0-rc.9) does not decrypt votes itself (that code is switched off inside Baileys), so the gateway does it:
+it tries the phone and the LID form of both numbers, because WhatsApp uses either depending on the chat.
+
+Files: `src/lib/poll.ts`, `src/lib/poll-decrypt.ts`, `src/lib/poll.test.ts`, `src/modules/whatsapp/poll-votes.ts` (all new),
+`src/lib/webhook.ts` (`poll.vote` event, `onPollVote`), `src/modules/whatsapp/store/index.ts` (votes and sent polls),
+`src/modules/whatsapp/instance.ts` (`getMessage`), the poll route, `prisma/schema.prisma` (model `SentPoll`), `package.json`
+(`npm test` runs the poll tests too), and the event lists (dashboard, swagger, API docs). It includes the 👍 reaction change (1b).
+
+The webhook body for one tap (example number):
+```json
+{"event":"poll.vote","sessionId":"<session>","timestamp":"2026-11-05T08:00:00.000Z",
+ "data":{"pollKeyId":"3EB0POLL0000000001","from":"919999900001@s.whatsapp.net","remoteJid":"919999900001@s.whatsapp.net",
+         "selectedOptions":["✅ Taken"],"selectedIndexes":[0],"timestamp":1793779200}}
+```
+A changed vote sends the new choice; a removed vote sends empty lists. Votes on polls the gateway did not send (or older than 30 days)
+and votes in groups are ignored.
 
 Steps:
-1. Send one poll to your own phone (replace the placeholders; the API key goes in the `X-API-Key` header):
+1. On the gateway server, update the code to this branch's `whatsapp-gateway/` (the same way you installed it).
+2. `npm install` (only if `node_modules` is missing), then **`npm run db:push`** (adds the new table `SentPoll`; it changes nothing
+   else; with Docker the container already runs `prisma db push` at start).
+3. `npm test` (18 tests, no database needed) and `npm run build`.
+4. Restart the gateway process (pm2 / docker, as you run it). The WhatsApp session stays linked (auth is on disk).
+5. Real test: send a poll to your own phone (replace the placeholders; the API key goes in the `X-API-Key` header):
    ```
    curl -s -X POST "https://wa.chhaon.site/api/messages/<sessionId>/<91XXXXXXXXXX@s.whatsapp.net>/poll" \
      -H "X-API-Key: <gateway api key>" -H "Content-Type: application/json" \
      -d '{"question":"💊 Papa, time for Metformin (blue round tablet)","options":["✅ Taken","⏰ Later"],"selectableCount":1}'
    ```
-2. On the phone: does the poll show with two tappable options? Tap **✅ Taken**. Then change the vote to **⏰ Later**.
-3. On the gateway, look for anything that arrived at the moment of each tap:
-   - the gateway server log (a `messages.upsert` with a `pollUpdateMessage`, or a `messages.update` with `pollUpdates`),
-   - the session's message list in the dashboard (a new incoming row),
-   - the webhook log (did `message.received` fire, and with what body?).
-4. Tell the product owner: (a) did the poll arrive and look right on the phone (Android and, if possible, iPhone), (b) did any event
-   arrive per tap, (c) the event body with the phone number masked.
-
-What happens next: if a vote event arrives, the gateway change is about 100-150 lines (keep each sent poll's message and secret, add
-`getMessage` to the socket, decrypt with `getAggregateVotesInPollMessage`, send a new webhook event `poll.vote
-{pollKeyId, voter, selectedOptions}`), and the Java side is built by us (send reminders as polls, store the poll id, handle `poll.vote`).
-Note: the poll route returns only `{status:true}`, not the message id; we would need the sent message's key id in the response.
-If no event arrives at all, polls are dropped and parents keep typed answers.
+   The answer must contain a `messageId`.
+6. On the phone, tap **✅ Taken**. In the dashboard webhook log a `poll.vote` appears with `"pollKeyId"` = that `messageId` and
+   `"selectedOptions":["✅ Taken"]`. Change the vote to **⏰ Later**: a second `poll.vote` with `["⏰ Later"]` and `[1]`. Remove the
+   vote: `[]`. (Until the Java side handles `poll.vote` our backend may answer it with an error or ignore it; that is fine for now.)
+7. Do it once from an Android phone and once from an iPhone.
+8. Tell the product owner: did each tap give a `poll.vote` with the right option (Android / iPhone), and if not, the gateway log
+   lines with `[Poll]` (for example "Could not decrypt a vote on our poll ..."), with the phone number masked.
 
 Planned poll answers (one choice per poll; a changed vote counts the last one; typed STOP still works):
 

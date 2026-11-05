@@ -201,7 +201,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited or '*'"
+            "description": "Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited, poll.vote or '*'"
           },
           "secret": {
             "type": "string"
@@ -1856,9 +1856,14 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": {
+                    "status": {
                       "type": "boolean",
                       "example": true
+                    },
+                    "messageId": {
+                      "type": "string",
+                      "description": "Key id of the sent poll; a poll.vote webhook carries it back as pollKeyId",
+                      "example": "3EB0POLL0000000001"
                     }
                   }
                 }

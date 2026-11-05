@@ -3,6 +3,7 @@ import type { WASocket, WAMessage, Contact } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
 import { onMessageReceived, onMessageSent, onReactionReceived, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
 import { extractReaction } from "@/lib/reaction";
+import { isPollVote, handlePollVote, rememberSentPoll } from "../poll-votes";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
 import { resolveToPhoneJid, isLidJid, normalizeJid } from "@/lib/jid-utils";
 
@@ -64,7 +65,7 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                     await sock.readMessages([msg.key]);
                 }
 
-                const savedMessage = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify', sock, config, io);
+                const savedMessage = await processAndSaveMessage(msg, dbSessionId, sessionId, type === 'notify', sock, config, io, type === 'notify' || type === 'append');
                 if (savedMessage) {
                     processedMessages.push(savedMessage);
                 }
@@ -176,6 +177,10 @@ export const bindSessionStore = (sock: WASocket, sessionId: string, io: Server |
                 const keyId = update.key?.id;
                 if (!keyId) continue;
 
+                // Chhaon: poll results without a delivery status are not a status change (votes are handled in
+                // messages.upsert, see poll-votes.ts): don't mark the poll PENDING or send a bogus message.status.
+                if (update.update?.pollUpdates && update.update?.status == null) continue;
+
                 const statusMap: Record<number, string> = {
                     0: 'PENDING',
                     1: 'SENT',
@@ -276,7 +281,9 @@ async function processAndSaveMessage(
     triggerWebhook: boolean,
     sock?: WASocket,
     config?: any,
-    io?: Server | null
+    io?: Server | null,
+    // Chhaon: a live upsert ('notify', or 'append' = our own sends and messages queued while we were offline), not history sync
+    live: boolean = triggerWebhook
 ) {
     const keyId = msg.key.id;
     const remoteJid = msg.key.remoteJid;
@@ -378,6 +385,22 @@ async function processAndSaveMessage(
             }
             return null;
         }
+    }
+
+    // Chhaon: a vote on a poll (tap on "✅ Taken"). Not stored as a chat message; a NEW vote from someone else on a poll
+    // we sent is decrypted and forwarded as poll.vote (poll-votes.ts), also one that was queued while the gateway was
+    // offline ('append'). History sync and our own votes are never forwarded.
+    if (isPollVote(msg)) {
+        if (live && !fromMe) {
+            handlePollVote(sessionId, msg, sock?.user).catch(e => logger.error("Webhook", "Error in handlePollVote", e));
+        }
+        return null;
+    }
+
+    // Chhaon: keep every poll we send (also those sent from the dashboard; our sends arrive as 'append'), so votes on
+    // it can be decrypted.
+    if (fromMe && live) {
+        rememberSentPoll(sessionId, msg).catch(e => logger.error("Poll", "Failed to keep a sent poll", e));
     }
 
     // Chhaon: an emoji reaction to a message (long-press + 👍). Not stored as a message (no text of its own, and the

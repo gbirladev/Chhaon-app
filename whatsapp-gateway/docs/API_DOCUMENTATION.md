@@ -2320,13 +2320,18 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `success` | boolean | No | — |
+| `status` | boolean | No | — |
+| `messageId` | string | No | Key id of the sent poll. A `poll.vote` webhook carries it back as `pollKeyId`. |
+| `data.key` | object | No | `{ id, remoteJid, fromMe }` of the sent poll |
 
 **Response Example (`200`):**
 
 ```json
 {
-  "success": true
+  "status": true,
+  "message": "Operation successful",
+  "messageId": "3EB0POLL0000000001",
+  "data": { "key": { "id": "3EB0POLL0000000001", "remoteJid": "919999900001@s.whatsapp.net", "fromMe": true } }
 }
 ```
 
@@ -5267,6 +5272,7 @@ When WA-AKG sends a POST to your webhook URL, the body has this structure:
 | `group.participant` | Member joined/left/promoted/demoted |
 | `contact.update` | Contact name or notify changed |
 | `status.update` | Status/story update |
+| `poll.vote` | Someone voted on a poll this gateway sent (one-to-one chats). Also delivered to webhooks subscribed to `message.received` |
 
 ---
 
@@ -5425,6 +5431,25 @@ Status flow: `PENDING` → `SENT` → `DELIVERED` → `READ`
 {
   "event": "message.deleted",
   "data": { "keyId": "DE12LT34EF", "remoteJid": "6281234567890@s.whatsapp.net", "fromMe": false }
+}
+```
+
+#### poll.vote — Vote on a poll we sent
+
+The voter's current selection (a changed vote replaces the old one; a removed vote has empty arrays). `from` is
+normalised to `@s.whatsapp.net` like `message.received`. Polls are kept 30 days for decryption.
+
+```json
+{
+  "event": "poll.vote",
+  "data": {
+    "pollKeyId": "3EB0POLL0000000001",
+    "from": "919999900001@s.whatsapp.net",
+    "remoteJid": "919999900001@s.whatsapp.net",
+    "selectedOptions": ["✅ Taken"],
+    "selectedIndexes": [0],
+    "timestamp": 1793779200
+  }
 }
 ```
 
@@ -7130,7 +7155,7 @@ curl -X POST "http://localhost:3000/api/contacts/session-01/628123456789@s.whats
 | `id` | string | No | — |
 | `sessionId` | string | No | — |
 | `url` | string | No | — |
-| `events` | array of string | No | Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited or '*' |
+| `events` | array of string | No | Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited, poll.vote or '*' |
 | `secret` | string | No | — |
 
 **Example:**

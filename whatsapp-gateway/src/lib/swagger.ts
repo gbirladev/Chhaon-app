@@ -130,7 +130,7 @@ All endpoints require authentication via:
                             events: { 
                                 type: "array", 
                                 items: { type: "string" },
-                                description: "Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited or '*'" 
+                                description: "Events to subscribe to: message.received, message.sent, message.status, connection.update, group.update, contact.update, status.update, group.participant, message.deleted, message.edited, poll.vote or '*'" 
                             },
                             secret: { type: "string" }
                         }

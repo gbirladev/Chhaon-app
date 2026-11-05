@@ -390,3 +390,20 @@ model BroadcastRecipient {
 
   @@index([broadcastLogId])
 }
+
+// Chhaon: every poll this gateway sends, so a vote can be decrypted (that needs the poll's messageSecret) even after a
+// restart. A new table only, with no relation, so `npm run db:push` adds it without touching existing data. Rows older
+// than 30 days are deleted by the gateway itself (src/modules/whatsapp/poll-store.ts).
+model SentPoll {
+  id        String   @id @default(cuid())
+  sessionId String   // the session's name (Session.sessionId), as in the API path
+  keyId     String   // WhatsApp key id of the poll message (the messageId the poll route returns)
+  remoteJid String   // chat the poll was sent to
+  question  String   @db.Text
+  options   Json     // string[] in the order they were sent
+  message   Bytes    // the full WAMessage (proto.WebMessageInfo encoded), incl. message.messageContextInfo.messageSecret
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, keyId])
+  @@index([createdAt])
+}

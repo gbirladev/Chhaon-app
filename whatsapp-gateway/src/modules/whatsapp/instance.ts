@@ -10,6 +10,7 @@ import { usePrismaAuthState } from "./auth/usePrismaAuthState";
 import { Server } from "socket.io";
 import pino from "pino";
 import { bindSessionStore } from "./store";
+import { getStoredMessage } from "./poll-votes";
 import { syncGroups } from "./store/groups";
 import { bindContactSync } from "./store/contacts";
 import { bindAutoReply } from "./store/autoreply";
@@ -76,6 +77,8 @@ export class WhatsAppInstance {
             browser: ["Ubuntu", "Chrome", "20.0.04"],
             markOnlineOnConnect: botConfig?.alwaysOnline ?? true,
             syncFullHistory: process.env.WA_SYNC_FULL_HISTORY === "true",
+            // Chhaon: polls we sent (with their messageSecret), for vote decryption and message retries
+            getMessage: (key) => getStoredMessage(this.sessionId, key),
         });
         this.socket = sock;
 

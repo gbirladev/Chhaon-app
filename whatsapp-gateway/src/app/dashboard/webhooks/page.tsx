@@ -69,6 +69,7 @@ const AVAILABLE_EVENTS = [
     { id: "status.update", label: "Status/Story", description: "When a status is posted or viewed" },
     { id: "message.edited", label: "Message Edited", description: "When a message is edited" },
     { id: "message.deleted", label: "Message Deleted", description: "When a message is revoked/deleted" },
+    { id: "poll.vote", label: "Poll Vote", description: "When someone votes on a poll this gateway sent (also sent to Message Received webhooks)" },
 ];
 
 import { useSession } from "@/components/dashboard/session-provider";

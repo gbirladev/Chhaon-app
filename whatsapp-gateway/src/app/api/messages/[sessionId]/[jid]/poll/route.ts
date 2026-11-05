@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { waManager } from "@/modules/whatsapp/manager";
 import { getAuthenticatedUser, canAccessSession } from "@/lib/api-auth";
 import { fireSentWebhook } from "@/lib/webhook";
+import { rememberSentPoll } from "@/modules/whatsapp/poll-votes";
 
 // POST: Send poll message
 export async function POST(
@@ -53,10 +54,25 @@ export async function POST(
             }
         });
 
+        // Chhaon: keep the poll (with its messageSecret) so votes on it can be decrypted, also after a restart.
+        // Awaited, so a vote that comes back at once finds it; a failure is logged but does not fail the send.
+        try {
+            await rememberSentPoll(sessionId, sendResult);
+        } catch (e) {
+            console.error("Send poll: could not keep the poll for vote decryption:", e);
+        }
+
         // Fire webhook for sent message (non-blocking)
         fireSentWebhook(sessionId, jid, { type: 'poll', text: question }, sendResult).catch(() => {});
 
-        return NextResponse.json({ status: true, message: "Operation successful" });
+        // messageId = the poll's key id; a poll.vote webhook carries it back as pollKeyId
+        const messageId = sendResult?.key?.id || null;
+        return NextResponse.json({
+            status: true,
+            message: "Operation successful",
+            messageId,
+            data: { key: { id: messageId, remoteJid: sendResult?.key?.remoteJid || jid, fromMe: true } },
+        });
 
     } catch (error) {
         console.error("Send poll error:", error);

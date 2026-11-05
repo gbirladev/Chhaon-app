@@ -8,6 +8,7 @@ import { resolveToPhoneJidBySessionId as resolveToPhoneJid, isLidJid } from "./j
 import { logger } from "./logger";
 import { waManager } from "@/modules/whatsapp/manager";
 import { reactionPayload, type InboundReaction } from "./reaction";
+import { pollVotePayload, webhookWantsEvent } from "./poll";
 
 // Event types that can trigger webhooks
 export type WebhookEventType =
@@ -21,6 +22,7 @@ export type WebhookEventType =
     | "group.participant"
     | "message.deleted"
     | "message.edited"
+    | "poll.vote"
     | "test";
 
 interface WebhookPayload {
@@ -89,8 +91,8 @@ export async function dispatchWebhook(
         // Dispatch to all matching webhooks
         for (const webhook of webhooks) {
             // Check if this webhook subscribes to this event
-            const events = (webhook.events as string[]) || [];
-            if (!events.includes(event) && !events.includes("*")) {
+            // (poll.vote also goes to webhooks subscribed to message.received, see src/lib/poll.ts)
+            if (!webhookWantsEvent(webhook.events as string[], event)) {
                 continue;
             }
 
@@ -618,6 +620,29 @@ export async function onReactionReceived(sessionId: string, message: any, reacti
         pushName: message.pushName,
         messageTimestamp: message.messageTimestamp,
         reaction,
+    }));
+}
+
+/**
+ * Chhaon: a decrypted vote on one of our polls (see src/modules/whatsapp/poll-votes.ts). `from` is the voter,
+ * normalised to @s.whatsapp.net like message.received (remoteJidAlt, then the contact table).
+ */
+export async function onPollVote(
+    sessionId: string,
+    message: WAMessage,
+    vote: { pollKeyId: string; selectedOptions: string[]; selectedIndexes: number[]; timestamp: number }
+) {
+    const remoteJid = message.key?.remoteJid || "";
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
+    const from = await resolveToPhoneJid(remoteJid, sessionId, remoteJidAlt);
+
+    dispatchWebhook(sessionId, "poll.vote", pollVotePayload({
+        pollKeyId: vote.pollKeyId,
+        from,
+        remoteJid: from,
+        selectedOptions: vote.selectedOptions,
+        selectedIndexes: vote.selectedIndexes,
+        timestamp: vote.timestamp,
     }));
 }
 
