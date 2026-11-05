@@ -84,6 +84,48 @@ public final class AlertTexts {
     }
 
     /**
+     * The alert when the reminders go to someone other than the person (a helper or a family member,
+     * docs/reminder-receiver.md): a missed dose names who was reminded, and a STOP / "no" is said to come from that receiver,
+     * not from the parent. {@code receiver} comes from {@link ReceiverTexts#receiverLabel}; null = the person themself, which is
+     * exactly {@link #alert(String, String, String, String, Integer, String)}.
+     */
+    public static String alert(String type, String language, String parent, String medicine, Integer count, String when, String receiver) {
+        if (receiver == null || receiver.isBlank()) return alert(type, language, parent, medicine, count, when);
+        boolean h = hi(language);
+        String p = MessageTexts.clean(parent, 40);
+        if (p.isEmpty()) p = fallbackParent(language);
+        String m = MessageTexts.clean(medicine, 60);
+        String med = m.isEmpty() ? (h ? "एक दवा" : "a medicine") : "*" + m + "*";
+        boolean many = count != null && count > 1 && count <= 50;
+        String w = when == null || when.isBlank() ? null : MessageTexts.clean(when, 60);
+        boolean you = "you".equals(receiver) || "आप".equals(receiver);
+        String toR = h ? (you ? "आपको" : receiver + " को") : receiver;
+        String body = switch (type) {
+            case "dose_missed" -> h
+                    ? p + " की " + (many ? count + " दवाइयों" : "दवा " + med) + (w == null ? " (आज)" : " (" + w + ")")
+                        + " की पुष्टि नहीं हुई। रिमाइंडर " + toR + " भेजा गया था।\nएक बार फ़ोन करके पूछ लें।"
+                    : p + "'s " + (many ? count + " medicines" : "medicine " + med) + (w == null ? " today" : " (due " + w + ")")
+                        + (many ? " were" : " was") + " not confirmed. The reminder went to " + toR + ".\nYou may want to give them a call.";
+            case "reminder_not_sent" -> h
+                    ? "हम " + p + " की दवा " + med + " का रिमाइंडर " + toR + " नहीं भेज पाए।\nकृपया ख़ुद याद दिला दें या फ़ोन कर लें।"
+                    : "We could not send the reminder for " + p + "'s medicine " + med + " to " + toR + ".\nPlease make sure it is given, or give them a call.";
+            case "parent_stopped" -> h
+                    ? (you ? "आपने" : p + " के रिमाइंडर पाने वाले " + receiver + " ने") + " WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए "
+                        + p + " के रिमाइंडर रुके हुए हैं।"
+                    : (you ? "you" : receiver + ", who gets " + p + "'s reminders,") + " stopped Chhaon messages on WhatsApp, so "
+                        + p + "'s reminders are paused.";
+            case "parent_declined" -> h
+                    ? (you ? "आपने" : receiver + " ने") + " WhatsApp पर " + p + " की दवा के रिमाइंडर लेने से मना किया है, इसलिए कोई रिमाइंडर नहीं भेजा जाएगा।"
+                    : (you ? "you" : receiver) + " said no to getting " + p + "'s medicine reminders on WhatsApp, so no reminders will be sent.";
+            default -> null;
+        };
+        if (body == null) return alert(type, language, parent, medicine, count, when); // refills, check-ins: as before
+        if (!h) body = Character.toUpperCase(body.charAt(0)) + body.substring(1);
+        return (h ? "छाँव अलर्ट 🔔\n" : "Chhaon alert 🔔\n") + body
+                + (h ? "\n\nये अलर्ट बंद करने के लिए STOP लिखें।" : "\n\nReply STOP to turn off these alerts.");
+    }
+
+    /**
      * A due time as the family reads it, in the PARENT's time zone: "8:00 AM" / "सुबह 8:00". When the caregiver lives in a
      * different zone, "(their time)" / "(उनके समय से)" is added so nobody misreads it as their own clock.
      */

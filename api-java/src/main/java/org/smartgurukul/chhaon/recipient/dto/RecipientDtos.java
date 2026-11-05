@@ -35,7 +35,11 @@ public final class RecipientDtos {
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             Boolean caregiverAttested,
-            Boolean isSelf) {
+            Boolean isSelf,
+            // who gets the WhatsApp reminders (docs/reminder-receiver.md): person (default) | caregiver | helper
+            String reminderTo,
+            @Size(max = 60) String reminderName,
+            @Size(max = 30) String reminderRelation) {
     }
 
     /** Update a parent profile. Editable fields only; is_self and circle are immutable. */
@@ -55,7 +59,11 @@ public final class RecipientDtos {
             List<ContactDto> doctorContacts,
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
-            Boolean caregiverAttested) {
+            Boolean caregiverAttested,
+            // who gets the WhatsApp reminders; null = keep what is stored (an older app version)
+            String reminderTo,
+            @Size(max = 60) String reminderName,
+            @Size(max = 30) String reminderRelation) {
     }
 
     public record RecipientResponse(
@@ -82,6 +90,10 @@ public final class RecipientDtos {
             OffsetDateTime optedOutAt,
             OffsetDateTime consentRequestedAt,
             OffsetDateTime createdAt,
-            OffsetDateTime updatedAt) {
+            OffsetDateTime updatedAt,
+            String reminderTo,
+            String reminderName,
+            String reminderRelation,
+            String reminderUserId) {
     }
 }

@@ -40,6 +40,9 @@ import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import type { PillColour, PillShape } from "./lib/pillLook";
+import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
+import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
+import { loadMe, type MeDto } from "./lib/api";
 
 type Screen =
   | "welcome"
@@ -453,6 +456,28 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   const [callName, setCallName] = useState(recipient ? parentCall(recipient, language) : defaultCallName("father", language));
   const [callTouched, setCallTouched] = useState(!!recipient);
   const typedPhone = normalizePhone(phoneText);
+  // Who gets the WhatsApp reminders (docs/reminder-receiver.md): the person, me, someone else (a helper), or ("other") another family member.
+  const myId = authUserId();
+  const storedReceiver = receiverOf(recipient);
+  const [receiver, setReceiver] = useState<ReceiverMode>(isSelf ? "person" : initialReceiverMode(recipient, myId));
+  const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
+  const [helperRelation, setHelperRelation] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_relation ?? "" : "");
+  const [me, setMe] = useState<MeDto | null>(null);
+  useEffect(() => {
+    if (isSelf) return;
+    let cancelled = false;
+    loadMe().then((m) => { if (!cancelled) setMe(m); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [isSelf]);
+  const chooseReceiver = (next: ReceiverMode) => {
+    if (next === receiver) return;
+    setReceiver(next);
+    // The number belongs to whoever gets the reminders: the stored one when going back, my own for "Me", empty for someone new.
+    if (recipient && next === initialReceiverMode(recipient, myId)) setPhoneText(phoneForForm(recipient.whatsapp_phone));
+    else if (next === "caregiver") setPhoneText(phoneForForm(me?.phone ?? me?.alertPhone ?? null));
+    else setPhoneText("");
+  };
+  const reminderTo = receiver === "other" ? "caregiver" : receiver;
   // Another profile of yours that already uses this number: a warning only (a couple may share one phone); the database refuses it for your own profile.
   const [sharedWith, setSharedWith] = useState<{ name: string; isSelf: boolean } | null>(null);
   useEffect(() => {
@@ -490,6 +515,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (!name) found["f-name"] = t("errName");
     const whatsapp = normalizePhone(data.whatsapp ?? "");
     if (!whatsapp) found["f-whatsapp"] = t("invalidPhone");
+    if (!isSelf && receiver === "helper" && !helperName.trim()) found["f-helperName"] = t("errHelperName");
     const timezone = data.timezone || zoneValue;   // always the box: it starts at the stored zone, or the number's country (India: Asia/Kolkata)
     const ageText = (data.age ?? "").trim();
     const age = ageText ? Number(ageText) : null;
@@ -518,6 +544,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       allergies,
       bloodGroup: data.bloodGroup || null,
       ...(isSelf && !recipient ? { isSelf: true } : {}),
+      ...(isSelf ? {} : { reminderTo, reminderName: receiver === "helper" ? helperName.trim() : null, reminderRelation: receiver === "helper" ? helperRelation.trim() || null : null }),
     };
     setBusy(true);
     let recipientId = recipient?.id;
@@ -535,7 +562,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       return setError(friendlyError(err, tAll));
     }
     // A new parent, or a changed number, needs a fresh WhatsApp opt-in (the database resets consent on a number change).
-    if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp)) void requestConsent(recipientId);
+    // A new receiver (helper / me / the person) is a new agreement too (the database resets consent then).
+    if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp || (!isSelf && storedReceiver.reminder_to !== reminderTo))) void requestConsent(recipientId);
     await onSaved(recipientId);
     setBusy(false);
   };
@@ -549,8 +577,10 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
           <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); if (!callTouched) setCallName(defaultCallName(event.target.value, language)); }}>{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>
         </div>}
         {!isSelf && <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
-        <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : "whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
-        {sharedWith && <p className="form-note" role="status">{t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
+        {!isSelf && <ReceiverChoice mode={receiver} onMode={chooseReceiver} call={callName.trim() || t("receiverPersonFallback")} otherName={receiverName(storedReceiver) || t("receiverFamilyMember")}
+          helperName={helperName} helperRelation={helperRelation} onHelperName={setHelperName} onHelperRelation={setHelperRelation} nameError={errors["f-helperName"]} />}
+        <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t("whatsappHint") : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t("receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        {sharedWith && <p className="form-note" role="status">{receiver === "caregiver" && sharedWith.isSelf ? t("sharedNumberMe") : t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
         <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
         {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
@@ -769,6 +799,15 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   }, [waitUntil]);
   if (recipient.consent_at && !recipient.opted_out_at) return null;
   const stopped = !!recipient.opted_out_at;
+  // The agreement belongs to whoever gets the reminders: the person, me, or a helper / another family member (docs/reminder-receiver.md).
+  const rcv = receiverOf(recipient);
+  const toMe = !recipient.is_self && rcv.reminder_to === "caregiver" && rcv.reminder_user_id === authUserId();
+  const toOther = !recipient.is_self && rcv.reminder_to !== "person" && !toMe;
+  const who = toOther ? receiverName(rcv) || t("receiverSomeone") : call;
+  const title = recipient.is_self ? t("consentPendingTitleSelf") : toMe ? t("consentPendingTitleMe") : toOther ? t("consentPendingTitleReceiver", { name: who }) : t("consentPendingTitle", { call });
+  const body = stopped
+    ? recipient.is_self ? t("consentStoppedSelf") : toMe ? t("consentStoppedMe", { call }) : toOther ? t("consentStoppedReceiver", { name: who, call }) : t("consentStopped", { call })
+    : recipient.is_self ? t("consentPendingSelf") : toMe ? t("consentPendingMe", { call }) : toOther ? t("consentPendingReceiver", { name: who, call }) : t("consentPending", { call });
   const secondsLeft = waitUntil === null ? 0 : Math.max(0, Math.ceil((waitUntil - now) / 1000));
   const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const resend = async () => {
@@ -783,15 +822,15 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
     }
     if (result === "sent") {
       // The server allows the next message after its wait window; the first refusal tells us the exact time.
-      setNote(t("consentSent", { call }));
+      setNote(t("consentSent", { call: toMe ? t("consentYourWhatsApp") : who }));
       return;
     }
     setNote(t(result === "too_soon" ? "consentTooSoon" : "consentFailed", { call }));
   };
   return (
     <section className={`consent-card${stopped ? " stopped" : ""}`} role="status">
-      <strong>{stopped ? t("consentStoppedTitle") : t(recipient.is_self ? "consentPendingTitleSelf" : "consentPendingTitle", { call })}</strong>
-      <p>{stopped ? t(recipient.is_self ? "consentStoppedSelf" : "consentStopped", { call }) : t(recipient.is_self ? "consentPendingSelf" : "consentPending", { call })}</p>
+      <strong>{stopped ? t("consentStoppedTitle") : title}</strong>
+      <p>{body}</p>
       {!stopped && <button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button>}
       {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
       {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
@@ -932,7 +971,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipient?.id, recipient?.timezone]);
 
-  const phone = recipient?.whatsapp_phone ?? null;
+  // The "Call" buttons dial the person: when the reminders go to a helper or the family, whatsapp_phone is not the person's number.
+  const phone = receiverOf(recipient).reminder_to === "person" ? recipient?.whatsapp_phone ?? null : null;
   const callParent = () => { if (phone) window.location.href = `tel:${phone}`; };
   const time = (iso: string | null) => (iso ? formatClock(new Date(iso), tz, language) : "");
   const consented = !!recipient?.consent_at && !recipient.opted_out_at;
@@ -952,6 +992,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
   const checkinCard = () => {
     if (!consented || recipient?.is_self) return null;   // no "are you okay" check-in for yourself
+    if (receiverOf(recipient).reminder_to !== "person") return null;   // nor when a helper / the family gets the reminders (ReceiverNote says so)
     if (checkin?.status === "missed") {
       return (
         <section className="alert-card">
@@ -1025,6 +1066,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       <InstallBanner />
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
+      <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
       {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onAddSelf={() => { setParentsOpen(false); go("addSelf"); }} onClose={() => setParentsOpen(false)} />}
@@ -1735,6 +1777,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         <button onClick={() => setInviteOpen(true)} disabled={!circleId}><Icon name="plus" size={18} /> {t("invite")}</button>
       </section>}
       {recipient?.is_self && <p className="form-note">{t("selfNote")}</p>}
+      <ReceiverNote recipient={recipient} userId={userId} call={call} />
       {circleId && !recipient?.is_self && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
       <div className="section-title members-title"><div><h2>{t("membersTitle")}</h2><p>{t("membersSub")}</p></div></div>
       <AlertsCard />
@@ -1790,7 +1833,8 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
     `${e("allergies")}: ${allergies.join(", ") || unknown}`,
     `${e("conditions")}: ${conditions.join(", ") || unknown}`,
     `${e("medicines")}: ${active.map((m) => `${medicineLine(m)} (${describeTimes(m.times, t, language)})`).join("; ") || notAdded}`,
-    recipient.whatsapp_phone ? `${e("parentPhone")}: ${recipient.whatsapp_phone}` : "",
+    recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" ? `${e("parentPhone")}: ${recipient.whatsapp_phone}` : "",
+    recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" ? `${e("helperPhone")}: ${receiverName(receiverOf(recipient))} ${recipient.whatsapp_phone}` : "",
     ...family.map((m) => `${e("family")}: ${m.name || m.email || ""} ${plusPhone(m.phone ?? "")}`.trim()),
     `${e("timezoneLabel")}: ${recipient.timezone}`,
     `${e("updated")}: ${formatDate(new Date(), language, { day: "numeric", month: "short", year: "numeric" })}`,
@@ -1821,7 +1865,8 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
         <div className="emergency-grid"><div><small>{e("bloodGroup")}</small><strong>{recipient.blood_group ?? unknown}</strong></div><div><small>{e("allergies")}</small><strong>{allergies.join(", ") || unknown}</strong></div></div>
         <div className="emergency-section"><small>{e("conditions")}</small>{conditions.length ? <div>{conditions.map((c) => <span key={c}>{c}</span>)}</div> : <strong>{unknown}</strong>}</div>
         <div className="emergency-section"><small>{e("medicines")}</small>{active.length ? <ul>{active.map((m) => <li key={m.id}>{medicineLine(m)} <span>{describeTimes(m.times, t, language)}</span></li>)}</ul> : <strong>{notAdded}</strong>}</div>
-        {recipient.whatsapp_phone && contactRow(e("parentPhone"), recipient.name, recipient.whatsapp_phone, e("callParent"))}
+        {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" && contactRow(e("parentPhone"), recipient.name, recipient.whatsapp_phone, e("callParent"))}
+        {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" && contactRow(e("helperPhone"), receiverName(receiverOf(recipient)), recipient.whatsapp_phone, e("callHelper"))}
         {family.map((m) => contactRow(e("family"), m.name || m.email || "", plusPhone(m.phone ?? ""), e("callFamily")))}
       </section>
       <button className="secondary-button" style={{ marginTop: 14 }} onClick={() => go("profile")}>{e("editDetails")}</button>

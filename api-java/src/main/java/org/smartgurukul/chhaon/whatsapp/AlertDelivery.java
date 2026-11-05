@@ -106,7 +106,8 @@ public class AlertDelivery {
                 "select language, timezone, alert_phone, alert_consent_at from profiles where id = ?", u)));
         String phone = profile == null ? null : (String) profile.get("alert_phone");
         Map<String, Object> parent = n.get("rid") == null ? null : firstOrNull(jdbc.queryForList(
-                "select name, call_name, timezone, is_self from care_recipients where id = ?::uuid", n.get("rid")));
+                "select name, call_name, timezone, is_self, reminder_to, reminder_name, reminder_relation, reminder_user_id " +
+                        "from care_recipients where id = ?::uuid", n.get("rid")));
         boolean selfQuiet = parent != null && Boolean.TRUE.equals(parent.get("is_self")) && SELF_QUIET.contains((String) n.get("type"));
         if (profile == null || profile.get("alert_consent_at") == null || phone == null || phoneOptedOut(phone) || selfQuiet) {
             jdbc.update("update notifications set whatsapp_skipped_at = now() where id = ? " +
@@ -171,7 +172,11 @@ public class AlertDelivery {
         } catch (NumberFormatException ignored) {
             // an odd payload: say "a medicine"
         }
-        return AlertTexts.alert((String) n.get("type"), language, parentName, medicine, count, when);
+        // Who got the reminders, when it is not the person (docs/reminder-receiver.md): "The reminder went to Sunita (maid)".
+        String receiver = parent == null ? null : ReceiverTexts.receiverLabel(language, (String) parent.get("reminder_to"),
+                (String) parent.get("reminder_name"), (String) parent.get("reminder_relation"),
+                parent.get("reminder_user_id") != null && parent.get("reminder_user_id").equals(n.get("user_id")));
+        return AlertTexts.alert((String) n.get("type"), language, parentName, medicine, count, when, receiver);
     }
 
     private boolean phoneOptedOut(String phone) {

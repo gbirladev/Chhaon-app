@@ -67,7 +67,11 @@ public final class ReplyClassifier {
 
     private static final List<List<String>> TAKEN = seqs(
             "taken", "took", "done", "liya", "li", "le li", "le liya", "kha li", "kha liya",
-            "ले ली", "ले लिया", "खा ली", "खा लिया", "ली", "लिया");
+            "ले ली", "ले लिया", "खा ली", "खा लिया", "ली", "लिया",
+            // a helper or family member who GIVES the medicine (docs/reminder-receiver.md)
+            "given", "gave", "diya", "de diya", "de di", "दिया", "दे दिया", "दे दी");
+    /** "Done" said on its own ("ho gaya" = it is done). Whole message only: "kya ho gaya?" (what happened?) is NOT taken. */
+    private static final Set<String> DONE_EXACT = phrases("ho gaya", "ho gya", "ho gyi", "ho gayi", "हो गया", "हो गई", "हो गयी");
     private static final Set<String> ALL_WORDS = words("all", "sab", "sabhi", "saari", "sari", "सब", "सभी", "सारी", "सारे");
 
     private static final List<List<String>> CHECKIN_OK = seqs(
@@ -123,6 +127,7 @@ public final class ReplyClassifier {
         if (NO_EXACT.contains(joined)) return Intent.NO;
         if (ACK_EXACT.contains(joined)) return Intent.ACK;
         if (THANKS_EXACT.contains(joined)) return Intent.THANKS;
+        if (DONE_EXACT.contains(joined)) return Intent.TAKEN;
         // Several one-word answers of the same kind in mixed scripts ("haan yes", "ok theek hai").
         if (core.size() > 1 && core.size() <= 3) {
             if (core.stream().allMatch(YES_EXACT::contains)) return Intent.YES;
