@@ -34,7 +34,7 @@ const page = (kind, other) => {
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
 <link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
 <meta name="theme-color" content="#faf8fc" />
-<!-- Colours shared with the home page and the app's appearance setting (light / dark, Chhaon / Classic). -->
+<!-- Colours shared with the home page and the app's appearance setting (light / dark and every app colour). -->
 <link rel="stylesheet" href="/site-theme.css" />
 <script src="/site-theme.js"></script>
 <style>

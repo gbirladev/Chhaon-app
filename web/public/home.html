@@ -167,7 +167,7 @@
 <!-- Appearance (shared with the app) before the first paint, and old-link forwarding. A file, not inline: the production CSP is script-src 'self'. -->
 <script src="/site-theme.js"></script>
 <style>
-  /* Colours come from /site-theme.css (Chhaon violet or Classic teal, light or dark). Only layout lives here. */
+  /* Colours come from /site-theme.css (the app's colour themes, light or dark). Only layout lives here. */
   :root { --shadow: 0 18px 50px rgba(var(--shadow-c), .14); --radius: 24px; }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -410,15 +410,20 @@
         <button class="ap-btn" id="ap-btn" type="button" aria-expanded="false" aria-controls="ap-menu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg><span class="sr"><span class="en">Colours and dark mode</span><span class="hi">रंग और डार्क मोड</span></span></button>
         <div class="ap-menu" id="ap-menu" hidden>
           <p class="ap-h" id="ap-colour"><span class="en">Colour</span><span class="hi">रंग</span></p>
-          <div class="ap-row" role="group" aria-labelledby="ap-colour">
-            <button type="button" data-ap-palette="chhaon" aria-pressed="false"><span class="ap-sw v" aria-hidden="true"></span><span class="en">Chhaon</span><span class="hi">छाँव</span></button>
-            <button type="button" data-ap-palette="classic" aria-pressed="false"><span class="ap-sw t" aria-hidden="true"></span><span class="en">Classic</span><span class="hi">क्लासिक</span></button>
+          <div class="ap-grid" role="group" aria-labelledby="ap-colour">
+            <button type="button" data-ap-palette="chhaon" aria-pressed="false"><span class="ap-sw chhaon" aria-hidden="true"></span><span class="en">Chhaon</span><span class="hi">छाँव</span></button>
+            <button type="button" data-ap-palette="classic" aria-pressed="false"><span class="ap-sw classic" aria-hidden="true"></span><span class="en">Classic</span><span class="hi">क्लासिक</span></button>
+            <button type="button" data-ap-palette="teal" aria-pressed="false"><span class="ap-sw teal" aria-hidden="true"></span><span class="en">Teal</span><span class="hi">टील</span></button>
+            <button type="button" data-ap-palette="blue" aria-pressed="false"><span class="ap-sw blue" aria-hidden="true"></span><span class="en">Blue</span><span class="hi">नीला</span></button>
+            <button type="button" data-ap-palette="saffron" aria-pressed="false"><span class="ap-sw saffron" aria-hidden="true"></span><span class="en">Saffron</span><span class="hi">केसरिया</span></button>
+            <button type="button" data-ap-palette="rose" aria-pressed="false"><span class="ap-sw rose" aria-hidden="true"></span><span class="en">Rose</span><span class="hi">गुलाबी</span></button>
+            <label class="ap-cus" id="ap-custom"><input type="color" value="#e0457b" /><span class="ap-sw custom" aria-hidden="true"></span><span class="en">Custom</span><span class="hi">अपना रंग</span><span class="sr"><span class="en">: pick your own colour</span><span class="hi"> चुनें</span></span></label>
           </div>
           <p class="ap-h" id="ap-mode"><span class="en">Light or dark</span><span class="hi">हल्का या गहरा</span></p>
-          <div class="ap-row three" role="group" aria-labelledby="ap-mode">
+          <div class="ap-row" role="group" aria-labelledby="ap-mode">
+            <button type="button" data-ap-theme="system" aria-pressed="false"><span class="en">System</span><span class="hi">फ़ोन जैसा</span></button>
             <button type="button" data-ap-theme="light" aria-pressed="false"><span class="en">Light</span><span class="hi">हल्का</span></button>
             <button type="button" data-ap-theme="dark" aria-pressed="false"><span class="en">Dark</span><span class="hi">गहरा</span></button>
-            <button type="button" data-ap-theme="system" aria-pressed="false"><span class="en">System</span><span class="hi">फ़ोन जैसा</span></button>
           </div>
         </div>
       </div>

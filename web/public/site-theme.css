@@ -1,11 +1,14 @@
-/* Colours of the public website (home, /hi/, doctors, legal pages), shared with the app's appearance setting.
-   Two colours only on the site: the default "Chhaon" violet (no data-palette attribute; the same values as the app's softened
-   default in src/palettes.css, primary #6943a5) and "Classic" (data-palette="classic", the original teal #247c72).
-   Any other app palette (teal, blue, saffron, rose, custom) is not set on the site: /site-theme.js leaves the attribute off,
-   so the site shows the default violet for them.
+/* Colours of the public website (home, /hi/, doctors, legal pages), shared with the app's appearance setting (same storage
+   keys and <html> attributes as src/lib/palette.ts and src/lib/theme.ts, so a choice on either side carries over).
+   - "Chhaon" violet, the default: no data-palette attribute. The same values as the app's softened default in src/palettes.css
+     (primary #6943a5). Dark buttons use #7655c2 (not #8868d2) so white text on them keeps 4.5:1.
+   - "Classic" (data-palette="classic"): the original teal #247c72, hand-written below.
+   - Teal, Blue, Saffron, Rose: GENERATED at the end of this file by scripts/build-site-palettes.mjs from the violet tokens below
+     (the app's hue shift, brightness kept, so every text keeps its contrast). Run it after changing a violet token.
+   - Custom: built in the browser by /site-theme.js from the same violet tokens (<style id="chhaon-site-custom">).
    Light / dark: <html data-theme="light|dark">, no attribute = follow the device (prefers-color-scheme), like the app.
    Dark rules sit inside @media screen so printing (the doctors' QR cards) is always dark on white.
-   Keep the keys and colours in step with /site-theme.js. */
+   The two dark blocks of each colour must stay identical (the build script checks the violet ones). */
 
 :root {
   color-scheme: light;
@@ -89,20 +92,408 @@
   }
 }
 
-/* The appearance picker (a button in the header that opens a small menu). Wired by /site-theme.js. */
+/* The appearance picker (a button in the header that opens a small menu), laid out like the app's theme sheet: the colours
+   as small tiles, 4 per row (Chhaon, Classic, Teal, Blue / Saffron, Rose, Custom), then System / Light / Dark.
+   Wired by /site-theme.js. The swatches of the generated colours are at the end of this file. */
 .ap { position: relative; }
 .ap-btn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--pt); cursor: pointer; padding: 0; }
 .ap-btn:hover { border-color: var(--pt); }
 .ap-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ap-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 256px; max-width: calc(100vw - 24px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 14px; box-shadow: 0 18px 44px rgba(var(--shadow-c), .22); }
+.ap-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 280px; max-width: calc(100vw - 24px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 12px; box-shadow: 0 18px 44px rgba(var(--shadow-c), .22); }
 .ap-menu[hidden] { display: none; }
-.ap-h { margin: 0 0 8px; font-size: .82rem; font-weight: 800; color: var(--muted); }
-.ap-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
-.ap-row.three { grid-template-columns: 1fr 1fr 1fr; margin-bottom: 0; }
-.ap-row button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 8px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: .9rem; font-weight: 700; cursor: pointer; }
-.ap-row button:hover { border-color: var(--pt); }
-.ap-row button[aria-pressed="true"] { border-color: var(--pt); background: var(--tick-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--pt); }
-.ap-sw { width: 16px; height: 16px; border-radius: 50%; flex: 0 0 16px; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
-.ap-sw.v { background: #6943a5; } .ap-sw.t { background: #247c72; }
+.ap-h { margin: 0 0 6px; font-size: .8rem; font-weight: 800; color: var(--muted); }
+.ap-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.ap-grid > button, .ap-cus { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 50px; margin: 0; padding: 5px 2px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: .75rem; font-weight: 700; line-height: 1.15; text-align: center; overflow-wrap: anywhere; cursor: pointer; }
+.ap-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.ap-row button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 6px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.ap-grid > button:hover, .ap-cus:hover, .ap-row button:hover { border-color: var(--pt); }
+.ap-menu button[aria-pressed="true"], .ap-cus.on { border-color: var(--pt); background: var(--tick-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--pt); }
+.ap-sw { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; flex: 0 0 20px; color: #ffffff; font-size: .7rem; font-weight: 800; line-height: 1; box-shadow: 0 0 0 1px var(--line); }
+.ap-sw.chhaon { background: #6943a5; } .ap-sw.classic { background: #247c72; }
+.ap-menu [aria-pressed="true"] .ap-sw::after, .ap-cus.on .ap-sw::after { content: "\2713"; }
+/* Custom: a rainbow "+" until chosen, then the colour really used (set by /site-theme.js) with a tick. */
+.ap-sw.custom { background: conic-gradient(#e5484d, #f5a524, #3fa865, #2f9e9a, #3f7fd6, #8a5cc7, #e0457b, #e5484d); text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
+.ap-cus:not(.on) .ap-sw.custom::after { content: "+"; }
+.ap-cus input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.ap-cus:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (forced-colors: active) { .ap-menu button[aria-pressed="true"], .ap-cus.on { outline: 3px solid Highlight; } }
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 @media (max-width: 560px) { .ap-menu { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; max-width: none; } }
+
+/* ===== GENERATED by scripts/build-site-palettes.mjs: do not edit below this line. =====
+   The app's ready-made colour themes on the website (same names, order and hues as src/lib/palette.ts). Re-run the script after
+   changing the violet tokens above. "Custom" is built in the browser by /site-theme.js from the same tokens. */
+
+:root[data-palette="teal"] {
+  --bg: #f0fbfa;
+  --surface: #ffffff;
+  --ink: #0f1e1c;
+  --muted: #425654;
+  --line: #d6e7e5;
+  --primary: #19625b;
+  --primary-hover: #124f49;
+  --primary-2: #238178;
+  --pt: #19625b;
+  --mint: #d5faf6;
+  --mint-2: #f0fbfa;
+  --tick-bg: #b2f1eb;
+  --hero-a: #fdf0dc;
+  --hero-b: #fbf7f0;
+  --hero-c: #cdf9f4;
+  --glow-cool: rgba(25,98,91,.16);
+  --art-a: #ffe3b0;
+  --art-b: #c1f1ec;
+  --band: #102a28;
+  --band-2: #0f3c37;
+  --band-muted: #98d3cd;
+  --band-kicker: #00e6cf;
+  --bar-bg: rgba(240,251,250,.86);
+  --final-a: #19625b;
+  --final-b: #238178;
+  --final-muted: #c7f5f1;
+  --dash: #a0bebb;
+}
+@media screen {
+  :root[data-palette="teal"][data-theme="dark"] {
+    --bg: #0b1413;
+    --surface: #111c1a;
+    --ink: #e0eeec;
+    --muted: #abc5c2;
+    --line: #213230;
+    --primary: #17766d;
+    --primary-hover: #17867b;
+    --primary-2: #19625b;
+    --pt: #19d5c2;
+    --mint: #0e1817;
+    --mint-2: #0b1413;
+    --tick-bg: #162e2c;
+    --hero-a: #101c1b;
+    --hero-b: #0e1817;
+    --hero-c: #0b1514;
+    --glow-cool: rgba(18,138,126,.12);
+    --art-a: #172927;
+    --art-b: #11201e;
+    --band: #070e0e;
+    --band-2: #132221;
+    --band-muted: #abc5c2;
+    --band-kicker: #19d5c2;
+    --bar-bg: rgba(11,20,19,.88);
+    --final-a: #124c47;
+    --final-b: #19625b;
+    --final-muted: #a7ece5;
+    --dash: #364b49;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root[data-palette="teal"]:not([data-theme="light"]) {
+    --bg: #0b1413;
+    --surface: #111c1a;
+    --ink: #e0eeec;
+    --muted: #abc5c2;
+    --line: #213230;
+    --primary: #17766d;
+    --primary-hover: #17867b;
+    --primary-2: #19625b;
+    --pt: #19d5c2;
+    --mint: #0e1817;
+    --mint-2: #0b1413;
+    --tick-bg: #162e2c;
+    --hero-a: #101c1b;
+    --hero-b: #0e1817;
+    --hero-c: #0b1514;
+    --glow-cool: rgba(18,138,126,.12);
+    --art-a: #172927;
+    --art-b: #11201e;
+    --band: #070e0e;
+    --band-2: #132221;
+    --band-muted: #abc5c2;
+    --band-kicker: #19d5c2;
+    --bar-bg: rgba(11,20,19,.88);
+    --final-a: #124c47;
+    --final-b: #19625b;
+    --final-muted: #a7ece5;
+    --dash: #364b49;
+  }
+}
+
+:root[data-palette="blue"] {
+  --bg: #f6f9fd;
+  --surface: #ffffff;
+  --ink: #131c27;
+  --muted: #495361;
+  --line: #dee4ec;
+  --primary: #23589d;
+  --primary-hover: #194682;
+  --primary-2: #3274cb;
+  --pt: #23589d;
+  --mint: #ecf3fd;
+  --mint-2: #f6f9fd;
+  --tick-bg: #d8e6f9;
+  --hero-a: #fdf0dc;
+  --hero-b: #fbf7f0;
+  --hero-c: #e8f1fd;
+  --glow-cool: rgba(35,88,157,.16);
+  --art-a: #ffe3b0;
+  --art-b: #dde9f8;
+  --band: #16273d;
+  --band-2: #16355f;
+  --band-muted: #b7cae2;
+  --band-kicker: #acd0ff;
+  --bar-bg: rgba(246,249,253,.86);
+  --final-a: #23589d;
+  --final-b: #3274cb;
+  --final-muted: #e3edfb;
+  --dash: #adb9c8;
+}
+@media screen {
+  :root[data-palette="blue"][data-theme="dark"] {
+    --bg: #0e1319;
+    --surface: #141a22;
+    --ink: #e7ebf2;
+    --muted: #b6c0ce;
+    --line: #262f3b;
+    --primary: #2268c4;
+    --primary-hover: #2576e0;
+    --primary-2: #23589d;
+    --pt: #99c2f6;
+    --mint: #11171f;
+    --mint-2: #0e1319;
+    --tick-bg: #1c2b3e;
+    --hero-a: #131b24;
+    --hero-b: #11171f;
+    --hero-c: #0e141c;
+    --glow-cool: rgba(35,121,232,.12);
+    --art-a: #1c2634;
+    --art-b: #151e29;
+    --band: #090d13;
+    --band-2: #17202c;
+    --band-muted: #b6c0ce;
+    --band-kicker: #99c2f6;
+    --bar-bg: rgba(14,19,25,.88);
+    --final-a: #1a447c;
+    --final-b: #23589d;
+    --final-muted: #d0e1f6;
+    --dash: #3d4856;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root[data-palette="blue"]:not([data-theme="light"]) {
+    --bg: #0e1319;
+    --surface: #141a22;
+    --ink: #e7ebf2;
+    --muted: #b6c0ce;
+    --line: #262f3b;
+    --primary: #2268c4;
+    --primary-hover: #2576e0;
+    --primary-2: #23589d;
+    --pt: #99c2f6;
+    --mint: #11171f;
+    --mint-2: #0e1319;
+    --tick-bg: #1c2b3e;
+    --hero-a: #131b24;
+    --hero-b: #11171f;
+    --hero-c: #0e141c;
+    --glow-cool: rgba(35,121,232,.12);
+    --art-a: #1c2634;
+    --art-b: #151e29;
+    --band: #090d13;
+    --band-2: #17202c;
+    --band-muted: #b6c0ce;
+    --band-kicker: #99c2f6;
+    --bar-bg: rgba(14,19,25,.88);
+    --final-a: #1a447c;
+    --final-b: #23589d;
+    --final-muted: #d0e1f6;
+    --dash: #3d4856;
+  }
+}
+
+:root[data-palette="saffron"] {
+  --bg: #fdf8f4;
+  --surface: #ffffff;
+  --ink: #231910;
+  --muted: #5d5045;
+  --line: #ebe2da;
+  --primary: #824a1a;
+  --primary-hover: #6a3b12;
+  --primary-2: #a96325;
+  --pt: #824a1a;
+  --mint: #fdf0e5;
+  --mint-2: #fdf8f4;
+  --tick-bg: #f8e1cd;
+  --hero-a: #fdf0dc;
+  --hero-b: #fbf7f0;
+  --hero-c: #fdeee0;
+  --glow-cool: rgba(130,74,26,.16);
+  --art-a: #ffe3b0;
+  --art-b: #f7e4d4;
+  --band: #352211;
+  --band-2: #4e2d10;
+  --band-muted: #dfc3ab;
+  --band-kicker: #ffc18b;
+  --bar-bg: rgba(253,248,244,.86);
+  --final-a: #824a1a;
+  --final-b: #a96325;
+  --final-muted: #fbe9da;
+  --dash: #c5b5a7;
+}
+@media screen {
+  :root[data-palette="saffron"][data-theme="dark"] {
+    --bg: #17110c;
+    --surface: #1f1812;
+    --ink: #f1eae4;
+    --muted: #cbbdb1;
+    --line: #372c23;
+    --primary: #9f5717;
+    --primary-hover: #b86115;
+    --primary-2: #824a1a;
+    --pt: #f7b072;
+    --mint: #1c150f;
+    --mint-2: #17110c;
+    --tick-bg: #382718;
+    --hero-a: #211911;
+    --hero-b: #1c150f;
+    --hero-c: #19120c;
+    --glow-cool: rgba(192,97,15,.12);
+    --art-a: #2f2318;
+    --art-b: #251b13;
+    --band: #110c08;
+    --band-2: #281d14;
+    --band-muted: #cbbdb1;
+    --band-kicker: #f7b072;
+    --bar-bg: rgba(23,17,12,.88);
+    --final-a: #663912;
+    --final-b: #824a1a;
+    --final-muted: #f5dbc3;
+    --dash: #524438;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root[data-palette="saffron"]:not([data-theme="light"]) {
+    --bg: #17110c;
+    --surface: #1f1812;
+    --ink: #f1eae4;
+    --muted: #cbbdb1;
+    --line: #372c23;
+    --primary: #9f5717;
+    --primary-hover: #b86115;
+    --primary-2: #824a1a;
+    --pt: #f7b072;
+    --mint: #1c150f;
+    --mint-2: #17110c;
+    --tick-bg: #382718;
+    --hero-a: #211911;
+    --hero-b: #1c150f;
+    --hero-c: #19120c;
+    --glow-cool: rgba(192,97,15,.12);
+    --art-a: #2f2318;
+    --art-b: #251b13;
+    --band: #110c08;
+    --band-2: #281d14;
+    --band-muted: #cbbdb1;
+    --band-kicker: #f7b072;
+    --bar-bg: rgba(23,17,12,.88);
+    --final-a: #663912;
+    --final-b: #824a1a;
+    --final-muted: #f5dbc3;
+    --dash: #524438;
+  }
+}
+
+:root[data-palette="rose"] {
+  --bg: #fdf7f9;
+  --surface: #ffffff;
+  --ink: #2a151c;
+  --muted: #644c54;
+  --line: #ede0e4;
+  --primary: #a12851;
+  --primary-hover: #851d40;
+  --primary-2: #cb406e;
+  --pt: #a12851;
+  --mint: #fdeff4;
+  --mint-2: #fdf7f9;
+  --tick-bg: #f9dee7;
+  --hero-a: #fdf0dc;
+  --hero-b: #fbf7f0;
+  --hero-c: #fdecf1;
+  --glow-cool: rgba(161,40,81,.16);
+  --art-a: #ffe3b0;
+  --art-b: #f8e2e9;
+  --band: #411926;
+  --band-2: #631932;
+  --band-muted: #e3becb;
+  --band-kicker: #ffbbd1;
+  --bar-bg: rgba(253,247,249,.86);
+  --final-a: #a12851;
+  --final-b: #cb406e;
+  --final-muted: #fbe7ee;
+  --dash: #cab2ba;
+}
+@media screen {
+  :root[data-palette="rose"][data-theme="dark"] {
+    --bg: #1a0f13;
+    --surface: #24161a;
+    --ink: #f2e9ec;
+    --muted: #cfbac1;
+    --line: #3e2830;
+    --primary: #c6275c;
+    --primary-hover: #dc346c;
+    --primary-2: #a12851;
+    --pt: #f5a9c3;
+    --mint: #201317;
+    --mint-2: #1a0f13;
+    --tick-bg: #421f2b;
+    --hero-a: #26151b;
+    --hero-b: #201317;
+    --hero-c: #1d1014;
+    --glow-cool: rgba(228,49,109,.12);
+    --art-a: #361e26;
+    --art-b: #2b171e;
+    --band: #140a0e;
+    --band-2: #2e1920;
+    --band-muted: #cfbac1;
+    --band-kicker: #f5a9c3;
+    --bar-bg: rgba(26,15,19,.88);
+    --final-a: #7f1e3e;
+    --final-b: #a12851;
+    --final-muted: #f7d7e2;
+    --dash: #594048;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root[data-palette="rose"]:not([data-theme="light"]) {
+    --bg: #1a0f13;
+    --surface: #24161a;
+    --ink: #f2e9ec;
+    --muted: #cfbac1;
+    --line: #3e2830;
+    --primary: #c6275c;
+    --primary-hover: #dc346c;
+    --primary-2: #a12851;
+    --pt: #f5a9c3;
+    --mint: #201317;
+    --mint-2: #1a0f13;
+    --tick-bg: #421f2b;
+    --hero-a: #26151b;
+    --hero-b: #201317;
+    --hero-c: #1d1014;
+    --glow-cool: rgba(228,49,109,.12);
+    --art-a: #361e26;
+    --art-b: #2b171e;
+    --band: #140a0e;
+    --band-2: #2e1920;
+    --band-muted: #cfbac1;
+    --band-kicker: #f5a9c3;
+    --bar-bg: rgba(26,15,19,.88);
+    --final-a: #7f1e3e;
+    --final-b: #a12851;
+    --final-muted: #f7d7e2;
+    --dash: #594048;
+  }
+}
+
+/* Swatches in the menu: each theme's light primary (the same as PALETTE_SWATCH in src/lib/palette.ts). */
+.ap-sw.teal { background: #19625b; }
+.ap-sw.blue { background: #23589d; }
+.ap-sw.saffron { background: #824a1a; }
+.ap-sw.rose { background: #a12851; }

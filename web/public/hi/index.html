@@ -73,7 +73,7 @@
      "name": "जवाब कैसे देते हैं?",
      "acceptedAnswer": {
       "@type": "Answer",
-      "text": "1 लिखकर या 👍 भेजकर। “ले ली” या “दिया” जैसे शब्द भी चलते हैं। रोज़ के हाल-चाल में 1 का मतलब है “मैं ठीक हूँ” और 2 का मतलब है “मुझे फ़ोन कीजिए”।"
+      "text": "संदेश के नीचे दिए बटन पर एक टैप से: दवा के लिए “✅ ले ली”। रोज़ के हाल-चाल में “मैं ठीक हूँ” या “फ़ोन कीजिए” दबाते हैं। कुछ लिखना नहीं पड़ता।"
      }
     },
     {
@@ -141,7 +141,7 @@
 <!-- Appearance (shared with the app) before the first paint, and old-link forwarding. A file, not inline: the production CSP is script-src 'self'. -->
 <script src="/site-theme.js"></script>
 <style>
-  /* Colours come from /site-theme.css (Chhaon violet or Classic teal, light or dark). Only layout lives here. */
+  /* Colours come from /site-theme.css (the app's colour themes, light or dark). Only layout lives here. */
   :root { --shadow: 0 18px 50px rgba(var(--shadow-c), .14); --radius: 24px; }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -275,6 +275,7 @@
   .chat-top .logo { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; box-shadow: none; }
   .chat-top strong { display: block; line-height: 1.2; } .chat-top small { color: var(--bub-time); }
   .bub { background: var(--bub); color: var(--bub-text); border-radius: 4px 16px 16px 16px; padding: 11px 14px 6px; margin-bottom: 12px; max-width: 94%; font-size: .96rem; line-height: 1.5; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); position: relative; }
+  .bub .btns { display: block; text-align: center; padding: 10px; margin: 9px -14px -6px; border-top: 1px solid var(--line); color: var(--wa-green); font-weight: 700; }
   .bub time { display: block; text-align: right; color: var(--bub-time); font-size: .72rem; margin-top: 2px; }
   .reply { margin: 0 0 12px auto; background: var(--reply); color: var(--reply-text); border-radius: 16px 4px 16px 16px; padding: 9px 14px; width: max-content; max-width: 80%; font-weight: 600; box-shadow: 0 1px 1px rgba(0, 0, 0, .08); }
   .wa-points { display: grid; gap: 22px; }
@@ -383,15 +384,20 @@
         <button class="ap-btn" id="ap-btn" type="button" aria-expanded="false" aria-controls="ap-menu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg><span class="sr"><span class="en">Colours and dark mode</span><span class="hi">रंग और डार्क मोड</span></span></button>
         <div class="ap-menu" id="ap-menu" hidden>
           <p class="ap-h" id="ap-colour"><span class="en">Colour</span><span class="hi">रंग</span></p>
-          <div class="ap-row" role="group" aria-labelledby="ap-colour">
-            <button type="button" data-ap-palette="chhaon" aria-pressed="false"><span class="ap-sw v" aria-hidden="true"></span><span class="en">Chhaon</span><span class="hi">छाँव</span></button>
-            <button type="button" data-ap-palette="classic" aria-pressed="false"><span class="ap-sw t" aria-hidden="true"></span><span class="en">Classic</span><span class="hi">क्लासिक</span></button>
+          <div class="ap-grid" role="group" aria-labelledby="ap-colour">
+            <button type="button" data-ap-palette="chhaon" aria-pressed="false"><span class="ap-sw chhaon" aria-hidden="true"></span><span class="en">Chhaon</span><span class="hi">छाँव</span></button>
+            <button type="button" data-ap-palette="classic" aria-pressed="false"><span class="ap-sw classic" aria-hidden="true"></span><span class="en">Classic</span><span class="hi">क्लासिक</span></button>
+            <button type="button" data-ap-palette="teal" aria-pressed="false"><span class="ap-sw teal" aria-hidden="true"></span><span class="en">Teal</span><span class="hi">टील</span></button>
+            <button type="button" data-ap-palette="blue" aria-pressed="false"><span class="ap-sw blue" aria-hidden="true"></span><span class="en">Blue</span><span class="hi">नीला</span></button>
+            <button type="button" data-ap-palette="saffron" aria-pressed="false"><span class="ap-sw saffron" aria-hidden="true"></span><span class="en">Saffron</span><span class="hi">केसरिया</span></button>
+            <button type="button" data-ap-palette="rose" aria-pressed="false"><span class="ap-sw rose" aria-hidden="true"></span><span class="en">Rose</span><span class="hi">गुलाबी</span></button>
+            <label class="ap-cus" id="ap-custom"><input type="color" value="#e0457b" /><span class="ap-sw custom" aria-hidden="true"></span><span class="en">Custom</span><span class="hi">अपना रंग</span><span class="sr"><span class="en">: pick your own colour</span><span class="hi"> चुनें</span></span></label>
           </div>
           <p class="ap-h" id="ap-mode"><span class="en">Light or dark</span><span class="hi">हल्का या गहरा</span></p>
-          <div class="ap-row three" role="group" aria-labelledby="ap-mode">
+          <div class="ap-row" role="group" aria-labelledby="ap-mode">
+            <button type="button" data-ap-theme="system" aria-pressed="false"><span class="en">System</span><span class="hi">फ़ोन जैसा</span></button>
             <button type="button" data-ap-theme="light" aria-pressed="false"><span class="en">Light</span><span class="hi">हल्का</span></button>
             <button type="button" data-ap-theme="dark" aria-pressed="false"><span class="en">Dark</span><span class="hi">गहरा</span></button>
-            <button type="button" data-ap-theme="system" aria-pressed="false"><span class="en">System</span><span class="hi">फ़ोन जैसा</span></button>
           </div>
         </div>
       </div>
@@ -408,7 +414,7 @@
     <div>
       <span class="eyebrow"><span class="en">FOR FAMILIES IN INDIA AND ABROAD</span><span class="hi">भारत और विदेश में बसे परिवारों के लिए</span></span>
       <h1><span class="en">Medicine reminders on WhatsApp for <em>the people you care for</em></span><span class="hi">जिनकी आप देखभाल करते हैं, उनके लिए <em>WhatsApp पर दवा के रिमाइंडर</em></span></h1>
-      <p class="lead"><span class="en"><strong>Parents, a pregnancy, a baby. Nothing to install.</strong> The reminder goes to them, or to whoever gives the medicine. They reply with 1 or 👍, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>माता-पिता, गर्भावस्था, नन्हा बच्चा। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर उन्हें जाता है, या उसे जो दवा देता है। वे 1 या 👍 भेजते हैं, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
+      <p class="lead"><span class="en"><strong>Parents, a pregnancy, a baby. Nothing to install.</strong> The reminder goes to them, or to whoever gives the medicine. They tap ✅ Taken, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>माता-पिता, गर्भावस्था, नन्हा बच्चा। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर उन्हें जाता है, या उसे जो दवा देता है। वे ✅ ले ली दबाते हैं, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
       <ul class="care-links" aria-label="किसके लिए">
         <li><a href="#who-older"><span aria-hidden="true">👴</span><span class="en">Older parents</span><span class="hi">बुज़ुर्ग माता-पिता</span></a></li>
         <li><a href="#who-pregnancy"><span aria-hidden="true">🤰</span><span class="en">Pregnancy</span><span class="hi">गर्भावस्था</span></a></li>
@@ -428,8 +434,8 @@
     <div class="phone-stage">
       <div class="art" aria-hidden="true">
         <div class="art-sun"></div>
-        <div class="art-card main"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg></span><div><b><span class="en">Papa took his medicine</span><span class="hi">पापा ने दवा ले ली</span></b><small><span class="en">Replied 👍 at 8:04 AM</span><span class="hi">सुबह 8:04 बजे 👍 भेजा</span></small></div><i>✓</i></div>
-        <div class="art-card wa"><span class="en"><b>Namaste Papa 🙏</b><br>It’s time for your medicine 💊 <b>Metformin</b><br>Dose: 500 mg<br>🔵 Blue round tablet<div class="tap">Reply 1 or 👍</div></span><span class="hi"><b>नमस्ते पापा 🙏</b><br>दवा लेने का समय हो गया है 💊 <b>Metformin</b><br>मात्रा: 500 mg<br>🔵 नीली गोल गोली<div class="tap">1 या 👍 भेजिए</div></span></div>
+        <div class="art-card main"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg></span><div><b><span class="en">Papa took his medicine</span><span class="hi">पापा ने दवा ले ली</span></b><small><span class="en">Tapped ✅ Taken at 8:04 AM</span><span class="hi">सुबह 8:04 बजे ✅ ले ली दबाया</span></small></div><i>✓</i></div>
+        <div class="art-card wa"><span class="en"><b>Namaste Papa 🙏</b><br>It’s time for your medicine 💊 <b>Metformin</b><br>Dose: 500 mg<br>🔵 Blue round tablet<div class="tap">✅ Taken</div></span><span class="hi"><b>नमस्ते पापा 🙏</b><br>दवा लेने का समय हो गया है 💊 <b>Metformin</b><br>मात्रा: 500 mg<br>🔵 नीली गोल गोली<div class="tap">✅ ले ली</div></span></div>
         <div class="art-card note"><i>🔔</i><span class="en">The family is told if a dose is not confirmed</span><span class="hi">पुष्टि न हो तो परिवार को पता चलता है</span></div>
       </div>
     </div>
@@ -466,7 +472,7 @@
       <p><span class="en">You use the app. The people you care for, or their helper, only use WhatsApp, which they already know.</span><span class="hi">ऐप आप चलाते हैं। जिनकी देखभाल हो रही है, या उनके सहायक, सिर्फ़ WhatsApp इस्तेमाल करते हैं, जो उन्हें पहले से आता है।</span></p></div>
     <div class="steps">
       <div class="step reveal"><h3><span class="en">Add who you care for</span><span class="hi">जिनकी देखभाल करते हैं, उन्हें जोड़ें</span></h3><p><span class="en">A parent, a pregnancy or a child. Add the medicines with the dose and how each tablet looks, and choose who gets the reminders.</span><span class="hi">माता-पिता, गर्भावस्था या बच्चा। दवाइयाँ मात्रा के साथ जोड़ें, और यह भी कि हर गोली कैसी दिखती है। फिर चुनें कि रिमाइंडर किसे मिलें।</span></p></div>
-      <div class="step reveal"><h3><span class="en">They agree, then reminders start</span><span class="hi">पहले हाँ, फिर रिमाइंडर</span></h3><p><span class="en">Whoever gets the reminders is asked on WhatsApp first. Then, at each dose time, they get a short message and reply 1 or 👍.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनसे पहले WhatsApp पर पूछा जाता है। फिर हर खुराक के समय उन्हें एक छोटा संदेश मिलता है और वे 1 या 👍 भेजते हैं।</span></p></div>
+      <div class="step reveal"><h3><span class="en">They agree, then reminders start</span><span class="hi">पहले हाँ, फिर रिमाइंडर</span></h3><p><span class="en">Whoever gets the reminders is asked on WhatsApp first. Then, at each dose time, they get a short message and tap ✅ Taken.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनसे पहले WhatsApp पर पूछा जाता है। फिर हर खुराक के समय उन्हें एक छोटा संदेश मिलता है और वे ✅ ले ली दबाते हैं।</span></p></div>
       <div class="step reveal"><h3><span class="en">The family sees it all</span><span class="hi">परिवार सब देखता है</span></h3><p><span class="en">Taken, missed and next doses on the Today screen. An alert when something is not confirmed, and a short summary every Sunday.</span><span class="hi">“आज” स्क्रीन पर ली गई, छूटी और अगली खुराक। पुष्टि न हो तो सूचना, और हर रविवार एक छोटा सार।</span></p></div>
     </div>
   </div>
@@ -523,13 +529,13 @@
     <div class="wa-grid">
       <div class="chat reveal" role="group" aria-label="WhatsApp चैट का उदाहरण">
         <div class="chat-top"><span class="logo" aria-hidden="true"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg></span><div><strong>Chhaon</strong><small><span class="en">WhatsApp reminders</span><span class="hi">WhatsApp रिमाइंडर</span></small></div></div>
-        <div class="bub"><span class="en"><b>Namaste Sunita ji 🙏</b><br>Time for Papa’s medicine 💊 <b>Metformin</b><br>Dose: <b>500 mg</b><br>🔵 Blue round tablet<br><br>Reply <b>1</b> or 👍 once you have given it ✅</span><span class="hi"><b>नमस्ते सुनीता जी 🙏</b><br>पापा की दवा का समय हो गया है 💊 <b>Metformin</b><br>मात्रा: <b>500 mg</b><br>🔵 नीली गोल गोली<br><br>दवा देने के बाद <b>1</b> या 👍 भेजिए ✅</span><time><span class="en">8:00 AM</span><span class="hi">सुबह 8:00</span></time></div>
-        <div class="reply"><span class="en">diya 👍</span><span class="hi">दिया 👍</span></div>
+        <div class="bub"><span class="en"><b>Namaste Sunita ji 🙏</b><br>Time for Papa’s medicine 💊 <b>Metformin</b><br>Dose: <b>500 mg</b><br>🔵 Blue round tablet</span><span class="hi"><b>नमस्ते सुनीता जी 🙏</b><br>पापा की दवा का समय हो गया है 💊 <b>Metformin</b><br>मात्रा: <b>500 mg</b><br>🔵 नीली गोल गोली</span><time><span class="en">8:00 AM</span><span class="hi">सुबह 8:00</span></time><div class="btns"><span class="en">✅ Given</span><span class="hi">✅ दे दी</span></div></div>
+        <div class="reply"><span class="en">✅ Given</span><span class="hi">✅ दे दी</span></div>
         <div class="bub"><span class="en">Thank you 🙏 Noted for Papa: Metformin ✅</span><span class="hi">धन्यवाद 🙏 पापा की दवा Metformin नोट कर ली ✅</span><time><span class="en">8:06 AM</span><span class="hi">सुबह 8:06</span></time></div>
       </div>
       <div class="wa-points">
         <div class="reveal"><span class="n" aria-hidden="true">🙋</span><div><h3><span class="en">Choose for each person</span><span class="hi">हर व्यक्ति के लिए चुनें</span></h3><p><span class="en">The person themself, a maid or attendant, Nani, a nanny, or you. A child’s reminders always go to an adult.</span><span class="hi">वे ख़ुद, घर की सहायिका या अटेंडेंट, नानी, आया, या आप। बच्चे के रिमाइंडर हमेशा किसी बड़े को जाते हैं।</span></p></div></div>
-        <div class="reveal"><span class="n" aria-hidden="true">👍</span><div><h3><span class="en">Reply the easy way</span><span class="hi">जवाब देना आसान</span></h3><p><span class="en">Type 1, send 👍, or write “le li” or “diya”. Nothing to install, nothing to learn.</span><span class="hi">1 लिखें, 👍 भेजें, या “ले ली” या “दिया” लिखें। न कुछ इंस्टॉल करना, न कुछ सीखना।</span></p></div></div>
+        <div class="reveal"><span class="n" aria-hidden="true">👆</span><div><h3><span class="en">Just one tap</span><span class="hi">बस एक टैप</span></h3><p><span class="en">They tap the button under the message. Nothing to type, nothing to install, nothing to learn.</span><span class="hi">संदेश के नीचे दिया बटन दबाना है। न कुछ लिखना, न कुछ इंस्टॉल करना, न कुछ सीखना।</span></p></div></div>
         <div class="reveal"><span class="n" aria-hidden="true">🙏</span><div><h3><span class="en">They agree first</span><span class="hi">पहले उनकी हाँ</span></h3><p><span class="en">Whoever gets the reminders is asked on WhatsApp before anything is sent, and can reply STOP at any time.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनसे कुछ भी भेजने से पहले WhatsApp पर पूछा जाता है, और वे कभी भी STOP लिख सकते हैं।</span></p></div></div>
       </div>
     </div>
@@ -620,7 +626,7 @@
     <div class="faq reveal">
       <details><summary><span class="en">Does anyone need to install an app?</span><span class="hi">क्या किसी को कोई ऐप इंस्टॉल करना होगा?</span></summary><p><span class="en">No. Whoever gets the reminders only needs WhatsApp, and never creates an account. Only you, the family, use the Chhaon app, in the browser of any phone or computer.</span><span class="hi">नहीं। जिन्हें रिमाइंडर मिलते हैं, उन्हें सिर्फ़ WhatsApp चाहिए, और कोई खाता नहीं बनाना पड़ता। छाँव ऐप सिर्फ़ आप, यानी परिवार, किसी भी फ़ोन या कंप्यूटर के ब्राउज़र में चलाते हैं।</span></p></details>
       <details><summary><span class="en">Who gets the WhatsApp reminder?</span><span class="hi">WhatsApp रिमाइंडर किसे मिलता है?</span></summary><p><span class="en">You choose for each person: the person themself, you, or someone else who gives the medicine, such as a maid, an attendant, Nani or a nanny. A child never gets the reminders; they go to the adult who gives the medicine.</span><span class="hi">हर व्यक्ति के लिए आप चुनते हैं: वे ख़ुद, आप, या कोई और जो दवा देता है, जैसे घर की सहायिका, अटेंडेंट, नानी या आया। बच्चे को कभी रिमाइंडर नहीं जाता; वह दवा देने वाले बड़े को जाता है।</span></p></details>
-      <details><summary><span class="en">How do they reply?</span><span class="hi">जवाब कैसे देते हैं?</span></summary><p><span class="en">By typing 1 or sending 👍. Words like “le li” or “diya” work too. In the daily check-in, 1 means “I am fine” and 2 means “please call me”.</span><span class="hi">1 लिखकर या 👍 भेजकर। “ले ली” या “दिया” जैसे शब्द भी चलते हैं। रोज़ के हाल-चाल में 1 का मतलब है “मैं ठीक हूँ” और 2 का मतलब है “मुझे फ़ोन कीजिए”।</span></p></details>
+      <details><summary><span class="en">How do they reply?</span><span class="hi">जवाब कैसे देते हैं?</span></summary><p><span class="en">With one tap on the button under the message: “✅ Taken” for a medicine. In the daily check-in they tap “I’m okay” or “Call me”. Nothing to type.</span><span class="hi">संदेश के नीचे दिए बटन पर एक टैप से: दवा के लिए “✅ ले ली”। रोज़ के हाल-चाल में “मैं ठीक हूँ” या “फ़ोन कीजिए” दबाते हैं। कुछ लिखना नहीं पड़ता।</span></p></details>
       <details><summary><span class="en">What if nobody replies?</span><span class="hi">अगर कोई जवाब न आए तो?</span></summary><p><span class="en">If a dose is not confirmed within about an hour, or the daily check-in gets no reply, the family gets an alert in the app, and on WhatsApp if they switch it on, so someone can call. Every Sunday the family also gets a short summary of the week.</span><span class="hi">अगर लगभग एक घंटे में खुराक की पुष्टि न हो, या रोज़ के हाल-चाल का जवाब न आए, तो परिवार को ऐप में सूचना मिलती है, और चालू करने पर WhatsApp पर भी, ताकि कोई फ़ोन कर सके। हर रविवार परिवार को हफ़्ते का एक छोटा सार भी मिलता है।</span></p></details>
       <details><summary><span class="en">Can I use it for a pregnancy or a baby?</span><span class="hi">क्या इसे गर्भावस्था या शिशु के लिए इस्तेमाल कर सकते हैं?</span></summary><p><span class="en">Yes. For a pregnancy you see the week and trimester, the baby’s approximate size, and the usual checks as suggestions to confirm with your doctor, with reminders for the iron and calcium she has been prescribed. For a child you get a suggested vaccination plan from the date of birth, and the reminders go to whoever gives the medicine.</span><span class="hi">हाँ। गर्भावस्था में आप हफ़्ता और तिमाही, बच्चे का अनुमानित आकार, और आम जाँचें सुझाव के रूप में देखते हैं, जिन्हें अपने डॉक्टर से पक्का करें; साथ में डॉक्टर के लिखे आयरन और कैल्शियम के रिमाइंडर। बच्चे के लिए जन्म की तारीख़ से टीकों की सुझाई गई योजना मिलती है, और रिमाइंडर उसे जाते हैं जो दवा देता है।</span></p></details>
       <details><summary><span class="en">Is the vaccination plan medical advice?</span><span class="hi">क्या टीकों की योजना चिकित्सा सलाह है?</span></summary><p><span class="en">No. It is a suggested plan, based on the Indian Academy of Pediatrics timetable, to help you remember the dates. Every date can be changed. Always give vaccines as advised by your child’s doctor.</span><span class="hi">नहीं। यह इंडियन एकेडमी ऑफ़ पीडियाट्रिक्स की सूची पर आधारित एक सुझाई गई योजना है, ताकि तारीख़ें याद रहें। हर तारीख़ बदली जा सकती है। टीके हमेशा बच्चे के डॉक्टर की सलाह के अनुसार ही लगवाएँ।</span></p></details>
