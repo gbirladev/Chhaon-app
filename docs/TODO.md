@@ -636,3 +636,12 @@ else is shrunk). Only files in the person's own folder `medicine-photos/<recipie
 - [ ] Before early 2027: switch those calls to the new secret key (apikey header only, or mint a short service JWT), then move the secret.
 - Also `SUPABASE_JWT_SECRET` is Sydney's LEGACY JWT secret (HS256, "Previously used keys"); login hands out a Supabase-compatible token
   signed with it. Do not revoke that key in the dashboard until the app no longer needs it.
+
+## Logo (decided 2026-11-05)
+- **Chosen: C "roof over a heart"** (home + care; clear at every size; works for all three care types). Rolled out to the app, the
+  website, the browser tab icon and the home-screen icon; colour follows the theme (Chhaon violet default, Classic teal, custom) and
+  dark mode inside the app and on the website. The installed home-screen icon cannot change after install, so it stays violet.
+- [ ] **Verify option D "छ" monogram later** (first letter of छाँव with a small gold heart): very distinctive and Indian, but not readable
+  for non-Hindi readers (NRI families' circles, doctors abroad). Test with 5-10 families/doctors before deciding; could work as a
+  Hindi-site variant or a secondary mark. Concepts: mockup canvas, screen "11 · Logo concepts".
+- [ ] Later polish of C by a designer: softer, rounder roof; maybe a small warm/gold accent.
