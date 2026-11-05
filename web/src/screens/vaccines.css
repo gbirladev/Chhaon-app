@@ -1,0 +1,31 @@
+/* Vaccines screen (child profiles). Uses the shared colour tokens so every theme and dark mode work. */
+.vaccines-page .vaccine-dob { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 8px; font-weight: 600; }
+.vaccines-page .vaccine-dob .inline-link { min-height: 44px; }
+.vaccine-safety { margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--s-f4f8f7); color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.5; }
+.vaccine-safety strong { color: var(--text); font-weight: 600; }
+.vaccine-section { display: flex; flex-direction: column; gap: 8px; margin: 0 0 18px; }
+.vaccine-section h2 { font-size: 1rem; margin: 0 0 2px; letter-spacing: -.2px; }
+.vaccine-section.overdue h2 { color: var(--t-a8481f); }
+.vaccine-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+.vaccine-group h3 { margin: 6px 0 0; font-size: max(0.8125rem, 12px); color: var(--text-muted); font-weight: 700; }
+.vaccine-empty { margin: 0; color: var(--text-muted); font-size: max(0.875rem, 12px); }
+.vaccine-card { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-radius: 16px; background: var(--surface); color: var(--text); text-align: left; box-shadow: 0 4px 18px var(--sh-1e443f-a06); min-height: 60px; }
+.vaccine-card.given, .vaccine-card.not_given { opacity: .75; box-shadow: none; border: 1px solid var(--b-e0ece8); }
+.vaccine-icon { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: var(--s-e6f2ee); color: var(--primary-text); display: grid; place-items: center; }
+.vaccine-card.overdue .vaccine-icon { background: var(--s-fde8e5); color: var(--t-a8481f); }
+.vaccine-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.vaccine-body strong { font-size: .9375rem; }
+.vaccine-body strong em { font-style: normal; font-weight: 600; color: var(--text-muted); }
+.vaccine-body small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.vaccine-done-toggle { display: block; margin: 4px 0 12px; min-height: 44px; }
+.vaccine-setup h2 { font-size: 1.0625rem; margin: 0 0 6px; }
+.vaccine-setup > p { margin: 0 0 14px; color: var(--text-muted); line-height: 1.5; font-size: max(0.875rem, 12px); }
+.guardian-check { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 8px; padding: 12px; border: 1px solid var(--b-dce7e4); border-radius: 14px; line-height: 1.45; }
+.guardian-check input { width: 24px; height: 24px; flex: none; margin-top: 2px; accent-color: var(--primary-text); }
+.guardian-check span { display: flex; flex-direction: column; gap: 4px; }
+.guardian-check small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.vaccine-setup .stack { margin-top: 14px; }
+.vaccine-sheet .vaccine-note { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--s-f4f8f7); font-size: max(0.8125rem, 12px); line-height: 1.5; color: var(--text-muted); }
+.vaccine-sheet .vaccine-state { font-weight: 600; margin: 0 0 12px; }
+.vaccine-rule { border: 0; border-top: 1px solid var(--b-e0ece8); margin: 14px 0; }
+.vaccine-sheet .inline-link { min-height: 44px; }

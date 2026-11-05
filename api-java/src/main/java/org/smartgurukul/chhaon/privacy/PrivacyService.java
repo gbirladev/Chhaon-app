@@ -80,6 +80,7 @@ public class PrivacyService {
             out.set("reports", rows(jdbc, "reports", "t.recipient_id in (" + MY_RECIPIENTS + ")", "t.created_at", userId));
             out.set("report_values", rows(jdbc, "report_values", "t.report_id in (" + MY_REPORTS + ")", "t.id", userId));
             out.set("appointments", rows(jdbc, "appointments", "t.recipient_id in (" + MY_RECIPIENTS + ")", "t.datetime", userId));
+            out.set("child_vaccines", rows(jdbc, "child_vaccines", "t.recipient_id in (" + MY_RECIPIENTS + ")", "t.due_date", userId));
             // The secret link itself is never exported, only that one exists.
             out.set("emergency_links", parse(jdbc.queryForObject(
                     "select coalesce(jsonb_agg(jsonb_build_object('recipient_id', t.recipient_id, 'active', t.active, "

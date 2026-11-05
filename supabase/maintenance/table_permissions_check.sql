@@ -11,6 +11,7 @@
 --   care_circles | 3 | 3 | 3 | 3 | t | t
 --   care_recipients | 24 | 24 | 24 | 24 | t | t
 --   checkins | 6 | 6 | 6 | 6 | t | t
+--   child_vaccines | 15 | 0 | 11 | 6 | t | t   (migration 0045)
 --   consent_requests | 4 | 4 | 4 | 4 | t | t
 --   document_files | 8 | 8 | 8 | 8 | t | t
 --   documents | 10 | 10 | 10 | 10 | t | t
