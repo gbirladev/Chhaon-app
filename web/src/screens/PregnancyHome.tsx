@@ -44,8 +44,9 @@ type Item = {
   delivery?: boolean;
 };
 
-export function PregnancyHome({ recipient, language, doses, dosesError, medicineCount, go, alerts }: {
+export function PregnancyHome({ recipient, language, doses, dosesError, medicineCount, go, alerts, todaySection }: {
   recipient: Recipient; language: Language; doses: TodayDose[] | null; dosesError: boolean; medicineCount: number; go: Go; alerts?: ReactNode;
+  todaySection?: ReactNode;   // the shared "Today's medicines" section (progress, styles, Mark as given); when given it replaces the small list
 }) {
   const t = useTranslations();
   const tz = recipient.timezone ?? "Asia/Kolkata";
@@ -187,7 +188,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
         </button>
       )}
 
-      <section className="ph-card" aria-labelledby="ph-today-title">
+      {todaySection ?? <section className="ph-card" aria-labelledby="ph-today-title">
         <div className="ph-card-head"><h2 id="ph-today-title">{t("pregnancyHome.todayTitle")}</h2><button type="button" className="ph-link" onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
         {dosesError && <p role="alert" className="form-error">{t("today.loadFailed")}</p>}
         {doses === null && !dosesError && <div className="skeleton card" aria-busy="true" />}
@@ -198,7 +199,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
             {medicineCount === 0 && <button type="button" className="secondary-button" onClick={() => go("addMedicine")}>{t("medicines.add")}</button>}
           </div>
         )}
-      </section>
+      </section>}
 
       <section className="ph-timeline-wrap" aria-labelledby="ph-timeline-title">
         <div className="ph-card-head"><h2 id="ph-timeline-title">{t("pregnancyHome.timelineTitle")}</h2><button type="button" className="ph-link" onClick={() => go("appointments")}>{t("today.viewAll")}</button></div>

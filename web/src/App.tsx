@@ -1092,6 +1092,30 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     };
   };
 
+  // Today's medicines: the same section for every care type (a pregnancy places it inside her home).
+  const medicinesSection = (
+      <section className="section">
+        <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
+        {visibleDoses.length > 0 && <div className="dose-progress" role="progressbar" aria-valuemin={0} aria-valuemax={visibleDoses.length} aria-valuenow={visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length} aria-label={t("today.medicinesTitle")}><i style={{ width: `${(visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length / visibleDoses.length) * 100}%` }} /></div>}
+        {dataError && <p role="alert" className="form-error">{t("today.loadFailed")}</p>}
+        {doses === null && !dataError && <div className="skeleton card" aria-busy="true" />}
+        {doses !== null && visibleDoses.length > 0 && (
+          <div className="layouts-wrap">
+            <button className="style-badge" onClick={() => setStyleOpen(true)} aria-label={t("layoutPicker.title")}><Icon name="sliders" size={17} /></button>
+            <DoseLayouts layout={layout} stops={visibleDoses.map(routeStop)} avatar={([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()} startLabel={t("today.routeStart")} endLabel={t("today.routeEnd")} nextLabel={t("today.routeNext")} />
+          </div>
+        )}
+        {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}
+        {doses !== null && visibleDoses.length === 0 && (
+          <div className="empty-note">
+            <strong>{medicines.length === 0 ? t("today.noMedicinesTitle") : t("today.dosesEmpty")}</strong>
+            {medicines.length === 0 && <p>{t("today.noMedicinesBody")}</p>}
+            {medicines.length === 0 && <button className="primary-button" onClick={() => go("addMedicine")}>{t("medicines.add")}</button>}
+          </div>
+        )}
+      </section>
+  );
+
   return (
     <main className="scroll-page">
       <h1 className="sr-only">{t("nav.today")}</h1>
@@ -1142,37 +1166,19 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {checkinCard()}
 
       {/* A pregnancy gets her own home (feature 7); everyone else keeps the Today below unchanged. */}
-      {recipient && isPregnancy(recipient) ? <PregnancyHome recipient={recipient} language={language} doses={doses === null ? null : visibleDoses} dosesError={dataError} medicineCount={medicines.length} go={go} alerts={<AlertsCard compact />} /> : <>
+      {recipient && isPregnancy(recipient) ? <PregnancyHome recipient={recipient} language={language} doses={doses === null ? null : visibleDoses} dosesError={dataError} medicineCount={medicines.length} go={go} todaySection={medicinesSection} /> : <>
 
       {recipient && <LoveCard recipient={recipient} call={call} />}
 
       {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
       {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
+      </>}
 
       <AlertsCard compact />
       <SeeAllActivity go={go} />
+      {/* A pregnancy shows this inside her home, right under the week card; everyone else here. */}
+      {!(recipient && isPregnancy(recipient)) && medicinesSection}
 
-      <section className="section">
-        <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
-        {visibleDoses.length > 0 && <div className="dose-progress" role="progressbar" aria-valuemin={0} aria-valuemax={visibleDoses.length} aria-valuenow={visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length} aria-label={t("today.medicinesTitle")}><i style={{ width: `${(visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length / visibleDoses.length) * 100}%` }} /></div>}
-        {dataError && <p role="alert" className="form-error">{t("today.loadFailed")}</p>}
-        {doses === null && !dataError && <div className="skeleton card" aria-busy="true" />}
-        {doses !== null && visibleDoses.length > 0 && (
-          <div className="layouts-wrap">
-            <button className="style-badge" onClick={() => setStyleOpen(true)} aria-label={t("layoutPicker.title")}><Icon name="sliders" size={17} /></button>
-            <DoseLayouts layout={layout} stops={visibleDoses.map(routeStop)} avatar={([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()} startLabel={t("today.routeStart")} endLabel={t("today.routeEnd")} nextLabel={t("today.routeNext")} />
-          </div>
-        )}
-        {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}
-        {doses !== null && visibleDoses.length === 0 && (
-          <div className="empty-note">
-            <strong>{medicines.length === 0 ? t("today.noMedicinesTitle") : t("today.dosesEmpty")}</strong>
-            {medicines.length === 0 && <p>{t("today.noMedicinesBody")}</p>}
-            {medicines.length === 0 && <button className="primary-button" onClick={() => go("addMedicine")}>{t("medicines.add")}</button>}
-          </div>
-        )}
-      </section>
-      </>}
     </main>
   );
 }
