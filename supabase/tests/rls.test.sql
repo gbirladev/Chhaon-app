@@ -21,7 +21,7 @@ select is((select role::text from public.care_circle_members where circle_id = '
   'owner', 'circle creator becomes owner');
 
 insert into public.care_recipients (id, circle_id, name, whatsapp_phone, consent_at)
-values ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Papa', '+919876543210', now());
+values ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Papa', '+919999700009', now());
 select is((select consent_at from public.care_recipients where id = 'dddddddd-0000-0000-0000-000000000001'),
   null, 'caregiver cannot set consent_at on insert');
 
@@ -64,7 +64,7 @@ create temp table t_ids (k text primary key, v uuid);
 grant all on t_ids to authenticated;
 
 insert into t_ids select 'parent', public.create_care_recipient(
-  '{"name":"Mummy","relation":"mother","whatsapp_phone":"+919811122233","conditions":["Diabetes","High BP"],
+  '{"name":"Mummy","relation":"mother","whatsapp_phone":"+919999700007","conditions":["Diabetes","High BP"],
     "emergency_contacts":[{"name":"Alice","phone":"+14155550123"}],"caregiver_attested":true}'::jsonb);
 
 select is((select array_length(conditions, 1) from public.care_recipients where id = (select v from t_ids where k = 'parent')),
@@ -95,11 +95,11 @@ update public.care_recipients set consent_at = now(), consent_requested_at = now
   where id = (select v from t_ids where k = 'parent');
 select isnt((select consent_at from public.care_recipients where id = (select v from t_ids where k = 'parent')), null,
   'system can record the parent''s consent');
-update public.care_recipients set whatsapp_phone = '+919000000001' where id = (select v from t_ids where k = 'parent');
+update public.care_recipients set whatsapp_phone = '+919999700001' where id = (select v from t_ids where k = 'parent');
 select is((select consent_at from public.care_recipients where id = (select v from t_ids where k = 'parent')), null,
   'changing the WhatsApp number resets consent');
 update public.care_recipients set name = 'Mummy G' where id = (select v from t_ids where k = 'parent');
-select is((select whatsapp_phone from public.care_recipients where id = (select v from t_ids where k = 'parent')), '+919000000001',
+select is((select whatsapp_phone from public.care_recipients where id = (select v from t_ids where k = 'parent')), '+919999700001',
   'other edits leave the number alone');
 
 -- ---- step 4: dose generation (acts as the backend; Mummy lives in Asia/Kolkata = UTC+5:30)
@@ -219,10 +219,10 @@ select throws_ok($$update public.care_recipients set call_name = repeat('x', 41)
 -- ---- caregiver alerts: only the system may set the alert number/consent; the caregiver may turn alerts off
 reset role;
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
-update public.profiles set alert_phone = '+919000011112', alert_consent_at = now(), alert_confirmed_at = now() where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+update public.profiles set alert_phone = '+919999700002', alert_consent_at = now(), alert_confirmed_at = now() where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","role":"authenticated"}', true);
-select throws_ok($$update public.profiles set alert_phone = '+919000099999' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, '42501', null, 'a caregiver cannot choose where alerts are sent by editing the number');
+select throws_ok($$update public.profiles set alert_phone = '+919999700003' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, '42501', null, 'a caregiver cannot choose where alerts are sent by editing the number');
 select throws_ok($$update public.profiles set alert_confirmed_at = null where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, '42501', null, 'a caregiver cannot rewrite the confirmation');
 select lives_ok($$update public.profiles set alert_consent_at = null where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, 'a caregiver can always turn alerts off');
 select throws_ok($$update public.profiles set alert_consent_at = now() where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, '42501', null, 'but cannot switch them on without the number confirming');

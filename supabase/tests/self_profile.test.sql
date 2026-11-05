@@ -16,7 +16,7 @@ select set_config('request.jwt.claims', '{"sub":"a9200000-0000-0000-0000-0000000
 
 -- Free allows one parent. An own profile is extra.
 insert into t_ids select 'parent', public.create_care_recipient('{"name":"Papa","relation":"father","caregiver_attested":true}'::jsonb);
-select lives_ok($$insert into t_ids select 'me', public.create_care_recipient('{"name":"Ananya","is_self":true,"caregiver_attested":true,"whatsapp_phone":"+919810099999"}'::jsonb)$$, 'a Free account can add itself on top of its one parent');
+select lives_ok($$insert into t_ids select 'me', public.create_care_recipient('{"name":"Ananya","is_self":true,"caregiver_attested":true,"whatsapp_phone":"+919999700006"}'::jsonb)$$, 'a Free account can add itself on top of its one parent');
 select is((select relation || ',' || is_self::text from public.care_recipients where id = (select v from t_ids where k = 'me')), 'self,true', 'it is marked as an own profile (relation self)');
 select is((public.plan_overview() ->> 'parents_used')::int, 1, 'plan_overview counts only the real parents');
 select throws_ok($$select public.create_care_recipient('{"name":"Mummy","relation":"mother"}'::jsonb)$$, 'P0001', null, 'the parent limit still applies to parents');
@@ -56,10 +56,10 @@ reset role;
 select throws_ok($$insert into public.care_recipients (circle_id, name, relation) values ((select circle_id from public.care_recipients where id = (select v from t_ids where k = 'me')), 'Extra', 'other')$$, 'P0001', 'self_circle_private', 'a parent cannot be added to the circle of an own profile');
 
 -- the same number on two profiles of yours: refused when one of them is your own
-select throws_ok($$select public.create_care_recipient('{"name":"Mummy","relation":"mother","whatsapp_phone":"+919810099999"}'::jsonb)$$, 'P0001', 'self_number_in_use', 'a parent cannot be given your own number');
-select lives_ok($$update public.care_recipients set whatsapp_phone = '+919810011111' where id = (select v from t_ids where k = 'parent')$$, 'a different number is fine');
-select throws_ok($$update public.care_recipients set whatsapp_phone = '+919810099999' where id = (select v from t_ids where k = 'parent')$$, 'P0001', 'self_number_in_use', 'a parent cannot be changed to your own number');
-select throws_ok($$update public.care_recipients set whatsapp_phone = '+919810011111' where id = (select v from t_ids where k = 'me')$$, 'P0001', 'self_number_in_use', 'your own number cannot be changed to a parent''s number');
+select throws_ok($$select public.create_care_recipient('{"name":"Mummy","relation":"mother","whatsapp_phone":"+919999700006"}'::jsonb)$$, 'P0001', 'self_number_in_use', 'a parent cannot be given your own number');
+select lives_ok($$update public.care_recipients set whatsapp_phone = '+919999700005' where id = (select v from t_ids where k = 'parent')$$, 'a different number is fine');
+select throws_ok($$update public.care_recipients set whatsapp_phone = '+919999700006' where id = (select v from t_ids where k = 'parent')$$, 'P0001', 'self_number_in_use', 'a parent cannot be changed to your own number');
+select throws_ok($$update public.care_recipients set whatsapp_phone = '+919999700005' where id = (select v from t_ids where k = 'me')$$, 'P0001', 'self_number_in_use', 'your own number cannot be changed to a parent''s number');
 
 select * from finish();
 rollback;

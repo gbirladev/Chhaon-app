@@ -7,7 +7,7 @@ select plan(40);
 
 insert into auth.users (id, email, instance_id, aud, role) values
   ('aaaaaaaa-0000-0000-0000-0000000000c1', 'pc-alice@test.dev', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
-update public.profiles set name = 'Alice Sharma', phone = '+919800000001' where id = 'aaaaaaaa-0000-0000-0000-0000000000c1';
+update public.profiles set name = 'Alice Sharma', phone = '+919999700004' where id = 'aaaaaaaa-0000-0000-0000-0000000000c1';
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-0000000000c1","role":"authenticated"}', true);
@@ -24,7 +24,7 @@ update public.care_recipients set
   blood_group = 'O+', city = 'Indore', whatsapp_phone = '+919999999999',
   conditions = array(select 'Condition ' || g from generate_series(1, 30) g),
   allergies = array['Penicillin', 'Sulfa drugs'],
-  emergency_contacts = '[{"name":"Neighbour","phone":"+919822200123"},{"name":"Bad number","phone":"12345"},{"name":"Text phone","phone":"call me"}]'::jsonb,
+  emergency_contacts = '[{"name":"Neighbour","phone":"+919999700008"},{"name":"Bad number","phone":"12345"},{"name":"Text phone","phone":"call me"}]'::jsonb,
   doctor_contacts = '[{"phone":"nope"},{"name":"  "},{"name":"Dr. Anil Mehta"},{"name":"Dr. Second"}]'::jsonb
 where id = 'dddddddd-0000-0000-0000-0000000000c1';
 
@@ -60,10 +60,10 @@ select is((select j -> 'medicines' -> 0 ->> 'name' from c), 'Telma 40', 'medicin
 select is((select j -> 'medicines' -> 0 -> 'times' from c), '["08:00","20:00"]'::jsonb, 'times are sorted, and a schedule that ended is left out');
 
 -- contacts and doctor
-select is((select j -> 'contacts' -> 0 ->> 'phone' from c), '+919822200123', 'a listed emergency contact comes first');
+select is((select j -> 'contacts' -> 0 ->> 'phone' from c), '+919999700008', 'a listed emergency contact comes first');
 select is((select jsonb_array_length(j -> 'contacts') from c), 2, 'bad numbers are dropped; the family caregiver phone is added');
-select is((select j -> 'contacts' -> 1 ->> 'phone' from c), '+919800000001', 'the caregiver phone is the second contact');
-update public.care_recipients set emergency_contacts = '[{"name":"Alice","phone":"+919800000001"}]'::jsonb where id = 'dddddddd-0000-0000-0000-0000000000c1';
+select is((select j -> 'contacts' -> 1 ->> 'phone' from c), '+919999700004', 'the caregiver phone is the second contact');
+update public.care_recipients set emergency_contacts = '[{"name":"Alice","phone":"+919999700004"}]'::jsonb where id = 'dddddddd-0000-0000-0000-0000000000c1';
 select is((select jsonb_array_length(j -> 'contacts') from c), 1, 'a family phone already listed is not repeated');
 update public.care_recipients set emergency_contacts = '[{"name":"A","phone":"+911111111111"},{"name":"B","phone":"+912222222222"},{"name":"C","phone":"+913333333333"},{"name":"D","phone":"+914444444444"}]'::jsonb where id = 'dddddddd-0000-0000-0000-0000000000c1';
 select is((select jsonb_array_length(j -> 'contacts') from c), 4, 'at most 4 contacts');
