@@ -488,7 +488,27 @@ class FamilyAlertsTest extends DbTest {
             }
         }
         assertThat(AlertTexts.alert("dose_missed", "en", "", null, null, null))
-                .contains("Your parent has not confirmed a medicine today.");
+                .contains("Someone in your family has not confirmed a medicine today.").doesNotContain("parent");
+        // who to call is named, never "them", and never with a number (R2)
+        for (String lang : List.of("en", "hi")) {
+            for (String type : List.of("dose_missed", "checkin_missed", "checkin_call_requested", "reminder_not_sent")) {
+                String t = AlertTexts.alert(type, lang, "Papa", "Metformin", null, "8:00 AM");
+                assertThat(t).as(type).doesNotContain(" them").doesNotContain("उन्हें");
+                assertThat(t.split("\n")[2]).as(type).contains("Papa");
+                String helper = AlertTexts.alert(type, lang, "Papa", "Metformin", null, "8:00 AM", "Sunita (maid)");
+                assertThat(helper).as(type).doesNotContain(" them").doesNotContain("उन्हें").doesNotContainPattern("\\d{6,}");
+            }
+        }
+        assertThat(AlertTexts.alert("dose_missed", "en", "Papa", "Metformin", null, "8:00 AM"))
+                .contains("Papa has not confirmed *Metformin* (due 8:00 AM).\nYou may want to call Papa.");
+        assertThat(AlertTexts.alert("dose_missed", "hi", "पापा", "Metformin", null, "सुबह 8:00"))
+                .contains("\nएक बार पापा को फ़ोन करके हाल पूछ लें।");
+        assertThat(AlertTexts.alert("dose_missed", "en", "Aarav", "Calpol syrup", null, "8:00 AM", "Kamla (Nani)"))
+                .contains("The reminder went to Kamla (Nani).\nYou may want to call Kamla (Nani).");
+        assertThat(AlertTexts.alert("dose_missed", "hi", "Aarav", "Calpol syrup", null, "सुबह 8:00", "Kamla (Nani)"))
+                .contains("\nएक बार Kamla (Nani) को फ़ोन करके पूछ लें।");
+        assertThat(AlertTexts.alert("dose_missed", "en", "Papa", "Metformin", null, "8:00 AM", "you"))
+                .contains("The reminder went to you.\nPlease check that Papa has had it.");
         assertThat(AlertTexts.alert("dose_missed", "en", "*Papa*\nhi", "Met_formin", null, null)).contains("Papa hi has not confirmed *Metformin*");
         assertThat(AlertTexts.alert("unknown", "en", "Papa", null, null, null)).isNull();
         Instant eight = LocalDate.of(2026, 11, 5).atTime(LocalTime.of(8, 0)).atZone(java.time.ZoneId.of("Asia/Kolkata")).toInstant();

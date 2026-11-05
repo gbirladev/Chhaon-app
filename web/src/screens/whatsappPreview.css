@@ -1,0 +1,7 @@
+/* The WhatsApp preview (WhatsAppPreview.tsx): bubbles carry the exact text the receiver gets, line by line. */
+.wa-text { white-space: normal; overflow-wrap: anywhere; }
+.wa-text p { margin: 0 0 2px; line-height: 1.4; }
+.wa-text p.wa-gap { height: 8px; margin: 0; }
+.wa-text .wa-note { display: block; margin: 0 0 6px; color: var(--text-muted); font-size: max(0.625rem, 12px); font-style: normal; }
+.wa-helper.wa-first { margin-top: 0; margin-bottom: 8px; }
+.wa-helper.wa-status { margin-top: 0; margin-bottom: 10px; }

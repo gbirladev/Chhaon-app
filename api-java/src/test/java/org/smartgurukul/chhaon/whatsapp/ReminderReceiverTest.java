@@ -251,7 +251,8 @@ class ReminderReceiverTest extends DbTest {
 
         scheduler.tick(f.recipientId());
 
-        assertThat(wa.sentTo(f.phone()).get(0).text()).isEqualTo(MessageTexts.doseReminder("en", "Papa", "Metformin"));
+        assertThat(wa.sentTo(f.phone()).get(0).text()).isEqualTo(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null, "500 mg"))
+                .contains("\nDose: *500 mg*\n");
     }
 
     @Test

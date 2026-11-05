@@ -82,6 +82,35 @@ class MessageTextsTest {
     }
 
     @Test
+    void theReminderSaysTheDoseInTheReceiversLanguage() {
+        assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", "blue", "round", "500 mg"))
+                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\nDose: *500 mg*\n🔵 Blue round tablet\n\n"
+                        + "Reply *1* or 👍 once you have taken it ✅");
+        assertThat(MessageTexts.doseReminder("hi", "पापा", "Thyronorm", null, null, "1 tablet"))
+                .isEqualTo("नमस्ते पापा 🙏\nदवा लेने का समय हो गया है 💊 *Thyronorm*\nमात्रा: *1 गोली*\n\nलेने के बाद *1* या 👍 भेजिए ✅");
+        assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null, null)).doesNotContain("Dose");
+        // unit words as the app shows them; the amount is never changed
+        assertThat(MessageTexts.localizeDose("en", "1 tablet")).isEqualTo("1 tablet");
+        assertThat(MessageTexts.localizeDose("en", "1.5 tablets")).isEqualTo("1.5 tablets");
+        assertThat(MessageTexts.localizeDose("hi", "2 tablets")).isEqualTo("2 गोलियाँ");
+        assertThat(MessageTexts.localizeDose("hi", "0.5 tablet")).isEqualTo("0.5 गोली");
+        assertThat(MessageTexts.localizeDose("hi", "1 capsule")).isEqualTo("1 कैप्सूल");
+        assertThat(MessageTexts.localizeDose("hi", "2.5 ml")).isEqualTo("2.5 ml");
+        assertThat(MessageTexts.localizeDose("hi", "5 drops")).isEqualTo("5 बूँदें");
+        assertThat(MessageTexts.localizeDose("hi", "1 tsp")).isEqualTo("1 चम्मच");
+        assertThat(MessageTexts.localizeDose("en", "half after food")).isEqualTo("half after food");
+        // a typed phone number is never sent as a "dose" (fraud rule), formatting marks are removed
+        assertThat(MessageTexts.localizeDose("en", "call 9810012345")).isEmpty();
+        assertThat(MessageTexts.doseLine("en", "*2* ml")).isEqualTo("\nDose: *2 ml*");
+    }
+
+    @Test
+    void theAlertQuestionDoesNotAssumeAParent() {
+        assertThat(MessageTexts.alertOptIn("en", "Ananya")).doesNotContain("parent");
+        assertThat(MessageTexts.alertOptIn("hi", "Ananya")).doesNotContain("माता-पिता");
+    }
+
+    @Test
     void anUnknownLanguageFallsBackToEnglish() {
         assertThat(MessageTexts.doseReminder(null, "Papa", "X")).startsWith("Namaste Papa");
         assertThat(MessageTexts.doseReminder("fr", "Papa", "X")).contains("Reply *1*");

@@ -43,9 +43,33 @@ class SchedulerPregnancyTest extends DbTest {
         assertThat(wa.sentTo(f.phone())).hasSize(1);
         String text = wa.sentTo(f.phone()).get(0).text();
         assertThat(text).matches("(?s)Good (morning|afternoon|evening) Shivani .*")
-                .contains("\nWeek 24 today 💛\nTime for your *Iron + folic acid* 💊")
+                .contains("\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\nDose: *1 tablet*")
                 .endsWith("Reply *1* or 👍 once you have taken it ✅")
                 .doesNotContain("Papa").doesNotContain("Namaste");
+    }
+
+    @Test
+    void theWeekIsSaidOnlyInTheFirstReminderOfTheDayANewWeekStarts() {
+        Family f = fx.family("en", true);
+        LocalDate today = ZonedDateTime.now(f.zone()).toLocalDate();
+        pregnant(f, null, today.plusDays(112));   // week 24 starts today
+        Med iron = fx.medicine(f, "Iron + folic acid", "1 tablet", 20, LocalTime.of(3, 0));
+        Med calcium = fx.medicine(f, "Calcium", "1 tablet", 20, LocalTime.of(3, 0));
+        fx.dose(iron.scheduleId(), Instant.now().minus(5, ChronoUnit.MINUTES), "pending", null, null);
+        fx.dose(calcium.scheduleId(), Instant.now().minus(5, ChronoUnit.MINUTES), "pending", null, null);
+
+        scheduler(f).scheduledTick();
+
+        assertThat(wa.sentTo(f.phone())).hasSize(2);
+        assertThat(wa.sentTo(f.phone()).stream().filter(s -> s.text().contains("Week 24 starts today")).count()).isEqualTo(1);
+
+        // one day into the week: no week line at all
+        Family g = fx.family("en", true);
+        pregnant(g, null, ZonedDateTime.now(g.zone()).toLocalDate().plusDays(111));
+        Med m = fx.medicine(g, "Iron + folic acid", "1 tablet", 20, LocalTime.of(3, 0));
+        fx.dose(m.scheduleId(), Instant.now().minus(5, ChronoUnit.MINUTES), "pending", null, null);
+        scheduler(g).scheduledTick();
+        assertThat(wa.sentTo(g.phone()).get(0).text()).doesNotContain("Week").contains("Dose: *1 tablet*");
     }
 
     @Test
@@ -60,7 +84,7 @@ class SchedulerPregnancyTest extends DbTest {
 
         assertThat(wa.sentTo(f.phone())).hasSize(1);
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .startsWith("सुप्रभात शिवानी ☀️\nआज आपका 30वाँ हफ़्ता है 💛\nआज आप कैसा महसूस कर रही हैं?")
+                .startsWith("सुप्रभात शिवानी ☀️\nआज आप कैसा महसूस कर रही हैं?")   // R2: the check-in never says the week
                 .endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
     }
 
@@ -73,6 +97,6 @@ class SchedulerPregnancyTest extends DbTest {
         scheduler(f).scheduledTick();
 
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\n\nReply *1* or 👍 once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\nDose: *500 mg*\n\nReply *1* or 👍 once you have taken it ✅");
     }
 }

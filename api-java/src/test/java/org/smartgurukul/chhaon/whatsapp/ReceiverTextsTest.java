@@ -39,7 +39,52 @@ class ReceiverTextsTest {
         clean(en);
         assertThat(en).startsWith("Namaste Ganesh 🙏").endsWith("Reply *1* or 👍 once Papa has taken it ✅").doesNotContain(" ji");
         String hi = ReceiverTexts.doseReminder("hi", "caregiver", "Ganesh", "पापा", "Metformin", null, null);
-        assertThat(hi).endsWith("पापा के दवा लेने के बाद *1* या 👍 भेजिए ✅");
+        assertThat(hi).endsWith("\n\nजब पापा दवा ले लें, तो *1* या 👍 भेजें ✅").doesNotContain("के दवा");
+        assertThat(ReceiverTexts.doseNotYet("hi", "caregiver", "पापा")).isEqualTo("ठीक है 🙏 जब पापा दवा ले लें, तो 1 लिखकर भेज दीजिए।");
+    }
+
+    @Test
+    void everyReceiverReminderSaysTheDose() {
+        String nani = ReceiverTexts.doseReminder("hi", "helper", "Kamla", "Aarav", "Calpol syrup", null, null, "2.5 ml");
+        clean(nani);
+        assertThat(nani).isEqualTo("नमस्ते Kamla जी 🙏\nAarav की दवा का समय हो गया है 💊 *Calpol syrup*\nमात्रा: *2.5 ml*\n\n"
+                + "दवा देने के बाद *1* या 👍 भेजिए ✅");
+        String maid = ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", "white", "round", "500 mg");
+        clean(maid);
+        assertThat(maid).isEqualTo("Namaste Sunita ji 🙏\nTime for Papa's medicine 💊 *Metformin*\nDose: *500 mg*\n⚪ White round tablet\n\n"
+                + "Reply *1* or 👍 once you have given it ✅");
+        String me = ReceiverTexts.doseReminder("hi", "caregiver", "Ganesh", "Papa", "Thyronorm", null, null, "1 tablet");
+        clean(me);
+        assertThat(me).contains("\nमात्रा: *1 गोली*\n\nजब Papa दवा ले लें, तो *1* या 👍 भेजें ✅");
+        // no dose stored: no dose line
+        assertThat(ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", null, null, null)).doesNotContain("Dose");
+        assertThat(ReceiverTexts.doseReminder("en", "helper", "Sunita", "Papa", "Metformin", null, null, " ")).doesNotContain("Dose");
+    }
+
+    @Test
+    void vaccineReminderToTheReceiver_englishAndHindi() {
+        java.time.LocalDate tue = java.time.LocalDate.of(2026, 11, 10);
+        String en = ReceiverTexts.vaccineReminder("en", "helper", "Kamla", "Aarav",
+                List.of(ReceiverTexts.vaccineTitle("en", "MMR", "1")), tue, false);
+        clean(en);
+        assertThat(en).isEqualTo("Namaste Kamla ji 🙏\n💉 Aarav's vaccine *MMR (dose 1)* is due on *Tue 10 Nov*, as advised by your doctor.\n"
+                + "Please remind the family, or take Aarav to the clinic.\n\nNo reply needed 🙏");
+        String today = ReceiverTexts.vaccineReminder("en", "caregiver", "Priya Sharma", "Aarav",
+                List.of(ReceiverTexts.vaccineTitle("en", "DTP", "1"), ReceiverTexts.vaccineTitle("en", "Typhoid", "B")), tue, true);
+        clean(today);
+        assertThat(today).isEqualTo("Namaste Priya 🙏\n💉 Aarav's vaccines *DTP (dose 1)*, *Typhoid (booster)* are due *today*, as advised by your doctor.\n"
+                + "Please take Aarav to the clinic.\n\nNo reply needed 🙏");
+        String hi = ReceiverTexts.vaccineReminder("hi", "helper", "Kamla", "Aarav",
+                List.of(ReceiverTexts.vaccineTitle("hi", "एमएमआर", "1")), tue, false);
+        clean(hi);
+        assertThat(hi).isEqualTo("नमस्ते Kamla जी 🙏\n💉 Aarav का टीका *एमएमआर (खुराक 1)* *मंगलवार, 10 नवंबर* को लगना है, जैसा डॉक्टर ने बताया है।\n"
+                + "कृपया परिवार को याद दिला दें, या Aarav को क्लिनिक ले जाएँ।\n\nजवाब देने की ज़रूरत नहीं 🙏");
+        String hiToday = ReceiverTexts.vaccineReminder("hi", "helper", "Kamla", "Aarav",
+                List.of("A (खुराक 1)", "B (बूस्टर 2)"), tue, true);
+        clean(hiToday);
+        assertThat(hiToday).contains("Aarav के टीके *A (खुराक 1)*, *B (बूस्टर 2)* *आज* लगने हैं,");
+        assertThat(ReceiverTexts.vaccineTitle("en", "BCG", "")).isEqualTo("BCG");
+        assertThat(ReceiverTexts.vaccineTitle("en", "Hep B", "B2")).isEqualTo("Hep B (booster 2)");
     }
 
     @Test

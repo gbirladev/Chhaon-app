@@ -85,3 +85,26 @@ you"). STOP / "no" are reported as the helper's ("Sunita (maid), who gets Papa's
   until the form is saved again.
 * The in-app notification list (bell) does not yet say who was reminded (the WhatsApp alert does).
 * Care types (`care-type` branch): texts are written for an older parent; TODO in `ReceiverTexts` for child / pregnancy wording.
+
+## R2: what the receiver reads (2026-11-05, branch `r2-receiver-texts`)
+
+* **Dose in every reminder** (person, helper, "Me", pregnancy, photo caption): a line "Dose: *2.5 ml*" / "मात्रा: *2.5 ml*" from
+  `medicines.dosage`. Only the unit word is translated (`MessageTexts.localizeDose`, same units as the web's `localizeDose`: tablet(s)
+  -> गोली/गोलियाँ, capsule -> कैप्सूल, ml/mg stay). No dose stored = no line. A "dose" with a run of 6+ digits (a phone number) is never sent.
+  Doses are never computed or changed.
+* **Pregnancy week, decision:** said ONCE a week, in the first dose reminder sent on the day a new week starts ("Week 24 starts today 💛");
+  every other reminder and the daily check-in leave it out (`SchedulerService#weekToSay`). Chosen over "check-in only" because the
+  pregnancy check-in is expected to become optional.
+* **"Me" Hindi:** "जब Papa दवा ले लें, तो *1* या 👍 भेजें ✅" (was the ungrammatical "Papa के दवा लेने के बाद").
+* **Receiver language:** for a helper or a family member the texts use `coalesce(to_jsonb(r)->>'reminder_language', r.language)`
+  (`ReceiverTexts.languageSql`), in the scheduler, the consent request and the replies; works before that column exists.
+* **Family alerts name who to call** ("You may want to call Kamla (Nani)." / "call Papa"), never "them", never a number. A missing name
+  says "someone in your family", never "your parent".
+* **Preview WhatsApp** (`GET /api/v1/recipients/{id}/whatsapp-preview`, `WhatsAppPreviewController`): read-only, family members only, no
+  phone numbers. Returns who receives ("Kamla (Nani)"), their language, consent state, and the exact texts built by the same code as the
+  real send: consent request, next dose reminder (its real time, dose, pill look, whether the photo goes along), daily check-in (only when
+  one is sent), a child's next vaccine message, and an example family alert (in the caller's language). Plus the reminder text of every
+  active medicine, used for the last 3 days of real history. The web screen (`web/src/screens/WhatsAppPreview.tsx`) shows them as chat
+  bubbles, no fake buttons.
+* **Vaccine WhatsApp** to the child's reminder receiver (`VaccineReminderService#sendWhatsApp`): see that class and migration
+  `20261105000051_vaccine_whatsapp.sql` (deploy it before or after the backend; without it no vaccine WhatsApp is sent).
