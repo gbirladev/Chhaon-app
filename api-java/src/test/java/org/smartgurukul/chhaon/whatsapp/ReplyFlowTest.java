@@ -282,6 +282,51 @@ class ReplyFlowTest extends DbTest {
     }
 
     @Test
+    void aLateOneAnswersTheMissedDoseSentAfterTheMorningCheckin_notTheCheckin() throws Exception {
+        // The "0 of 1 taken" case: check-in at 8 (never answered, now missed), reminder at 13 (missed after 60 min),
+        // "1" at 14:10. The "1" answers the reminder, the message we sent last.
+        Family f = fx.family("en", true);
+        Med m = fx.medicine(f, "Metformin", "500 mg", 20, LocalTime.of(3, 0));
+        UUID checkin = fx.checkin(f.recipientId(), LocalDate.now(f.zone()), "missed", ago(370));
+        UUID dose = fx.dose(m.scheduleId(), ago(72), "missed", ago(70), "wamid-A");
+
+        say(f, "1");
+
+        assertThat(fx.doseStatus(dose)).isEqualTo("taken_late");
+        assertThat(fx.checkinStatus(checkin)).isEqualTo("missed");
+        assertThat(fx.stock(m.medicineId())).isEqualTo(19);
+
+        say(f, "1"); // the next "1" is the check-in answer
+        assertThat(fx.checkinStatus(checkin)).isEqualTo("replied");
+    }
+
+    @Test
+    void aOneStillAnswersACheckinSentAfterTheMissedDose() throws Exception {
+        Family f = fx.family("en", true);
+        Med m = fx.medicine(f, "Metformin", "500 mg", 20, LocalTime.of(3, 0));
+        UUID dose = fx.dose(m.scheduleId(), ago(140), "missed", ago(138), "wamid-A");
+        UUID checkin = fx.checkin(f.recipientId(), LocalDate.now(f.zone()), "sent", ago(10));
+
+        say(f, "1");
+
+        assertThat(fx.checkinStatus(checkin)).isEqualTo("replied");
+        assertThat(fx.doseStatus(dose)).isEqualTo("missed");
+    }
+
+    @Test
+    void checkinWordsNeverConfirmAMissedDose() throws Exception {
+        Family f = fx.family("en", true);
+        Med m = fx.medicine(f, "Metformin", "500 mg", 20, LocalTime.of(3, 0));
+        UUID checkin = fx.checkin(f.recipientId(), LocalDate.now(f.zone()), "missed", ago(370));
+        UUID dose = fx.dose(m.scheduleId(), ago(72), "missed", ago(70), "wamid-A");
+
+        say(f, "I am okay");
+
+        assertThat(fx.checkinStatus(checkin)).isEqualTo("replied");
+        assertThat(fx.doseStatus(dose)).isEqualTo("missed");
+    }
+
+    @Test
     void checkinSpecificWordsSkipAnOpenDose() throws Exception {
         Family f = fx.family("en", true);
         Med m = fx.medicine(f, "Metformin", "500 mg", 20, LocalTime.of(3, 0));
