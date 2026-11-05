@@ -89,6 +89,24 @@ public class SchedulerService {
         tick(onlyRecipient);
     }
 
+    /**
+     * Make one parent's upcoming doses now, instead of at the next tick (up to 5 minutes later), so a medicine that was just
+     * added or changed shows on the Today screen at once. Only the dose plan is made: nothing is sent here, and a time that has
+     * already passed today still gets no dose (generate_dose_events skips times before the schedule was created).
+     * Does nothing when the scheduler would not handle this parent (switched off, an unreadable scope, or scoped to someone
+     * else), so a dose never sits on Today that no tick will ever send or close. Never throws: saving must not fail because of it.
+     */
+    public int generateNow(UUID recipientId) {
+        if (!enabled || onlyRecipientInvalid || recipientId == null) return 0;
+        if (onlyRecipient != null && !onlyRecipient.equals(recipientId)) return 0;
+        try {
+            return generate(recipientId);
+        } catch (Exception e) {
+            log.warn("generating doses right after a medicine change failed: {}", e.toString());
+            return 0;
+        }
+    }
+
     /** Run one tick. scope = a single recipient id to limit to (for tests), or null for all. */
     public Map<String, Integer> tick(UUID scope) {
         Map<String, Integer> counters = new LinkedHashMap<>();

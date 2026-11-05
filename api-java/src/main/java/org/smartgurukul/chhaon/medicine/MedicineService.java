@@ -7,9 +7,12 @@ import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.StockResponse;
 import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.UpdateMedicineRequest;
 import org.smartgurukul.chhaon.recipient.CareRecipient;
 import org.smartgurukul.chhaon.recipient.CareRecipientRepository;
+import org.smartgurukul.chhaon.scheduler.SchedulerService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -40,13 +43,30 @@ public class MedicineService {
     private final MedicineRepository medicines;
     private final MedicineScheduleRepository schedules;
     private final CareRecipientRepository recipients;
+    private final SchedulerService scheduler;
 
     public MedicineService(MedicineRepository medicines,
                            MedicineScheduleRepository schedules,
-                           CareRecipientRepository recipients) {
+                           CareRecipientRepository recipients,
+                           SchedulerService scheduler) {
         this.medicines = medicines;
         this.schedules = schedules;
         this.recipients = recipients;
+        this.scheduler = scheduler;
+    }
+
+    /** After the save is committed, make this parent's upcoming doses at once (see SchedulerService.generateNow). */
+    private void dosesAfterCommit(UUID recipientId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            scheduler.generateNow(recipientId);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                scheduler.generateNow(recipientId);
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +118,7 @@ public class MedicineService {
         } catch (DataAccessException e) {
             throw translate(e);
         }
+        dosesAfterCommit(recipientId);
         return toResponse(m);
     }
 
@@ -123,6 +144,7 @@ public class MedicineService {
 
         List<LocalTime> desired = distinctTimes(req.times());
         reconcileSchedules(m.getId(), desired, localToday(recipient));
+        dosesAfterCommit(m.getRecipientId());
 
         try {
             medicines.saveAndFlush(m);
@@ -153,6 +175,7 @@ public class MedicineService {
         if (req.critical() != null) m.setCritical(req.critical());
         m.setUpdatedAt(OffsetDateTime.now());
         medicines.saveAndFlush(m);
+        if (req.active() != null) dosesAfterCommit(m.getRecipientId());   // resumed: today's upcoming doses again; paused: its waiting doses go
         return toResponse(m);
     }
 
