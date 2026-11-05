@@ -60,6 +60,7 @@ public class WhatsAppPreviewController {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "select r.id recipient_id, r.name, r.name recipient_name, r.name person_name, r.call_name, r.is_self, r.reminder_to, " +
                 "r.reminder_name, r.reminder_relation, r.reminder_user_id, r.care_type, r.due_date, r.timezone, r.checkin_time, " +
+                "to_jsonb(r) ->> 'checkin_enabled' checkin_enabled, " +
                 ReceiverTexts.languageSql("r") + " language, (r.whatsapp_phone is not null) has_phone, " +
                 "(r.consent_at is not null) consented, (r.opted_out_at is not null or exists (select 1 from phone_opt_outs o " +
                 " where o.phone = r.whatsapp_phone)) stopped " +
@@ -123,7 +124,8 @@ public class WhatsAppPreviewController {
         }
 
         // The daily check-in: only to the person themself, never on the "Me" profile (same rule as SchedulerService#sendCheckins).
-        boolean checkin = !self && ReceiverTexts.PERSON.equals(reminderTo);
+        boolean checkin = !self && ReceiverTexts.PERSON.equals(reminderTo)
+                && !"false".equals(r.get("checkin_enabled"));   // the per-person switch (migration 0050), same rule as the scheduler
         if (checkin) {
             Instant at = atTime(r.get("checkin_time"), zone, now);
             messages.add(new Message("checkin", "receiver", SchedulerService.checkinText(r, at.atZone(zone).toLocalDate()), at, false));
