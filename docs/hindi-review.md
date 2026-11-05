@@ -383,3 +383,18 @@ When the selected person is a pregnancy, Today shows her own home: week hero, to
 | pregnancyHome.reportInReports | रिपोर्ट, रिपोर्ट टैब में | Report in Reports | |
 | pregnancyHome.delivery | डिलीवरी | Delivery | |
 | pregnancyHome.footer | आम जाँचें — डॉक्टर से पक्का करें। यह डॉक्टरी सलाह नहीं है। | Common checks — confirm with your doctor. Not medical advice. | |
+
+## Part 11: reply with a 👍 reaction (added 2026-11-05, branch `f6-thumbs-reaction`)
+
+A parent (or helper) can now long-press our message and tap 👍 instead of typing 1. The reply line of each question says so.
+"लिखें" (write) became "भेजें" (send) where 👍 was added, because an emoji is sent, not written. Please check that this reads
+naturally and that "*1* या 👍 भेजें" is clear to an older reader.
+
+| What | Hindi (new) | English (new) | OK? |
+|---|---|---|---|
+| Dose reminder (and pregnancy reminder), last line | लेने के बाद *1* या 👍 भेजिए ✅ | Reply *1* or 👍 once you have taken it ✅ | |
+| Daily check-in (and pregnancy check-in), "fine" line | ठीक हैं तो *1* या 👍 भेजें 😊 | Reply *1* or 👍 if you are fine 😊 | |
+| Consent request (parent, "Me", helper) | शुरू करने के लिए *1* या 👍 भेजें ✅ | Reply *1* or 👍 to start ✅ | |
+
+Unchanged: "फ़ोन चाहिए तो *2* लिखें 📞", "नहीं चाहिए तो *2* लिखें", the answers we send back, and the caregiver's alert question
+(a reaction does not answer that one).

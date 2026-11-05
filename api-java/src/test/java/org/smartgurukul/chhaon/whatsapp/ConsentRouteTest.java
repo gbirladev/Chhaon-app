@@ -46,7 +46,7 @@ class ConsentRouteTest extends DbTest {
         assertThat(r.getResponse().getStatus()).isEqualTo(200);
         assertThat(body(r)).isEqualTo("{\"status\":\"sent\"}");
         assertThat(wa.sentTo(f.phone())).hasSize(1);
-        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("Ananya").contains("Reply *1* to start").contains("Reply *2* if you do not want this").contains("STOP");
+        assertThat(wa.sentTo(f.phone()).get(0).text()).contains("Ananya").contains("Reply *1* or 👍 to start").contains("Reply *2* if you do not want this").contains("STOP");
         assertThat(fx.recipient(f.recipientId()).get("consent_requested_at")).isNotNull();
 
         // the parent answers by typing 1

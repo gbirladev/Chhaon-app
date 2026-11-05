@@ -51,6 +51,24 @@ Planned poll answers (one choice per poll; a changed vote counts the last one; t
 | Morning check-in | 😊 I'm fine / 📞 Please call me | 😊 ठीक हूँ / 📞 फ़ोन कीजिए |
 | Consent (first message) | ✅ Yes, start / ❌ No, thanks | ✅ हाँ, शुरू करें / ❌ नहीं चाहिए |
 
+### 1b. Deploy the gateway change "👍 reaction" (about 20 minutes) — NEW
+
+Branch `f6-thumbs-reaction` changes the gateway (`whatsapp-gateway/`), which our pipeline does NOT deploy. Until you deploy it, a
+👍 reaction simply does nothing (typed replies keep working; the backend and the gateway can be deployed in any order).
+Files: `src/lib/reaction.ts` (new), `src/lib/reaction.test.ts` (new), `src/lib/webhook.ts` (`onReactionReceived`),
+`src/modules/whatsapp/store/index.ts` (reactions are forwarded instead of dropped), `package.json` (`"test"` script).
+No database (Prisma) change, no new webhook event: it is `message.received` with `type: "REACTION"`, so the existing webhook
+subscription is enough.
+
+Steps:
+1. On the gateway server, update the code to this branch's `whatsapp-gateway/` (the same way you installed it).
+2. `npm install` (only if `node_modules` is missing), then `npm test` (5 tests, no database needed) and `npm run build`.
+3. Restart the gateway process (pm2 / docker, as you run it). The WhatsApp session stays linked (auth is on disk).
+4. Check: from your own phone (registered as a test parent with an open reminder), long-press the reminder and tap 👍. The
+   gateway webhook log shows a `message.received` with `"type":"REACTION"` and our backend answers `handled:REACTION`; the app
+   shows the dose as taken and you get "Thank you 🙏 Noted: ...". Tap ❤️ on another message: nothing happens.
+5. Tell the product owner whether it worked on Android and iPhone (and the masked webhook body if it did not).
+
 ### 2. Two Java tests fail on `main`
 - `DataApiTest.activityReturnsWhatWasSent` (line 108): it inserts a check-in with status `"ok"`, which the `checkin_status` type does not
   allow (pending / sent / replied / missed). Probably `"replied"` was meant.

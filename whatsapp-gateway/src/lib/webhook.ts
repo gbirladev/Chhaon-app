@@ -7,6 +7,7 @@ import pino from "pino";
 import { resolveToPhoneJidBySessionId as resolveToPhoneJid, isLidJid } from "./jid-utils";
 import { logger } from "./logger";
 import { waManager } from "@/modules/whatsapp/manager";
+import { reactionPayload, type InboundReaction } from "./reaction";
 
 // Event types that can trigger webhooks
 export type WebhookEventType =
@@ -589,6 +590,35 @@ export async function onMessageReceived(sessionId: string, message: any, existin
         quoted: quoted,
 
     });
+}
+
+/**
+ * Chhaon: an emoji reaction from someone else (long-press on a message + 👍). Sent as "message.received" with
+ * type "REACTION", the emoji in `content` and `reaction.text` ("" = removed) and the reacted message's key in
+ * `reaction.key` (its id is the id our send returned). Sender fields are normalised like onMessageReceived.
+ */
+export async function onReactionReceived(sessionId: string, message: any, reaction: InboundReaction) {
+    const remoteJid = message.key?.remoteJid || "";
+    const isGroup = remoteJid.endsWith("@g.us");
+    const participant = isGroup ? (message.key?.participant || message.participant) : undefined;
+    const remoteJidAlt = message.key?.remoteJidAlt || null;
+    const normalizedFrom = await resolveToPhoneJid(remoteJid, sessionId, remoteJidAlt);
+    const normalizedSender = await resolveToPhoneJid(isGroup ? (participant || "") : remoteJid, sessionId);
+    const participantDetail = participant ? await resolveToPhoneJid(participant, sessionId) : null;
+
+    dispatchWebhook(sessionId, "message.received", reactionPayload({
+        keyId: message.key?.id,
+        from: normalizedFrom,
+        fromMe: message.key?.fromMe || false,
+        isGroup,
+        chatType: getChatType(remoteJid),
+        sender: normalizedSender,
+        participant: participantDetail,
+        receiver: getOwnJid(sessionId),
+        pushName: message.pushName,
+        messageTimestamp: message.messageTimestamp,
+        reaction,
+    }));
 }
 
 /**

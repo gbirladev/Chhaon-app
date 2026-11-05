@@ -40,15 +40,15 @@ class PillLookTextTest {
     @Test
     void theReminderCarriesTheLookOnItsOwnLine() {
         String en = MessageTexts.doseReminder("en", "Papa", "Amlodipine", "blue", "round");
-        assertThat(en).isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Amlodipine*\n🔵 Blue round tablet\n\nReply *1* once you have taken it ✅");
+        assertThat(en).isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Amlodipine*\n🔵 Blue round tablet\n\nReply *1* or 👍 once you have taken it ✅");
         String hi = MessageTexts.doseReminder("hi", "पापा", "Amlodipine", "white", "round");
-        assertThat(hi).contains("*Amlodipine*\n⚪ सफ़ेद गोल गोली\n\n").endsWith("*1* लिखकर भेजिए ✅");
+        assertThat(hi).contains("*Amlodipine*\n⚪ सफ़ेद गोल गोली\n\n").endsWith("*1* या 👍 भेजिए ✅");
     }
 
     @Test
     void withoutALookTheReminderIsUnchanged() {
         assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin", null, null))
                 .isEqualTo(MessageTexts.doseReminder("en", "Papa", "Metformin"))
-                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\n\nReply *1* once you have taken it ✅");
+                .isEqualTo("Namaste Papa 🙏\nIt's time for your medicine 💊 *Metformin*\n\nReply *1* or 👍 once you have taken it ✅");
     }
 }

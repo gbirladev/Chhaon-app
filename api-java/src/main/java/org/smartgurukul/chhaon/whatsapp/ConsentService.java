@@ -84,8 +84,9 @@ public class ConsentService {
             text = ReceiverTexts.consentRequest(language, reminderTo, (String) r.get("reminder_name"),
                     ReceiverTexts.personName((String) r.get("call_name"), (String) r.get("name")), caregiverName(userId));
         }
+        String messageId;
         try {
-            wa.send(phone, text);
+            messageId = wa.send(phone, text);
         } catch (Exception e) {
             jdbc.update("delete from consent_requests where id = ?", logged); // the attempt does not count
             String reason = WhatsAppSender.failureReason(e);
@@ -93,6 +94,7 @@ public class ConsentService {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "WhatsApp is unavailable. Try again shortly. [" + reason + "]");
         }
         jdbc.update("update care_recipients set consent_requested_at = now() where id = ?", recipientId);
+        rememberConsentMessage(messageId, recipientId);
         return new Result("sent", null);
     }
 
@@ -128,6 +130,20 @@ public class ConsentService {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /**
+     * Remembers which WhatsApp message asked this parent, so a 👍 reaction on it counts as "1" (ReplyRouter.routeReaction).
+     * Best effort: without it the parent can still type 1. Skipped when the gateway gave no real id.
+     */
+    private void rememberConsentMessage(String messageId, UUID recipientId) {
+        if (messageId == null || messageId.isBlank() || "sent".equals(messageId)) return;
+        try {
+            jdbc.update("insert into whatsapp_events (id) values (?) on conflict (id) do nothing",
+                    org.smartgurukul.chhaon.whatsapp.reply.ReplyRouter.consentMarker(messageId, recipientId));
+        } catch (Exception e) {
+            log.warn("consent message id not stored ({})", e.getClass().getSimpleName());
+        }
+    }
 
     private JsonNode claim(String phone, UUID userId) {
         String raw = jdbc.queryForObject("select public.claim_consent_request(?, ?, make_interval(mins => ?), ?)::text",

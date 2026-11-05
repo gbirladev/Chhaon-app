@@ -51,10 +51,10 @@ public final class MessageTexts {
         String lookLine = look.isEmpty() ? "" : "\n" + look;
         if (hi(language)) {
             return "नमस्ते" + who(callName) + " 🙏\nदवा लेने का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                    + lookLine + "\n\nलेने के बाद *1* लिखकर भेजिए ✅";
+                    + lookLine + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
         }
         return "Namaste" + who(callName) + " 🙏\nIt's time for your medicine 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                + lookLine + "\n\nReply *1* once you have taken it ✅";
+                + lookLine + "\n\nReply *1* or 👍 once you have taken it ✅";
     }
 
     /**
@@ -73,19 +73,19 @@ public final class MessageTexts {
         String head = greeting(language, callName, localHour) + weekLine(language, week);
         if (hi(language)) {
             return head + "\n" + (med.isEmpty() ? "दवा" : "*" + med + "*") + " लेने का समय हो गया है 💊"
-                    + lookLine + "\n\nलेने के बाद *1* लिखकर भेजिए ✅";
+                    + lookLine + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
         }
         return head + "\nTime for your " + (med.isEmpty() ? "medicine" : "*" + med + "*") + " 💊"
-                + lookLine + "\n\nReply *1* once you have taken it ✅";
+                + lookLine + "\n\nReply *1* or 👍 once you have taken it ✅";
     }
 
     /** The gentler daily check-in for a pregnancy: same answers as everyone (*1* fine, *2* call me). */
     public static String pregnancyCheckin(String language, String callName, Integer week) {
         String head = greeting(language, callName, 8) + weekLine(language, week);
         if (hi(language)) {
-            return head + "\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
+            return head + "\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
         }
-        return head + "\nHow are you feeling today?\n\nReply *1* if you are fine 😊\nReply *2* if you want a call 📞";
+        return head + "\nHow are you feeling today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞";
     }
 
     /** "Good morning Shivani ☀️" / "सुप्रभात Shivani ☀️", by the hour on the person's clock. */
@@ -154,9 +154,9 @@ public final class MessageTexts {
 
     public static String checkin(String language, String callName) {
         if (hi(language)) {
-            return "सुप्रभात" + who(callName) + " ☀️🙏\nआज आप कैसे हैं?\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
+            return "सुप्रभात" + who(callName) + " ☀️🙏\nआज आप कैसे हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
         }
-        return "Good morning" + who(callName) + " ☀️🙏\nHow are you today?\n\nReply *1* if you are fine 😊\nReply *2* if you want a call 📞";
+        return "Good morning" + who(callName) + " ☀️🙏\nHow are you today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞";
     }
 
     /** The first message to a parent: asks for agreement (consent) before anything else is ever sent. */
@@ -166,11 +166,11 @@ public final class MessageTexts {
             return "नमस्ते" + who(callName) + " 🙏\n"
                     + (by.isEmpty() ? "आपका परिवार आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहता है।"
                                     : by + " आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहते हैं।")
-                    + "\n\nशुरू करने के लिए *1* लिखें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
+                    + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         return "Namaste" + who(callName) + " 🙏\n" + (by.isEmpty() ? "Your family" : by)
                 + " would like to send you gentle medicine reminders on WhatsApp."
-                + "\n\nReply *1* to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
+                + "\n\nReply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 
     /** For the caregiver's own profile ("Me"): they add their own number for their own medicines. */
@@ -179,10 +179,10 @@ public final class MessageTexts {
         String name = n.isEmpty() ? "" : " " + n;
         if (hi(language)) {
             return "नमस्ते" + name + " 🙏\nआपने अपनी दवाओं के रिमाइंडर के लिए अपना नंबर जोड़ा है।"
-                    + "\n\nशुरू करने के लिए *1* लिखें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
+                    + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         return "Namaste" + name + " 🙏\nYou added this number for your own medicine reminders on Chhaon."
-                + "\n\nReply *1* to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
+                + "\n\nReply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 
     /** Asks a caregiver to confirm WhatsApp alerts about their parent. */

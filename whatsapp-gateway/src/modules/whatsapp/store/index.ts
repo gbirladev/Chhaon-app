@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import type { WASocket, WAMessage, Contact } from "@whiskeysockets/baileys";
 import { normalizeMessageContent } from "@whiskeysockets/baileys";
-import { onMessageReceived, onMessageSent, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
+import { onMessageReceived, onMessageSent, onReactionReceived, dispatchWebhook, downloadAndSaveMedia } from "@/lib/webhook";
+import { extractReaction } from "@/lib/reaction";
 import { handleBotCommand, setSessionStartTime } from "../bot/command-handler";
 import { resolveToPhoneJid, isLidJid, normalizeJid } from "@/lib/jid-utils";
 
@@ -377,6 +378,17 @@ async function processAndSaveMessage(
             }
             return null;
         }
+    }
+
+    // Chhaon: an emoji reaction to a message (long-press + 👍). Not stored as a message (no text of its own, and the
+    // MessageType enum has no REACTION); a NEW one from someone else is forwarded as message.received type "REACTION"
+    // with the reacted message's key. History sync and our own reactions are never forwarded.
+    const reaction = extractReaction(msg.message);
+    if (reaction) {
+        if (triggerWebhook && !fromMe) {
+            onReactionReceived(sessionId, msg, reaction).catch(e => logger.error("Webhook", "Error in onReactionReceived", e));
+        }
+        return null;
     }
 
     const ignoredTypes = [
