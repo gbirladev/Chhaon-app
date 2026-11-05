@@ -18,6 +18,7 @@
     "crashBody": "Please reload the page. Your saved information is safe.",
     "reload": "Reload",
     "sessionExpired": "Your session has ended. Please log in again.",
+    "signInFailed": "We couldn't sign you in. Please try again.",
     "mainNav": "Main menu",
     "unreadCount": "{count} unread"
   },

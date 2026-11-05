@@ -4,7 +4,7 @@ import { supabase } from "./lib/supabase";
 import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired } from "./lib/auth";
 import { compressImage } from "./lib/image";
 import {
-  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isNotFound, normalizePhone, requestConsent,
+  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
@@ -1977,7 +1977,7 @@ export default function App() {
 
   /** The selected parent, null if there are none, or "error" if the lookup failed. A failure never clears what is on screen.
    *  `selectId` makes a just-created parent the selected one. */
-  const refreshRecipient = async (selectId?: string, notifyIfRemoved = false): Promise<Recipient | null | "error"> => {
+  const refreshRecipient = async (selectId?: string, notifyIfRemoved = false): Promise<Recipient | null | "error" | "auth"> => {
     try {
       const previousId = recipientRef.current?.id;
       const uid = authUserId();
@@ -2004,8 +2004,8 @@ export default function App() {
         showToast(MESSAGES[language].common.removedFromFamily);
       }
       return chosen;
-    } catch {
-      return "error";
+    } catch (e) {
+      return isAuthError(e as { code?: string; message?: string; hint?: string; status?: number }) ? "auth" : "error";
     }
   };
   const selectParent = (id: string) => {
@@ -2049,7 +2049,8 @@ export default function App() {
       setLoadFailed(true);  // say so straight away instead of waiting for requests that cannot succeed
     } else {
       const next = await refreshRecipient();
-      if (next === "error") setLoadFailed(true);
+      if (next === "auth") rejectLogin();   // a stored token Supabase refuses: clear it so we don't loop on the error screen
+      else if (next === "error") setLoadFailed(true);
       else {
         setSignedIn(true);
         if (!next) go("profile", { replace: true });
@@ -2156,21 +2157,23 @@ export default function App() {
     if (next === "error") return setLoadFailed(true);
     go(next ? "today" : "profile", { replace: true });
   };
+  // The login token was refused (e.g. Supabase does not accept it): clear it and send them back to sign in with a
+  // clear message, instead of a blank screen or a misleading "check your connection".
+  const rejectLogin = () => {
+    clearToken();
+    setSignedIn(false);
+    setLoadFailed(false);
+    recipientRef.current = null;
+    selectedIdRef.current = null;
+    setRecipient(null);
+    setRecipients([]);
+    go("welcome", { replace: true });
+    showToast(MESSAGES[language].common.signInFailed);
+  };
   const afterLogin = async () => {
     const next = await refreshRecipient();
-    if (next === "error") {
-      // The code was right (we hold a token), but the first data load failed. If we are offline, let them retry;
-      // if we are online it means the login token was not accepted — never strand them on the code screen, send
-      // them back to sign in with a clear message instead of a blank/"something went wrong" dead end.
-      if (navigator.onLine) {
-        clearToken();
-        setSignedIn(false);
-        go("welcome", { replace: true });
-        showToast(MESSAGES[language].common.sessionExpired);
-        return;
-      }
-      return setLoadFailed(true);
-    }
+    if (next === "auth") return rejectLogin();          // token not accepted: don't strand on the code screen
+    if (next === "error") return setLoadFailed(true);   // network/server: retryable
     setSignedIn(true);
     go(next ? "today" : "profile", { replace: true });
   };

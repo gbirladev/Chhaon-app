@@ -290,6 +290,15 @@ export function isStaleSession(error: { code?: string; message?: string } | null
   return ["23503", "PGRST301", "PGRST303"].includes(error.code ?? "") || /jwt|sub claim/i.test(error.message ?? "");
 }
 
+/** The login token was refused (expired, wrong signature, or Supabase does not accept it) — as opposed to a network or
+ *  server problem. Used right after login/boot to tell "could not sign you in" apart from "check your connection". */
+export function isAuthError(error: { code?: string; message?: string; hint?: string; status?: number } | null | undefined): boolean {
+  if (!error) return false;
+  if (error.status === 401 || error.status === 403) return true;
+  if (["PGRST301", "PGRST302", "PGRST303"].includes(error.code ?? "")) return true;
+  return /jwt|jws|\btoken\b|sub claim|invalid.*signature|unauthori[sz]ed/i.test(`${error.message ?? ""} ${error.hint ?? ""}`);
+}
+
 /** Like isStaleSession, but a 42501 (our own "not found" or a plain permission denial) only counts when the login really is invalid. */
 export async function sessionIsGone(error: { code?: string; message?: string } | null | undefined): Promise<boolean> {
   if (!error) return false;
