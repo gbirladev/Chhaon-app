@@ -362,3 +362,34 @@ New words understood as "given": diya, de diya, de di, दिया, दे द�
 | today.consentPendingMe | हमने आपके WhatsApp पर संदेश भेजा है। {call} की दवा के रिमाइंडर शुरू करने के लिए वहाँ 1 लिखें। | We sent a message to your WhatsApp. Reply 1 there to start getting {call}'s medicine reminders. | |
 | today.consentStoppedReceiver | {name} ने WhatsApp संदेश बंद कर दिए हैं, इसलिए {call} के रिमाइंडर रुके हुए हैं। {name} से WhatsApp पर START लिखने को कहें। | {name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp. | |
 | emergency.helperPhone | दवा देने वाले | GIVES THE MEDICINES | |
+
+## Part 10: vaccines, "which ones were already given?" (added 2026-11-05, branch `f1-vaccines-given`)
+
+For a child set up after birth (for example at 5 months), the family ticks the earlier doses that are on the vaccination card. A past dose is not
+called overdue until the family says it is not given yet. One existing line changed (`vaccines.overdue`, now the heading of the "not given yet"
+list).
+
+**App (`vaccines` in hi.json)**
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| vaccines.overdue (changed) | अभी नहीं लगे | Not given yet | |
+| vaccines.askSection | पहले के टीके | Earlier vaccines | |
+| vaccines.askBanner | इनमें से ज़्यादातर टीके आमतौर पर अस्पताल या क्लिनिक में लग जाते हैं। बताइए कि कौन-से लग चुके हैं। | Many of these are usually given in hospital or at the clinic. Tell us which ones are already done. | |
+| vaccines.askButton / askTitle | कौन-से टीके पहले ही लग चुके हैं? | Which ones were already given? | |
+| vaccines.askNote | टीकाकरण कार्ड में जो लिखा है, उस पर टिक करें। | Tick what is on the vaccination card. | |
+| vaccines.askUnticked | जिन टीकों पर टिक नहीं करेंगे, वे "अभी नहीं लगे" में दिखेंगे। | Vaccines you leave unticked will show as not given yet. | |
+| vaccines.askDoctor | अगर कोई टीका छूट गया हो, तो डॉक्टर से पूछें कि आगे क्या करना है। | If a vaccine was missed, ask your doctor what to do next. | |
+| vaccines.tickUpTo | {age} तक के सभी पर टिक करें | Tick all up to {age} | |
+| vaccines.tickBirth | जन्म के समय वाले सभी पर टिक करें | Tick all at birth | |
+| vaccines.askSave | सेव करें | Save | |
+| vaccines.askNotSure | पक्का नहीं पता, बाद में तय करेंगे | Not sure, decide later | |
+| vaccines.askNotSureTicked | टिक किए हुए सेव करें, बाक़ी बाद में तय करेंगे | Save the ticked ones, decide the rest later | |
+| vaccines.askEdit | इनमें से कुछ लग चुके हैं? उन पर टिक करें | Some of these already given? Tick them | |
+| vaccines.suggestedOn | सुझाई गई तारीख़: {date} | Suggested for {date} | |
+| vaccines.suggestedAsk | सुझाई गई तारीख़: {date} · क्या लग चुका है? | Suggested for {date} · Already given? | |
+| vaccines.overdueSince | {date} से बाक़ी | Overdue since {date} | |
+| vaccines.givenNoDate | लग गया (तारीख़ दर्ज नहीं) | Given (date not recorded) | |
+| vaccines.markGivenNoDate | लग गया, तारीख़ पता नहीं | Given, date not known | |
+| vaccines.markNotYet | अभी नहीं लगा | Not given yet | |
+| vaccines.addGivenDate | टीका लगने की तारीख़ जोड़ें (ज़रूरी नहीं) | Add the date it was given (optional) | |

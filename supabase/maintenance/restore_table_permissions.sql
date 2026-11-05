@@ -45,6 +45,7 @@ begin
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.child_vaccines to service_role',
     'grant INSERT (dose_label, due_date, due_date_by_family, given_on, not_given, notes, recipient_id, schedule_edition, schedule_key, suggested_due_date, vaccine_code) on public.child_vaccines to authenticated',
     'grant UPDATE (due_date, due_date_by_family, given_on, not_given, notes, suggested_due_date) on public.child_vaccines to authenticated',
+    'grant UPDATE (given_date_unknown, not_yet_given_at) on public.child_vaccines to authenticated',   -- migration 0046
     'revoke all on table public.consent_requests from public, anon, authenticated, service_role',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.consent_requests to anon',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.consent_requests to authenticated',

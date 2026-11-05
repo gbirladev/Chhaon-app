@@ -13,6 +13,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +46,17 @@ public class ChildService {
 
     public record VaccineRow(String id, String key, String vaccine, String vaccineEn, String vaccineHi, String dose, String group,
                              String note, LocalDate suggestedDueDate, LocalDate dueDate, boolean dueDateByFamily,
-                             LocalDate givenOn, boolean notGiven, String notes, String status, String edition) {}
+                             LocalDate givenOn, boolean notGiven, String notes, String status, String edition,
+                             boolean givenDateUnknown, boolean askIfGiven) {}
 
     /** status: "given" (givenOn required), "not_given", or "due" (open again). dueDate / notes / resetDueDate are optional. */
     public record VaccineInput(String status, LocalDate givenOn, LocalDate dueDate, String notes, Boolean resetDueDate) {}
+
+    /** "Which ones were already given?": doses to mark given (date not recorded) and doses the family says are not given yet. */
+    public record GivenEarlierInput(List<UUID> given, List<UUID> notGivenYet) {}
+
+    /** Most ids in one "already given?" call (the whole schedule has fewer doses). */
+    static final int GIVEN_EARLIER_MAX = 100;
 
     private record Recip(UUID id, String timezone, LocalDate dob, OffsetDateTime guardianAt, String careType, boolean isSelf) {
         LocalDate today() {
@@ -176,13 +185,13 @@ public class ChildService {
         LocalDate today = r.today();
         List<VaccineRow> rows = db.asUser(userId, jdbc -> jdbc.query("""
                         select id, schedule_key, vaccine_code, dose_label, suggested_due_date, due_date, due_date_by_family,
-                               given_on, not_given, notes, schedule_edition
+                               given_on, not_given, notes, schedule_edition, given_date_unknown, not_yet_given_at is not null
                         from child_vaccines where recipient_id = ?
                         """,
                 (rs, i) -> row(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
                         rs.getDate(5).toLocalDate(), rs.getDate(6).toLocalDate(), rs.getBoolean(7),
                         rs.getDate(8) == null ? null : rs.getDate(8).toLocalDate(), rs.getBoolean(9), rs.getString(10),
-                        rs.getString(11), today),
+                        rs.getString(11), rs.getBoolean(12), rs.getBoolean(13), today),
                 recipientId));
         rows.sort(Comparator.comparing(VaccineRow::dueDate).thenComparing(v -> order(v.key())));
         return rows;
@@ -194,7 +203,8 @@ public class ChildService {
     }
 
     private VaccineRow row(String id, String key, String code, String dose, LocalDate suggested, LocalDate due, boolean byFamily,
-                           LocalDate givenOn, boolean notGiven, String notes, String edition, LocalDate today) {
+                           LocalDate givenOn, boolean notGiven, String notes, String edition, boolean givenDateUnknown,
+                           boolean saidNotYetGiven, LocalDate today) {
         VaccineSchedule.Dose d = schedule.dose(key);
         VaccineSchedule.Name name = schedule.name(code);
         String status = givenOn != null ? "given"
@@ -203,7 +213,9 @@ public class ChildService {
                 : ChronoUnit.DAYS.between(today, due) <= DUE_SOON_DAYS ? "due_soon"
                 : "later";
         return new VaccineRow(id, key, code, name.en(), name.hi(), dose, d == null ? null : d.group(), d == null ? null : d.note(),
-                suggested, due, byFamily, givenOn, notGiven, notes, status, edition);
+                suggested, due, byFamily, givenOn, notGiven, notes, status, edition, givenOn != null && givenDateUnknown,
+                // askIfGiven: the date has passed and the family has not said "not given yet" -> the screen asks instead of "overdue".
+                "overdue".equals(status) && !saidNotYetGiven);
     }
 
     /** Mark a dose given (with the date) / not given / open again, change its date, or go back to the suggested date. */
@@ -243,8 +255,16 @@ public class ChildService {
         String finalNotes = notes;
         db.asUser(userId, jdbc -> {
             if (status != null) {
-                jdbc.update("update child_vaccines set given_on = ?, not_given = ? where id = ?",
-                        "given".equals(status) ? Date.valueOf(in.givenOn()) : null, "not_given".equals(status), vaccineId);
+                // A date given here is a real date (given_date_unknown off). "Open again" for a dose whose date has passed is the family
+                // saying "not given yet": from then on the screen calls it overdue (migration 0046).
+                jdbc.update("""
+                                update child_vaccines set given_on = ?, not_given = ?, given_date_unknown = false,
+                                       not_yet_given_at = case when ? and due_date < ? then coalesce(not_yet_given_at, now())
+                                                               else not_yet_given_at end
+                                where id = ?
+                                """,
+                        "given".equals(status) ? Date.valueOf(in.givenOn()) : null, "not_given".equals(status),
+                        "due".equals(status), Date.valueOf(today), vaccineId);
             }
             if (reset) {
                 jdbc.update("update child_vaccines set due_date = suggested_due_date, due_date_by_family = false where id = ?", vaccineId);
@@ -257,5 +277,54 @@ public class ChildService {
         });
         return list(userId, recipientId).stream().filter(v -> v.id().equals(vaccineId.toString())).findFirst()
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Vaccine not found"));
+    }
+
+    /**
+     * "Which ones were already given?" for a child set up after birth: marks many past doses given in one call (the date is not recorded:
+     * given_on holds the plan date as a placeholder, flagged by given_date_unknown) and records "not given yet" for others. Same rules as
+     * {@link #update}: family circle only (404 otherwise), guardian confirmation required (409), every write as the user under Row Level
+     * Security. Only doses of this child whose date has passed; doses already given or marked "not given" are left as they are, so the
+     * call is idempotent (a dose given with a real date keeps it).
+     */
+    public List<VaccineRow> givenEarlier(UUID userId, UUID recipientId, GivenEarlierInput in) {
+        Recip r = load(userId, recipientId);
+        requireChildProfile(r);
+        if (r.guardianAt() == null) throw new ResponseStatusException(CONFLICT, "guardian_confirmation_required");
+        List<UUID> given = in == null || in.given() == null ? List.of() : in.given().stream().distinct().toList();
+        List<UUID> notYet = in == null || in.notGivenYet() == null ? List.of() : in.notGivenYet().stream().distinct().toList();
+        if (given.contains(null) || notYet.contains(null)) throw new ResponseStatusException(BAD_REQUEST, "vaccine_invalid");
+        if (given.size() + notYet.size() > GIVEN_EARLIER_MAX) throw new ResponseStatusException(BAD_REQUEST, "too_many");
+        if (given.stream().anyMatch(notYet::contains)) throw new ResponseStatusException(BAD_REQUEST, "given_and_not_given");
+        if (given.isEmpty() && notYet.isEmpty()) return list(userId, recipientId);
+        LocalDate today = r.today();
+        List<UUID> all = new ArrayList<>(given);
+        all.addAll(notYet);
+        db.asUser(userId, jdbc -> {
+            // Every id must be a dose of THIS child whose date has passed (Row Level Security hides other families' doses anyway).
+            List<Object> args = new ArrayList<>(all);
+            args.add(recipientId);
+            args.add(Date.valueOf(today));
+            Integer ok = jdbc.queryForObject("select count(*) from child_vaccines where id in (" + marks(all.size())
+                    + ") and recipient_id = ? and due_date < ?", Integer.class, args.toArray());
+            if (ok == null || ok != all.size()) throw new ResponseStatusException(BAD_REQUEST, "vaccine_not_past_due");
+            if (!given.isEmpty()) {
+                List<Object> a = new ArrayList<>(given);
+                a.add(recipientId);
+                jdbc.update("update child_vaccines set given_on = due_date, given_date_unknown = true where id in (" + marks(given.size())
+                        + ") and recipient_id = ? and given_on is null and not not_given", a.toArray());
+            }
+            if (!notYet.isEmpty()) {
+                List<Object> a = new ArrayList<>(notYet);
+                a.add(recipientId);
+                jdbc.update("update child_vaccines set not_yet_given_at = now() where id in (" + marks(notYet.size())
+                        + ") and recipient_id = ? and given_on is null and not not_given and not_yet_given_at is null", a.toArray());
+            }
+            return null;
+        });
+        return list(userId, recipientId);
+    }
+
+    private static String marks(int n) {
+        return String.join(", ", Collections.nCopies(n, "?"));
     }
 }
