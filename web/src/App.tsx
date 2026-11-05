@@ -51,9 +51,9 @@ import type { PillColour, PillShape } from "./lib/pillLook";
 import { careTypeOf, dueDateOk, isPregnancy, todayIn, type CareType } from "./lib/pregnancy";
 import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
-import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
+import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
-import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
+import { hasCheckin, initialReceiverMode, receiverName, receiverOf, receiverValues, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
@@ -189,7 +189,8 @@ export function parentCall(recipient: Recipient | null, language: Language) {
 }
 
 /** Relations offered in the form, and a friendly default for "What do you call them?" (the caregiver can change it). */
-const RELATIONS = ["father", "mother", "grandfather", "grandmother", "father_in_law", "mother_in_law", "spouse", "uncle", "aunt", "brother", "sister", "other"] as const;
+const RELATIONS = ["father", "mother", "grandfather", "grandmother", "father_in_law", "mother_in_law", "spouse", "uncle", "aunt", "brother", "sister",
+  "son", "daughter", "grandson", "granddaughter", "wife", "husband", "other"] as const;   // 'spouse' kept for existing profiles
 const defaultCallName = (relation: string, language: Language): string =>
   (MESSAGES[language].callDefaults as Record<string, string>)[relation] ?? "";
 
@@ -476,6 +477,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   const language = useLocale() as Language;
   const [phoneText, setPhoneText] = useState(phoneForForm(recipient?.whatsapp_phone ?? null));
   const [relation, setRelation] = useState<string>(recipient && (RELATIONS as readonly string[]).includes(recipient.relation) ? recipient.relation : "father");
+  const [relationTouched, setRelationTouched] = useState(!!recipient);
+  const [nameText, setNameText] = useState(recipient?.name ?? "");
+  const firstName = nameText.trim().split(/\s+/)[0] ?? "";
   // "What do you call them?" starts from a friendly default for the relation until the caregiver types their own.
   const [callName, setCallName] = useState(recipient ? parentCall(recipient, language) : defaultCallName("father", language));
   const [callTouched, setCallTouched] = useState(!!recipient);
@@ -494,21 +498,39 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       if (info.dob) setChildDetails((d) => ({ ...d, dob: d.dob || (info.dob as string) }));
     }).catch(() => { /* the form still works: the guardian box simply asks again */ });
   }, [recipient]);
-  const pk = (key: string) => (pregnant ? `${key}Pregnant` : key);   // the pregnancy wording of a label ("Her name")
+  const pk = (key: string) => (pregnant ? `${key}Pregnant` : child ? `${key}Child` : key);   // the pregnancy / child wording ("Her name", "Child's name")
+  // A pregnancy or a child is called by the first name until the family types something else (never "Papa").
+  const followsName = (type: CareType) => type === "pregnant" || type === "child";
+  const changeName = (next: string) => {
+    setNameText(next);
+    if (!callTouched && followsName(careType)) setCallName(next.trim().split(/\s+/)[0] ?? "");
+  };
   const chooseCareType = (next: CareType) => {
     setCareType(next);
-    // A new profile follows the choice until the caregiver picks a relation or a name by hand.
-    if (!recipient && relation === (next === "pregnant" ? "father" : "spouse")) {
-      const nextRelation = next === "pregnant" ? "spouse" : "father";
-      setRelation(nextRelation);
-      if (!callTouched) setCallName(defaultCallName(nextRelation, language));
-    }
+    // A new profile follows the choice until the caregiver picks a relation or a name by hand (older: Father / Papa;
+    // pregnancy: Wife and her first name; child: no relation picked yet and the child's first name).
+    const nextRelation = !recipient && !relationTouched ? (next === "older" ? "father" : next === "pregnant" ? "wife" : "") : relation;
+    if (nextRelation !== relation) setRelation(nextRelation);
+    if (!callTouched) setCallName(followsName(next) ? firstName : defaultCallName(nextRelation, language));
+    if (!recipient && !checkinTouched) setCheckinOn(next !== "pregnant");   // a new pregnancy starts without the daily check-in
+    // A child never gets the reminders: the adult who gives the medicine does.
+    if (next === "child" && receiver === "person") chooseReceiver("helper");
+    else if (!recipient && next !== "child" && receiver === "helper" && !helperName.trim()) chooseReceiver("person");
   };
   const typedPhone = normalizePhone(phoneText);
   // Who gets the WhatsApp reminders (docs/reminder-receiver.md): the person, me, someone else (a helper), or ("other") another family member.
   const myId = authUserId();
   const storedReceiver = receiverOf(recipient);
-  const [receiver, setReceiver] = useState<ReceiverMode>(isSelf ? "person" : initialReceiverMode(recipient, myId));
+  const [receiver, setReceiver] = useState<ReceiverMode>(() => {
+    if (isSelf) return "person";
+    const mode = initialReceiverMode(recipient, myId);
+    return careTypeOf(recipient) === "child" && mode === "person" ? "helper" : mode;   // an older child profile set to "the child"
+  });
+  // Round 2 (migration 0050): the daily check-in switch and the language of a helper / family member who gets the reminders.
+  const storedSettings = settingsOf(recipient);
+  const [checkinOn, setCheckinOn] = useState(recipient ? storedSettings.checkin_enabled : true);
+  const [checkinTouched, setCheckinTouched] = useState(false);
+  const [reminderLang, setReminderLang] = useState<"en" | "hi">(storedSettings.reminder_language ?? (recipient?.language === "en" ? "en" : "hi"));
   const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
   const [helperRelation, setHelperRelation] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_relation ?? "" : "");
   const [me, setMe] = useState<MeDto | null>(null);
@@ -525,6 +547,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (recipient && next === initialReceiverMode(recipient, myId)) setPhoneText(phoneForForm(recipient.whatsapp_phone));
     else if (next === "caregiver") setPhoneText(phoneForForm(me?.phone ?? me?.alertPhone ?? null));
     else setPhoneText("");
+    // "Me": my messages in my app language unless a language was stored for the reminders.
+    if (next === "caregiver" && !storedSettings.reminder_language) setReminderLang(language === "en" ? "en" : "hi");
   };
   const reminderTo = receiver === "other" ? "caregiver" : receiver;
   // Another profile of yours that already uses this number: a warning only (a couple may share one phone); the database refuses it for your own profile.
@@ -584,7 +608,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       name,
       relation: isSelf ? "self" : (RELATIONS as readonly string[]).includes(data.relation) ? data.relation : "other",
       callName: isSelf ? null : (data.callName ?? "").trim() || null,
-      age,
+      age: careType === "older" || isSelf ? age : recipient?.age ?? null,   // no age box for a pregnancy or a child: keep what is stored
       dob: recipient?.dob ?? null,                                 // the form does not edit these: pass them through
       doctorContacts: recipient?.doctor_contacts ?? null,
       emergencyContacts: recipient?.emergency_contacts ?? null,
@@ -598,7 +622,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       ...(isSelf && !recipient ? { isSelf: true } : {}),
       // "" clears the due date; the backend also clears it whenever the profile is not a pregnancy.
       ...(isSelf ? {} : { careType: pregnant ? "pregnant" : child ? "child" : "older", dueDate: pregnant ? dueDate : "",
-        reminderTo, reminderName: receiver === "helper" ? helperName.trim() : null, reminderRelation: receiver === "helper" ? helperRelation.trim() || null : null }),
+        reminderTo, reminderName: receiver === "helper" ? helperName.trim() : null, reminderRelation: receiver === "helper" ? helperRelation.trim() || null : null,
+        checkinEnabled: checkinOn, reminderLanguage: reminderTo === "person" ? "" : reminderLang }),
     };
     setBusy(true);
     let recipientId = recipient?.id;
@@ -631,23 +656,28 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     await onSaved(recipientId);
     setBusy(false);
   };
+  // No age for a pregnancy or a child (the due date / date of birth say more): the relation then stands alone.
+  const relationField = <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); setRelationTouched(true); if (!callTouched) setCallName(defaultCallName(event.target.value, language) || (followsName(careType) ? firstName : "")); }}>{relation === "" && <option value="">{t("relationChoose")}</option>}{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>;
   return (
     <main className="scroll-page no-nav">
-      <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : pregnant ? t(recipient ? "titleEditPregnant" : "titleNewPregnant") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : pregnant ? t("subtitlePregnant") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
+      <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : pregnant ? t(recipient ? "titleEditPregnant" : "titleNewPregnant") : child ? t(recipient ? "titleEditChild" : "titleNewChild") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : pregnant ? t("subtitlePregnant") : child ? t("subtitleChild") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
       <form id="parent-form" className="form-card" onSubmit={saveProfile} noValidate>
         {!isSelf && <CareTypePicker value={careType} onChange={chooseCareType} />}
         {pregnant && <Field id="f-dueDate" label={t("dueDate")} error={errors["f-dueDate"]} hint={t("dueDateHint")}><input {...fieldProps("f-dueDate", errors)} name="dueDate" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></Field>}
         {child && <ChildDetailsFields value={childDetails} onChange={setChildDetails} today={todayIn(zoneValue)} errors={errors} guardianLocked={guardianDone} />}
-        <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
-        {!isSelf && <div className="two-col">
+        <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} value={nameText} onChange={(event) => changeName(event.target.value)} /></Field>
+        {!isSelf && careType === "older" && <div className="two-col">
           <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>
-          <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); if (!callTouched) setCallName(defaultCallName(event.target.value, language)); }}>{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>
+          {relationField}
         </div>}
-        {!isSelf && <Field id="f-callName" label={t("callName")} hint={t(pk("callNameHint"))}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
-        {!isSelf && <ReceiverChoice mode={receiver} onMode={chooseReceiver} call={callName.trim() || t("receiverPersonFallback")} otherName={receiverName(storedReceiver) || t("receiverFamilyMember")}
+        {!isSelf && careType !== "older" && relationField}
+        {!isSelf && <Field id="f-callName" label={t(pk("callName"))} hint={t(pk("callNameHint"))}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
+        {!isSelf && <ReceiverChoice mode={receiver} onMode={chooseReceiver} call={callName.trim()} chip={t(pregnant ? "receiverPersonFallbackPregnant" : "receiverPersonFallback")} careType={careType} otherName={receiverName(storedReceiver) || t("receiverFamilyMember")}
           helperName={helperName} helperRelation={helperRelation} onHelperName={setHelperName} onHelperRelation={setHelperRelation} nameError={errors["f-helperName"]} />}
-        <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t(pk("whatsappHint")) : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t("receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t(pk("whatsappHint")) : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t(pregnant ? "personWordPregnant" : child ? "personWordChild" : "receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {sharedWith && <p className="form-note" role="status">{receiver === "caregiver" && sharedWith.isSelf ? t("sharedNumberMe") : t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
+        {!isSelf && receiver !== "person" && <ReceiverLanguageField value={reminderLang} onChange={setReminderLang} mode={receiver} name={receiver === "helper" ? helperName : receiver === "other" ? receiverName(storedReceiver) : ""} />}
+        {!isSelf && !child && receiver === "person" && <CheckinSwitch on={checkinOn} pregnant={pregnant} onChange={(on) => { setCheckinOn(on); setCheckinTouched(true); }} />}
         <Field id="f-timezone" label={t(pk("timezone"))} hint={t(pk("timezoneHint"))}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
         {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
@@ -1134,6 +1164,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   const checkinCard = () => {
     if (!consented || recipient?.is_self) return null;   // no "are you okay" check-in for yourself
     if (receiverOf(recipient).reminder_to !== "person") return null;   // nor when a helper / the family gets the reminders (ReceiverNote says so)
+    if (!hasCheckin(recipient)) return null;   // nor when the family switched the daily check-in off (migration 0050)
     if (checkin?.status === "missed") {
       return (
         <section className="alert-card">
@@ -1909,6 +1940,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   const t = useTranslations("family");
   const td = useTranslations("doctorSummary");
   const ti = useTranslations("invites");
+  const tWho = useTranslations("who");
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { let cancelled = false; loadIsAdmin().then((v) => { if (!cancelled) setIsAdmin(v); }).catch(() => {}); return () => { cancelled = true; }; }, []);
   const language = useLocale() as Language;
@@ -1966,7 +1998,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <ActivityLink go={go} />
       <VaccinesLink go={go} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
-      <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{tWho("familyWhatsappSub", receiverValues(recipient, userId, { call, you: tWho("you"), someone: tWho("someone") }))}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><Icon3D name="chart" /><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
       <button className="feature-link" onClick={() => go("feedback")}><Icon3D name="feedback" /><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>

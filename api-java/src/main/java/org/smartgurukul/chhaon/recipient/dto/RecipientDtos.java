@@ -18,7 +18,7 @@ public final class RecipientDtos {
     public record ContactDto(String name, String phone) {}
 
     /*
-     * careType: "older" | "pregnant" ("child" is not offered yet). Left out: "older" on create, unchanged on update.
+     * careType: "older" | "pregnant" | "child" (a child never has reminderTo = person: 400). Left out: "older" on create, unchanged on update.
      * dueDate: "YYYY-MM-DD", pregnant only. Left out or null: unchanged on update; "" clears it. A profile that is not a
      * pregnancy never keeps a due date (switching away from pregnant clears it).
      */
@@ -47,7 +47,11 @@ public final class RecipientDtos {
             // who gets the WhatsApp reminders (docs/reminder-receiver.md): person (default) | caregiver | helper
             String reminderTo,
             @Size(max = 60) String reminderName,
-            @Size(max = 30) String reminderRelation) {
+            @Size(max = 30) String reminderRelation,
+            // daily check-in on/off; null = default (create: off for a pregnancy, else on) / keep (update)
+            Boolean checkinEnabled,
+            // en | hi for a helper / family member who gets the reminders; null or "" = the person's language
+            String reminderLanguage) {
     }
 
     /** Update a parent profile. Editable fields only; is_self and circle are immutable. */
@@ -73,7 +77,11 @@ public final class RecipientDtos {
             // who gets the WhatsApp reminders; null = keep what is stored (an older app version)
             String reminderTo,
             @Size(max = 60) String reminderName,
-            @Size(max = 30) String reminderRelation) {
+            @Size(max = 30) String reminderRelation,
+            // daily check-in on/off; null = default (create: off for a pregnancy, else on) / keep (update)
+            Boolean checkinEnabled,
+            // en | hi for a helper / family member who gets the reminders; null or "" = the person's language
+            String reminderLanguage) {
     }
 
     public record RecipientResponse(
@@ -106,6 +114,8 @@ public final class RecipientDtos {
             String reminderTo,
             String reminderName,
             String reminderRelation,
-            String reminderUserId) {
+            String reminderUserId,
+            boolean checkinEnabled,
+            String reminderLanguage) {
     }
 }

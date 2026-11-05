@@ -125,4 +125,13 @@ public class CareRecipient {
     /** The family member who gets the reminders when reminderTo = caregiver. */
     @Column(name = "reminder_user_id")
     private UUID reminderUserId;
+
+    // --- Round 2 "who and how" (migration 20261105000050) ---
+    /** The daily "How are you?" check-in (only ever sent when the person gets the reminders themself). New pregnancies: off. */
+    @Column(name = "checkin_enabled", nullable = false)
+    private boolean checkinEnabled = true;
+
+    /** en | hi: language of the messages for a helper / family member who gets the reminders; null = the person's language. */
+    @Column(name = "reminder_language")
+    private String reminderLanguage;
 }

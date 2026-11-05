@@ -108,3 +108,36 @@ you"). STOP / "no" are reported as the helper's ("Sunita (maid), who gets Papa's
   bubbles, no fake buttons.
 * **Vaccine WhatsApp** to the child's reminder receiver (`VaccineReminderService#sendWhatsApp`): see that class and migration
   `20261105000051_vaccine_whatsapp.sql` (deploy it before or after the backend; without it no vaccine WhatsApp is sent).
+
+## Round 2: "who and how" (2026-11-05, branch `r1-who-and-how`, migration 0050)
+
+Migration `supabase/migrations/20261105000050_who_and_how.sql` (idempotent). **Deploy order: paste it into the Sydney SQL editor BEFORE
+deploying the backend** (the backend maps `checkin_enabled` and `reminder_language` and would not start without them). pgTAP:
+`supabase/tests/who_and_how.test.sql`.
+
+* **A child never gets the reminders.** The form offers only "Me" and "Someone else" for a child (default "Someone else"; an older child
+  profile still set to "the child" opens on "Someone else"). The backend answers 400 for `careType = child` with `reminderTo = person`
+  (also when `reminderTo` is left out on create, and when an edit would make a person-receiver profile a child). Not enforced in the
+  database: child rows created before this change may still say `person`, and the vaccine / guardian endpoints update the same row, so a
+  check there would block them. For a child the form hides Age (the date of birth says it), picks no relation and calls the child by the
+  first name; titles "Add a child" / "Child's details", "Child's name", "Child's time zone".
+* **Relations:** son, daughter, grandson, granddaughter, wife, husband (web, backend, DB check). No call-name defaults for them. A new
+  pregnancy starts as "Wife" and is called by her first name (no Age box); `spouse` stays valid for existing profiles.
+* **Daily check-in switch** `care_recipients.checkin_enabled boolean not null default true`. A NEW pregnancy is created with it off
+  (backend default when the app does not send it). **Existing pregnancy rows are left on** (they already get it; a silent stop would
+  surprise them); the family can switch it off in the form. The switch shows only when the person gets the reminders themself (there
+  is no check-in otherwise). The scheduler skips check-ins when it is false, read as `to_jsonb(r)->>'checkin_enabled'` (works before the
+  migration). Today shows nothing about the check-in when it is off. API: `checkinEnabled` (create: null = default; update: null = keep).
+* **The receiver's own language** `care_recipients.reminder_language` (`en` | `hi` | null = the person's language). Shown in the form only
+  when a helper or a family member gets the reminders ("Language for Sunita's messages" / "Language for your reminder messages"); always
+  cleared when the person gets them. API: `reminderLanguage` (update: null = keep, "" = clear; anything other than en / hi = 400).
+  **For the message texts (R2):** pick the language with `RecipientLanguage.forReceiver(row)` (`api-java/.../recipient/RecipientLanguage.java`;
+  select `r.reminder_to, r.language, to_jsonb(r)->>'reminder_language' reminder_language`) or in SQL
+  `case when r.reminder_to <> 'person' then coalesce(to_jsonb(r)->>'reminder_language', r.language) else r.language end`.
+* **Who-receives wording:** `receiverLabel(recipient, me, words)` / `receiverValues(...)` in `web/src/lib/reminderReceiver.ts` give
+  "Kamla (Nani)" / "you" / "Shivani" (plus an ICU `me` switch for the grammar). Used on Safety net (title, intro, "if ... says nothing
+  for days"; the check-in timings are hidden when there is no check-in), Doctor visits (empty text, "Remind ... on WhatsApp"), the
+  doctor summary note ("Based on the replies to WhatsApp reminders (sent to Kamla (Nani))", never "you": the sheet is for the doctor)
+  and the Family tab ("See the messages Kamla (Nani) receives"). `hasCheckin(recipient)` says whether there is a daily check-in.
+* Not changed here (other agents' files): the WhatsApp preview screen, the emergency card labels ("माता-पिता का टाइम ज़ोन" there),
+  the message texts.

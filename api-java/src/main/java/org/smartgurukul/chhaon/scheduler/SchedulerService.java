@@ -322,6 +322,8 @@ public class SchedulerService {
                 "and r.is_self = false " +
                 // "Are you okay?" is asked of the person only: no check-in when a helper or a family member gets the reminders
                 "and r.reminder_to = 'person' " +
+                // the family can switch the check-in off per person (migration 0050; read defensively: on when the column is missing)
+                "and coalesce((to_jsonb(r)->>'checkin_enabled')::boolean, true) " +
                 // STOP belongs to the NUMBER: never a check-in to a number that opted out, even when another parent record carries it.
                 "and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)" + scopeClause(scope, p, "r");
         int sent = 0;

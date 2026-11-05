@@ -6,6 +6,8 @@ import { ConfirmSheet } from "./Invites";
 import { createAppointment, deleteAppointment, loadAppointments, updateAppointment, doctorName, localTimeExists, utcToZoned, zonedToUtc, type Appointment } from "../lib/appointments";
 import { formatClock, formatDate, type Language } from "../lib/format";
 import type { Recipient } from "../lib/api";
+import { authUserId } from "../lib/auth";
+import { receiverValues } from "../lib/reminderReceiver";
 import { isPregnancy } from "../lib/pregnancy";
 import { UsualChecks, type CheckPrefill } from "./Pregnancy";
 import { Icon3D } from "./Icon3D";
@@ -56,6 +58,9 @@ export function AppointmentSheet({ recipient, existing, prefill, onClose, onSave
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const canRemind = !!recipient.consent_at && !recipient.opted_out_at;
+  // The reminder goes to whoever gets this person's reminders: the person, a helper, or you (lib/reminderReceiver.ts).
+  const tw = useTranslations("who");
+  const who = receiverValues(recipient, authUserId(), { call, you: tw("you"), someone: tw("someone") });
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -112,7 +117,7 @@ export function AppointmentSheet({ recipient, existing, prefill, onClose, onSave
           <Field id="a-location" label={t("location")}><input id="a-location" name="location" maxLength={200} autoComplete="off" placeholder={t("locationPlaceholder")} defaultValue={existing?.location ?? ""} /></Field>
           <Field id="a-notes" label={t("notes")}><textarea id="a-notes" name="notes" maxLength={500} rows={2} defaultValue={existing?.notes ?? prefill?.notes ?? ""} /></Field>
           <label className="toggle-row">
-            <span><strong>{t("remind", { call })}</strong><small>{canRemind ? t("remindHint") : t("remindNoConsent", { call })}</small></span>
+            <span><strong>{tw("apptRemind", who)}</strong><small>{canRemind ? t("remindHint") : tw("apptRemindNoConsent", who)}</small></span>
             <input type="checkbox" role="switch" checked={remind} onChange={(event) => setRemind(event.target.checked)} /><i className={remind ? "" : "off"} />
           </label>
           <div className="stack">
@@ -129,6 +134,7 @@ export function AppointmentSheet({ recipient, existing, prefill, onClose, onSave
 
 export function AppointmentsScreen({ go, recipient }: { go: (screen: "today") => void; recipient: Recipient | null }) {
   const t = useTranslations("appointments");
+  const tw = useTranslations("who");
   const language = useLocale() as Language;
   const [list, setList] = useState<Appointment[] | null>(null);
   const [error, setError] = useState(false);
@@ -162,7 +168,7 @@ export function AppointmentsScreen({ go, recipient }: { go: (screen: "today") =>
       <AppHeader title={t("title")} subtitle={t("subtitle", { call: parentCall(recipient, language) })} back={() => go("today")} action={<Icon3D name="calendar" size={40} eager className="header-3d" />} />
       {error && <p role="alert" className="form-error">{t("loadFailed")}</p>}
       {list === null && !error && <div className="skeleton card" aria-busy="true" />}
-      {list !== null && upcoming.length === 0 && <div className="empty-note"><Icon3D name="calendar" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call: parentCall(recipient, language) })}</p></div>}
+      {list !== null && upcoming.length === 0 && <div className="empty-note"><Icon3D name="calendar" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{tw("apptEmptyBody", receiverValues(recipient, authUserId(), { call: parentCall(recipient, language), you: tw("you"), someone: tw("someone") }))}</p></div>}
       {upcoming.length > 0 && <section className="appt-list" aria-label={t("upcoming")}>{upcoming.map((a) => card(a, false))}</section>}
       {past.length > 0 && (
         <>

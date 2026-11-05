@@ -712,3 +712,63 @@ naturally as a short line under a name.
 | notif.group_other | ऐसी {count} सूचनाएँ | {count} alerts like this | |
 | notif.deleteGroup | ये {count} सूचनाएँ हटाएँ | Delete these {count} notifications | |
 | notif.noneForPerson | अभी {call} के लिए कोई सूचना नहीं। | Nothing for {call} right now. | |
+
+## Part R1: who gets the reminders, and how (added 2026-11-05, branch `r1-who-and-how`)
+
+App only (the person form, Safety net, Doctor visits, Doctor summary, Family). Nothing new is sent on WhatsApp. Please check:
+the feminine forms for a pregnancy ("जवाब देंगी", "महसूस कर रही हैं"); "पोता / नाती" and "पोती / नातिन" for grandson / granddaughter;
+"{me, select, yes {...} other {...}}" is a switch: the first text is used when YOU get the reminders ("आपको"), the second names the
+receiver ("Kamla (Nani) को"). `who.you` (आप) is put in place of {name} in sentences that read the same for आप and a name.
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| profile.relations.son | बेटा | Son | |
+| profile.relations.daughter | बेटी | Daughter | |
+| profile.relations.grandson | पोता / नाती | Grandson | |
+| profile.relations.granddaughter | पोती / नातिन | Granddaughter | |
+| profile.relations.wife | पत्नी | Wife | |
+| profile.relations.husband | पति | Husband | |
+| profile.relationChoose | चुनें | Choose | |
+| profile.titleNewChild | बच्चे को जोड़ें | Add a child | |
+| profile.titleEditChild | बच्चे की जानकारी | Child's details | |
+| profile.subtitleChild | बच्चे की दवाइयाँ और टीके | Medicines and vaccines for your child | |
+| profile.nameChild | बच्चे का नाम | Child's name | |
+| profile.errNameChild | कृपया बच्चे का नाम लिखें। | Please enter the child's name. | |
+| profile.callNamePregnant | आप उन्हें क्या कहकर बुलाते हैं? | What do you call her? | |
+| profile.callNameChild | आप बच्चे को क्या कहकर बुलाते हैं? | What do you call the child? | |
+| profile.callNameHintChild | अलर्ट और रिमाइंडर में यही नाम इस्तेमाल होगा, जैसे आरव, मुन्ना। | Used in alerts and reminders, e.g. Aarav, Munna. | |
+| profile.whatsappHintChild | उस व्यक्ति का नंबर जिसे रिमाइंडर मिलेंगे। | The number of the person who gets the reminders. | |
+| profile.timezoneChild | बच्चे का टाइम ज़ोन | Child's time zone | |
+| profile.timezoneHintChild | रिमाइंडर बच्चे की जगह के इस समय पर जाएँगे। | Reminders go out at this time of day where the child lives. | |
+| profile.noteChild | रिमाइंडर भेजने से पहले हम उस व्यक्ति से WhatsApp पर सहमति माँगेंगे जिसे रिमाइंडर मिलेंगे। | We'll ask the person who gets the reminders for permission on WhatsApp before sending any. | |
+| profile.receiverPersonFallbackPregnant | उन्हें | Her | |
+| profile.personWordPregnant | उन | her | |
+| profile.personWordChild | बच्चे | the child | |
+| profile.receiverHintPersonNoName | रिमाइंडर उनके अपने WhatsApp पर जाएँगे। दवा लेने के बाद वे 1 लिखकर जवाब देंगे। | Reminders go to their own WhatsApp. They reply 1 after taking the medicine. | |
+| profile.receiverHintPersonNoNamePregnant | रिमाइंडर उनके अपने WhatsApp पर जाएँगे। दवा लेने के बाद वे 1 लिखकर जवाब देंगी। | Reminders go to her own WhatsApp. She replies 1 after taking the medicine. | |
+| profile.receiverHintPersonPregnant | रिमाइंडर {call} के अपने WhatsApp पर जाएँगे। दवा लेने के बाद {call} 1 लिखकर जवाब देंगी। | Reminders go to {call}'s own WhatsApp. {call} replies 1 after taking the medicine. | |
+| profile.receiverHintMeNoName | रिमाइंडर आपके WhatsApp पर आएँगे। दवा ले लेने के बाद 1 लिखें। तब रोज़ का चेक-इन नहीं होगा। | Reminders come to your WhatsApp. Reply 1 once the medicine is taken. There is no daily check-in then. | |
+| profile.receiverHintMeChild | रिमाइंडर आपके WhatsApp पर {call} के नाम से आएँगे। दवा देने के बाद 1 लिखें। | Reminders come to your WhatsApp, with {call}'s name. Reply 1 once you have given the medicine. | |
+| profile.receiverHintMeChildNoName | रिमाइंडर आपके WhatsApp पर बच्चे के नाम से आएँगे। दवा देने के बाद 1 लिखें। | Reminders come to your WhatsApp, with the child's name. Reply 1 once you have given the medicine. | |
+| profile.receiverHintHelperChild | माँ, नानी, आया या जो भी दवा देते हैं, उनके लिए। दवा देने के बाद वे 1 लिखेंगे। | For the mother, Nani, a nanny or whoever gives the medicine. They reply 1 once it is given. | |
+| profile.checkinSwitch | रोज़ का 'आप कैसे हैं?' चेक-इन | Daily 'How are you?' check-in | |
+| profile.checkinSwitchOn | हर सुबह हम WhatsApp पर पूछते हैं कि सब ठीक है या नहीं, और जवाब न आने पर आपको बताते हैं। | Every morning we ask on WhatsApp if all is well, and tell you if there is no reply. | |
+| profile.checkinSwitchOnPregnant | हर सुबह हम WhatsApp पर प्यार से पूछते हैं कि वे कैसा महसूस कर रही हैं, और जवाब न आने पर आपको बताते हैं। | Every morning we gently ask on WhatsApp how she is feeling, and tell you if there is no reply. | |
+| profile.checkinSwitchOff | बंद: सिर्फ़ दवा के रिमाइंडर जाएँगे। | Off: only the medicine reminders are sent. | |
+| profile.receiverLanguage | {name} के संदेशों की भाषा | Language for {name}'s messages | |
+| profile.receiverLanguageMe | आपके रिमाइंडर संदेशों की भाषा | Language for your reminder messages | |
+| profile.receiverLanguageThem | उनके संदेशों की भाषा | Language for their messages | |
+| profile.receiverLanguageHint | WhatsApp रिमाइंडर इसी भाषा में भेजे जाएँगे। | The WhatsApp reminders are sent in this language. | |
+| who.you | आप | you | |
+| who.someone | कोई | someone | |
+| who.safetySubtitle | जब {name} जवाब न दें तो क्या होता है | What happens when {me, select, yes {you do} other {{name} does}} not reply | |
+| who.safetyIntro | अगर {name} किसी रिमाइंडर का जवाब न दें, तो हम पहले एक हल्की याद भेजते हैं और आपको सिर्फ़ ज़रूरत पर बताते हैं। किसी भी मोड़ पर जवाब आने से सब रुक जाता है। | If {me, select, yes {you do} other {{name} does}} not answer a reminder, we send one gentle nudge first and tell you only when it matters. A reply at any point stops everything. | |
+| who.safetySilentTitle | अगर {name} कई दिन कुछ न कहें | If {me, select, yes {you say} other {{name} says}} nothing for days | |
+| who.safetySpeedLineNoCheckin | दवाएँ: {a} मिनट बाद याद, {b} मिनट बाद अलर्ट। | Medicines: nudge after {a} min, alert after {b} min. | |
+| who.safetyAlertHintNoCheckin | एक बार टैप भूल जाना अक्सर आपातकाल नहीं होता, इसलिए हम उसे दर्ज करते हैं पर अलर्ट नहीं देते। ज़रूरी दवाओं पर पहली चूक पर ही अलर्ट मिलता है। | One forgotten tap is usually not an emergency, so we record it without alerting you. Critical medicines always alert on the first miss. | |
+| who.safetySilentHintNoCheckin | {days} दिन तक कोई जवाब न आने पर हम अतिरिक्त याद और अलर्ट रोक देते हैं और आपको एक सारांश भेजते हैं। रिमाइंडर चलते रहते हैं। | After {days} days without any reply we stop the extra nudges and alerts and send you one summary. Reminders continue. | |
+| who.apptEmptyBody | मुलाक़ात जोड़ें, तो {me, select, yes {आपको} other {{name} को}} एक दिन पहले और उसी सुबह WhatsApp पर प्यारा सा रिमाइंडर मिलेगा। | Add a doctor visit and {me, select, yes {you get} other {{name} gets}} a gentle WhatsApp reminder the day before and on the morning of the visit. | |
+| who.apptRemind | {me, select, yes {मुझे} other {{name} को}} WhatsApp पर याद दिलाएँ | Remind {me, select, yes {me} other {{name}}} on WhatsApp | |
+| who.apptRemindNoConsent | {me, select, yes {आपने} other {{name} ने}} अभी WhatsApp संदेशों के लिए हाँ नहीं कही है, इसलिए अभी रिमाइंडर नहीं जाएगा। | {me, select, yes {You have} other {{name} has}} not agreed to WhatsApp messages yet, so no reminder will be sent for now. | |
+| who.doctorNote | यह WhatsApp रिमाइंडर पर आए जवाबों पर आधारित है (रिमाइंडर {name} को भेजे गए)। "पुष्ट नहीं" का मतलब है कि जवाब नहीं आया; हो सकता है दवाई फिर भी ली गई हो। रोकी गई या अभी इंतज़ार में रहने वाली खुराकें गिनी नहीं गईं। यह चिकित्सा सलाह नहीं है। | Based on the replies to WhatsApp reminders (sent to {name}). "Not confirmed" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice. | |
+| who.familyWhatsappSub | {me, select, yes {आपको} other {{name} को}} मिलने वाले संदेश देखें | See the messages {me, select, yes {you receive} other {{name} receives}} | |
