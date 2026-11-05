@@ -77,10 +77,10 @@ but please handle it before real families join (match the old formats, or let an
   softened (same hue and brightness, less saturation; `DEFAULT_SOFTEN` in `web/scripts/build-palettes.mjs`, `theme.css` untouched).
   Users can also pick Classic (the first teal), Teal, Blue, Saffron, Rose or their own colour.
 
-## Still a question for you
+## Answered
 
-**Storage files from the old Mumbai project:** before the move, did you copy the medicine photos and report files? If you have a copy,
-`supabase/maintenance/copy_storage.mjs` can load it.
+**Storage files from the old Mumbai project:** not copied before the move, so the old medicine photos and report files are LOST
+(confirmed 2026-11-05). Only the owner's own family/test data is affected; the dangling links in the database are being cleaned up.
 
 ## Rules that still apply
 

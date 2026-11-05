@@ -530,3 +530,9 @@ Idea from Dr. Deepak Birla (2026-11-05): parents and home helpers who cannot rea
 - [ ] Later, if asked: show the colour on the Today screen and the emergency card; a "two colours" option for capsules.
 - Note: 2 Java tests (`OtpServiceTest`) fail on `main` too, before this change; not looked into yet.
 
+## 2026-11-05: old storage files (Mumbai) are LOST
+The buddy confirmed the medicine photos and report files of the old Mumbai project were not copied before the move to Sydney.
+Only the owner's own family/test data is affected. Clean-up: count the rows whose file is missing (medicines.photo_url not in
+storage.objects bucket `medicine-photos`; document_files.path not in bucket `reports`), then clear those photo links and delete report
+entries whose files are all gone. `supabase/maintenance/copy_storage.mjs` is no longer needed for this.
+
