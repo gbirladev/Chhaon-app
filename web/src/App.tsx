@@ -46,6 +46,7 @@ import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, toda
 import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
+import { WeeklyCard } from "./screens/WeeklySummary";
 import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 
@@ -1842,6 +1843,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       </section>}
       {recipient?.is_self && <p className="form-note">{t("selfNote")}</p>}
       <ReceiverNote recipient={recipient} userId={userId} call={call} />
+      <WeeklyCard recipient={recipient} />
       {circleId && !recipient?.is_self && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
       <div className="section-title members-title"><div><h2>{t("membersTitle")}</h2><p>{t("membersSub")}</p></div></div>
       <AlertsCard />

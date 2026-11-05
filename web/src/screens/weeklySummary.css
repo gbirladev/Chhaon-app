@@ -1,0 +1,15 @@
+/* "This week" card on the Family tab (weekly summary). Uses the shared colour tokens so every theme and dark mode work. */
+.weekly-card { margin: 0 0 16px; padding: 16px; border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px var(--sh-1e443f-a06); overflow-wrap: anywhere; }
+.weekly-card header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.weekly-card h2 { margin: 0; font-size: 1.0625rem; letter-spacing: -.2px; }
+.weekly-card h2 em { font-style: normal; font-weight: 600; color: var(--text-muted); }
+.weekly-card header small { color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.weekly-score { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.weekly-score strong { font-size: 1rem; }
+.weekly-bar { display: block; height: 8px; border-radius: 99px; background: var(--s-e6f2ee); overflow: hidden; }
+.weekly-bar span { display: block; height: 100%; border-radius: 99px; background: var(--primary-text); }
+.weekly-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: max(0.875rem, 12px); line-height: 1.45; }
+.weekly-card dt { color: var(--text-muted); }
+.weekly-card dd { margin: 0; }
+.weekly-quiet { margin: 0 0 6px; color: var(--text-muted); font-size: max(0.875rem, 12px); }
+.weekly-note { margin: 12px 0 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.45; }

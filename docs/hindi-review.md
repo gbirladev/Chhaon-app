@@ -398,3 +398,41 @@ naturally and that "*1* या 👍 भेजें" is clear to an older reader
 
 Unchanged: "फ़ोन चाहिए तो *2* लिखें 📞", "नहीं चाहिए तो *2* लिखें", the answers we send back, and the caregiver's alert question
 (a reaction does not answer that one).
+
+## Part 12: weekly summary to the family (added 2026-11-05, branch `f3-weekly-summary`)
+
+Sent on Sunday morning to a caregiver who turned on WhatsApp alerts (the reader is the adult child, not the person). One message
+covers everyone they care for. Code: `api-java/.../whatsapp/WeeklySummaryTexts.java`; app card: `weekly.*` in `web/src/messages/hi.json`.
+Please check especially the short day and month names and "छूटी" / "किसने दी" as line labels.
+
+**WhatsApp**
+
+| What | Hindi | English | OK? |
+|---|---|---|---|
+| Header (one person) | छाँव साप्ताहिक 🗓️ · मम्मी | Chhaon weekly 🗓️ · Mummy | |
+| Period | 30 अक्टू – 5 नव | 30 Oct – 5 Nov | |
+| Pregnancy week | हफ़्ता 24 | Week 24 | |
+| Confirmed | दवा की पुष्टि: 28 में से 26 | Medicines confirmed: 26 of 28 | |
+| Missed | छूटी: Metformin मंगल रात, गुरु रात | Missed: Metformin Tue night, Thu night | |
+| More missed | (+3 और) | (+3 more) | |
+| Given by | किसने दी: Sunita 24 · आप 2 | Given by: Sunita 24 · you 2 | |
+| Given in the app, name unknown | परिवार | family | |
+| Check-ins | चेक-इन का जवाब: 7 में से 6 | Check-ins answered: 6 of 7 | |
+| Refill | जल्द मँगाएँ: Metformin (6 बची) / (ख़त्म) | Refill soon: Metformin (6 left) / (none left) | |
+| Next visit | अगली मुलाक़ात: Dr Mehta, मंगल 11 नव, सुबह 11:00 | Next visit: Dr Mehta, Tue 11 Nov, 11:00 AM | |
+| Next vaccine | अगला टीका: MMR (ख़ुराक 1), मंगल 11 नव / (बूस्टर 1) | Next vaccine: MMR (dose 1), Tue 11 Nov / (booster 1) | |
+| More people | +2 और, ऐप में देखें। | +2 more in the app. | |
+| Footer | पूरी जानकारी छाँव ऐप में। / ये अलर्ट बंद करने के लिए STOP लिखें। | Full details in the Chhaon app. / Reply STOP to turn off these alerts. | |
+| Days | सोम मंगल बुध गुरु शुक्र शनि रवि | Mon ... Sun | |
+| Months | जन फ़र मार्च अप्रैल मई जून जुलाई अग सित अक्टू नव दिस | Jan ... Dec | |
+| Parts of the day | सुबह / दोपहर / शाम / रात | morning / afternoon / evening / night | |
+
+**App ("This week" card on the Family tab)**
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| weekly.title | इस हफ़्ते | This week | |
+| weekly.quiet | पिछले 7 दिनों में {call} के लिए दिखाने को कुछ नहीं है। | Nothing to show for {call} in the last 7 days. | |
+| weekly.checkinsValue | {total} में से {answered} का जवाब मिला | {answered} of {total} answered | |
+| weekly.note | पिछले 7 दिन। जिन सदस्यों ने WhatsApp अलर्ट चालू किए हैं, उन्हें यह रविवार सुबह भी मिलता है। | The last 7 days. Family members with WhatsApp alerts on also get this on Sunday morning. | |
+| weekly.missed / givenBy / refill / nextVisit / nextVaccine | छूटी / किसने दी / जल्द मँगाएँ / अगली मुलाक़ात / अगला टीका | Missed / Given by / Refill soon / Next visit / Next vaccine | |

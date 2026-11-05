@@ -1383,5 +1383,30 @@
     "notChild": "टीकों की योजना सिर्फ़ बच्चे की प्रोफ़ाइल के लिए है।",
     "notifDue": "{call}: {vaccine} की तारीख़ {date} है, डॉक्टर की सलाह के अनुसार।",
     "notifDueGeneric": "{call} का एक टीका जल्द है, डॉक्टर की सलाह के अनुसार।"
+  },
+  "weekly": {
+    "title": "इस हफ़्ते",
+    "period": "{from} – {to}",
+    "pregnancyWeek": "हफ़्ता {n}",
+    "quiet": "पिछले 7 दिनों में {call} के लिए दिखाने को कुछ नहीं है।",
+    "confirmed": "दवा की पुष्टि: {total} में से {confirmed}",
+    "missed": "छूटी",
+    "givenBy": "किसने दी",
+    "you": "आप",
+    "family": "परिवार",
+    "checkins": "चेक-इन",
+    "checkinsValue": "{total} में से {answered} का जवाब मिला",
+    "refill": "जल्द मँगाएँ",
+    "left": "{medicine} ({n} बची)",
+    "noneLeft": "{medicine} (ख़त्म)",
+    "nextVisit": "अगली मुलाक़ात",
+    "nextVaccine": "अगला टीका",
+    "note": "पिछले 7 दिन। जिन सदस्यों ने WhatsApp अलर्ट चालू किए हैं, उन्हें यह रविवार सुबह भी मिलता है।",
+    "part": {
+      "morning": "सुबह",
+      "afternoon": "दोपहर",
+      "evening": "शाम",
+      "night": "रात"
+    }
   }
 }

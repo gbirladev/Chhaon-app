@@ -1383,5 +1383,30 @@
     "notChild": "The vaccine plan is only for a child's profile.",
     "notifDue": "{call}: {vaccine} is due on {date}, as advised by your doctor.",
     "notifDueGeneric": "A vaccine for {call} is due soon, as advised by your doctor."
+  },
+  "weekly": {
+    "title": "This week",
+    "period": "{from} – {to}",
+    "pregnancyWeek": "Week {n}",
+    "quiet": "Nothing to show for {call} in the last 7 days.",
+    "confirmed": "Medicines confirmed: {confirmed} of {total}",
+    "missed": "Missed",
+    "givenBy": "Given by",
+    "you": "you",
+    "family": "family",
+    "checkins": "Check-ins",
+    "checkinsValue": "{answered} of {total} answered",
+    "refill": "Refill soon",
+    "left": "{medicine} ({n} left)",
+    "noneLeft": "{medicine} (none left)",
+    "nextVisit": "Next visit",
+    "nextVaccine": "Next vaccine",
+    "note": "The last 7 days. Family members with WhatsApp alerts on also get this on Sunday morning.",
+    "part": {
+      "morning": "morning",
+      "afternoon": "afternoon",
+      "evening": "evening",
+      "night": "night"
+    }
   }
 }
