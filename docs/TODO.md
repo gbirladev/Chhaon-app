@@ -502,3 +502,11 @@ The old gateway number was banned on 2026-11-05. The owner linked a NEW number t
 - [ ] Restart reminders for ONE parent first (CHHAON_SCHEDULER_ONLY_RECIPIENT), then everyone.
 - [ ] Lower ban risk: only consented parents, low volume at first, no burst sends, no links; keep a spare number ready.
 - [ ] Still open: the "0 of 1 taken" reply seen before the ban (SESSION_HANDOFF.md 0.6).
+
+## Note 2026-11-05: a new medicine appears on Today only after the next scheduler run (up to 5 minutes)
+Saving a medicine stores its schedule; the day's dose entries (`dose_events`) are made by the scheduler's `generate_dose_events`,
+which runs every 5 minutes. So a medicine added now shows on the Today screen within about 5 minutes, not at once.
+Also by design: a reminder time that has already passed today gets no dose today (`scheduled_at >= created_at`); the first dose is the
+next one in the future (for example an 08:00 medicine added at 14:30 starts tomorrow). Nothing is sent late.
+- [ ] Possible improvement (not decided): create today's future doses at once when a medicine is saved, and/or show a short note after saving
+      ("It will appear on Today within 5 minutes" / "First reminder: tomorrow 8:00").
