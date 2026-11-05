@@ -7,6 +7,10 @@
   var root = document.documentElement;
   if (choice === "light" || choice === "dark") { root.setAttribute("data-theme", choice); root.style.colorScheme = choice; }  // colorScheme: dark canvas even before the CSS arrives
   var dark = choice === "dark" || (choice !== "light" && !!window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // Colour theme (src/lib/palette.ts): no attribute = the Smart Gurukul default.
+  var palette = null;
+  try { palette = localStorage.getItem("chhaon-palette"); } catch (e) { /* storage blocked */ }
+  if (palette && /^(teal|blue|green|saffron|rose)$/.test(palette)) root.setAttribute("data-palette", palette);
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", dark ? "#14101f" : "#faf8fd");
 })();

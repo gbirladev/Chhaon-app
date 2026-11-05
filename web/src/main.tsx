@@ -14,13 +14,16 @@ import '@fontsource/noto-sans-devanagari/devanagari-500.css'
 import '@fontsource/noto-sans-devanagari/devanagari-600.css'
 import '@fontsource/noto-sans-devanagari/devanagari-700.css'
 import './theme.css'
+import './palettes.css'  // extra colour themes; Smart Gurukul (theme.css) stays the default
 import './index.css'
 import './platform.css'
 import './playful.css'
 import { isPublicCardHash } from './lib/emergencyPublic'
 import { initTheme } from './lib/theme'
+import { initPalette } from './lib/palette'
 
 initTheme()
+initPalette()
 
 // The emergency card link (#/e/<token>) opens a tiny standalone page for strangers: it must never load the caregiver
 // app, its login redirects or its data. So the choice is made before anything of the app is imported.

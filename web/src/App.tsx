@@ -17,7 +17,7 @@ import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
 import { ConsentGate, Goodbye, LegalLinks, LegalPage, OfflineBanner, PrivacyData } from "./screens/Privacy";
 import { EmergencyLinkPanel } from "./screens/EmergencyLink";
-import { AppearanceCard } from "./screens/Appearance";
+import { ThemeButton } from "./screens/Appearance";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
@@ -241,10 +241,12 @@ export function AppHeader({
   title,
   subtitle,
   back,
+  action,
 }: {
   title: string;
   subtitle?: string;
   back?: () => void;
+  action?: ReactNode;   // shown at the right end (e.g. the theme button on the Family page)
 }) {
   const t = useTranslations();
   return (
@@ -254,6 +256,7 @@ export function AppHeader({
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
+      {action}
     </header>
   );
 }
@@ -1710,7 +1713,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   const initials = (m: CircleMember) => name(m).split(/\s+/).map((word) => [...word][0] ?? "").join("").slice(0, 2).toUpperCase();
   return (
     <main className="scroll-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle")} />
+      <AppHeader title={t("title")} subtitle={t("subtitle")} action={<ThemeButton />} />
       {!recipient?.is_self && <section className="family-hero">
         <div className="avatar-stack">{members.slice(0, 3).map((m) => <span key={m.userId}>{initials(m)}</span>)}</div>
         <h2>{t("heroTitle", { count: members.length, call })}</h2>
@@ -1746,7 +1749,6 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <LoveLink go={go} hidden={!!recipient?.is_self} />
       <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="heart" /></span><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
       {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
-      <AppearanceCard />
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
   );

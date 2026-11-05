@@ -1186,6 +1186,13 @@
     "note": "Based on {name}'s replies to WhatsApp reminders. \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice."
   },
   "appearance": {
+    "openThemes": "Change colour theme",
+    "themesTitle": "Theme",
+    "themesHint": "Pick the colours you like. You can go back to the Smart Gurukul theme any time.",
+    "defaultTag": "Default",
+    "backToDefault": "Back to default theme",
+    "done": "Done",
+    "palettes": { "gurukul": "Smart Gurukul", "teal": "Teal", "blue": "Blue", "green": "Green", "saffron": "Saffron", "rose": "Rose" },
     "title": "Appearance",
     "hint": "Choose how Chhaon looks on this phone.",
     "system": "System",
