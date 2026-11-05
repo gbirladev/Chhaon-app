@@ -63,6 +63,7 @@ import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
 import { SlimNotice } from "./screens/SlimNotice";
 import { CardIcon } from "./screens/TodayCard";
+import { Logo } from "./screens/Logo";
 
 type Screen =
   | "activity"
@@ -374,7 +375,7 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
   return (
     <main className="onboarding">
       <div className="logo-hero">
-        <div className="brand-mark"><Icon name="heart" size={31} strokeWidth={2.2} /></div>
+        <Logo className="brand-mark" size={50} label="Chhaon" />
         <div className="big-heart">
           <Icon name="heart" size={64} strokeWidth={1.6} />
           {/* Optional photo: drop web/public/welcome-parent.jpg in. Without the file the heart above stays. */}
