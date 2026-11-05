@@ -37,6 +37,7 @@ import { loadSchedulerAge, SCHEDULER_STALE_SECONDS } from "./lib/scheduler";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
+import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import type { PillColour, PillShape } from "./lib/pillLook";
 
@@ -2244,6 +2245,7 @@ export default function App() {
   };
   const signOut = async () => {
     clearToken();
+    forgetDoctorAddresses();
     setSignedIn(false);
     recipientRef.current = null;
     selectedIdRef.current = null;

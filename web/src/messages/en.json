@@ -1191,6 +1191,15 @@
     "count": "{confirmed} of {total}",
     "notActive": "not active now",
     "checkins": "Daily check-in answered on {answered} of {total} days",
+    "forTitle": "Your doctor (optional)",
+    "forHint": "Shown at the top of the summary. Saved only on this phone.",
+    "doctorName": "Doctor's name",
+    "doctorPlaceholder": "For example: Anita Sharma",
+    "clinicName": "Clinic or hospital",
+    "clinicPlaceholder": "For example: City Clinic, Pune",
+    "preparedForBoth": "Prepared for: Dr {doctor}, {clinic}",
+    "preparedForDoctor": "Prepared for: Dr {doctor}",
+    "preparedForClinic": "Prepared for: {clinic}",
     "note": "Based on {name}'s replies to WhatsApp reminders. \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice."
   },
   "appearance": {

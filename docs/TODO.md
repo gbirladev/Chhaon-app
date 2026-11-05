@@ -255,6 +255,11 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
   one tap away; print / save as PDF and share as text. Counts only results (taken, taken late = confirmed; missed = no confirmation; pending,
   sent and skipped are left out), never judges, says "not medical advice", never shows 100% while a dose is unconfirmed. Hindi wording
   (`doctorSummary` in `hi.json`) needs a native read.
+  - [x] **"Prepared for" line (2026-11-05):** two optional fields (doctor's name, clinic or hospital) on the summary screen; shown as "Prepared for:
+        Dr <name>, <clinic>" at the top of the sheet, in the print/PDF and in the shared text (Hindi: "किसके लिए: डॉ. ..."). Kept per parent on this
+        device only (localStorage, cleared on sign-out); the first doctor in the parent's `doctor_contacts` is the starting value. No backend change.
+        Nothing about the doctor is shown to anyone else (Regulation 6.4.1). QR cards: a typed clinic name prints on all 6 cards as
+        "<clinic> / For our patients · हमारे मरीज़ों के लिए".
 - **Parked (decided 2026-11-03): no doctor login for now.** It would make a stranger a viewer of a parent's health data (needs NMC registration
   checks, per-patient consent from the family, an audit log, revoke), doctors rarely adopt another app, the backend login is being moved to the
   Java service, and no doctor has asked yet. The family carries the sheet to the visit instead.

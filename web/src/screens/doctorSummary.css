@@ -4,6 +4,13 @@
 .ds-lang button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--b-dce7e4); background: var(--surface); color: var(--primary-text); font: inherit; font-weight: 700; }
 .ds-lang button[aria-pressed="true"] { background: var(--primary); border-color: var(--b-247c72); color: var(--on-fill); }
 
+/* "Prepared for": the family's own doctor (optional). Only the resulting line prints, never the form. */
+.ds-for { margin: 0 0 14px; }
+.ds-for h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+.ds-for .hint { margin: 2px 0 8px; }
+.ds-for .field { margin-bottom: 10px; }
+.ds-for-line { margin: 8px 0 0; font-weight: 700; }
+
 .ds-sheet { background: var(--surface); border: 1px solid var(--b-dce7e4); border-radius: 16px; padding: 18px 16px; color: var(--text); overflow-wrap: anywhere; }
 .ds-sheet header { padding-bottom: 12px; border-bottom: 2px solid var(--b-247c72); }
 .ds-kicker { margin: 0; font-size: max(0.75rem, 12px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--primary-text); }
@@ -45,7 +52,7 @@
   html.ds-print .phone-frame { max-width: none !important; width: auto !important; height: auto !important; min-height: 0 !important; overflow: visible !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #fff !important; }
   html.ds-print .app-shell > :not(.phone-frame), html.ds-print .phone-frame > :not(main) { display: none !important; }
   html.ds-print .scroll-page { height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; }
-  html.ds-print .page-header, html.ds-print .ds-lang, html.ds-print .ds-actions { display: none !important; }
+  html.ds-print .page-header, html.ds-print .ds-lang, html.ds-print .ds-for, html.ds-print .ds-actions { display: none !important; }
   html.ds-print .ds-sheet { border: 0; border-radius: 0; padding: 0; font-size: 11pt; }
   html.ds-print .ds-sheet h2 { font-size: 18pt; }
   html.ds-print .ds-bar { border: 1px solid #999; background: #fff; }

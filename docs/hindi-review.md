@@ -128,6 +128,25 @@ App screen (`alerts.*` in `web/src/messages/hi.json`, changed because there are 
 "हमने {phone} पर संदेश भेजा है। WhatsApp खोलकर 1 लिखकर भेजें, तब अलर्ट शुरू होंगे।", "इस नंबर की पुष्टि के लिए हम एक संदेश भेजेंगे।
 1 लिखकर भेजने के बाद ही अलर्ट शुरू होंगे।"
 
+## Part 6: "Prepared for" on the doctor summary (added 2026-11-05)
+
+The family can address the doctor summary (Family > Share with doctor) to their own doctor. The last three lines are printed at the top of
+the sheet when it is in Hindi; {doctor} and {clinic} are what the family typed (often in English letters). `doctorSummary.*` in `hi.json`.
+
+| Key | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| forTitle | आपके डॉक्टर (ज़रूरी नहीं) | Your doctor (optional) | |
+| forHint | सारांश में सबसे ऊपर दिखेगा। सिर्फ़ इसी फ़ोन में सेव रहता है। | Shown at the top of the summary. Saved only on this phone. | |
+| doctorName | डॉक्टर का नाम | Doctor's name | |
+| doctorPlaceholder | जैसे: अनीता शर्मा | For example: Anita Sharma | |
+| clinicName | क्लिनिक या अस्पताल | Clinic or hospital | |
+| clinicPlaceholder | जैसे: सिटी क्लिनिक, पुणे | For example: City Clinic, Pune | |
+| preparedForBoth | किसके लिए: डॉ. {doctor}, {clinic} | Prepared for: Dr {doctor}, {clinic} | |
+| preparedForDoctor | किसके लिए: डॉ. {doctor} | Prepared for: Dr {doctor} | |
+| preparedForClinic | किसके लिए: {clinic} | Prepared for: {clinic} | |
+
+Doctor QR cards (`web/public/doctors.html`): when a clinic name is typed, each card ends with the name and "For our patients · हमारे मरीज़ों के लिए".
+
 ## Still to come
 
 Appointment reminders are not ported to the Java backend yet; their Hindi texts will need the same review once merged.
