@@ -269,7 +269,16 @@
     "receiverLanguageThem": "उनके संदेशों की भाषा",
     "receiverLanguageHint": "WhatsApp रिमाइंडर इसी भाषा में भेजे जाएँगे।"
   },
+  "slimNotice": {
+    "more": "और देखें",
+    "less": "कम देखें"
+  },
   "today": {
+    "trialSlimSoon": "मुफ़्त ट्रायल {days} दिन में खत्म होगा",
+    "trialSlimTomorrow": "मुफ़्त ट्रायल कल खत्म होगा",
+    "trialSlimEnded": "आपका मुफ़्त ट्रायल खत्म हो गया है",
+    "missedSlimOne": "{name} की पुष्टि नहीं हुई",
+    "missedSlimMany": "आज {count} खुराकों की पुष्टि नहीं हुई",
     "morning": "सुप्रभात",
     "afternoon": "शुभ दोपहर",
     "evening": "शुभ संध्या",
@@ -999,6 +1008,10 @@
     "chat": {
       "name": "चैट",
       "desc": "WhatsApp जैसे संदेशों में पूरा दिन"
+    },
+    "simple": {
+      "name": "सरल सूची",
+      "desc": "हर खुराक की एक पंक्ति: सही का निशान, नाम, खुराक और समय"
     },
     "previewLabel": "नमूना दवाइयों के साथ पूर्वावलोकन",
     "use": "यही शैली रखें",

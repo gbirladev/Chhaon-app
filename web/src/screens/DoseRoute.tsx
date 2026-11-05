@@ -28,6 +28,7 @@ export type RouteStop = {
   icon: ReactNode;
   tod?: number;       // minutes since midnight on the parent's clock
   at?: number;        // scheduled time in ms: the distance on the road follows the time between doses
+  note?: string;      // "Marked given by Neha, 8:41 AM" when a family member marked it (the Simple list shows it)
 };
 
 const ROW = 76;               // height of one stop, px

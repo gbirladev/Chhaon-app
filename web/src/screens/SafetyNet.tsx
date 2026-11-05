@@ -11,6 +11,7 @@ import {
 import { formatClock, type Language } from "../lib/format";
 import "./safetynet.css";
 import { Icon3D } from "./Icon3D";
+import { SlimNotice } from "./SlimNotice";
 
 /** The Safety net: what happens when a parent does not answer. Nudge first, tell the family only when it matters. */
 export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }: {
@@ -160,8 +161,7 @@ export function EscalationProgress({ recipient, call }: { recipient: Recipient; 
     load();
   };
   return (
-    <section className="escalation-card" aria-label={t("progressTitle", { call })}>
-      <strong>{t("progressTitle", { call })}</strong>
+    <SlimNotice tone="warn" title={t("progressTitle", { call })}>
       {shown.map((e) => (
         <div key={e.id} className="escalation-row">
           <ul>
@@ -172,7 +172,7 @@ export function EscalationProgress({ recipient, call }: { recipient: Recipient; 
           <button type="button" className="secondary-button" disabled={busy === e.id} onClick={() => void handle(e)}><Icon name="check" size={16} /> {t("handled")}</button>
         </div>
       ))}
-    </section>
+    </SlimNotice>
   );
 }
 

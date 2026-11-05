@@ -11,6 +11,7 @@ import { receiverValues } from "../lib/reminderReceiver";
 import { isPregnancy } from "../lib/pregnancy";
 import { UsualChecks, type CheckPrefill } from "./Pregnancy";
 import { Icon3D } from "./Icon3D";
+import { CardIcon } from "./TodayCard";
 
 const when = (iso: string, tz: string, language: Language) => {
   const day = formatDate(new Date(iso), language, { weekday: "short", day: "numeric", month: "short", timeZone: tz });
@@ -33,7 +34,7 @@ export function NextAppointment({ recipient, go }: { recipient: Recipient; go: (
   if (next === undefined) return null;
   return (
     <button className={`next-visit${next ? "" : " empty"}`} onClick={go}>
-      <Icon3D name="calendar" size={28} />
+      <CardIcon name="calendar" />
       <span className="next-visit-text">
         <strong>{next ? t("with", { doctor: doctorName(next.doctor) }) : t("addFirst")}</strong>
         {next && <em>{when(next.at, tz, language)}</em>}

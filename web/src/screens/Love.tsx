@@ -10,6 +10,7 @@ import {
 } from "../lib/love";
 import "./love.css";
 import { Icon3D } from "./Icon3D";
+import { CardIcon } from "./TodayCard";
 
 /** One thing the parent did that a caregiver can answer with a little love: a taken dose (or a time slot of them) or an answered check-in. */
 type Moment = { key: string; kind: "dose" | "checkin"; at: string; names: string[] };
@@ -133,7 +134,7 @@ export function LoveCard({ recipient, call }: { recipient: Recipient; call: stri
 
   return (
     <section className="love-card" aria-label={t("cardTitle", { call })}>
-      <strong>{t("cardTitle", { call })}</strong>
+      <div className="tc-head"><CardIcon name="heart" tone="love" /><strong>{t("cardTitle", { call })}</strong></div>
       {optedOut && <p className="love-note" role="note">{t("optedOutNote", { call })}</p>}
       {shown.map((m) => {
         const reactions = byMoment.get(m.key) ?? [];

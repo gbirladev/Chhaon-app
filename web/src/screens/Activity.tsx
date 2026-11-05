@@ -7,6 +7,7 @@ import "./activity.css";
 import { Icon3D } from "./Icon3D";
 import { PersonBadge } from "./PersonBadge";
 import { personKindFrom } from "../lib/person";
+import { CardIcon } from "./TodayCard";
 
 /**
  * Family activity feed (feature 4): a read-only list of what happened for everyone the caregiver cares for, last 7 days, newest
@@ -215,5 +216,5 @@ export function ActivityLink({ go }: { go: (screen: "activity") => void }) {
 /** A small text link on Today. */
 export function SeeAllActivity({ go }: { go: (screen: "activity") => void }) {
   const t = useTranslations("activity");
-  return <button type="button" className="feed-see-all" onClick={() => go("activity")}>{t("seeAll")} <Icon name="chevron" size={16} /></button>;
+  return <button type="button" className="feed-see-all" onClick={() => go("activity")}><CardIcon name="users" /><span className="tc-label">{t("seeAll")}</span> <Icon name="chevron" size={16} /></button>;
 }

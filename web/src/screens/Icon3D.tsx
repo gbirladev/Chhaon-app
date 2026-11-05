@@ -4,7 +4,7 @@ import "./icon3d.css";
 
 /**
  * The 3D "picture" icons (Microsoft Fluent Emoji 3D, MIT; see public/icons/3d/LICENSE-fluentui-emoji.txt).
- * Used ONLY for: the Family page feature links, one icon per Today card (check-in, next visit, vaccine), empty states,
+ * Used ONLY for: the Family page feature links, empty states,
  * and the headers of the doctor-visits / reports / emergency screens. Everything else stays the flat SVG Icon so it
  * follows the theme colour and dark mode: tabs, bell and header buttons, banners, list rows, buttons, sheets, section
  * headers, ticks, back / chevron / close / edit / plus. (Person badges and the baby size have their own 3D images.)

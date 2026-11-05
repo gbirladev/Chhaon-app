@@ -1,0 +1,99 @@
+/* R7 "tidy Today": slim warnings at the top, one card look for the non-medicine cards, and the "Simple list" dose style.
+   Only theme tokens, so all colour themes and dark mode follow. Scoped to .today-page where it overrides older card rules. */
+
+/* ---------- Slim notices: one line, "More" opens the rest in place ---------- */
+.today-notices { display: flex; flex-direction: column; gap: 6px; margin: 0 0 12px; }
+.today-notices:empty { display: none; }
+.slim-notice { border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.slim-notice.sn-warn { background: var(--s-fff4de); border-color: var(--b-f0d9a5, var(--line)); color: var(--t-7a5a12); }
+.slim-notice.sn-danger { background: var(--s-fdecec); border-color: var(--b-d64545-a2); color: var(--t-a12626); }
+.slim-notice.sn-info { background: var(--field); border-color: var(--line); color: var(--text); }
+.sn-line { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 4px 4px 10px; }
+.sn-icon { flex: 0 0 auto; display: grid; place-items: center; }
+.slim-notice.sn-info .sn-icon { color: var(--primary-text); }
+.sn-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.sn-more { position: relative; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.sn-more:after { content: ""; position: absolute; inset: -4px 0; }   /* 44 px tap target */
+.sn-more svg { transition: transform .15s ease; }
+.sn-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sn-more:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.sn-body { padding: 0 12px 12px 36px; }
+.sn-body[hidden] { display: none; }
+.sn-body p { margin: 0 0 8px; font-size: max(0.875rem, 13px); line-height: 1.45; color: inherit; }
+.sn-body p:last-child { margin-bottom: 0; }
+.sn-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.sn-actions button, .sn-actions a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-weight: 700; font-size: 14px; text-decoration: none; cursor: pointer; }
+.sn-actions button:disabled { opacity: .55; }
+.sn-actions .sn-primary { background: var(--primary); border-color: var(--primary); color: var(--on-fill); }
+.sn-body ul { margin: 0 0 8px; padding-left: 18px; font-size: 13px; line-height: 1.45; }
+.sn-body .escalation-row { margin-bottom: 8px; }
+.sn-body .escalation-row .secondary-button { min-height: 44px; }
+@media (prefers-reduced-motion: reduce) { .sn-more svg { transition: none; } }
+
+/* ---------- One card look for the non-medicine cards on Today ---------- */
+.today-page .checkin-line,
+.today-page .next-visit,
+.today-page .alerts-slim,
+.today-page .love-card,
+.today-page .feed-see-all,
+.today-page .today-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; margin: 0 0 10px; padding: 11px 12px;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); box-shadow: none;
+  text-align: start; font: inherit;
+}
+.today-page .next-visit.empty { border-style: solid; background: var(--surface); }
+.today-page .love-card { display: block; }
+.today-page button.checkin-line, .today-page button.next-visit, .today-page button.feed-see-all { cursor: pointer; }
+.today-page .checkin-line > svg, .today-page .next-visit > svg, .today-page .feed-see-all > svg:last-child { flex: 0 0 auto; width: 18px; height: 18px; color: var(--text-muted); }
+
+/* The tinted square with the flat icon (≈40 px, radius 12). */
+.tc-icon { position: relative; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--field); color: var(--primary-text); }
+.tc-icon.tc-ok { background: var(--s-e6f4ec); color: var(--t-1d6b4b); }
+.tc-icon.tc-warn { background: var(--s-fff4de); color: var(--t-7a5a12); }
+.tc-icon.tc-danger, .tc-icon.tc-love { background: var(--s-fdecec); color: var(--t-a12626); }
+.tc-badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; line-height: 1; background: var(--f-3a9d72); color: var(--on-fill); box-shadow: 0 0 0 2px var(--surface); }
+.tc-plain .tc-badge, .tc-warn .tc-badge { background: var(--text-muted); }
+
+/* Text inside the cards: title + one quiet line, the same everywhere. */
+.today-page .checkin-text, .today-page .next-visit .next-visit-text, .today-page .tc-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 2px; overflow: visible; }
+.today-page .checkin-text strong, .today-page .next-visit .next-visit-text strong, .today-page .tc-text strong { flex: 0 0 auto; max-width: 100%; font-size: 15px; font-weight: 700; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; color: var(--text); }
+.today-page .checkin-text small, .today-page .next-visit .next-visit-text em, .today-page .tc-text small { font-size: 13px; font-weight: 500; font-style: normal; line-height: 1.3; white-space: normal; color: var(--text-muted); }
+.today-page .next-visit .next-visit-text em { color: var(--primary-text); font-weight: 600; }
+
+/* Check-in not answered: same card, red tint on the icon, a Call button. */
+.today-page .today-card .tc-call { flex: 0 0 auto; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--primary-text); font: inherit; font-weight: 700; font-size: 14px; }
+
+/* Alerts card: the same card; its own button keeps the primary fill. */
+.today-page .alerts-slim > .tc-icon { flex: 0 0 40px; }
+.today-page .alerts-slim > span:not(.tc-icon) { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; line-height: 1.3; }
+.today-page .alerts-slim .slim-action { min-height: 40px; padding: 0 14px; font-size: 14px; border-radius: 12px; }
+
+/* Love card: the header row gets the same icon square. */
+.today-page .love-card .tc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.today-page .love-card .tc-head strong { font-size: 15px; }
+
+/* Activity link: a card, not a text link. */
+.today-page .feed-see-all { justify-content: flex-start; font-weight: 700; font-size: 15px; color: var(--text); }
+.today-page .feed-see-all .tc-label { flex: 1; min-width: 0; }
+
+/* Today's medicines sits right under the main card: a little less space above its title. */
+.today-page .today-meds { margin-top: 6px; }
+.today-page .child-home .today-meds { margin-bottom: 16px; }
+
+/* ---------- 11th dose style: "Simple list" ---------- */
+.lay-simple { list-style: none; margin: 0; padding: 2px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.lay-simple li { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.lay-simple li:first-child { border-top: 0; }
+.sl-mark { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--b-cfdcd8); color: var(--on-fill); font-weight: 800; font-size: 13px; line-height: 1; }
+.lay-simple .done .sl-mark { background: var(--f-3a9d72); border-color: var(--b-3a9d72); }
+.lay-simple .missed .sl-mark { background: var(--f-d64545); border-color: var(--b-d64545); }
+.lay-simple .skipped .sl-mark { background: var(--s-fff4de); border-color: var(--t-a8481f); color: var(--t-a8481f); }
+.lay-simple .current .sl-mark { border-color: var(--t-a8481f); }
+.sl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sl-main strong { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.sl-main strong small { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+.sl-main > small { font-size: 12.5px; color: var(--t-1d6b4b); }
+.lay-simple .missed .sl-main strong { color: var(--t-a12626); }
+.sl-time { flex: 0 0 auto; font-size: 14px; font-weight: 700; white-space: nowrap; color: var(--text); }
+.sl-time small { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-left: 2px; }
+.lay-simple .done .sl-time { color: var(--text-muted); }

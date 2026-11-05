@@ -5,6 +5,7 @@ import { AppHeader, Field, Icon, parentCall, useDialog, useToast } from "../App"
 import type { Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
 import { Icon3D } from "./Icon3D";
+import { CardIcon } from "./TodayCard";
 import {
   ageGroup, childDetailsErrors, doseText, fmtPlainDate as fmt, isChild, loadChild, loadVaccines, localToday, makeVaccinePlan, saveChild,
   updateVaccine, vaccinesGivenEarlier, type ChildDetails, type ChildInfo, type Vaccine, type VaccineChange,
@@ -412,7 +413,7 @@ export function NextVaccine({ go, recipient }: { go: (screen: "vaccines") => voi
   if (!child || next === undefined) return null;
   return (
     <button className={`next-visit${next ? "" : " empty"}`} onClick={() => go("vaccines")}>
-      <Icon3D name="vaccine" size={28} />
+      <CardIcon name="syringe" />
       <span className="next-visit-text">
         <strong>{next ? `${vaccineName(next, language)}${next.dose ? ` · ${doseLabel(next.dose)}` : ""}` : t("nextNone", { call: parentCall(recipient, language) })}</strong>
         {next && <em>{t("dueOn", { date: fmt(next.dueDate, language) })}</em>}
