@@ -95,7 +95,7 @@ function ThemeSheet({ onClose }: { onClose: () => void }) {
         <div className="theme-grid mode-grid" role="radiogroup" aria-labelledby="theme-mode-label">
           {THEME_CHOICES.map((value) => (
             <button key={value} type="button" role="radio" aria-checked={mode === value} className={mode === value ? "on" : ""} onClick={() => setMode(value)}>
-              <svg className="mode-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{MODE_ICONS[value]}</svg>
+              <svg className="mode-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{MODE_ICONS[value]}</svg>
               <span className="palette-name">{t(value)}</span>
             </button>
           ))}

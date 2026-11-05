@@ -5,14 +5,14 @@ import { customPaletteCss, customPrimary } from "./recolour";
  *  the ready-made ones are generated into src/palettes.css by scripts/build-palettes.mjs; "custom" is any colour the
  *  user picks, turned into CSS in the browser (src/lib/recolour.ts) and kept in storage so public/theme.js can put it
  *  back before the first paint. Remembered on this device only, like light/dark. Keep the keys in step with theme.js. */
-export const PALETTES = ["chhaon", "teal", "blue", "green", "saffron", "rose"] as const;
+export const PALETTES = ["chhaon", "classic", "teal", "blue", "saffron", "rose"] as const;
 export type Palette = (typeof PALETTES)[number] | "custom";
 export const DEFAULT_PALETTE: Palette = "chhaon";
 export const DEFAULT_CUSTOM = "#e0457b";
 
 /** The swatch in the picker: each theme's primary button colour. */
 export const PALETTE_SWATCH: Record<(typeof PALETTES)[number], string> = {
-  chhaon: "#6d28d9", teal: "#19625b", blue: "#24589d", green: "#1f643c", saffron: "#824b1a", rose: "#a12951",
+  chhaon: "#6943a5", classic: "#247c72", teal: "#19625b", blue: "#24589d", saffron: "#824b1a", rose: "#a12951",
 };
 
 const KEY = "chhaon-palette";

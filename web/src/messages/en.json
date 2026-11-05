@@ -1197,7 +1197,7 @@
     "defaultTag": "Default",
     "backToDefault": "Back to Chhaon colours",
     "done": "Done",
-    "palettes": { "chhaon": "Chhaon", "teal": "Teal", "blue": "Blue", "green": "Green", "saffron": "Saffron", "rose": "Rose", "custom": "Custom" },
+    "palettes": { "chhaon": "Chhaon", "classic": "Classic", "teal": "Teal", "blue": "Blue", "saffron": "Saffron", "rose": "Rose", "custom": "Custom" },
     "title": "Appearance",
     "hint": "Choose how Chhaon looks on this phone.",
     "system": "System",

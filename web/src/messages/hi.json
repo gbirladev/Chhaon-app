@@ -1197,7 +1197,7 @@
     "defaultTag": "डिफ़ॉल्ट",
     "backToDefault": "छाँव के रंगों पर वापस जाएँ",
     "done": "हो गया",
-    "palettes": { "chhaon": "छाँव", "teal": "टील", "blue": "नीला", "green": "हरा", "saffron": "केसरिया", "rose": "गुलाबी", "custom": "अपना रंग" },
+    "palettes": { "chhaon": "छाँव", "classic": "क्लासिक", "teal": "टील", "blue": "नीला", "saffron": "केसरिया", "rose": "गुलाबी", "custom": "अपना रंग" },
     "title": "थीम",
     "hint": "चुनिए कि इस फ़ोन पर छाँव कैसा दिखे।",
     "system": "फ़ोन जैसा",

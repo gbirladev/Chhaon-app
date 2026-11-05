@@ -10,7 +10,7 @@
   // Colour theme (src/lib/palette.ts): no attribute = the Smart Gurukul default.
   var palette = null;
   try { palette = localStorage.getItem("chhaon-palette"); } catch (e) { /* storage blocked */ }
-  if (palette && /^(teal|blue|green|saffron|rose)$/.test(palette)) root.setAttribute("data-palette", palette);
+  if (palette && /^(classic|teal|blue|saffron|rose)$/.test(palette)) root.setAttribute("data-palette", palette);
   if (palette === "custom") {
     // the user's own colour: the CSS was made by src/lib/recolour.ts when they picked it
     var css = null;
