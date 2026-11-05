@@ -269,7 +269,16 @@
     "receiverLanguageThem": "Language for their messages",
     "receiverLanguageHint": "The WhatsApp reminders are sent in this language."
   },
+  "slimNotice": {
+    "more": "More",
+    "less": "Less"
+  },
   "today": {
+    "trialSlimSoon": "Free trial ends in {days, plural, one {# day} other {# days}}",
+    "trialSlimTomorrow": "Free trial ends tomorrow",
+    "trialSlimEnded": "Your free trial has ended",
+    "missedSlimOne": "{name} not confirmed",
+    "missedSlimMany": "{count} doses not confirmed today",
     "morning": "GOOD MORNING",
     "afternoon": "GOOD AFTERNOON",
     "evening": "GOOD EVENING",
@@ -999,6 +1008,10 @@
     "chat": {
       "name": "Chat",
       "desc": "The day as WhatsApp-style messages"
+    },
+    "simple": {
+      "name": "Simple list",
+      "desc": "One line for each dose: a tick, the name, the dose and the time"
     },
     "previewLabel": "Preview with sample medicines",
     "use": "Use this style",

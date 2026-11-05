@@ -4,6 +4,7 @@ import { Icon, useDialog } from "../App";
 import { dismissInstallHelp, isStandalone, promptInstall, useInstallState, type InstallPlatform } from "../lib/install";
 import "./install.css";
 import { Icon3D } from "./Icon3D";
+import { SlimNotice } from "./SlimNotice";
 
 const Steps = ({ platform }: { platform: InstallPlatform }) => {
   const t = useTranslations("install");
@@ -37,19 +38,15 @@ export function InstallBanner() {
   if (!show) return help ? <InstallSheet onClose={() => setHelp(false)} /> : null;
   return (
     <>
-      <section className="install-banner" aria-label={t("bannerTitle")}>
-        <span className="install-icon" aria-hidden="true"><Icon name="phone" size={22} /></span>
-        <div>
-          <strong>{t("bannerTitle")}</strong>
-          <p>{t("bannerBody")}</p>
-          <div className="install-actions">
-            {canPrompt
-              ? <button className="install-primary" onClick={() => void promptInstall()}>{t("add")}</button>
-              : <button className="install-primary" onClick={() => setHelp(true)}>{t("how")}</button>}
-            <button className="install-quiet" onClick={dismissInstallHelp}>{t("notNow")}</button>
-          </div>
+      <SlimNotice tone="info" role="note" title={t("bannerTitle")}>
+        <p>{t("bannerBody")}</p>
+        <div className="sn-actions">
+          {canPrompt
+            ? <button className="sn-primary" onClick={() => void promptInstall()}>{t("add")}</button>
+            : <button className="sn-primary" onClick={() => setHelp(true)}>{t("how")}</button>}
+          <button onClick={dismissInstallHelp}>{t("notNow")}</button>
         </div>
-      </section>
+      </SlimNotice>
       {help && <InstallSheet onClose={() => setHelp(false)} />}
     </>
   );

@@ -813,3 +813,21 @@ paramedic. "{date} को" after the weight is meant as "measured on {date}".
 | facts.errWeightDate | जन्म की तारीख़ से आज तक का कोई दिन चुनें। | Choose a day from the date of birth until today. | |
 | facts.errWeightSave | वज़न सेव नहीं हो सका। फिर से कोशिश करें। | Could not save the weight. Please try again. | |
 | facts.weightNeedsDob | पहले टीकाकरण में जन्म की तारीख़ जोड़ें। फिर यहाँ वज़न लिख सकेंगे। | First add the date of birth in Vaccines. Then you can record the weight here. | |
+
+## Part R7: tidy Today, slim warnings and the "Simple list" style (added 2026-11-05, branch `r7-tidy-today`)
+
+App only; nothing is sent on WhatsApp. The warnings on Today are now one short line each with "और देखें" ("More"), which opens
+the full text that was already reviewed. The short lines must stay short (one line on a small phone). The Simple list sample in
+the style picker shows "नेहा ने दी गई दर्ज की, सुबह 8:41" (the same words as `doseGiven.markedBy`).
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| slimNotice.more | और देखें | More | |
+| slimNotice.less | कम देखें | Less | |
+| today.trialSlimSoon | मुफ़्त ट्रायल {days} दिन में खत्म होगा | Free trial ends in {days} days | |
+| today.trialSlimTomorrow | मुफ़्त ट्रायल कल खत्म होगा | Free trial ends tomorrow | |
+| today.trialSlimEnded | आपका मुफ़्त ट्रायल खत्म हो गया है | Your free trial has ended | |
+| today.missedSlimOne | {name} की पुष्टि नहीं हुई | {name} not confirmed | |
+| today.missedSlimMany | आज {count} खुराकों की पुष्टि नहीं हुई | {count} doses not confirmed today | |
+| layoutPicker.simple.name | सरल सूची | Simple list | |
+| layoutPicker.simple.desc | हर खुराक की एक पंक्ति: सही का निशान, नाम, खुराक और समय | One line for each dose: a tick, the name, the dose and the time | |

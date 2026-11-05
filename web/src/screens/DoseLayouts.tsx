@@ -5,11 +5,14 @@ import { loadTodayLayout, saveTodayLayout } from "../lib/api";
 import { ClockText, ClockTime, DoseRoute, type RouteStop } from "./DoseRoute";
 import { joinClock } from "../lib/format";
 import "./layouts.css";
+import "./todayTidy.css";
 
 /** Preview of several ways to show Today's medicines, so one can be chosen. Same data for all of them. */
-export type DoseLayout = "route" | "curvy" | "timeline" | "arc" | "focus" | "ring" | "pillbox" | "ladder" | "clock" | "chat";
-export const LAYOUTS: { id: DoseLayout }[] = ["route", "curvy", "timeline", "arc", "focus", "ring", "pillbox", "ladder", "clock", "chat"].map((id) => ({ id: id as DoseLayout }));
+export type DoseLayout = "route" | "curvy" | "timeline" | "arc" | "focus" | "ring" | "pillbox" | "ladder" | "clock" | "chat" | "simple";
+export const LAYOUTS: { id: DoseLayout }[] = ["route", "curvy", "timeline", "arc", "focus", "ring", "pillbox", "ladder", "clock", "chat", "simple"].map((id) => ({ id: id as DoseLayout }));
 const KEY = "carelink-dose-layout";
+/** Set while this phone holds a style its profile could not save (e.g. one the server does not accept yet): then the phone's choice wins. */
+const LOCAL_ONLY = "carelink-dose-layout-local";
 const valid = (v: unknown): v is DoseLayout => LAYOUTS.some((l) => l.id === v);
 
 /** The caregiver's chosen style: instant from this device, then confirmed from (and saved to) their profile so it follows them. */
@@ -17,13 +20,18 @@ export function useTodayLayout(): [DoseLayout, (next: DoseLayout) => Promise<boo
   const [layout, setLayoutState] = useState<DoseLayout>(() => { try { const v = localStorage.getItem(KEY); return valid(v) ? v : "focus"; } catch { return "focus"; } });
   useEffect(() => {
     let cancelled = false;
+    let localOnly = false;
+    try { localOnly = localStorage.getItem(LOCAL_ONLY) === "1"; } catch { /* ignore */ }
+    if (localOnly) return;
     void loadTodayLayout().then((v) => { if (!cancelled && valid(v)) { setLayoutState(v); try { localStorage.setItem(KEY, v); } catch { /* ignore */ } } }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
   const set = async (next: DoseLayout) => {
     setLayoutState(next);
     try { localStorage.setItem(KEY, next); } catch { /* ignore */ }
-    return saveTodayLayout(next);
+    const ok = await saveTodayLayout(next);
+    try { if (ok) localStorage.removeItem(LOCAL_ONLY); else localStorage.setItem(LOCAL_ONLY, "1"); } catch { /* ignore */ }
+    return ok;
   };
   return [layout, set];
 }
@@ -46,6 +54,7 @@ function sampleStops(hi: boolean): RouteStop[] {
     time: `${r.h % 12 || 12}:${String(r.m).padStart(2, "0")}`, suffix: suffix(r.h),
     pill: pill(r.state === "done" ? "taken" : r.state === "missed" ? "missed" : "pending", r.state === "done" ? (hi ? "ली गई" : "Taken") : r.state === "missed" ? (hi ? "छूटी" : "Missed") : (hi ? "आने वाली" : "Upcoming")),
     icon: r.state === "done" ? "✓" : r.state === "missed" ? "!" : <Icon name="pill" size={15} />,
+    note: i === 1 ? (hi ? "नेहा ने दी गई दर्ज की, सुबह 8:41" : "Marked given by Neha, 8:41 AM") : undefined,
   }));
 }
 
@@ -269,7 +278,27 @@ function Chat({ stops }: Props) {
   );
 }
 
+/** 11: one line per dose: a flat status mark, the name and dose, the time (and who marked it given). Big rows, nothing else. */
+function SimpleList({ stops }: Props) {
+  return (
+    <ul className="lay-simple">
+      {stops.map((s) => (
+        <li key={s.id} className={s.state}>
+          <span className="sl-mark" aria-hidden="true">{s.state === "done" ? <Icon name="check" size={15} strokeWidth={3} /> : s.state === "missed" || s.state === "skipped" ? "!" : ""}</span>
+          <span className="sl-main">
+            <strong>{s.name}{s.dose && <small> · {s.dose}</small>}</strong>
+            {s.note && <small>{s.note}</small>}
+          </span>
+          <span className="sl-time">{s.time}<small>{s.suffix}</small></span>
+          <span className="sr-only">{s.pill}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function DoseLayouts({ layout, ...props }: Props & { layout: DoseLayout }) {
+  if (layout === "simple") return <SimpleList {...props} />;
   if (layout === "route") return <DoseRoute {...props} />;
   if (layout === "curvy") return <DoseRoute {...props} curvy />;
   if (layout === "timeline") return <Timeline {...props} />;

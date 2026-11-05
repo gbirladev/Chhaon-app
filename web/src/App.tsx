@@ -61,6 +61,8 @@ import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
+import { SlimNotice } from "./screens/SlimNotice";
+import { CardIcon } from "./screens/TodayCard";
 
 type Screen =
   | "activity"
@@ -243,6 +245,10 @@ export function Icon({
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
     chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
     check: <path d="m5 12 5 5 9-10" />,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></>,
+    syringe: <><path d="m18 2 4 4M17 7l3-3M19 9 9.5 18.5a2.1 2.1 0 0 1-3 0l-1-1a2.1 2.1 0 0 1 0-3L15 5" /><path d="m9 11 4 4M5 19l-3 3M14 4l6 6" /></>,
+    warning: <><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></>,
+    info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></>,
     refresh: <><path d="M20 11a8 8 0 0 0-14.3-4.6L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16" /><path d="M20 20v-4h-4" /></>,
     chevron: <path d="m9 18 6-6-6-6" />,
     back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h10" /></>,
@@ -922,14 +928,10 @@ function PauseWarning({ recipient, call, go }: { recipient: Recipient; call: str
   if (!parentPaused && names.length === 0) return null;
   const shown = names.slice(0, 5).join(", ") + (names.length > 5 ? ` +${names.length - 5}` : "");
   return (
-    <section className="pause-card" role="alert">
-      <div className="pause-icon" aria-hidden="true">!</div>
-      <div>
-        <strong>{parentPaused ? t("pauseParentTitle", { call }) : t("pauseMedicinesTitle")}</strong>
-        <p>{parentPaused ? t("pauseParentBody", { call }) : t("pauseMedicinesBody", { call, names: shown })}</p>
-        <button onClick={() => go("plans")}>{t("pauseButton")}</button>
-      </div>
-    </section>
+    <SlimNotice tone="danger" role="alert" title={parentPaused ? t("pauseParentTitle", { call }) : t("pauseMedicinesTitle")}>
+      <p>{parentPaused ? t("pauseParentBody", { call }) : t("pauseMedicinesBody", { call, names: shown })}</p>
+      <div className="sn-actions"><button className="sn-primary" onClick={() => go("plans")}>{t("pauseButton")}</button></div>
+    </SlimNotice>
   );
 }
 
@@ -952,7 +954,13 @@ function TrialBanner({ go }: { go: (screen: Screen) => void }) {
   const soon = items ? t("bannerSoonPause", { days, items }) : days <= 1 ? t("bannerSoonOne") : t("bannerSoon", { days });
   const text = plan.onTrial ? (days <= 7 ? soon : null) : plan.plan === "free" && !(pauses && (pauses.parentIds.length > 0 || pauses.medicines.length > 0)) ? t("bannerEnded") : null;   // the red warning already says it
   if (!text) return null;
-  return <button className="trial-banner" onClick={() => go("plans")}>{text}</button>;
+  const short = plan.onTrial ? (days <= 1 ? t("trialSlimTomorrow") : t("trialSlimSoon", { days })) : t("trialSlimEnded");
+  return (
+    <SlimNotice tone="info" title={short}>
+      <p>{text}</p>
+      <div className="sn-actions"><button className="sn-primary" onClick={() => go("plans")}>{t("pauseButton")}</button></div>
+    </SlimNotice>
+  );
 }
 
 function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string }) {
@@ -1001,13 +1009,12 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
     setNote(t(result === "too_soon" ? "consentTooSoon" : "consentFailed", { call }));
   };
   return (
-    <section className={`consent-card${stopped ? " stopped" : ""}`} role="status">
-      <strong>{stopped ? t("consentStoppedTitle") : title}</strong>
+    <SlimNotice tone={stopped ? "warn" : "info"} title={stopped ? t("consentStoppedTitle") : title}>
       <p>{body}</p>
-      {!stopped && <button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button>}
+      {!stopped && <div className="sn-actions"><button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button></div>}
       {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
       {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
-    </section>
+    </SlimNotice>
   );
 }
 
@@ -1034,7 +1041,7 @@ function AlertsCard({ compact }: { compact?: boolean }) {
     return (
       <>
         <section className="alerts-slim" role="status">
-          <Icon name="bell" size={18} />
+          <CardIcon name="bell" />
           <span>{state.waiting ? t("waitingTitle") : t("slimTitle")}</span>
           <button className="slim-action" onClick={() => setOpen(true)}>{state.waiting ? t("resend") : t("turnOn")}</button>
           {!state.waiting && <button className="slim-x" aria-label={t("notNow")} onClick={notNow}>×</button>}
@@ -1170,17 +1177,17 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     if (!hasCheckin(recipient)) return null;   // nor when the family switched the daily check-in off (migration 0050)
     if (checkin?.status === "missed") {
       return (
-        <section className="alert-card">
-          <div className="alert-icon">!</div>
-          <div><strong>{t("today.checkinMissedText", { call })}</strong>{checkin.sent_at && <p>{t("today.checkinSentAt", { time: time(checkin.sent_at) })}</p>}</div>
-          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
+        <section className="today-card">
+          <CardIcon name="sun" tone="danger" badge="!" />
+          <span className="tc-text"><strong>{t("today.checkinMissedText", { call })}</strong>{checkin.sent_at && <small>{t("today.checkinSentAt", { time: time(checkin.sent_at) })}</small>}</span>
+          {phone && <button className="tc-call" onClick={callParent}>{t("today.callButton")}</button>}
         </section>
       );
     }
     const state = checkin?.status === "replied" ? "replied" : checkin?.status === "sent" ? "sent" : "none";
     return (
       <button className={`checkin-line ${state}`} onClick={() => go("whatsapp")} aria-label={t("today.seeMessages")}>
-        <span className="checkin-sun" aria-hidden="true"><Icon3D name="sun" size={28} eager /><span className="okay-icon">{state === "replied" ? "✓" : "…"}</span></span>
+        <CardIcon name="sun" tone={state === "replied" ? "ok" : "plain"} badge={state === "replied" ? "✓" : "…"} />
         <span className="checkin-text">
           <strong>{t(state === "replied" ? "today.checkinOkay" : state === "sent" ? "today.checkinWaiting" : "today.checkinNone", { call })}</strong>
           <small>{state === "replied" ? t("today.checkinReplied", { time: time(checkin?.responded_at ?? checkin?.sent_at ?? null) }) : state === "sent" ? (checkin?.sent_at ? t("today.checkinSentAt", { time: time(checkin.sent_at) }) : "") : t("today.checkinNoneHint")}</small>
@@ -1190,6 +1197,11 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     );
   };
 
+  const givenNote = (d: TodayDose) => {
+    const at = time(d.respondedAt ?? null);
+    if (d.confirmedBy && d.confirmedBy === authUserId()) return t("doseGiven.markedByYou", { time: at });
+    return t("doseGiven.markedBy", { name: (d.confirmedByName ?? "").trim().split(/\s+/)[0] || t("doseGiven.someone"), time: at });
+  };
   const routeStop = (d: TodayDose): RouteStop => {
     const parts = clockParts(new Date(d.scheduledAt), tz, language);
     const future = new Date(d.scheduledAt).getTime() > Date.now();
@@ -1206,12 +1218,13 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       state: d.status === "taken" || d.status === "taken_late" ? "done" : d.status === "missed" ? "missed" : d.status === "sent" ? "current" : d.status === "skipped" ? "skipped" : "todo",
       icon: d.status === "taken" || d.status === "taken_late" ? "✓" : d.status === "missed" ? "!" : d.status === "sent" ? <Icon name="pill" size={16} /> : <Icon name="pill" size={15} />,
       pill: <StatusPill type={pill[0] as "taken"}>{t(pill[1])}</StatusPill>,
+      note: isManual(d.confirmSource) ? givenNote(d) : undefined,
     };
   };
 
   // Today's medicines: the same section for every care type (a pregnancy places it inside her home).
   const medicinesSection = (
-      <section className="section">
+      <section className="section today-meds">
         <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
         {visibleDoses.length > 0 && <div className="dose-progress" role="progressbar" aria-valuemin={0} aria-valuemax={visibleDoses.length} aria-valuenow={visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length} aria-label={t("today.medicinesTitle")}><i style={{ width: `${(visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length / visibleDoses.length) * 100}%` }} /></div>}
         {dataError && <p role="alert" className="form-error">{t("today.loadFailed")}</p>}
@@ -1234,10 +1247,34 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       </section>
   );
 
+  // The warnings sit at the very top, ONE slim line each ("More" opens the full text and the Call button in place).
+  const callAction = phone ? <div className="sn-actions"><button onClick={callParent}><Icon name="phone" size={16} />{t("today.callButton")}</button></div> : null;
+  const notices = (
+    <div className="today-notices">
+      {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
+      {schedulerStale && schedulerAge !== null && (
+        <SlimNotice tone="warn" role="alert" title={t("today.staleTitle")}><p>{t("today.staleBody", { call, ago: ago(schedulerAge) })}</p>{callAction}</SlimNotice>
+      )}
+      {!schedulerStale && stuck.length > 0 && (
+        <SlimNotice tone="warn" role="alert" title={t("today.delayedTitle")}><p>{t("today.delayedBody", { call, names: stuckShown })}</p>{callAction}</SlimNotice>
+      )}
+      {lastMissed && !recipient?.is_self && (
+        <SlimNotice tone="warn" title={missed.length > 1 ? t("today.missedSlimMany", { count: missed.length }) : t("today.missedSlimOne", { name: lastMissed.name })}>
+          <p>{missed.length > 1 ? t("today.doseMissedMany", { count: missed.length, call }) : t("today.doseMissedText", { name: lastMissed.name, time: time(lastMissed.scheduledAt), call })}</p>{callAction}
+        </SlimNotice>
+      )}
+      {recipient && <EscalationProgress recipient={recipient} call={call} />}
+      {recipient && <ConsentBanner recipient={recipient} call={call} />}
+      <TrialBanner go={go} />
+      <InstallBanner />
+      {!isChild(recipient) && <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />}
+    </div>
+  );
+
   return (
-    <main className="scroll-page">
+    <main className="scroll-page today-page">
       <h1 className="sr-only">{t("nav.today")}</h1>
-      {recipient && isChild(recipient) ? <ChildHome recipient={recipient} go={go} unread={unread} onLanguage={() => setLanguage(language === "en" ? "hi" : "en")} onBell={() => setSheetOpen(true)} onPeople={() => setParentsOpen(true)} /> : (
+      {recipient && isChild(recipient) ? <ChildHome recipient={recipient} go={go} unread={unread} onLanguage={() => setLanguage(language === "en" ? "hi" : "en")} onBell={() => setSheetOpen(true)} onPeople={() => setParentsOpen(true)} notices={notices} todaySection={medicinesSection} /> : (
       <header className="home-header">
         <button className="parent-profile" aria-haspopup="dialog" onClick={() => setParentsOpen(true)}>
           <PersonBadge name={header.call} kind={personKindOf(recipient)} />
@@ -1249,53 +1286,26 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         </div>
       </header>)}
 
-      <TrialBanner go={go} />
-      {recipient && <PauseWarning recipient={recipient} call={call} go={go} />}
-      {schedulerStale && schedulerAge !== null && (
-        <section className="alert-card" role="alert">
-          <div className="alert-icon">!</div>
-          <div><strong>{t("today.staleTitle")}</strong><p>{t("today.staleBody", { call, ago: ago(schedulerAge) })}</p></div>
-          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
-        </section>
-      )}
-      {!schedulerStale && stuck.length > 0 && (
-        <section className="alert-card" role="alert">
-          <div className="alert-icon">!</div>
-          <div><strong>{t("today.delayedTitle")}</strong><p>{t("today.delayedBody", { call, names: stuckShown })}</p></div>
-          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
-        </section>
-      )}
-      <InstallBanner />
-      {recipient && <EscalationProgress recipient={recipient} call={call} />}
-      {recipient && <ConsentBanner recipient={recipient} call={call} />}
-      {!isChild(recipient) && <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />}
+      {/* Order (R7): slim warnings, the person's main card, Today's medicines, next visit / vaccine, alerts, activity, love card. */}
+      {!(recipient && isChild(recipient)) && notices}
       {styleOpen && <LayoutSheet current={layout} onClose={() => setStyleOpen(false)} onSave={async (next) => { setStyleOpen(false); const ok = await saveLayout(next); styleToast(t(ok ? "layoutPicker.saved" : "layoutPicker.failed")); }} />}
       {sheetOpen && <NotificationSheet notifications={notifications} recipients={recipients} currentId={recipient?.id ?? null} onMarkAllRead={() => onNotificationsSeen(notifications.map((n) => n.id))} medicineNames={medicineNames} callFor={(rid) => { const found = rid ? recipients.find((r) => r.id === rid) : recipient; return found ? parentCall(found, language) : rid ? t("notif.unknownParent") : parentCall(recipient, language); }} onDelete={onDeleteNotification} onClose={() => { setSheetOpen(false); onNotificationsSeen(notifications.map((n) => n.id)); }} />}
       {parentsOpen && <ParentSheet recipients={recipients} selectedId={recipient?.id ?? null} language={language} onSelect={(id) => { onSelectParent(id); setParentsOpen(false); }} onEdit={() => { setParentsOpen(false); go("profile"); }} onAdd={() => { setParentsOpen(false); go("addParent"); }} onAddSelf={() => { setParentsOpen(false); go("addSelf"); }} onClose={() => setParentsOpen(false)} />}
 
-      {lastMissed && !recipient?.is_self && (
-        <section className="alert-card">
-          <div className="alert-icon">!</div>
-          <div><strong>{missed.length > 1 ? t("today.doseMissedMany", { count: missed.length, call }) : t("today.doseMissedText", { name: lastMissed.name, time: time(lastMissed.scheduledAt), call })}</strong></div>
-          {phone && <button onClick={callParent}>{t("today.callButton")}</button>}
-        </section>
-      )}
-
-      {checkinCard()}
-
-      {/* A pregnancy gets her own home (feature 7); everyone else keeps the Today below unchanged. */}
-      {recipient && isPregnancy(recipient) ? <PregnancyHome recipient={recipient} language={language} doses={doses === null ? null : visibleDoses} dosesError={dataError} medicineCount={medicines.length} go={go} todaySection={medicinesSection} /> : <>
-
-      {recipient && <LoveCard recipient={recipient} call={call} />}
-
-      {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
-      {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
+      {/* A pregnancy gets her own home (week card, medicines, checks timeline); a child's home shows the medicines under its hero. */}
+      {recipient && isPregnancy(recipient) ? <>
+        <PregnancyHome recipient={recipient} language={language} doses={doses === null ? null : visibleDoses} dosesError={dataError} medicineCount={medicines.length} go={go} todaySection={medicinesSection} />
+        {checkinCard()}
+      </> : <>
+        {checkinCard()}
+        {!(recipient && isChild(recipient)) && medicinesSection}
+        {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
+        {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
       </>}
 
       <AlertsCard compact />
       <SeeAllActivity go={go} />
-      {/* A pregnancy shows this inside her home, right under the week card; everyone else here. */}
-      {!(recipient && isPregnancy(recipient)) && medicinesSection}
+      {recipient && !isPregnancy(recipient) && <LoveCard recipient={recipient} call={call} />}
 
     </main>
   );

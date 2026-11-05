@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import "./childHome.css";
 import { PersonBadge } from "./PersonBadge";
 import { useLocale, useTranslations } from "use-intl";
@@ -53,8 +53,10 @@ function doseMonths(v: Vaccine, dob: string | null): number {
 const isOpen = (v: Vaccine) => v.status === "due_soon" || v.status === "later";
 const vaccineName = (v: Vaccine, language: Language) => (language === "hi" && v.vaccineHi ? v.vaccineHi : v.vaccineEn);
 
-export function ChildHome({ recipient, go, onLanguage, onBell, onPeople, unread }: {
+export function ChildHome({ recipient, go, onLanguage, onBell, onPeople, unread, notices, todaySection }: {
   recipient: Recipient; go: Go; onLanguage: () => void; onBell: () => void; onPeople: () => void; unread: number;
+  notices?: ReactNode;        // the slim warnings: right under the header
+  todaySection?: ReactNode;   // Today's medicines: right under the hero
 }) {
   const t = useTranslations("childHome");
   const tv = useTranslations("vaccines");
@@ -194,7 +196,9 @@ export function ChildHome({ recipient, go, onLanguage, onBell, onPeople, unread 
         </div>
       </header>
 
+      {notices}
       {hero()}
+      {todaySection}
 
       {mine && !needsSetup && tiles.length > 0 && (
         <section className="child-card" aria-labelledby="child-card-title">
