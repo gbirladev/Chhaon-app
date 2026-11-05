@@ -21,6 +21,8 @@ import { ThemeButton } from "./screens/Appearance";
 import { clearPendingInvite, leaveCircle, pendingInvite, removeMember } from "./lib/invites";
 import { ConfirmSheet, InviteSheet, JoinScreen, PendingInvites } from "./screens/Invites";
 import { AppointmentsScreen, NextAppointment } from "./screens/Appointments";
+import { NextVaccine, VaccinesLink, VaccinesScreen } from "./screens/Vaccines";
+import { vaccineDueText } from "./lib/vaccines";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
 import { PlansScreen } from "./screens/Plans";
 import { StockField } from "./screens/StockField";
@@ -71,7 +73,8 @@ type Screen =
   | "feedback"
   | "love"
   | "doctor"
-  | "addSelf";
+  | "addSelf"
+  | "vaccines";
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
@@ -651,6 +654,7 @@ function SwipeRow({ onRemove, label, className, children }: { onRemove: () => vo
 
 function NotificationSheet({ notifications, medicineNames, callFor, onDelete, onClose }: { notifications: AppNotification[]; medicineNames: Record<string, string>; callFor: (recipientId?: string) => string; onDelete: (id: string) => void; onClose: () => void }) {
   const t = useTranslations("notif");
+  const tv = useTranslations("vaccines");
   const language = useLocale() as Language;
   const dialog = useDialog(onClose);
   const text = (n: AppNotification) => {
@@ -660,6 +664,7 @@ function NotificationSheet({ notifications, medicineNames, callFor, onDelete, on
     if (n.type === "refill_needed") return name ? t("refill_needed", { name }) : t("refill_needed_generic");
     if (n.type === "out_of_stock") return name ? t("out_of_stock", { name }) : t("out_of_stock_generic");
     if (n.type === "dose_missed" && typeof payload.count === "number" && payload.count > 1) return t("dose_missed_many", { call, count: payload.count });
+    if (n.type === "vaccine_due") return vaccineDueText(n.payload, language, call, tv);
     if (n.type === "parent_silent") return t("parent_silent", { call, days: payload.days ?? 3 });
     if (n.type === "love_not_delivered") return t(`love_not_delivered_${payload.reason === "expired" || payload.reason === "parent_opted_out" || payload.reason === "whatsapp_failed" ? payload.reason : "other"}`, { call });
     if (n.type === "dose_missed") return name ? t("dose_missed_named", { call, name }) : t("dose_missed", { call });
@@ -1066,6 +1071,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {recipient && <LoveCard recipient={recipient} call={call} />}
 
       {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
+      <NextVaccine go={go} recipient={recipient} />
 
       <AlertsCard compact />
 
@@ -1786,6 +1792,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
+      <VaccinesLink go={go} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
@@ -1980,9 +1987,9 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
   );
 }
 
-const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor"];
+const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2343,6 +2350,7 @@ export default function App() {
             : <WalletScreen recipient={recipient} onOpen={(id) => { setSelectedDocumentId(id); go("documentDetail"); }} onUpgrade={() => go("plans")} />)}
           {screen === "documentDetail" && <WalletDetail go={go} documentId={selectedDocumentId} />}
           {screen === "appointments" && <AppointmentsScreen go={go} recipient={recipient} />}
+          {screen === "vaccines" && <VaccinesScreen go={go} recipient={recipient} />}
           {screen === "reportDetail" && <ReportDetail go={go} recipient={recipient} reportId={selectedReportId} />}
           {screen === "join" && pendingInvite() && <JoinScreen token={pendingInvite() as string} onDone={afterInvite} />}
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}

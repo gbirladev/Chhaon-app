@@ -28,6 +28,7 @@ begin
     ('can_access_recipient(uuid)', array['authenticated','service_role']::text[]),
     ('can_access_report(uuid)', array['authenticated','service_role']::text[]),
     ('can_access_schedule(uuid)', array['authenticated','service_role']::text[]),
+    ('can_write_child_data(uuid)', array['authenticated','service_role']::text[]),
     ('card_clean(text,integer)', array['service_role']::text[]),
     ('check_medicine_input(uuid,text,text,text,time without time zone[])', array['authenticated','service_role']::text[]),
     ('claim_consent_request(text,uuid,interval,integer)', array['service_role']::text[]),

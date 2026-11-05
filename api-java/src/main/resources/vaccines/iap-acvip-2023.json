@@ -1,0 +1,89 @@
+{
+  "_comment": [
+    "MUST BE REVIEWED BY A PAEDIATRICIAN BEFORE RELEASE. Not reviewed yet.",
+    "Source: Indian Academy of Pediatrics (IAP) Advisory Committee on Vaccines and Immunization Practices (ACVIP): Recommended",
+    "Immunization Schedule (2023) and Update on Immunization for Children Aged 0 Through 18 Years. Rao M IS, Kasi SG, Dhir SK, et al.",
+    "Indian Pediatrics 2024;61:113-125 (February 15, 2024). https://www.indianpediatrics.net/feb2024/113.pdf",
+    "Rows = Table I 'IAP-ACVIP Immunization Timetable 2023: Vaccines for Routine Use' (read from the official PDF on 2026-11-05),",
+    "comments from Table I and the footnotes of Fig. 1. 'age' is where the suggested due date is put (date of birth + age; the START of",
+    "a range such as 16-18 mo); 'group' is the age as printed in Table I (age in completed weeks/months/years).",
+    "Left out on purpose (not a fixed date from the date of birth, or not routine): yearly influenza after the 2nd dose (Table I:",
+    "'to be repeated every year, in pre-monsoon period, till 5 y of age'), HPV 3-dose schedule at 15-18 y ('if not administered earlier'),",
+    "and the Fig. 1 vaccines that are not in Table I (meningococcal, Japanese encephalitis 'in endemic areas', cholera, etc.).",
+    "The app never says a vaccine is optional or required beyond the notes below, never suggests a dose amount, and shows every date",
+    "as 'as advised by your doctor'. The family can change every date."
+  ],
+  "edition": "IAP-ACVIP 2023",
+  "source": "Indian Pediatrics 2024;61:113-125, Table I (https://www.indianpediatrics.net/feb2024/113.pdf)",
+  "reviewedByPaediatrician": false,
+  "vaccines": {
+    "bcg":       { "en": "BCG", "hi": "बीसीजी (BCG)" },
+    "opv":       { "en": "OPV (oral polio)", "hi": "ओपीवी (मुँह से पोलियो की दवा)" },
+    "hepb":      { "en": "Hepatitis B", "hi": "हेपेटाइटिस बी" },
+    "dtp":       { "en": "DTwP / DTaP (diphtheria, tetanus, whooping cough)", "hi": "डीटीपी (DTwP / DTaP: डिप्थीरिया, टिटनेस, काली खाँसी)" },
+    "ipv":       { "en": "IPV (polio injection)", "hi": "आईपीवी (पोलियो का इंजेक्शन)" },
+    "hib":       { "en": "Hib", "hi": "हिब (Hib)" },
+    "rotavirus": { "en": "Rotavirus", "hi": "रोटावायरस" },
+    "pcv":       { "en": "PCV (pneumococcal)", "hi": "पीसीवी (न्यूमोकोकल)" },
+    "influenza": { "en": "Influenza (flu)", "hi": "इन्फ़्लुएंज़ा (फ़्लू)" },
+    "tcv":       { "en": "Typhoid conjugate vaccine", "hi": "टाइफ़ाइड कॉन्जुगेट वैक्सीन" },
+    "mmr":       { "en": "MMR (measles, mumps, rubella)", "hi": "एमएमआर (खसरा, गलसुआ, रूबेला)" },
+    "hepa":      { "en": "Hepatitis A", "hi": "हेपेटाइटिस ए" },
+    "varicella": { "en": "Varicella (chickenpox)", "hi": "वैरिसेला (चिकनपॉक्स)" },
+    "hpv":       { "en": "HPV", "hi": "एचपीवी (HPV)" },
+    "tdap":      { "en": "Tdap", "hi": "टीडैप (Tdap)" },
+    "td":        { "en": "Td", "hi": "टीडी (Td)" }
+  },
+  "doses": [
+    { "key": "bcg",         "vaccine": "bcg",       "dose": "",   "group": "birth", "age": { "days": 0 } },
+    { "key": "opv-0",       "vaccine": "opv",       "dose": "0",  "group": "birth", "age": { "days": 0 } },
+    { "key": "hepb-1",      "vaccine": "hepb",      "dose": "1",  "group": "birth", "age": { "days": 0 } },
+
+    { "key": "dtp-1",       "vaccine": "dtp",       "dose": "1",  "group": "6w",  "age": { "weeks": 6 } },
+    { "key": "ipv-1",       "vaccine": "ipv",       "dose": "1",  "group": "6w",  "age": { "weeks": 6 } },
+    { "key": "hib-1",       "vaccine": "hib",       "dose": "1",  "group": "6w",  "age": { "weeks": 6 } },
+    { "key": "hepb-2",      "vaccine": "hepb",      "dose": "2",  "group": "6w",  "age": { "weeks": 6 } },
+    { "key": "rotavirus-1", "vaccine": "rotavirus", "dose": "1",  "group": "6w",  "age": { "weeks": 6 } },
+    { "key": "pcv-1",       "vaccine": "pcv",       "dose": "1",  "group": "6w",  "age": { "weeks": 6 } },
+
+    { "key": "dtp-2",       "vaccine": "dtp",       "dose": "2",  "group": "10w", "age": { "weeks": 10 } },
+    { "key": "ipv-2",       "vaccine": "ipv",       "dose": "2",  "group": "10w", "age": { "weeks": 10 } },
+    { "key": "hib-2",       "vaccine": "hib",       "dose": "2",  "group": "10w", "age": { "weeks": 10 } },
+    { "key": "hepb-3",      "vaccine": "hepb",      "dose": "3",  "group": "10w", "age": { "weeks": 10 } },
+    { "key": "rotavirus-2", "vaccine": "rotavirus", "dose": "2",  "group": "10w", "age": { "weeks": 10 } },
+    { "key": "pcv-2",       "vaccine": "pcv",       "dose": "2",  "group": "10w", "age": { "weeks": 10 } },
+
+    { "key": "dtp-3",       "vaccine": "dtp",       "dose": "3",  "group": "14w", "age": { "weeks": 14 } },
+    { "key": "ipv-3",       "vaccine": "ipv",       "dose": "3",  "group": "14w", "age": { "weeks": 14 } },
+    { "key": "hib-3",       "vaccine": "hib",       "dose": "3",  "group": "14w", "age": { "weeks": 14 } },
+    { "key": "hepb-4",      "vaccine": "hepb",      "dose": "4",  "group": "14w", "age": { "weeks": 14 }, "note": "hepb4" },
+    { "key": "rotavirus-3", "vaccine": "rotavirus", "dose": "3",  "group": "14w", "age": { "weeks": 14 }, "note": "rotavirus3" },
+    { "key": "pcv-3",       "vaccine": "pcv",       "dose": "3",  "group": "14w", "age": { "weeks": 14 } },
+
+    { "key": "influenza-1", "vaccine": "influenza", "dose": "1",  "group": "6m",  "age": { "months": 6 } },
+    { "key": "tcv",         "vaccine": "tcv",       "dose": "",   "group": "6-9m","age": { "months": 6 } },
+    { "key": "influenza-2", "vaccine": "influenza", "dose": "2",  "group": "7m",  "age": { "months": 7 }, "note": "influenzaYearly" },
+    { "key": "mmr-1",       "vaccine": "mmr",       "dose": "1",  "group": "9m",  "age": { "months": 9 } },
+    { "key": "hepa-1",      "vaccine": "hepa",      "dose": "1",  "group": "12m", "age": { "months": 12 }, "note": "hepa1" },
+
+    { "key": "mmr-2",       "vaccine": "mmr",       "dose": "2",  "group": "15m", "age": { "months": 15 } },
+    { "key": "varicella-1", "vaccine": "varicella", "dose": "1",  "group": "15m", "age": { "months": 15 } },
+    { "key": "pcv-b",       "vaccine": "pcv",       "dose": "B",  "group": "15m", "age": { "months": 15 } },
+
+    { "key": "dtp-b1",      "vaccine": "dtp",       "dose": "B1", "group": "16-18m", "age": { "months": 16 } },
+    { "key": "hib-b1",      "vaccine": "hib",       "dose": "B1", "group": "16-18m", "age": { "months": 16 } },
+    { "key": "ipv-b1",      "vaccine": "ipv",       "dose": "B1", "group": "16-18m", "age": { "months": 16 } },
+
+    { "key": "hepa-2",      "vaccine": "hepa",      "dose": "2",  "group": "18-19m", "age": { "months": 18 }, "note": "hepa2" },
+    { "key": "varicella-2", "vaccine": "varicella", "dose": "2",  "group": "18-19m", "age": { "months": 18 } },
+
+    { "key": "dtp-b2",      "vaccine": "dtp",       "dose": "B2", "group": "4-6y", "age": { "years": 4 } },
+    { "key": "ipv-b2",      "vaccine": "ipv",       "dose": "B2", "group": "4-6y", "age": { "years": 4 } },
+    { "key": "mmr-3",       "vaccine": "mmr",       "dose": "3",  "group": "4-6y", "age": { "years": 4 } },
+
+    { "key": "hpv-1",       "vaccine": "hpv",       "dose": "1",  "group": "9-14y", "age": { "years": 9 }, "note": "hpv2dose" },
+    { "key": "hpv-2",       "vaccine": "hpv",       "dose": "2",  "group": "9-14y", "age": { "years": 9, "months": 6 }, "note": "hpv2dose" },
+    { "key": "tdap",        "vaccine": "tdap",      "dose": "",   "group": "10y",   "age": { "years": 10 }, "note": "tdap" },
+    { "key": "td",          "vaccine": "td",        "dose": "",   "group": "16-18y","age": { "years": 16 } }
+  ]
+}

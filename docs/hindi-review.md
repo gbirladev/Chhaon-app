@@ -211,3 +211,100 @@ Check names and supplement names (`web/src/lib/pregnancyChecks.ts`; the suppleme
 ## Still to come
 
 Appointment reminders are not ported to the Java backend yet; their Hindi texts will need the same review once merged.
+
+## Part 7 (renumber at merge if taken): child profiles and vaccines (added 2026-11-05, branch `child-vaccines`)
+
+The Vaccines screen of a child's profile, the guardian confirmation when a child is added, and the in-app vaccine reminder.
+`vaccines.*` in `web/src/messages/hi.json`. {call} is what the family calls the child, {date} a date, {vaccine} a vaccine name, {n} a number.
+Medical wording ("as advised by your doctor", the IAP notes) must stay exactly as careful as the English: no "required", no "optional".
+
+| Key | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| title | टीके | Vaccines | |
+| subtitle | {call} के टीकों की योजना | {call}'s vaccination plan | |
+| linkTitle | टीके | Vaccines | |
+| linkSub | {call} के टीकों की तारीख़ें, डॉक्टर की सलाह के अनुसार | {call}'s vaccine dates, as advised by your doctor | |
+| nextNone | {call} के टीकों की योजना बनाएँ | Set up {call}'s vaccine plan | |
+| setupTitle | टीकों की योजना बनाएँ | Set up the vaccine plan | |
+| editDobTitle | जन्म की तारीख़ | Date of birth | |
+| setupBody | हम इंडियन एकेडमी ऑफ़ पीडियाट्रिक्स (IAP) की सूची से, जन्म की तारीख़ से गिनकर तारीख़ें सुझाते हैं। हर तारीख़ आप डॉक्टर की सलाह के अनुसार बदल सकते हैं। | We suggest dates from the Indian Academy of Pediatrics (IAP) schedule, counted from the date of birth. You can change every date to what your doctor advises. | |
+| dob | जन्म की तारीख़ | Date of birth | |
+| dobHint | टीकों की तारीख़ें सुझाने के लिए ज़रूरी। | Needed to suggest the vaccine dates. | |
+| errDob | कृपया जन्म की तारीख़ डालें (आगे की तारीख़ नहीं, 18 साल से कम)। | Please enter the date of birth (not in the future, under 18 years). | |
+| guardian | मैं इस बच्चे का माता-पिता या क़ानूनी अभिभावक हूँ | I am the parent or legal guardian of this child | |
+| guardianHint | भारतीय क़ानून (DPDP एक्ट) के अनुसार बच्चे की सेहत की जानकारी सेव करने से पहले यह पुष्टि ज़रूरी है। इसे छाँव पर सिर्फ़ आपका परिवार देख सकता है। कोई विज्ञापन नहीं, कोई ट्रैकिंग नहीं। | Indian law (DPDP Act) asks for this before we save a child's health details. Only your family on Chhaon can see them. No ads, no tracking. | |
+| errGuardian | कृपया पुष्टि करें कि आप माता-पिता या क़ानूनी अभिभावक हैं। | Please confirm that you are the parent or legal guardian. | |
+| makePlan | टीकों की योजना बनाएँ | Make the vaccine plan | |
+| saveDob | सेव करें | Save | |
+| making | सेव हो रहा है… | Saving… | |
+| dobLine | जन्म: {date} | Born {date} | |
+| changeDob | बदलें | Change | |
+| safety | ये तारीख़ें इंडियन एकेडमी ऑफ़ पीडियाट्रिक्स की {edition} सूची से सुझाई गई हैं। हर तारीख़ डॉक्टर की सलाह के अनुसार है। {call} को कौन-से टीके और कौन-से ब्रांड लगें, यह आपके डॉक्टर तय करते हैं। | Suggested dates from the {edition} schedule of the Indian Academy of Pediatrics. Every date is as advised by your doctor. Your doctor decides which vaccines and brands {call} gets. | |
+| notReviewed | इस सूची को अभी किसी बाल रोग विशेषज्ञ ने नहीं जाँचा है। | This list has not been checked by a paediatrician yet. | |
+| overdue | सुझाई गई तारीख़ निकल गई | Past the suggested date | |
+| dueSoon | अगले 30 दिनों में | In the next 30 days | |
+| later | बाद में | Later | |
+| done | हो चुके | Done | |
+| showDone | हो चुके टीके दिखाएँ ({count}) | Show done ({count}) | |
+| hideDone | हो चुके टीके छिपाएँ | Hide done | |
+| emptyNext | अगले 30 दिनों में कोई टीका नहीं। | Nothing in the next 30 days. | |
+| dueOn | तारीख़: {date} | Due {date} | |
+| asAdvised | डॉक्टर की सलाह के अनुसार। | As advised by your doctor. | |
+| givenOn | लगा: {date} | Given {date} | |
+| notGiven | नहीं लगा | Not given | |
+| changedByFamily | तारीख़ परिवार ने बदली | date changed by the family | |
+| dose | खुराक {n} | Dose {n} | |
+| booster | बूस्टर | Booster | |
+| boosterN | बूस्टर {n} | Booster {n} | |
+| age.birth | जन्म के समय | At birth | |
+| age.weeks | {n} हफ़्ते | {n} weeks | |
+| age.months | {n} महीने | {n} months | |
+| age.monthsRange | {from}-{to} महीने | {from}-{to} months | |
+| age.years | {n} साल | {n} years | |
+| age.yearsRange | {from}-{to} साल | {from}-{to} years | |
+| note.hepb4 | IAP: कॉम्बिनेशन वैक्सीन के हिस्से के रूप में हेपेटाइटिस बी की चौथी खुराक सुरक्षित है और दी जा सकती है। डॉक्टर से पूछें कि यह आप पर लागू है या नहीं। | IAP: a 4th dose of Hepatitis B is safe and permitted when it is part of a combination vaccine. Ask your doctor whether it applies. | |
+| note.rotavirus3 | IAP: 2 खुराक वाले रोटावायरस टीके RV1 (GSK) में इसकी ज़रूरत नहीं; बाक़ी ब्रांड में 3 खुराक होती हैं। डॉक्टर से पूछें। | IAP: not needed with the 2-dose rotavirus vaccine RV1 (GSK); other brands have 3 doses. Ask your doctor. | |
+| note.influenzaYearly | IAP: इसके बाद फ़्लू का टीका हर साल, मानसून से पहले, 5 साल की उम्र तक दोहराया जाता है। डॉक्टर से पूछें। | IAP: after this, the flu vaccine is repeated every year, before the monsoon, till 5 years of age. Ask your doctor. | |
+| note.hepa1 | IAP: लाइव (जीवित) हेपेटाइटिस ए टीके की एक खुराक; इनएक्टिवेटेड टीके की दो खुराक होती हैं। | IAP: one dose for the live hepatitis A vaccine; the inactivated vaccine needs two doses. | |
+| note.hepa2 | IAP: सिर्फ़ इनएक्टिवेटेड हेपेटाइटिस ए टीके के लिए। डॉक्टर से पूछें कि कौन-सा टीका लगा था। | IAP: only for the inactivated hepatitis A vaccine. Ask your doctor which one was given. | |
+| note.hpv2dose | IAP: 9 से 14 साल में, 6 महीने के अंतर पर दो खुराक, लड़कियों और लड़कों दोनों के लिए। | IAP: from 9 to 14 years, two doses 6 months apart, for girls and boys. | |
+| note.tdap | IAP: 10 साल पर लगता है, भले ही Tdap पहले DTP बूस्टर के रूप में लग चुका हो। डॉक्टर से पूछें। | IAP: given at 10 years even if Tdap was given earlier as the DTP booster. Ask your doctor. | |
+| markGiven | लग गया | Mark as given | |
+| givenDate | किस तारीख़ को लगा | Given on | |
+| errGivenDate | कृपया वह तारीख़ चुनें जब टीका लगा (आगे की तारीख़ नहीं)। | Please pick the date it was given (not in the future). | |
+| markNotGiven | नहीं लगा | Mark as not given | |
+| reopen | अभी नहीं लगा (फिर से खोलें) | Mark as not done yet | |
+| changeDate | तारीख़ | Due date | |
+| saveDate | तारीख़ सेव करें | Save date | |
+| useSuggested | सुझाई गई तारीख़ लें ({date}) | Use the suggested date ({date}) | |
+| notes | नोट (ज़रूरी नहीं) | Notes (optional) | |
+| notesPlaceholder | जैसे: अस्पताल, ब्रांड, बैच | For example: hospital, brand, batch | |
+| saveNotes | नोट सेव करें | Save notes | |
+| close | बंद करें | Close | |
+| saved | सेव हो गया | Saved | |
+| errSave | सेव नहीं हो पाया। कृपया फिर से कोशिश करें। | Could not save. Please try again. | |
+| loadFailed | टीके लोड नहीं हो पाए। कृपया फिर से कोशिश करें। | Could not load the vaccines. Please try again. | |
+| notChild | टीकों की योजना सिर्फ़ बच्चे की प्रोफ़ाइल के लिए है। | The vaccine plan is only for a child's profile. | |
+| notifDue | {call}: {vaccine} की तारीख़ {date} है, डॉक्टर की सलाह के अनुसार। | {call}: {vaccine} is due on {date}, as advised by your doctor. | |
+| notifDueGeneric | {call} का एक टीका जल्द है, डॉक्टर की सलाह के अनुसार। | A vaccine for {call} is due soon, as advised by your doctor. | |
+
+Vaccine names (shown in Hindi mode; from `api-java/src/main/resources/vaccines/iap-acvip-2023.json`, also read by a paediatrician):
+
+| Code | Hindi | English | OK / better wording |
+|---|---|---|---|
+| bcg | बीसीजी (BCG) | BCG | |
+| opv | ओपीवी (मुँह से पोलियो की दवा) | OPV (oral polio) | |
+| hepb | हेपेटाइटिस बी | Hepatitis B | |
+| dtp | डीटीपी (DTwP / DTaP: डिप्थीरिया, टिटनेस, काली खाँसी) | DTwP / DTaP (diphtheria, tetanus, whooping cough) | |
+| ipv | आईपीवी (पोलियो का इंजेक्शन) | IPV (polio injection) | |
+| hib | हिब (Hib) | Hib | |
+| rotavirus | रोटावायरस | Rotavirus | |
+| pcv | पीसीवी (न्यूमोकोकल) | PCV (pneumococcal) | |
+| influenza | इन्फ़्लुएंज़ा (फ़्लू) | Influenza (flu) | |
+| tcv | टाइफ़ाइड कॉन्जुगेट वैक्सीन | Typhoid conjugate vaccine | |
+| mmr | एमएमआर (खसरा, गलसुआ, रूबेला) | MMR (measles, mumps, rubella) | |
+| hepa | हेपेटाइटिस ए | Hepatitis A | |
+| varicella | वैरिसेला (चिकनपॉक्स) | Varicella (chickenpox) | |
+| hpv | एचपीवी (HPV) | HPV | |
+| tdap | टीडैप (Tdap) | Tdap | |
+| td | टीडी (Td) | Td | |
