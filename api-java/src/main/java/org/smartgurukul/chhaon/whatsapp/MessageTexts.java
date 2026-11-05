@@ -41,51 +41,116 @@ public final class MessageTexts {
     }
 
     public static String doseReminder(String language, String callName, String medicine) {
-        return doseReminder(language, callName, medicine, null, null);
+        return doseReminder(language, callName, medicine, null, null, null);
     }
 
-    /** With how the tablet looks (migration 0042), so a parent who cannot read the strip can still pick it: "🔵 Blue round tablet". */
     public static String doseReminder(String language, String callName, String medicine, String pillColour, String pillShape) {
-        String med = clean(medicine, 60);
-        String look = pillLook(language, pillColour, pillShape);
-        String lookLine = look.isEmpty() ? "" : "\n" + look;
-        if (hi(language)) {
-            return "नमस्ते" + who(callName) + " 🙏\nदवा लेने का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                    + lookLine + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
-        }
-        return "Namaste" + who(callName) + " 🙏\nIt's time for your medicine 💊" + (med.isEmpty() ? "" : " *" + med + "*")
-                + lookLine + "\n\nReply *1* or 👍 once you have taken it ✅";
+        return doseReminder(language, callName, medicine, pillColour, pillShape, null);
     }
 
     /**
-     * For a pregnancy (care_type = pregnant, migration 0043): a greeting for the time of day, the pregnancy week when the due
-     * date is known, then the medicine. Same pill-look line and the same reply as for everyone (*1* = taken), so the reply
-     * classifier is unchanged. Example: "Good morning Shivani ☀️\nWeek 24 today 💛\nTime for your *Iron + folic acid* 💊".
+     * With how the tablet looks (migration 0042), so a parent who cannot read the strip can still pick it ("🔵 Blue round tablet"),
+     * and the dose the family typed ("Dose: *500 mg*", R2). No dose stored = no dose line. The dose is shown as stored, only the
+     * unit word is translated ({@link #localizeDose}); it is never computed or changed.
+     */
+    public static String doseReminder(String language, String callName, String medicine, String pillColour, String pillShape,
+                                      String dosage) {
+        String med = clean(medicine, 60);
+        String extra = doseLine(language, dosage) + lookLine(language, pillColour, pillShape);
+        if (hi(language)) {
+            return "नमस्ते" + who(callName) + " 🙏\nदवा लेने का समय हो गया है 💊" + (med.isEmpty() ? "" : " *" + med + "*")
+                    + extra + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
+        }
+        return "Namaste" + who(callName) + " 🙏\nIt's time for your medicine 💊" + (med.isEmpty() ? "" : " *" + med + "*")
+                + extra + "\n\nReply *1* or 👍 once you have taken it ✅";
+    }
+
+    /**
+     * For a pregnancy (care_type = pregnant, migration 0043): a greeting for the time of day, the new pregnancy week ONCE a week,
+     * then the medicine and its dose. Same pill-look line and the same reply as for everyone (*1* = taken), so the reply classifier
+     * is unchanged. Example: "Good morning Shivani ☀️\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\nDose: *1 tablet*".
      *
-     * @param week      completed pregnancy weeks (recipient.Pregnancy#week), or null to leave the line out
+     * <p>Decision (R2): the week is said only in the FIRST reminder sent on the day a new week starts (the scheduler decides, see
+     * SchedulerService#weekToSay); every other reminder and the daily check-in leave it out, so "Week 24" is not repeated twice a day.
+     *
+     * @param newWeek   the week that starts today when this is the first reminder of that day, else null (no week line)
      * @param localHour the hour on the PERSON's clock (0-23), for good morning / afternoon / evening
      */
     public static String pregnancyDoseReminder(String language, String callName, String medicine, String pillColour,
-                                               String pillShape, Integer week, int localHour) {
-        String med = clean(medicine, 60);
-        String look = pillLook(language, pillColour, pillShape);
-        String lookLine = look.isEmpty() ? "" : "\n" + look;
-        String head = greeting(language, callName, localHour) + weekLine(language, week);
-        if (hi(language)) {
-            return head + "\n" + (med.isEmpty() ? "दवा" : "*" + med + "*") + " लेने का समय हो गया है 💊"
-                    + lookLine + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
-        }
-        return head + "\nTime for your " + (med.isEmpty() ? "medicine" : "*" + med + "*") + " 💊"
-                + lookLine + "\n\nReply *1* or 👍 once you have taken it ✅";
+                                               String pillShape, Integer newWeek, int localHour) {
+        return pregnancyDoseReminder(language, callName, medicine, pillColour, pillShape, null, newWeek, localHour);
     }
 
-    /** The gentler daily check-in for a pregnancy: same answers as everyone (*1* fine, *2* call me). */
-    public static String pregnancyCheckin(String language, String callName, Integer week) {
-        String head = greeting(language, callName, 8) + weekLine(language, week);
+    public static String pregnancyDoseReminder(String language, String callName, String medicine, String pillColour,
+                                               String pillShape, String dosage, Integer newWeek, int localHour) {
+        String med = clean(medicine, 60);
+        String extra = doseLine(language, dosage) + lookLine(language, pillColour, pillShape);
+        String head = greeting(language, callName, localHour) + weekLine(language, newWeek);
+        if (hi(language)) {
+            return head + "\n" + (med.isEmpty() ? "दवा" : "*" + med + "*") + " लेने का समय हो गया है 💊"
+                    + extra + "\n\nलेने के बाद *1* या 👍 भेजिए ✅";
+        }
+        return head + "\nTime for your " + (med.isEmpty() ? "medicine" : "*" + med + "*") + " 💊"
+                + extra + "\n\nReply *1* or 👍 once you have taken it ✅";
+    }
+
+    /** The gentler daily check-in for a pregnancy: same answers as everyone (*1* fine, *2* call me). No week line (see above). */
+    public static String pregnancyCheckin(String language, String callName) {
+        String head = greeting(language, callName, 8);
         if (hi(language)) {
             return head + "\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
         }
         return head + "\nHow are you feeling today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞";
+    }
+
+    /** "\n🔵 Blue round tablet" or "". */
+    static String lookLine(String language, String pillColour, String pillShape) {
+        String look = pillLook(language, pillColour, pillShape);
+        return look.isEmpty() ? "" : "\n" + look;
+    }
+
+    /** "\nDose: *2.5 ml*" / "\nमात्रा: *2.5 ml*", or "" when no dose is stored (or it is not safe to show). */
+    public static String doseLine(String language, String dosage) {
+        String d = localizeDose(language, dosage);
+        if (d.isEmpty()) return "";
+        return hi(language) ? "\nमात्रा: *" + d + "*" : "\nDose: *" + d + "*";
+    }
+
+    private static final Pattern DOSE = Pattern.compile("^(\\d+(?:\\.\\d+)?)\\s+([a-z]+?)s?$");
+    /** A run of digits this long is a phone number, not a dose: such a "dose" is never sent (owner's fraud rule). */
+    private static final Pattern LONG_NUMBER = Pattern.compile("\\d{6,}");
+    // unit -> {English one, English other, Hindi one, Hindi other}; same units and words as web/src/lib/format.ts localizeDose.
+    private static final Map<String, String[]> UNITS = Map.of(
+            "mg", new String[] {"mg", "mg", "mg", "mg"},
+            "mcg", new String[] {"mcg", "mcg", "mcg", "mcg"},
+            "g", new String[] {"g", "g", "g", "g"},
+            "ml", new String[] {"ml", "ml", "ml", "ml"},
+            "tablet", new String[] {"tablet", "tablets", "गोली", "गोलियाँ"},
+            "capsule", new String[] {"capsule", "capsules", "कैप्सूल", "कैप्सूल"},
+            "drop", new String[] {"drop", "drops", "बूँद", "बूँदें"},
+            "unit", new String[] {"unit", "units", "यूनिट", "यूनिट"},
+            "puff", new String[] {"puff", "puffs", "पफ़", "पफ़"},
+            "tsp", new String[] {"tsp", "tsp", "चम्मच", "चम्मच"});
+
+    /**
+     * The stored dose ("2.5 ml", "1 tablet", "2 tablets": canonical English from the app) in the receiver's language: "1 गोली",
+     * "2 गोलियाँ", "2.5 ml". Anything else the family typed is shown as typed (cleaned). Never computes or changes the amount.
+     */
+    public static String localizeDose(String language, String dosage) {
+        String d = clean(dosage, 30);
+        if (d.isEmpty() || LONG_NUMBER.matcher(d).find()) return "";
+        java.util.regex.Matcher m = DOSE.matcher(d.toLowerCase(Locale.ROOT));
+        if (!m.matches()) return d;
+        String[] words = UNITS.get(m.group(2));
+        if (words == null) return d;
+        double n;
+        try {
+            n = Double.parseDouble(m.group(1));
+        } catch (NumberFormatException e) {
+            return d;
+        }
+        boolean one = hi(language) ? n <= 1 : n == 1;
+        return m.group(1) + " " + words[(hi(language) ? 2 : 0) + (one ? 0 : 1)];
     }
 
     /** "Good morning Shivani ☀️" / "सुप्रभात Shivani ☀️", by the hour on the person's clock. */
@@ -99,10 +164,10 @@ public final class MessageTexts {
         return morning ? "Good morning" + n + " ☀️" : afternoon ? "Good afternoon" + n + " 🌤️" : "Good evening" + n + " 🌙";
     }
 
-    /** "\nWeek 24 today 💛" / "\nआज आपका 24वाँ हफ़्ता है 💛", or "" without a week. */
+    /** "\nWeek 24 starts today 💛" / "\nआज से आपका 24वाँ हफ़्ता शुरू हो रहा है 💛", or "" without a week. */
     private static String weekLine(String language, Integer week) {
         if (week == null || week < 1 || week > 42) return "";
-        return hi(language) ? "\nआज आपका " + hindiOrdinal(week) + " हफ़्ता है 💛" : "\nWeek " + week + " today 💛";
+        return hi(language) ? "\nआज से आपका " + hindiOrdinal(week) + " हफ़्ता शुरू हो रहा है 💛" : "\nWeek " + week + " starts today 💛";
     }
 
     /** 1 पहला, 2 दूसरा, 3 तीसरा, 4 चौथा, 6 छठा, otherwise 24वाँ. */
@@ -190,10 +255,10 @@ public final class MessageTexts {
         String n = clean(firstName, 40);
         String name = n.isEmpty() ? "" : " " + n;
         if (hi(language)) {
-            return "नमस्ते" + name + " 🙏\nछाँव आपको यहाँ ज़रूरी अलर्ट भेजना चाहता है (जैसे माता-पिता की छूटी हुई दवा)।"
+            return "नमस्ते" + name + " 🙏\nछाँव आपको यहाँ ज़रूरी अलर्ट भेजना चाहता है (जैसे परिवार में किसी की छूटी हुई दवा)।"
                     + "\n\nचालू करने के लिए *1* लिखें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
-        return "Namaste" + name + " 🙏\nChhaon would like to send you important alerts here (for example a missed medicine of your parent)."
+        return "Namaste" + name + " 🙏\nChhaon would like to send you important alerts here (for example a missed medicine in your family)."
                 + "\n\nReply *1* to turn alerts on ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 

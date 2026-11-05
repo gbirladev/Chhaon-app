@@ -19,14 +19,14 @@ class PregnancyTextTest {
     void englishDoseReminderHasTheWeekTheMedicineAndTheUsualReply() {
         String t = MessageTexts.pregnancyDoseReminder("en", "Shivani", "Iron + folic acid", null, null, 24, 8);
         chatSized(t);
-        assertThat(t).isEqualTo("Good morning Shivani ☀️\nWeek 24 today 💛\nTime for your *Iron + folic acid* 💊\n\nReply *1* or 👍 once you have taken it ✅");
+        assertThat(t).isEqualTo("Good morning Shivani ☀️\nWeek 24 starts today 💛\nTime for your *Iron + folic acid* 💊\n\nReply *1* or 👍 once you have taken it ✅");
     }
 
     @Test
     void hindiDoseReminderHasTheWeekTheMedicineAndTheUsualReply() {
         String t = MessageTexts.pregnancyDoseReminder("hi", "शिवानी", "आयरन + फ़ोलिक एसिड", "red", "round", 24, 20);
         chatSized(t);
-        assertThat(t).isEqualTo("शुभ संध्या शिवानी 🌙\nआज आपका 24वाँ हफ़्ता है 💛\n*आयरन + फ़ोलिक एसिड* लेने का समय हो गया है 💊\n🔴 लाल गोल गोली\n\nलेने के बाद *1* या 👍 भेजिए ✅");
+        assertThat(t).isEqualTo("शुभ संध्या शिवानी 🌙\nआज से आपका 24वाँ हफ़्ता शुरू हो रहा है 💛\n*आयरन + फ़ोलिक एसिड* लेने का समय हो गया है 💊\n🔴 लाल गोल गोली\n\nलेने के बाद *1* या 👍 भेजिए ✅");
     }
 
     @Test
@@ -40,13 +40,23 @@ class PregnancyTextTest {
     }
 
     @Test
-    void pregnancyCheckinIsGentleAndKeepsBothAnswers() {
-        String en = MessageTexts.pregnancyCheckin("en", "Shivani", 30);
+    void pregnancyCheckinIsGentleKeepsBothAnswersAndNeverRepeatsTheWeek() {
+        String en = MessageTexts.pregnancyCheckin("en", "Shivani");
         chatSized(en);
-        assertThat(en).isEqualTo("Good morning Shivani ☀️\nWeek 30 today 💛\nHow are you feeling today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞");
-        String hi = MessageTexts.pregnancyCheckin("hi", "शिवानी", 1);
+        assertThat(en).isEqualTo("Good morning Shivani ☀️\nHow are you feeling today?\n\nReply *1* or 👍 if you are fine 😊\nReply *2* if you want a call 📞");
+        String hi = MessageTexts.pregnancyCheckin("hi", "शिवानी");
         chatSized(hi);
-        assertThat(hi).isEqualTo("सुप्रभात शिवानी ☀️\nआज आपका पहला हफ़्ता है 💛\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞");
+        assertThat(hi).isEqualTo("सुप्रभात शिवानी ☀️\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* या 👍 भेजें 😊\nफ़ोन चाहिए तो *2* लिखें 📞");
+    }
+
+    @Test
+    void theDoseIsInEveryPregnancyReminder() {
+        String en = MessageTexts.pregnancyDoseReminder("en", "Shivani", "Iron + folic acid", null, null, "1 tablet", null, 8);
+        chatSized(en);
+        assertThat(en).isEqualTo("Good morning Shivani ☀️\nTime for your *Iron + folic acid* 💊\nDose: *1 tablet*\n\nReply *1* or 👍 once you have taken it ✅");
+        String hi = MessageTexts.pregnancyDoseReminder("hi", "शिवानी", "Calcium", "white", "oval", "2 tablets", 25, 8);
+        chatSized(hi);
+        assertThat(hi).isEqualTo("सुप्रभात शिवानी ☀️\nआज से आपका 25वाँ हफ़्ता शुरू हो रहा है 💛\n*Calcium* लेने का समय हो गया है 💊\nमात्रा: *2 गोलियाँ*\n⚪ सफ़ेद अंडाकार गोली\n\nलेने के बाद *1* या 👍 भेजिए ✅");
     }
 
     @Test

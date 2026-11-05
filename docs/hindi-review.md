@@ -619,3 +619,37 @@ reads naturally for a dose given by a helper as well as one the person took.
 | doseGiven.undoTooLate | वापस सिर्फ़ 10 मिनट तक ले सकते हैं। | Undo is only possible for 10 minutes. | |
 | doseGiven.undoNotPossible | इसे अब वापस नहीं लिया जा सकता। | This can no longer be undone. | |
 | doseGiven.failed | सेव नहीं हुआ। इंटरनेट देखकर फिर से कोशिश करें। | Could not save. Please check your internet and try again. | |
+
+## Part R2: what the receiver reads (added 2026-11-05, branch `r2-receiver-texts`)
+
+WhatsApp texts (Java: `MessageTexts`, `ReceiverTexts`, `AlertTexts`) and the app's "Preview WhatsApp" screen (`whatsapp` in hi.json).
+Please check especially: "मात्रा" for the dose line, the new "Me" sentence ("जब Papa दवा ले लें ..."), the vaccine message and the alert
+lines that now name who to call.
+
+| Where | Hindi | English | OK? |
+|---|---|---|---|
+| Dose line (every reminder) | मात्रा: *2.5 ml* / मात्रा: *1 गोली* / मात्रा: *2 गोलियाँ* | Dose: *2.5 ml* / *1 tablet* / *2 tablets* | |
+| Dose units | गोली / गोलियाँ, कैप्सूल, बूँद / बूँदें, यूनिट, पफ़, चम्मच (mg, mcg, g, ml unchanged) | tablet(s), capsule(s), drop(s), unit(s), puff(s), tsp | |
+| Pregnancy, new week (first reminder of that day only) | आज से आपका 24वाँ हफ़्ता शुरू हो रहा है 💛 | Week 24 starts today 💛 | |
+| "Me" reminder, last line | जब Papa दवा ले लें, तो *1* या 👍 भेजें ✅ (was: "Papa के दवा लेने के बाद ...") | Reply *1* or 👍 once Papa has taken it ✅ | |
+| "Me", "not yet" reply | ठीक है 🙏 जब Papa दवा ले लें, तो 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once Papa has taken the medicine. | |
+| Vaccine, 3 days before (helper) | नमस्ते Kamla जी 🙏 / 💉 Aarav का टीका *एमएमआर (खुराक 1)* *मंगलवार, 10 नवंबर* को लगना है, जैसा डॉक्टर ने बताया है। / कृपया परिवार को याद दिला दें, या Aarav को क्लिनिक ले जाएँ। / जवाब देने की ज़रूरत नहीं 🙏 | Namaste Kamla ji 🙏 / 💉 Aarav's vaccine *MMR (dose 1)* is due on *Tue 10 Nov*, as advised by your doctor. / Please remind the family, or take Aarav to the clinic. / No reply needed 🙏 | |
+| Vaccine, on the day, several doses | Aarav के टीके *A (खुराक 1)*, *B (बूस्टर 2)* *आज* लगने हैं, जैसा डॉक्टर ने बताया है। | Aarav's vaccines *A (dose 1)*, *B (booster 2)* are due *today*, as advised by your doctor. | |
+| Vaccine, "Me" receiver | कृपया Aarav को क्लिनिक ले जाएँ। | Please take Aarav to the clinic. | |
+| Alert: dose missed | एक बार Papa को फ़ोन करके हाल पूछ लें। | You may want to call Papa. | |
+| Alert: dose missed, helper got it | एक बार Kamla (Nani) को फ़ोन करके पूछ लें। | You may want to call Kamla (Nani). | |
+| Alert: dose missed, you got it | कृपया देख लें कि Papa ने दवा ले ली है। | Please check that Papa has had it. | |
+| Alert: check-in missed | एक बार Papa को फ़ोन करके पूछ लें कि सब ठीक है। | You may want to call Papa to make sure all is well. | |
+| Alert: call requested | जब हो सके, Papa को फ़ोन कर लें। | Please call Papa when you can. | |
+| Alert: reminder not sent | कृपया Papa को फ़ोन करके ख़ुद याद दिला दें। | Please remind Papa yourself, for example with a call. | |
+| Alert: not sent, helper | कृपया Kamla (Nani) को फ़ोन करके याद दिला दें। / (you) कृपया ध्यान रखें कि दवा समय पर दी जाए। | Please make sure it is given, or call Kamla (Nani). / Please make sure it is given. | |
+| Alert: name missing (profile deleted) | परिवार के एक सदस्य (was: आपके माता-पिता) | someone in your family (was: your parent) | |
+| Alert opt-in question | (जैसे परिवार में किसी की छूटी हुई दवा) (was: माता-पिता की) | (for example a missed medicine in your family) | |
+| whatsapp.receives / receivesYou | {name} को ये WhatsApp संदेश {language} में मिलते हैं। / आपको ये ... | {name} receives these WhatsApp messages, in {language}. | |
+| whatsapp.realNote / sampleNote | पिछले 3 दिनों में जो भेजा गया, हूबहू वही। / अभी तक कुछ नहीं भेजा गया। ये वही संदेश हैं जो क्रम से भेजे जाएँगे। | What was sent in the last 3 days, word for word. / Nothing has been sent yet. These are the exact messages, in order. | |
+| whatsapp.firstMessage / nextReminder / checkinLabel / vaccineLabel / familyAlert | पहला संदेश: सहमति माँगता है / अगला रिमाइंडर / रोज़ का हालचाल / टीके का रिमाइंडर (3 दिन पहले और उसी दिन) / परिवार को, अगर कोई पुष्टि न करे | FIRST MESSAGE: ASKS TO AGREE / NEXT REMINDER / DAILY CHECK-IN / VACCINE REMINDER ... / TO THE FAMILY, IF NOBODY CONFIRMS | |
+| whatsapp.withPhoto / noMedicine | 📷 दवा की फ़ोटो के साथ भेजा जाता है / रिमाइंडर यहाँ देखने के लिए कोई दवा जोड़ें। | 📷 Sent with the medicine photo / Add a medicine to see its reminder here. | |
+| whatsapp.waitingConsent(You) | {name} ने अभी सहमति नहीं दी है। जब तक {name} 1 या 👍 नहीं भेजते, कोई रिमाइंडर नहीं जाएगा। | {name} has not agreed yet. No reminders are sent until {name} replies 1 or 👍. | |
+| whatsapp.stopped(You) / noNumber / loadError | {name} ने STOP लिखा है। जब तक {name} START नहीं लिखते, कुछ नहीं भेजा जाएगा। / अभी कोई WhatsApp नंबर नहीं है। ... / संदेश लोड नहीं हो पाए। ... | {name} replied STOP. ... / No WhatsApp number yet. ... / Could not load the messages. ... | |
+| whatsapp.confirmed / replied / waiting / noReply (+You) | {name} ने पुष्टि की ✅ / {name} ने जवाब दिया / {name} के जवाब का इंतज़ार / {name} का जवाब नहीं आया | {name} confirmed ✅ / replied / Waiting for {name}'s reply / No reply from {name} | |
+| whatsapp.helper / helperYou | {name} 1 लिखकर या 👍 भेजकर जवाब देते हैं। जवाब एक मिनट के भीतर आपके छाँव ऐप में दिखता है। | {name} replies by typing 1 or sending 👍. The answer shows in your Chhaon app within a minute. | |

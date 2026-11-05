@@ -27,15 +27,18 @@ public final class AlertTexts {
         return "hi".equals(language);
     }
 
-    /** What a missing piece is called in the text. */
+    /**
+     * What the person is called when their name is missing (only when the profile was deleted meanwhile: the name is required).
+     * Neutral on purpose: the person may be a parent, a pregnancy or a child, so never "your parent".
+     */
     public static String fallbackParent(String language) {
-        return hi(language) ? "आपके माता-पिता" : "your parent";
+        return hi(language) ? "परिवार के एक सदस्य" : "someone in your family";
     }
 
     /**
      * The full alert text, or null for a type we do not send.
      *
-     * @param parent   what the family calls the parent (call name, else name); blank = "your parent"
+     * @param parent   what the family calls the person (call name, else name); blank = {@link #fallbackParent}
      * @param medicine one medicine name, or null
      * @param count    how many medicines went unconfirmed together (dose_missed), or null / 1
      * @param when     the due time already worded ({@link #clock}), or null
@@ -51,15 +54,15 @@ public final class AlertTexts {
         String body = switch (type) {
             case "dose_missed" -> h
                     ? p + " ने " + (w == null ? "आज " : w + " की ") + (many ? count + " दवाइयाँ" : "दवा " + med)
-                        + " लेने की पुष्टि नहीं की है।\nएक बार फ़ोन करके हाल पूछ लें।"
+                        + " लेने की पुष्टि नहीं की है।\nएक बार " + p + " को फ़ोन करके हाल पूछ लें।"
                     : p + " has not confirmed " + (many ? count + " medicines" : med) + (w == null ? " today" : " (due " + w + ")")
-                        + ".\nYou may want to give them a call.";
+                        + ".\nYou may want to call " + p + ".";
             case "checkin_missed" -> h
-                    ? p + " ने आज सुबह के चेक-इन का जवाब नहीं दिया है।\nएक बार फ़ोन करके पूछ लें कि वे ठीक हैं।"
-                    : p + " has not replied to today's morning check-in.\nYou may want to call to make sure they are okay.";
+                    ? p + " ने आज सुबह के चेक-इन का जवाब नहीं दिया है।\nएक बार " + p + " को फ़ोन करके पूछ लें कि सब ठीक है।"
+                    : p + " has not replied to today's morning check-in.\nYou may want to call " + p + " to make sure all is well.";
             case "checkin_call_requested" -> h
-                    ? p + " ने आज के चेक-इन में फ़ोन करने को कहा है।\nजब हो सके, उन्हें फ़ोन कर लें।"
-                    : p + " asked for a call in today's check-in.\nPlease phone them when you can.";
+                    ? p + " ने आज के चेक-इन में फ़ोन करने को कहा है।\nजब हो सके, " + p + " को फ़ोन कर लें।"
+                    : p + " asked for a call in today's check-in.\nPlease call " + p + " when you can.";
             case "refill_needed" -> h
                     ? p + " की दवा " + med + " कम बची है।\nदोबारा मँगाने का समय है।"
                     : p + "'s medicine " + med + " is running low.\nTime to arrange a refill.";
@@ -67,8 +70,8 @@ public final class AlertTexts {
                     ? p + " की दवा " + med + " ख़त्म हो गई है।\nआज ही मँगा लें, ताकि कोई ख़ुराक न छूटे।"
                     : p + "'s medicine " + med + " has run out.\nPlease arrange it today so that no dose is missed.";
             case "reminder_not_sent" -> h
-                    ? "हम " + p + " को " + med + " का रिमाइंडर नहीं भेज पाए।\nकृपया उन्हें ख़ुद याद दिला दें या फ़ोन कर लें।"
-                    : "We could not send the reminder for " + med + " to " + p + ".\nPlease remind them yourself or give them a call.";
+                    ? "हम " + p + " को " + med + " का रिमाइंडर नहीं भेज पाए।\nकृपया " + p + " को फ़ोन करके ख़ुद याद दिला दें।"
+                    : "We could not send the reminder for " + med + " to " + p + ".\nPlease remind " + p + " yourself, for example with a call.";
             case "parent_stopped" -> h
                     ? p + " ने WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए रिमाइंडर और चेक-इन रुके हुए हैं।"
                     : p + " chose to stop Chhaon messages on WhatsApp, so reminders and check-ins are paused.";
@@ -103,12 +106,16 @@ public final class AlertTexts {
         String body = switch (type) {
             case "dose_missed" -> h
                     ? p + " की " + (many ? count + " दवाइयों" : "दवा " + med) + (w == null ? " (आज)" : " (" + w + ")")
-                        + " की पुष्टि नहीं हुई। रिमाइंडर " + toR + " भेजा गया था।\nएक बार फ़ोन करके पूछ लें।"
+                        + " की पुष्टि नहीं हुई। रिमाइंडर " + toR + " भेजा गया था।\n"
+                        + (you ? "कृपया देख लें कि " + p + " ने दवा ले ली है।" : "एक बार " + receiver + " को फ़ोन करके पूछ लें।")
                     : p + "'s " + (many ? count + " medicines" : "medicine " + med) + (w == null ? " today" : " (due " + w + ")")
-                        + (many ? " were" : " was") + " not confirmed. The reminder went to " + toR + ".\nYou may want to give them a call.";
+                        + (many ? " were" : " was") + " not confirmed. The reminder went to " + toR + ".\n"
+                        + (you ? "Please check that " + p + " has had it." : "You may want to call " + receiver + ".");
             case "reminder_not_sent" -> h
-                    ? "हम " + p + " की दवा " + med + " का रिमाइंडर " + toR + " नहीं भेज पाए।\nकृपया ख़ुद याद दिला दें या फ़ोन कर लें।"
-                    : "We could not send the reminder for " + p + "'s medicine " + med + " to " + toR + ".\nPlease make sure it is given, or give them a call.";
+                    ? "हम " + p + " की दवा " + med + " का रिमाइंडर " + toR + " नहीं भेज पाए।\n"
+                        + (you ? "कृपया ध्यान रखें कि दवा समय पर दी जाए।" : "कृपया " + receiver + " को फ़ोन करके याद दिला दें।")
+                    : "We could not send the reminder for " + p + "'s medicine " + med + " to " + toR + ".\n"
+                        + (you ? "Please make sure it is given." : "Please make sure it is given, or call " + receiver + ".");
             case "parent_stopped" -> h
                     ? (you ? "आपने" : p + " के रिमाइंडर पाने वाले " + receiver + " ने") + " WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए "
                         + p + " के रिमाइंडर रुके हुए हैं।"

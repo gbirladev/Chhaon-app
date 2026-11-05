@@ -1,17 +1,17 @@
 import { Component, createContext, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ErrorInfo, type ReactNode } from "react";
-import { createTranslator, useLocale, useTranslations } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
 import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired } from "./lib/auth";
 import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
-  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, loadRecentActivity, type Activity, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
+  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
   createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setMedicineFlags, deleteMedicineApi,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockLabel, clockParts, describeTimes, formatClock, formatDate, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { clockParts, describeTimes, formatClock, formatDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -45,7 +45,7 @@ import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import type { PillColour, PillShape } from "./lib/pillLook";
-import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
+import { careTypeOf, dueDateOk, isPregnancy, todayIn, type CareType } from "./lib/pregnancy";
 import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
@@ -53,6 +53,7 @@ import { WeeklyCard } from "./screens/WeeklySummary";
 import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
+import { WhatsAppScreen } from "./screens/WhatsAppPreview";
 
 type Screen =
   | "activity"
@@ -1964,119 +1965,6 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   );
 }
 
-/** The chat bubbles are what the PARENT receives, so they use the parent's language, not the caregiver's. */
-function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; recipient: Recipient | null; medicines: Medicine[] }) {
-  const t = useTranslations("whatsapp");
-  const tProfile = useTranslations("profile");
-  const uiLanguage = useLocale() as Language;
-  const parentLanguage: Language = recipient ? (recipient.language === "en" ? "en" : "hi") : uiLanguage;
-  const msg = createTranslator({ locale: parentLanguage, messages: MESSAGES[parentLanguage], namespace: "whatsapp.msg" });
-  const parentName = parentCall(recipient, parentLanguage);
-  const callUi = parentCall(recipient, uiLanguage);
-  // The picture of "what your parent receives" uses the parent's real first medicine and its real time.
-  const tParent = createTranslator({ locale: parentLanguage, messages: MESSAGES[parentLanguage] }) as unknown as T;
-  const sample = medicines.find((m) => m.active);
-  const sampleName = sample ? sample.name : "Metformin";
-  const sampleDose = sample?.dose ? localizeDose(sample.dose, tParent) : "500 mg";
-  const sampleTime = sample?.times[0] ? clockLabel(sample.times[0], parentLanguage) : clockLabel("08:30", parentLanguage);
-  const tz = recipient?.timezone ?? "Asia/Kolkata";
-  // A pregnancy gets the gentler wording with the week (MessageTexts.pregnancyDoseReminder / pregnancyCheckin).
-  const pregnant = isPregnancy(recipient);
-  const pregWeek = pregnant && recipient?.due_date ? pregnancyStatus(recipient.due_date, todayIn(tz))?.week ?? null : null;
-  const weekLine = pregWeek !== null ? <p>{msg("pregnancyWeek", { week: pregWeek, ordinal: hindiOrdinal(pregWeek) })}</p> : null;
-  const hello = pregnant ? <><p>{msg("goodMorning", { call: parentName })}</p>{weekLine}</> : <p>{msg("hello", { call: parentName })}</p>;
-  const howAreYou = pregnant ? <>{weekLine}<p>{msg("feelingToday")}</p></> : <p>{msg("areYouOkay")}</p>;
-
-  // The real history: what was sent in the last 3 days and how the parent answered (null = still loading).
-  const [activity, setActivity] = useState<Activity[] | null>(null);
-  useEffect(() => {
-    if (!recipient) return;
-    let cancelled = false;
-    const load = () => { loadRecentActivity(recipient).then((a) => { if (!cancelled) setActivity(a); }).catch(() => { if (!cancelled) setActivity([]); }); };
-    load();
-    const onReturn = () => { if (document.visibilityState === "visible") load(); };
-    document.addEventListener("visibilitychange", onReturn);
-    return () => { cancelled = true; document.removeEventListener("visibilitychange", onReturn); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipient?.id]);
-
-  const time = (iso: string) => formatClock(new Date(iso), tz, parentLanguage);
-  const dayLabel = (iso: string) => {
-    const day = localDate(new Date(iso), tz);
-    if (day === localDate(new Date(), tz)) return t("today");
-    if (day === localDate(new Date(Date.now() - 24 * 3600_000), tz)) return t("yesterday");
-    return new Intl.DateTimeFormat(uiLanguage === "hi" ? "hi-IN" : "en-IN", { day: "numeric", month: "short", timeZone: tz }).format(new Date(iso));
-  };
-  const real = activity && activity.length > 0 ? activity : null;
-  const waitingForData = recipient && activity === null;
-
-  const realItems = (items: Activity[]) => {
-    let lastDay = "";
-    return items.map((a) => {
-      const day = localDate(new Date(a.at), tz);
-      const heading = day !== lastDay ? <div key={`d-${a.id}`} className="wa-date next-day">{dayLabel(a.at)}</div> : null;
-      lastDay = day;
-      if (a.kind === "dose") {
-        return (
-          <div key={a.id}>
-            {heading}
-            <div className="wa-message medicine-message">
-              {hello}<p>{msg("medicineTimeNow")}</p>
-              <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{a.name}{a.dosage ? ` ${localizeDose(a.dosage, tParent)}` : ""}</strong></span></div>
-              <small>{time(a.at)} ✓✓</small>
-            </div>
-            {(a.status === "taken" || a.status === "taken_late") && <div className="wa-reply"><p>{msg("taken")}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
-            {a.status === "missed" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("noReply", { call: callUi })}</div>}
-            {a.status === "sent" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("waiting", { call: callUi })}</div>}
-          </div>
-        );
-      }
-      return (
-        <div key={a.id}>
-          {heading}
-          <div className="wa-message">
-            <p>{msg("goodMorning", { call: parentName })}</p>{howAreYou}<small>{time(a.at)} ✓✓</small>
-            <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
-          </div>
-          {a.status === "replied" && <div className="wa-reply"><p>{t("replied", { call: callUi })}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
-          {a.status === "missed" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("noReply", { call: callUi })}</div>}
-          {a.status === "sent" && <div className="wa-helper" style={{ marginTop: 0, marginBottom: 10 }}>{t("waiting", { call: callUi })}</div>}
-        </div>
-      );
-    });
-  };
-
-  return (
-    <main className="whatsapp-page">
-      <h1 className="sr-only">{t("title")}</h1>
-      <header className="wa-header"><button onClick={() => go("family")} aria-label={t("back")}><Icon name="back" /></button><span className="wa-logo"><Icon name="heart" size={19} /></span><div><strong>Chhaon</strong><small>{t("title")}</small></div></header>
-      <div className="wa-chat">
-        {!waitingForData && <div className={`wa-helper${real ? "" : " preview-note"}`} style={{ marginTop: 0, marginBottom: 8 }}>{real ? t("realNote", { call: callUi }) : t("sampleNote", { call: callUi })}</div>}
-        <div className="wa-helper" style={{ marginTop: 0, marginBottom: 14 }}>{t(pregnant ? "sentInPregnant" : "sentIn", { call: callUi, language: tProfile(parentLanguage === "en" ? "langEnglish" : "langHindi") })}</div>
-        {real && realItems(real)}
-        {!real && !waitingForData && (
-          <>
-            <div className="wa-date">{t("today")}</div>
-            <div className="wa-message medicine-message">
-              {hello}<p>{msg("medicineTime")}</p>
-              <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{sampleName} {sampleDose}</strong><small>{sample ? "" : msg("medicineDose")}</small></span></div>
-              <small>{sampleTime} ✓✓</small>
-              <button type="button" disabled>{msg("taken")}</button>
-            </div>
-            <div className="wa-date next-day">{t("tomorrow")}</div>
-            <div className="wa-message">
-              <p>{msg("goodMorning", { call: parentName })}</p>{howAreYou}<small>{clockLabel("08:00", parentLanguage)} ✓✓</small>
-              <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
-            </div>
-          </>
-        )}
-        <div className="wa-helper">{t("helper", { call: callUi })}</div>
-      </div>
-      <div className="wa-input" aria-hidden="true"><span>{t("inputPlaceholder")}</span><button type="button" tabIndex={-1} disabled aria-hidden="true" aria-label={t("inputPlaceholder")}><Icon name="send" /></button></div>
-    </main>
-  );
-}
-
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
 const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
@@ -2445,7 +2333,7 @@ export default function App() {
           {screen === "join" && pendingInvite() && <JoinScreen token={pendingInvite() as string} onDone={afterInvite} />}
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}
           {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
-          {screen === "whatsapp" && <WhatsApp go={go} recipient={recipient} medicines={medicines} />}
+          {screen === "whatsapp" && <WhatsAppScreen go={go} recipient={recipient} />}
           {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}

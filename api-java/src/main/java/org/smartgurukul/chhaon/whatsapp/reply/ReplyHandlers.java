@@ -130,7 +130,8 @@ public class ReplyHandlers {
 
     private void consent(Consent c, InboundMessage m, List<OutboundReply> out) {
         Map<String, Object> r = firstOrNull(jdbc.queryForList(
-                "select id, circle_id, language, whatsapp_phone, name, call_name, reminder_to from care_recipients where id = ?",
+                "select r.id, r.circle_id, " + ReceiverTexts.languageSql("r") + " language, r.whatsapp_phone, r.name, r.call_name, " +
+                        "r.reminder_to from care_recipients r where r.id = ?",
                 c.recipientId()));
         if (r == null || !m.phone().equals(r.get("whatsapp_phone"))) {
             log.warn("ignored a consent reply from an unexpected number {}", WhatsAppSender.mask(m.phone()));
@@ -215,7 +216,7 @@ public class ReplyHandlers {
 
     private void dose(Dose d, InboundMessage m, List<OutboundReply> out) {
         Map<String, Object> row = firstOrNull(jdbc.queryForList(
-                "select m.id medicine_id, m.name, m.dosage, r.language, r.whatsapp_phone, " +
+                "select m.id medicine_id, m.name, m.dosage, " + ReceiverTexts.languageSql("r") + " language, r.whatsapp_phone, " +
                         "r.name person_name, r.call_name, r.reminder_to " +
                         "from dose_events de join medicine_schedules s on s.id = de.schedule_id " +
                         "join medicines m on m.id = s.medicine_id join care_recipients r on r.id = m.recipient_id " +
@@ -264,7 +265,7 @@ public class ReplyHandlers {
     private String doseNotYetText(DoseNotYet n) {
         if (n.doseId() != null) {
             Map<String, Object> r = firstOrNull(jdbc.queryForList(
-                    "select r.language, r.name, r.call_name, r.reminder_to from dose_events de " +
+                    "select " + ReceiverTexts.languageSql("r") + " language, r.name, r.call_name, r.reminder_to from dose_events de " +
                             "join medicine_schedules s on s.id = de.schedule_id join medicines m on m.id = s.medicine_id " +
                             "join care_recipients r on r.id = m.recipient_id where de.id = ?", n.doseId()));
             if (r != null && ReceiverTexts.notThePerson((String) r.get("reminder_to"))) {

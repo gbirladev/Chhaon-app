@@ -214,12 +214,13 @@ public class SchedulerService {
     private int sendDueDoses(UUID scope, Map<String, Integer> counters) {
         List<Object> p = new ArrayList<>();
         p.add(doseMissedMinutes);
-        String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, r.language, " +
+        String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, " +
+                ReceiverTexts.languageSql("r") + " language, " +   // a helper may read another language (R1's reminder_language)
                 "r.call_name, r.name recipient_name, r.timezone, r.care_type, r.due_date, " +
                 "r.name person_name, r.reminder_to, r.reminder_name, " +   // who gets the reminder (migration 0044)
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
-                "m.id medicine_id, m.name medicine_name, m.photo_url, " +
+                "m.id medicine_id, m.name medicine_name, m.dosage, m.photo_url, " +
                 // read through to_jsonb so a database without the colour columns (migration 0042 not applied yet)
                 // still sends reminders, just without the look line
                 "to_jsonb(m) ->> 'pill_colour' pill_colour, to_jsonb(m) ->> 'pill_shape' pill_shape " +
@@ -240,8 +241,8 @@ public class SchedulerService {
                     "update dose_events set status='sent', sent_at=now() where id=? and status='pending'", doseId);
             if (claimed != 1) continue; // another tick took it
             try {
-                String text = doseText(row);
-                if (ReceiverTexts.notThePerson((String) row.get("reminder_to"))) text = receiverDoseText(row);
+                String text = ReceiverTexts.notThePerson((String) row.get("reminder_to")) ? receiverDoseText(row)
+                        : doseText(row, pregnant(row) ? weekToSay(row, doseId) : null, Instant.now());
                 // With the medicine photo when there is one; any photo problem sends this same text instead (never throws here).
                 byte[] photo = photos == null ? null
                         : photos.reminderJpeg((UUID) row.get("recipient_id"), (String) row.get("photo_url")).orElse(null);
@@ -415,32 +416,57 @@ public class SchedulerService {
         return d instanceof java.sql.Date sql ? sql.toLocalDate() : d instanceof LocalDate ld ? ld : null;
     }
 
-    /** The dose reminder: older parents get the text they always got; a pregnancy gets the week and a gentler greeting. */
-    static String doseText(Map<String, Object> row) {
+    /**
+     * The new pregnancy week to say in this reminder, or null (R2: the week is said once a week, in the FIRST reminder sent on the
+     * day a new week starts; MessageTexts#pregnancyDoseReminder). Best effort: any problem leaves the week out, never the reminder.
+     */
+    private Integer weekToSay(Map<String, Object> row, UUID doseId) {
+        try {
+            ZoneId zone = zoneOf(row.get("timezone"));
+            LocalDate today = Instant.now().atZone(zone).toLocalDate();
+            Integer week = Pregnancy.week(dueDate(row), today);
+            if (week == null || week.equals(Pregnancy.week(dueDate(row), today.minusDays(1)))) return null;
+            // Another reminder already went out today (or in this same tick, claimed just before): it carried the week.
+            Integer earlier = jdbc.queryForObject("select count(*) from dose_events d join medicine_schedules s on s.id = d.schedule_id " +
+                            "join medicines m on m.id = s.medicine_id where m.recipient_id = ? and d.id <> ? and d.sent_at >= ?",
+                    Integer.class, row.get("recipient_id"), doseId, java.sql.Timestamp.from(today.atStartOfDay(zone).toInstant()));
+            return earlier != null && earlier > 0 ? null : week;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * The dose reminder to the person: older parents get "Namaste Papa", a pregnancy a greeting for the time of day on her clock
+     * (and {@code newWeek} when a new week starts today). Public so the in-app WhatsApp preview shows exactly this text.
+     *
+     * @param at when the reminder goes out (now, or the next dose time in the preview)
+     */
+    public static String doseText(Map<String, Object> row, Integer newWeek, Instant at) {
         String language = (String) row.get("language");
         if (!pregnant(row)) {
             return MessageTexts.doseReminder(language, (String) row.get("call_name"), (String) row.get("medicine_name"),
-                    (String) row.get("pill_colour"), (String) row.get("pill_shape"));
+                    (String) row.get("pill_colour"), (String) row.get("pill_shape"), (String) row.get("dosage"));
         }
-        ZonedDateTime local = Instant.now().atZone(zoneOf(row.get("timezone")));
+        ZonedDateTime local = at.atZone(zoneOf(row.get("timezone")));
         return MessageTexts.pregnancyDoseReminder(language, pregnancyName(row), (String) row.get("medicine_name"),
-                (String) row.get("pill_colour"), (String) row.get("pill_shape"),
-                Pregnancy.week(dueDate(row), local.toLocalDate()), local.getHour());
+                (String) row.get("pill_colour"), (String) row.get("pill_shape"), (String) row.get("dosage"), newWeek, local.getHour());
     }
 
-    /** The daily check-in; for a pregnancy the gentle "How are you feeling today?" with the week. */
-    static String checkinText(Map<String, Object> row, LocalDate localToday) {
+    /** The daily check-in; for a pregnancy the gentle "How are you feeling today?" (no week: R2). */
+    public static String checkinText(Map<String, Object> row, LocalDate localToday) {
         String language = (String) row.get("language");
         if (!pregnant(row)) return MessageTexts.checkin(language, (String) row.get("call_name"));
-        return MessageTexts.pregnancyCheckin(language, pregnancyName(row), Pregnancy.week(dueDate(row), localToday));
+        return MessageTexts.pregnancyCheckin(language, pregnancyName(row));
     }
 
     /** The third-person reminder for a helper / the caregiver ("Time for Papa's medicine"), see docs/reminder-receiver.md. */
-    private static String receiverDoseText(Map<String, Object> row) {
+    public static String receiverDoseText(Map<String, Object> row) {
         return ReceiverTexts.doseReminder((String) row.get("language"), (String) row.get("reminder_to"),
                 (String) row.get("reminder_name"),
                 ReceiverTexts.personName((String) row.get("call_name"), (String) row.get("person_name")),
-                (String) row.get("medicine_name"), (String) row.get("pill_colour"), (String) row.get("pill_shape"));
+                (String) row.get("medicine_name"), (String) row.get("pill_colour"), (String) row.get("pill_shape"),
+                (String) row.get("dosage"));
     }
 
     /** One notification row per circle member (payload carries ids only, never health data/phones). */
