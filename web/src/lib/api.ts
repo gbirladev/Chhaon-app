@@ -1,5 +1,5 @@
-import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { authToken, authUserId, authExpired } from "./auth";
 import type { Database } from "./database.types";
 import { E164 } from "./countries";
 import { resolveLocalUrl } from "./hosts";
@@ -49,8 +49,8 @@ export function normalizePhone(input: string): string | null {
 
 /** Every parent this caregiver looks after (oldest first), or [] if none yet. Throws if the lookup FAILS, so callers never
  *  mistake a network problem for "no parent" (which would send them to the add-parent form and risk a duplicate). */
-export async function loadRecipients(session: Session | null): Promise<Recipient[]> {
-  if (!session) return [];
+export async function loadRecipients(): Promise<Recipient[]> {
+  if (!authToken()) return [];
   const { data, error } = await supabase.from("care_recipients").select("*").order("created_at", { ascending: true });
   if (error) throw error;
   return data;
@@ -90,8 +90,7 @@ export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_so
 /** Asks the backend to send the parent a WhatsApp message requesting their agreement. Never throws. */
 export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number }> {
   try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
+    const token = authToken();
     if (!token) return { result: "error" };
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/recipients/${recipientId}/consent-request`, {
       method: "POST",
@@ -110,8 +109,7 @@ export type AlertsResult = "sent" | "opted_out" | "too_soon" | "too_many" | "err
 
 /** The caregiver's own WhatsApp-alert settings. on = confirmed by that number and not switched off. */
 export async function loadMyAlerts(): Promise<AlertsState | null> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return null;
   const { data } = await supabase.from("profiles").select("phone, alert_phone, alert_requested_at, alert_confirmed_at, alert_consent_at").eq("id", uid).maybeSingle();
   if (!data) return null;
@@ -121,8 +119,7 @@ export async function loadMyAlerts(): Promise<AlertsState | null> {
 
 export async function requestAlerts(phone: string): Promise<AlertsResult> {
   try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
+    const token = authToken();
     if (!token) return "error";
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/alerts/whatsapp/request`, {
       method: "POST",
@@ -137,8 +134,7 @@ export async function requestAlerts(phone: string): Promise<AlertsResult> {
 }
 
 export async function turnOffAlerts(): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return false;
   const { error } = await supabase.from("profiles").update({ alert_consent_at: null }).eq("id", uid);
   return !error;
@@ -184,8 +180,7 @@ export type UploadResult = { ok: true; id: string; status: ReportStatus } | { ok
 /** Calls the backend to read a stored report. Never throws. */
 export async function analyzeReport(reportId: string, language: string): Promise<"done" | "processing" | "failed" | "ai_off" | "auth"> {
   try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
+    const token = authToken();
     if (!token) return "auth";
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/reports/${reportId}/analyze`, {
       method: "POST",
@@ -211,8 +206,7 @@ export async function uploadReport(recipientId: string, file: File, language: st
   if (!ext) return { ok: false, reason: "type" };
   const body = kind.startsWith("image/") ? await shrink(file) : file;
   if (body.size > REPORT_MAX_BYTES) return { ok: false, reason: "size" };
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return { ok: false, reason: "auth" };
   const name = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
   const path = `${recipientId}/${name}.${ext}`;
@@ -258,16 +252,14 @@ export async function signedReportUrl(path: string): Promise<string | null> {
 
 /** Which way the caregiver wants today's medicines drawn (null = the default). */
 export async function loadTodayLayout(): Promise<string | null> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return null;
   const { data } = await supabase.from("profiles").select("today_layout").eq("id", uid).maybeSingle();
   return data?.today_layout ?? null;
 }
 
 export async function saveTodayLayout(layout: string): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return false;
   const { error } = await supabase.from("profiles").update({ today_layout: layout }).eq("id", uid);
   return !error;
@@ -303,13 +295,9 @@ export async function sessionIsGone(error: { code?: string; message?: string } |
   if (!error) return false;
   if (isStaleSession(error)) return true;
   if (error.code !== "42501") return false;
-  try {
-    const { data, error: userError } = await supabase.auth.getUser();
-    if (userError) return [401, 403, 404].includes(userError.status ?? 0) || userError.name === "AuthSessionMissingError";  // network trouble is not an expiry
-    return !data.user;
-  } catch {
-    return false;  // offline: do not sign anyone out
-  }
+  // A 42501 is only a login problem when our token is actually gone/expired; otherwise it is a plain
+  // permission/"not found" from one of our own functions and must not sign the caregiver out.
+  return authExpired();
 }
 
 /** Our own database functions raise 42501 with these messages when the record is gone (not an auth problem). */

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { authUserId } from "./auth";
 
 /** The love loop (docs/love-loop.md): small warm reactions that reach the parent on WhatsApp. The server sends them; this creates and reads them. */
 export const EMOJIS = ["❤️", "🙏", "🤗"] as const;
@@ -31,9 +32,9 @@ export async function setLoveEnabled(recipientId: string, enabled: boolean): Pro
 }
 
 export async function loadMyCallName(circleId: string): Promise<string> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return "";
-  const { data, error } = await supabase.from("care_circle_members").select("parent_calls_me").eq("circle_id", circleId).eq("user_id", auth.user.id).maybeSingle();
+  const uid = authUserId();
+  if (!uid) return "";
+  const { data, error } = await supabase.from("care_circle_members").select("parent_calls_me").eq("circle_id", circleId).eq("user_id", uid).maybeSingle();
   if (error) throw error;
   return data?.parent_calls_me ?? "";
 }
@@ -44,8 +45,7 @@ export async function saveMyCallName(circleId: string, name: string): Promise<bo
 }
 
 export async function myUserId(): Promise<string | null> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  return authUserId();
 }
 
 /** Reactions of the last 3 days for this parent (the whole family's, newest first). */

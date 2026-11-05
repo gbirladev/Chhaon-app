@@ -1,6 +1,7 @@
 import { compressImage } from "./image";
 import { supabase } from "./supabase";
 import { kindOf, randomName } from "./wallet";
+import { authUserId } from "./auth";
 
 export const FEEDBACK_KINDS = ["idea", "problem", "praise", "other"] as const;
 export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
@@ -30,8 +31,7 @@ export async function prepareImage(file: File): Promise<{ ok: true; image: Prepa
 
 /** Uploads one prepared picture into the caregiver's own folder. Returns its storage path, or null if it could not be uploaded. */
 export async function uploadFeedbackImage(image: PreparedImage): Promise<string | null> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return null;
   const ext = image.mime === "image/png" ? "png" : image.mime === "image/webp" ? "webp" : "jpg";
   const path = `${uid}/${randomName()}.${ext}`;
@@ -41,8 +41,7 @@ export async function uploadFeedbackImage(image: PreparedImage): Promise<string 
 
 /** Sends one feedback message as the logged-in caregiver. The database allows 10 a day ("limit" if that is used up). */
 export async function sendFeedback(input: { kind: FeedbackKind; message: string; rating: number | null; screen: string; language: string; images?: string[] }): Promise<FeedbackResult> {
-  const { data: auth } = await supabase.auth.getSession();
-  const uid = auth.session?.user.id;
+  const uid = authUserId();
   if (!uid) return "error";
   const { error } = await supabase.from("feedback").insert({
     user_id: uid,

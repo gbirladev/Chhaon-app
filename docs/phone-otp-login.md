@@ -1,60 +1,62 @@
-# Phone OTP login (over WhatsApp)
+# Phone-OTP login (owned by the Java backend)
 
-Login by phone number, with the one-time code delivered over **WhatsApp** via the self-hosted WA-AKG
-gateway — the same gateway Chhaon already uses for reminders, and the same approach as Smart Gurukul.
-No paid SMS provider, no per-message cost.
+Login is by **phone number + one-time code**, like Smart Gurukul. There is **no email login and no
+Supabase Auth (GoTrue)**. Our Java backend generates the code, stores only its BCrypt hash, delivers it
+over WhatsApp (WA-AKG gateway), verifies it, and mints the session token. Supabase remains only as the
+database/storage underneath.
 
 ## How it works
 
-The phone-OTP flow itself is **Supabase Auth**, unchanged and already built in the web app:
-
-- `web/src/App.tsx` → `supabase.auth.signInWithOtp({ phone })` then `verifyOtp({ phone, token, type: "sms" })`.
-- Supabase generates the code, rate-limits requests, and verifies it. The Java backend is auth-agnostic
-  (`SupabaseJwtVerifier` just checks the signed JWT), so nothing changes there for login.
-
-The only thing we replace is **delivery**. Instead of Supabase calling Twilio/MessageBird, it calls a
-**Send-SMS auth hook** on our backend, which relays the code over WhatsApp:
-
 ```
-Supabase Auth  --(Send SMS hook, signed)-->  POST /hooks/supabase-sms (Java)  --> WA-AKG gateway --> parent's WhatsApp
+web  --POST /api/v1/auth/otp/request {phone}-->  Java  --> WA-AKG gateway --> user's WhatsApp
+web  --POST /api/v1/auth/otp/verify {phone,code}--> Java --> { token, userId, name, plan, isNew }
 ```
 
-- `SendSmsHookController` (`/hooks/supabase-sms`) verifies the Standard-Webhooks signature
-  (`StandardWebhookSignature`, fails closed), reads `{ user.phone, sms.otp }`, and sends
-  `MessageTexts.loginOtp(code)` through `WhatsAppSender`.
-- Public in `SecurityConfig` (a hook is not user-authenticated); authenticated by the signature instead.
-- Nothing from the request is logged (it holds a phone number and a live code).
+- `OtpController` / `OtpService` (`api-java/.../auth/otp/`): normalise the phone (`PhoneNormalizer`),
+  rate-limit (cooldown 30s, ≤5/hour), generate a 6-digit `SecureRandom` code, store its BCrypt hash in
+  `otp_codes` (migration `V2__phone_otp.sql`, 5-min expiry, ≤5 wrong guesses), send via `WhatsAppSender`.
+  On verify, resolve the caregiver by `profiles.phone` or **create a profile** for a new number, then mint
+  the token. Nothing logs the phone or the code.
+
+### The session token (why the rest of the app keeps working)
+The web app reads most data and all files **directly from Supabase** under RLS. So the token we return is
+an **HS256 JWT signed with the Supabase project JWT secret** (`SUPABASE_JWT_SECRET`), shaped like a
+Supabase access token (`sub`=profiles.id, `role`=`aud`=`authenticated`). It is accepted by **both**:
+- Supabase PostgREST + Storage (so `supabase.from/rpc/storage` + RLS keep working), and
+- the Java API (its `JwtAuthenticationFilter` already verifies such tokens via `SupabaseJwtVerifier`).
+
+`SupabaseCompatibleTokenService` mints it. The web client hands it to supabase-js through the
+`accessToken` provider (`web/src/lib/supabase.ts`); `web/src/lib/auth.ts` owns the token (localStorage),
+the OTP calls, and logout. There are no refresh tokens yet, so the token is long-lived
+(`app.supabase.token-expiry-minutes`, default 7 days); on expiry the user logs in again.
+
+This shared JWT secret is the **only** remaining Supabase tie in auth. Removing it too (porting the whole
+data + storage layer to Java) is a separate, larger project ("B2").
 
 ## Turning it on
+1. **`SUPABASE_JWT_SECRET` must be set on the backend** (GitHub secret → `/etc/chhaon/backend.env`). Without
+   it, login fails closed (`SupabaseCompatibleTokenService` disables itself; the rest of the API keeps
+   serving) and the Java API can't verify our HS256 tokens. **Gating check before trusting B1:** confirm the
+   Supabase project still accepts HS256 tokens signed with the legacy secret at PostgREST — mint a token and
+   `curl {SUPABASE_URL}/rest/v1/profiles?select=id&limit=1` with `apikey:<anon>` + `Authorization: Bearer`.
+2. Deploy the backend (migration `V2`, new `/api/v1/auth/otp/*` endpoints).
+3. Deploy the web app.
+4. **Data pre-reqs:** each existing caregiver needs a unique, personal `profiles.phone` or they can't log in
+   (email login is gone). Clean duplicate phones first (the `V2` unique index needs it):
+   `select phone, count(*) from profiles where phone is not null group by phone having count(*)>1`.
 
-### 1. Supabase dashboard (hosted project)
-Authentication → **Hooks** → **Send SMS hook**:
-- Type: **HTTPS**
-- URL: `https://api.chhaon.site/hooks/supabase-sms`
-- Copy the **secret** it shows (looks like `v1,whsec_…`).
+## Delivery still needs a working number
+OTP codes go over the WhatsApp gateway. If its number is banned/unavailable, codes won't arrive — this
+rewrite changes *who issues* the code, not *how it is delivered*. Local dev: `WhatsAppSender` dry-runs and
+logs the code when the gateway isn't configured.
 
-Also make sure phone sign-ups are enabled (Authentication → Providers → Phone).
+## Config (`application.properties`)
+- `app.supabase.jwt-secret` (env `SUPABASE_JWT_SECRET`) — signs the session token.
+- `app.supabase.token-expiry-minutes` (default 10080 = 7 days), `app.supabase.token-issuer` (`chhaon`).
+- `app.otp.code-length` (6), `app.otp.expiry-minutes` (5), `app.otp.request-cooldown-seconds` (30),
+  `app.otp.max-requests-per-hour` (5), `app.otp.max-failed-attempts` (5).
 
-### 2. Backend secret
-Add GitHub Actions secret **`SUPABASE_SEND_SMS_HOOK_SECRET`** = the secret from step 1.
-The backend deploy writes it into `/etc/chhaon/backend.env`
-(`app.supabase.send-sms-hook-secret`). Blank ⇒ `/hooks/supabase-sms` refuses everything (503).
-
-The WhatsApp gateway must already be configured (`WHATSAPP_GATEWAY_URL`, `WHATSAPP_GATEWAY_TOKEN`,
-`WHATSAPP_SENDER_SESSION_NAME`) — the same env the reminders use.
-
-### 3. Web app
-Set the GitHub Actions **variable** `VITE_PHONE_LOGIN` to `true` (anything but `false`), then redeploy
-the web app. The login screen then shows the phone/email toggle and defaults to phone.
-
-## Local dev
-`supabase/config.toml` keeps the `[auth.sms.test_otp]` map (`919999999999 → 123456`), so no delivery is
-needed locally. To exercise the real WhatsApp path locally, run the backend on `:8080`, set its secret,
-and uncomment the `[auth.hook.send_sms]` block in `config.toml` (it points at `host.docker.internal:8080`).
-
-## Notes
-- The login message is bilingual (English + Hindi): at login we don't yet know the user's language.
-- Fail-soft vs fail-hard: the gateway dry-runs when unconfigured, but for login we treat a real send
-  failure as a 500 so Supabase surfaces "couldn't send, try again" to the user.
-- The user's phone must be on WhatsApp. If a pilot family's login number is not on WhatsApp, fall back
-  to email login (the toggle stays available) or wire a real SMS provider for that case.
+## Superseded
+The earlier Supabase **Send-SMS auth hook** (`SendSmsHookController`, `/hooks/supabase-sms`) is no longer
+used for login — Supabase Auth is out of the flow. The endpoint is harmless (fails closed) and can be
+removed in a later cleanup.
