@@ -66,7 +66,7 @@ sudo journalctl -u chhaon-wa -n 40 --no-pager
 Rollback: `sudo systemctl stop chhaon-wa; rm -rf /opt/whatsapp-gateway; mv /opt/whatsapp-gateway.bak-<date> /opt/whatsapp-gateway; sudo systemctl start chhaon-wa`
 (the extra `SentPoll` table can stay).
 
-**Checks** (1-2 right after the restart by you; 3-5 can be done by the owner in the gateway dashboard, which they can access)
+**Checks** (all yours: everything about polls is your task end to end)
 1. `https://wa.chhaon.site`: the session is CONNECTED without a new QR.
 2. Typed replies still work: a test parent sends `1` to an open reminder, the dose turns "taken".
 3. Poll: send one to your own phone (dashboard chat, or the API with the `X-API-Key` header):
@@ -81,9 +81,11 @@ Rollback: `sudo systemctl stop chhaon-wa; rm -rf /opt/whatsapp-gateway; mv /opt/
    turns taken. ❤️ does nothing.
 5. Do 3 and 4 once from Android and once from iPhone.
 
-**Then switch polls on** (or tell the owner): GitHub secret `WHATSAPP_POLLS_ENABLED` = `true`, then Actions → Backend Deploy → Run
+**Then switch polls on** (yours too; if you cannot edit the repo's GitHub secrets, ask the owner to add this one value): GitHub secret `WHATSAPP_POLLS_ENABLED` = `true`, then Actions → Backend Deploy → Run
 workflow. From the next time slot reminders and the morning check-in go out as polls; if a poll cannot be sent the backend falls back to
-the text reminder by itself.
+the text reminder by itself. After switching on, watch the first real poll reminder: the parent taps ✅, the dose turns "taken" in
+the app, and the parent gets "Thank you 🙏 Noted: ...". If polls misbehave, set the secret to `false` and run Backend Deploy again:
+reminders go back to text.
 
 **Report to the owner:** did each tap give a `poll.vote` with the right option (Android / iPhone)? If not, the gateway log lines with
 `[Poll]` (for example "Could not decrypt a vote on our poll ..."), with phone numbers masked.
