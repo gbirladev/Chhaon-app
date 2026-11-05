@@ -1458,5 +1458,62 @@
     "close": "Close",
     "source": "{edition} schedule",
     "sourceUnreviewed": "{edition} schedule · to be checked by a paediatrician"
+  },
+  "activity": {
+    "title": "Family activity",
+    "subtitle": "Last 7 days, everyone you care for",
+    "filterLabel": "Show activity for",
+    "all": "All",
+    "me": "Me",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "loadFailed": "Could not load the activity. Please try again.",
+    "retry": "Try again",
+    "empty": "Nothing has happened in the last 7 days yet.",
+    "showMore": "Show more",
+    "loading": "Loading...",
+    "heartGive": "Send love (now {count})",
+    "heartUndo": "Take back your love (now {count})",
+    "heartFailed": "Could not save the heart. Please try again.",
+    "heartNote": "♥ is seen only by your family in the app. It is not sent on WhatsApp.",
+    "someone": "Someone",
+    "helper": "The helper",
+    "familyMember": "A family member",
+    "dueAt": "Due {time}",
+    "givenOn": "Given on {date}",
+    "doseLabel": "Dose {dose}",
+    "onDate": "On {date}",
+    "bothTimes": "{time} ({mine} your time)",
+    "linkTitle": "Family activity",
+    "linkSub": "What happened for everyone in the last 7 days",
+    "seeAll": "See all activity",
+    "doseTaken": {
+      "person": "{call} took {medicine}",
+      "by": "{by} gave {call} {medicine}",
+      "you": "You gave {call} {medicine}",
+      "app": "{medicine} marked as given for {call}"
+    },
+    "doseMissed": "{call}'s {medicine} was not confirmed",
+    "checkinFine": "{call}: I'm fine",
+    "checkinCall": "{call} asked for a call",
+    "checkinMissed": "{call} did not answer the morning check-in",
+    "vaccineGiven": "Vaccine given to {call}: {vaccine}",
+    "appointmentAdded": {
+      "by": "{by} added an appointment for {call}: {doctor}",
+      "you": "You added an appointment for {call}: {doctor}",
+      "none": "Appointment added for {call}: {doctor}"
+    },
+    "medicineAdded": "New medicine for {call}: {medicine}",
+    "medicinePaused": "{call}'s {medicine} was paused",
+    "consentGiven": {
+      "person": "{call} agreed to get WhatsApp reminders",
+      "by": "{by} agreed to get {call}'s WhatsApp reminders",
+      "you": "You agreed to get {call}'s WhatsApp reminders"
+    },
+    "consentStopped": {
+      "person": "{call} stopped the WhatsApp reminders",
+      "by": "{by} stopped {call}'s WhatsApp reminders",
+      "you": "You stopped {call}'s WhatsApp reminders"
+    }
   }
 }

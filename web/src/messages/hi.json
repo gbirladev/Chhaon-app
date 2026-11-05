@@ -1458,5 +1458,62 @@
     "close": "बंद करें",
     "source": "{edition} टीकाकरण सूची",
     "sourceUnreviewed": "{edition} टीकाकरण सूची · शिशु रोग विशेषज्ञ से जाँच होनी बाकी"
+  },
+  "activity": {
+    "title": "परिवार की गतिविधि",
+    "subtitle": "पिछले 7 दिन, जिन सबकी आप देखभाल करते हैं",
+    "filterLabel": "किसकी गतिविधि देखें",
+    "all": "सभी",
+    "me": "मैं",
+    "today": "आज",
+    "yesterday": "कल",
+    "loadFailed": "गतिविधि नहीं खुल सकी। कृपया फिर से कोशिश करें।",
+    "retry": "फिर से कोशिश करें",
+    "empty": "पिछले 7 दिनों में अभी कुछ नहीं हुआ।",
+    "showMore": "और देखें",
+    "loading": "खुल रहा है...",
+    "heartGive": "प्यार भेजें (अभी {count})",
+    "heartUndo": "अपना प्यार वापस लें (अभी {count})",
+    "heartFailed": "दिल सेव नहीं हो सका। कृपया फिर से कोशिश करें।",
+    "heartNote": "♥ सिर्फ़ ऐप में आपके परिवार को दिखता है। यह WhatsApp पर नहीं भेजा जाता।",
+    "someone": "कोई",
+    "helper": "मददगार",
+    "familyMember": "परिवार के एक सदस्य",
+    "dueAt": "समय {time}",
+    "givenOn": "{date} को लगा",
+    "doseLabel": "खुराक {dose}",
+    "onDate": "{date} को",
+    "bothTimes": "{time} (आपके यहाँ {mine})",
+    "linkTitle": "परिवार की गतिविधि",
+    "linkSub": "पिछले 7 दिनों में सबके लिए क्या हुआ",
+    "seeAll": "सारी गतिविधि देखें",
+    "doseTaken": {
+      "person": "{call} ने दवा ली: {medicine}",
+      "by": "{by} ने {call} को दवा दी: {medicine}",
+      "you": "आपने {call} को दवा दी: {medicine}",
+      "app": "{call} की दवा दी गई (ऐप में दर्ज): {medicine}"
+    },
+    "doseMissed": "{call} की दवा की पुष्टि नहीं हुई: {medicine}",
+    "checkinFine": "{call}: ठीक हूँ",
+    "checkinCall": "{call} ने कॉल करने को कहा",
+    "checkinMissed": "{call} ने सुबह के हालचाल का जवाब नहीं दिया",
+    "vaccineGiven": "{call} को टीका लगा: {vaccine}",
+    "appointmentAdded": {
+      "by": "{by} ने {call} के लिए अपॉइंटमेंट जोड़ा: {doctor}",
+      "you": "आपने {call} के लिए अपॉइंटमेंट जोड़ा: {doctor}",
+      "none": "{call} के लिए अपॉइंटमेंट जोड़ा गया: {doctor}"
+    },
+    "medicineAdded": "{call} के लिए नई दवा: {medicine}",
+    "medicinePaused": "{call} की दवा रोकी गई: {medicine}",
+    "consentGiven": {
+      "person": "{call} ने WhatsApp रिमाइंडर के लिए हाँ कहा",
+      "by": "{by} ने {call} के WhatsApp रिमाइंडर पाने के लिए हाँ कहा",
+      "you": "आपने {call} के WhatsApp रिमाइंडर पाने के लिए हाँ कहा"
+    },
+    "consentStopped": {
+      "person": "{call} ने WhatsApp रिमाइंडर बंद किए",
+      "by": "{by} ने {call} के WhatsApp रिमाइंडर बंद किए",
+      "you": "आपने {call} के WhatsApp रिमाइंडर बंद किए"
+    }
   }
 }

@@ -50,8 +50,10 @@ import { ReceiverChoice, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
 import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
+import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 
 type Screen =
+  | "activity"
   | "welcome"
   | "otp"
   | "profile"
@@ -287,7 +289,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "activity"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -1144,6 +1146,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
 
       <AlertsCard compact />
+      <SeeAllActivity go={go} />
 
       <section className="section">
         <div className="section-title"><div><h2>{t("today.medicinesTitle")}</h2>{visibleDoses.length > 0 && <p>{t("today.progress", { done: visibleDoses.filter((d) => d.status === "taken" || d.status === "taken_late").length, total: visibleDoses.length })}</p>}</div><button onClick={() => go("medicines")}>{t("today.viewAll")}</button></div>
@@ -1865,6 +1868,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
+      <ActivityLink go={go} />
       <VaccinesLink go={go} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
@@ -2064,7 +2068,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2437,6 +2441,7 @@ export default function App() {
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
+          {screen === "activity" && <ActivityScreen go={go} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}
           {(screen === "policy" || screen === "terms") && <LegalPage key={screen} kind={screen} go={go} signedIn={signedIn} />}
           {screen === "goodbye" && <Goodbye go={go} />}
