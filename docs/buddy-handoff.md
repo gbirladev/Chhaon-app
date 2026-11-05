@@ -1,97 +1,95 @@
 # Handoff for the backend owner (AWS and WhatsApp gateway)
 
-Written 2026-11-04. Chhaon reminders have not been sent since 2026-11-02 21:00 IST, because the Java scheduler is off
-(`CHHAON_SCHEDULER_ENABLED` defaults to false) and the Java backend had no way to receive parents' replies.
-The reply pipeline is now written and tested (405 tests) but is NOT deployed. These are the things only you can do.
-Nothing here needs the scheduler to be switched on yet.
+Updated 2026-11-05 (first written 2026-11-04). What is done, what is open for you, and what is coming. Nothing secret is in this file:
+secrets are exchanged privately, never in the repository or a chat group.
 
-## 1. Backend settings (the env file on the server)
+## Done (thank you)
 
-Add or confirm:
+- Webhook secret set on the server and in the gateway; gateway webhook `Chhaon backend` points to
+  `https://api.chhaon.site/webhooks/whatsapp-gateway` with events `message.received` and `message.status` (signed test = 200).
+- Backend Deploy is green (the smoke test needs `HEALTH_CHECK_URL` = `https://api.chhaon.site/actuator/health`).
+- Phone-OTP login, Java data API (phase 1 and 2) and the "Playful Blocks" theme are live.
+- The old WhatsApp number was banned on 2026-11-05. A **new number** is linked to the same gateway and the scheduler runs for everyone
+  (`CHHAON_SCHEDULER_ENABLED` = `true`, `CHHAON_SCHEDULER_ONLY_RECIPIENT` = `all`).
 
-| Variable | What |
-|---|---|
-| `WHATSAPP_WEBHOOK_SECRET` | New. A random secret, 64 hex characters (`openssl rand -hex 32`). Must be the SAME value as in the gateway dashboard (item 2). Blank means the webhook refuses everything (503). |
-| `WHATSAPP_GATEWAY_URL` | The gateway's address. If blank, the sender is in dry-run and marks doses "sent" with fake ids. |
-| `WHATSAPP_GATEWAY_TOKEN` | The gateway's API token. |
-| `WHATSAPP_SENDER_SESSION_NAME` | The gateway session that sends (default `Chhaon`). |
-| `CHHAON_SCHEDULER_ENABLED` | Leave **false** for now. It is switched on last (see `docs/TODO.md`, "Switch-on checklist"). |
+## Open tasks for you
 
-The secret should be given to you privately, never in a repository, a chat group or a commit.
+### 1. Poll test: can parents answer with ONE TAP? (about 1 hour, no code needed) — NEW
 
-## 2. Gateway dashboard: the webhook
+Today parents type a reply (`1`, "le li", 👍). A WhatsApp **poll** would let them tap an answer instead. The gateway can already SEND a
+poll (`whatsapp-gateway/src/app/api/messages/[sessionId]/[jid]/poll/route.ts`), but it does nothing with the votes: there is no poll
+event in `src/lib/webhook.ts`, `messages.update` only forwards delivery status (`src/modules/whatsapp/store/index.ts`, around line 170),
+and the socket has no `getMessage`, so Baileys cannot decrypt a vote. Before anyone builds this, please check whether a vote reaches
+the gateway at all.
 
-- URL: `https://api.chhaon.site/webhooks/whatsapp-gateway`
-- Secret: the same value as `WHATSAPP_WEBHOOK_SECRET`
-- Events: `message.received` and `message.status`
+Steps:
+1. Send one poll to your own phone (replace the placeholders; the API key goes in the `X-API-Key` header):
+   ```
+   curl -s -X POST "https://wa.chhaon.site/api/messages/<sessionId>/<91XXXXXXXXXX@s.whatsapp.net>/poll" \
+     -H "X-API-Key: <gateway api key>" -H "Content-Type: application/json" \
+     -d '{"question":"💊 Papa, time for Metformin (blue round tablet)","options":["✅ Taken","⏰ Later"],"selectableCount":1}'
+   ```
+2. On the phone: does the poll show with two tappable options? Tap **✅ Taken**. Then change the vote to **⏰ Later**.
+3. On the gateway, look for anything that arrived at the moment of each tap:
+   - the gateway server log (a `messages.upsert` with a `pollUpdateMessage`, or a `messages.update` with `pollUpdates`),
+   - the session's message list in the dashboard (a new incoming row),
+   - the webhook log (did `message.received` fire, and with what body?).
+4. Tell the product owner: (a) did the poll arrive and look right on the phone (Android and, if possible, iPhone), (b) did any event
+   arrive per tap, (c) the event body with the phone number masked.
 
-Please also confirm the WhatsApp session is **connected** (scanned and online) and tell the product owner.
+What happens next: if a vote event arrives, the gateway change is about 100-150 lines (keep each sent poll's message and secret, add
+`getMessage` to the socket, decrypt with `getAggregateVotesInPollMessage`, send a new webhook event `poll.vote
+{pollKeyId, voter, selectedOptions}`), and the Java side is built by us (send reminders as polls, store the poll id, handle `poll.vote`).
+Note: the poll route returns only `{status:true}`, not the message id; we would need the sent message's key id in the response.
+If no event arrives at all, polls are dropped and parents keep typed answers.
 
-## 3. Deploying
+Planned poll answers (one choice per poll; a changed vote counts the last one; typed STOP still works):
 
-The new backend code (reply webhook, consent route, scheduler heartbeat, plain-text reminder wording) is merged on the local
-`main` branch of the product owner and is deployed by the existing GitHub Actions pipeline when it is pushed. The product owner
-will push when ready, as one batched push. The webhook endpoint fails closed, so deploying it before the secret is set is safe
-(it answers 503 to everything).
+| Message | English | Hindi |
+|---|---|---|
+| Dose reminder | ✅ Taken / ⏰ Later | ✅ ले ली / ⏰ थोड़ी देर में |
+| Morning check-in | 😊 I'm fine / 📞 Please call me | 😊 ठीक हूँ / 📞 फ़ोन कीजिए |
+| Consent (first message) | ✅ Yes, start / ❌ No, thanks | ✅ हाँ, शुरू करें / ❌ नहीं चाहिए |
 
-## 4. Database (Supabase, Sydney)
+### 2. Two Java tests fail on `main`
+- `DataApiTest.activityReturnsWhatWasSent` (line 108): it inserts a check-in with status `"ok"`, which the `checkin_status` type does not
+  allow (pending / sent / replied / missed). Probably `"replied"` was meant.
+- `OtpServiceTest`: `aWrongCodeIsRejectedAndBurnsAfterTooManyAttempts` and sometimes `requestThenVerifyLogsInAndCreatesAProfileForANewPhone`.
+  Not looked into.
 
-- Migration `20261104000040_scheduler_heartbeat.sql` is applied (2026-11-04).
-- Migration `20261104000041_checkin_message_id.sql` is optional (lets a swipe-reply match a check-in). The code works without it.
-- The Sydney database has no migration history table: apply SQL in the SQL editor, never `supabase db push`.
-- **When the database was copied from Mumbai to Sydney, table and function permissions were lost** (grants for the anon,
-  authenticated and service roles). The product owner repaired them with `supabase/maintenance/restore_*.sql`. If the database is
-  ever copied again, please keep the permissions (for example `pg_dump` without `--no-acl`), and run
-  `supabase/maintenance/table_permissions_check.sql` afterwards (it should list 26 expected lines).
+### 3. Phone login finds accounts only by the exact number `+91…` (low priority)
+`OtpService.verify` looks a profile up by `phone` exactly. Profiles saved as `91…` (without `+`) or with no phone (old email sign-ups)
+get a NEW empty account at the first phone login. Today only the owner's own family is affected (fixed by hand), so this can wait,
+but please handle it before real families join (match the old formats, or let an email account link a phone).
 
-## 5. Storage files
+### 4. New WhatsApp number: keep it alive
+- Check that `WHATSAPP_SENDER_SESSION_NAME` is the name of the NEW session.
+- Login codes also go out over this number: a ban stops logins as well as reminders. Keep a spare number ready.
+- Lower the ban risk: messages only to parents who agreed (replied 1), low volume at first, no bursts, no links.
 
-The Sydney project had no storage buckets, so report uploads failed and old medicine photos were missing. The buckets and their
-rules are recreated (2026-11-04) and new uploads work. **Question: before the move, did you copy the old project's storage files
-(medicine photos, reports)?** The old Mumbai project appears to have been deleted. If you have a copy, tell the product owner;
+## Coming soon (heads-up)
+
+- **Tablet colour and shape** (merged on the owner's local `main`, not pushed): the backend now reads two new columns
+  `medicines.pill_colour` and `medicines.pill_shape`, and with `ddl-auto=validate` it will **refuse to start** if they are missing.
+  Order: the owner pastes `supabase/migrations/20261105000042_pill_look.sql` into the Sydney SQL editor FIRST, then pushes.
+- **Reply fix** (merged locally): a late plain `1` now answers the missed dose that was sent after the check-in, not the check-in.
+- **Theme picker** (live since 2026-11-05): Family page, top right. The default is called "Chhaon": your Smart Gurukul violet, slightly
+  softened (same hue and brightness, less saturation; `DEFAULT_SOFTEN` in `web/scripts/build-palettes.mjs`, `theme.css` untouched).
+  Users can also pick Classic (the first teal), Teal, Blue, Saffron, Rose or their own colour.
+
+## Still a question for you
+
+**Storage files from the old Mumbai project:** before the move, did you copy the medicine photos and report files? If you have a copy,
 `supabase/maintenance/copy_storage.mjs` can load it.
 
-## Which account to use
+## Rules that still apply
 
-Please do **not** use the owner's admin account (`gbirla.dev.rnd@gmail.com`) for any setup, login or testing. It is the live admin
-account (Ultra plan, real data). Use a separate account of your own for the dashboards and for any test sign-ins in the app.
+- **Database (Sydney):** it has no migration history table. Apply SQL in the SQL editor, never `supabase db push`. If the database is
+  ever copied again, keep the permissions (for example `pg_dump` without `--no-acl`) and run
+  `supabase/maintenance/table_permissions_check.sql` afterwards (26 expected lines).
+- **Accounts:** do not use the owner's admin account (`gbirla.dev.rnd@gmail.com`) for setup or tests; it holds live data.
+- **Deploys:** a push that touches `api-java/**` deploys the backend to production; a push that touches `web/**` deploys the website.
 
-## Step by step (do in this order)
-
-**A. Get the secret.** The product owner generates it (`openssl rand -hex 32`) and sends it to you privately. Keep it in a
-password manager. If you would rather generate it yourself, run the same command and send the value back to the product owner.
-
-**B. Put it in the backend.** On the server, edit the backend env file (the one the service reads, built from
-`api-java/deploy/aws/backend.env.example`) and add the line `WHATSAPP_WEBHOOK_SECRET=<secret>`. While you are there, check
-that `WHATSAPP_GATEWAY_URL`, `WHATSAPP_GATEWAY_TOKEN` and `WHATSAPP_SENDER_SESSION_NAME` have values and that
-`CHHAON_SCHEDULER_ENABLED` is false or absent. Restart the backend service. (This setting only takes effect once the new code
-is deployed, see item 3. Before that, it is harmless.)
-
-**C. Put it in the gateway.** Open the gateway dashboard, find the webhook settings of the sending session, and set:
-URL `https://api.chhaon.site/webhooks/whatsapp-gateway`, secret = the same value, events `message.received` and
-`message.status`. Save. Make sure the session shows as connected.
-
-**D. Check the webhook after the new code is deployed** (from any terminal; replace `<secret>`):
-
-```
-URL=https://api.chhaon.site/webhooks/whatsapp-gateway
-# 1. No signature. Expect HTTP 401 {"status":"bad signature"}  (503 means the secret is not set on the server yet)
-curl -s -o /dev/null -w "%{http_code}\n" -X POST "$URL" -H 'Content-Type: application/json' -d '{"event":"test"}'
-# 2. Correct signature on a harmless test event. Expect HTTP 200 {"status":"ignored:event"}
-BODY='{"event":"test"}'
-SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac '<secret>' | sed 's/^.* //')
-curl -s -w "\n%{http_code}\n" -X POST "$URL" -H 'Content-Type: application/json' -H "X-Webhook-Signature: sha256=$SIG" -d "$BODY"
-```
-
-If 1 gives 401 and 2 gives 200, the secret matches and the webhook works. A 200 on test 1 should never happen.
-
-**E. Tell the product owner** the results of D and whether the session is connected.
-
-## 6. After you have done 1 and 2
-
-Tell the product owner. They will push, and then the two of you do the real-phone test and the scoped single-parent tick from
-`docs/TODO.md` ("Switch-on checklist"), and only then switch the scheduler on.
-
-Known gaps on the Java side: a sender the gateway cannot turn into a phone number (an `@lid` without a number) is ignored, even
-if it says STOP; the gateway never retries, so a 500 from us loses that reply; appointment reminders and caregiver WhatsApp
-alerts are not ported yet. Details: `docs/java-whatsapp-replies.md`.
+Known gaps on the Java side: a sender the gateway cannot turn into a phone number (`@lid` without a number) is ignored, even if it says
+STOP; the gateway never retries, so a 500 from us loses that reply; caregiver WhatsApp alerts and appointment reminders are not ported
+yet. Details: `docs/java-whatsapp-replies.md`.
