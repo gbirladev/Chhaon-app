@@ -43,6 +43,7 @@ public class RecordingWhatsAppSender extends WhatsAppSender {
 
     public void reset() {
         sent.clear();
+        counter.set(0);
         failing = false;
     }
 }

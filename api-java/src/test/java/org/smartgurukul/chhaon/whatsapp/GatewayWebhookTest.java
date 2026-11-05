@@ -277,7 +277,7 @@ class GatewayWebhookTest extends DbTest {
         Family again = fx.family(f.phone(), "en", true, f.zone());
         Med m = fx.medicine(again, "Metformin", "500 mg", 20, LocalTime.of(3, 0));
         UUID dose = fx.dose(m.scheduleId(), ago(5), "pending", null, null);
-        new org.smartgurukul.chhaon.scheduler.SchedulerService(fx.jdbc(), wa, false, 60, 180, 120, 24).tick(again.recipientId());
+        new org.smartgurukul.chhaon.scheduler.SchedulerService(fx.jdbc(), wa, false, 60, 180, 120, 24, "").tick(again.recipientId());
         assertThat(fx.doseStatus(dose)).isEqualTo("skipped");
         assertThat(wa.sent()).isEmpty();
     }

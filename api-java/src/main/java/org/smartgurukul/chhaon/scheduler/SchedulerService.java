@@ -43,6 +43,10 @@ public class SchedulerService {
     private final int checkinMissedMinutes;
     private final int checkinStartWindowMinutes;
     private final int horizonHours;
+    /** null = every family. Set to one recipient id to run the scheduler for that parent only (first switch-on). */
+    private final UUID onlyRecipient;
+    /** true when chhaon.scheduler.only-recipient holds something that is neither empty, "all" nor a recipient id: then NOTHING runs. */
+    private final boolean onlyRecipientInvalid;
 
     public SchedulerService(JdbcTemplate jdbc,
                             WhatsAppSender wa,
@@ -50,7 +54,8 @@ public class SchedulerService {
                             @Value("${chhaon.scheduler.dose-missed-minutes:60}") int doseMissedMinutes,
                             @Value("${chhaon.scheduler.checkin-missed-minutes:180}") int checkinMissedMinutes,
                             @Value("${chhaon.scheduler.checkin-start-window-minutes:120}") int checkinStartWindowMinutes,
-                            @Value("${chhaon.scheduler.horizon-hours:24}") int horizonHours) {
+                            @Value("${chhaon.scheduler.horizon-hours:24}") int horizonHours,
+                            @Value("${chhaon.scheduler.only-recipient:}") String onlyRecipient) {
         this.jdbc = jdbc;
         this.wa = wa;
         this.enabled = enabled;
@@ -58,13 +63,30 @@ public class SchedulerService {
         this.checkinMissedMinutes = checkinMissedMinutes;
         this.checkinStartWindowMinutes = checkinStartWindowMinutes;
         this.horizonHours = horizonHours;
+        String o = onlyRecipient == null ? "" : onlyRecipient.trim();
+        UUID parsed = null;
+        boolean bad = false;
+        if (!o.isEmpty() && !"all".equalsIgnoreCase(o)) {
+            try {
+                parsed = UUID.fromString(o);
+            } catch (IllegalArgumentException e) {
+                bad = true;
+            }
+        }
+        this.onlyRecipient = parsed;
+        this.onlyRecipientInvalid = bad;
+        if (enabled && bad) {
+            log.error("scheduler is ENABLED but chhaon.scheduler.only-recipient is neither empty, 'all' nor a recipient id: it will NOT run");
+        } else if (enabled && parsed != null) {
+            log.warn("scheduler is enabled for ONE recipient only ({}); set only-recipient to 'all' to run for every family", parsed);
+        }
     }
 
     @Scheduled(fixedDelayString = "${chhaon.scheduler.tick-interval-ms:300000}",
                initialDelayString = "${chhaon.scheduler.initial-delay-ms:60000}")
     public void scheduledTick() {
-        if (!enabled) return;
-        tick(null);
+        if (!enabled || onlyRecipientInvalid) return;   // an unreadable scope never means "everyone"
+        tick(onlyRecipient);
     }
 
     /** Run one tick. scope = a single recipient id to limit to (for tests), or null for all. */

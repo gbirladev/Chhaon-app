@@ -75,6 +75,8 @@ jobs:
           WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
           # Reminders switch: set the secret to "true" to turn the scheduler on, "false" to turn it off. Blank keeps the value on the box.
           CHHAON_SCHEDULER_ENABLED: ${{ secrets.CHHAON_SCHEDULER_ENABLED }}
+          # First switch-on for ONE parent: set to that recipient's id. Set to "all" to run for every family. Blank keeps the value on the box.
+          CHHAON_SCHEDULER_ONLY_RECIPIENT: ${{ secrets.CHHAON_SCHEDULER_ONLY_RECIPIENT }}
         run: bash deploy/aws/send-ssm-deploy.sh
 
       - name: Smoke test (public health)
