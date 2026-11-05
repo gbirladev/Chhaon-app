@@ -563,6 +563,8 @@
     "planPilotSub": "पायलट में आप क्या जोड़ सकते हैं",
     "statsLink": "पायलट आँकड़े",
     "statsSub": "कितने लोग इस्तेमाल करते हैं, और क्या यह काम करता है",
+    "monitorLink": "मॉनिटर",
+    "monitorSub": "हर परिवार, लाइव: क्या सब ठीक चल रहा है?",
     "feedbackLink": "सुझाव भेजिए",
     "feedbackSub": "छाँव टीम को सुझाव, समस्या या धन्यवाद भेजिए",
     "selfNote": "यह आपकी अपनी प्रोफ़ाइल है। यह सिर्फ़ आपके लिए है, इसलिए किसी को बुलाने की ज़रूरत नहीं।"
@@ -1699,5 +1701,286 @@
     "apptRemindNoConsent": "{me, select, yes {आपने} other {{name} ने}} अभी WhatsApp संदेशों के लिए हाँ नहीं कही है, इसलिए अभी रिमाइंडर नहीं जाएगा।",
     "doctorNote": "यह WhatsApp रिमाइंडर पर आए जवाबों पर आधारित है (रिमाइंडर {name} को भेजे गए)। \"पुष्ट नहीं\" का मतलब है कि जवाब नहीं आया; हो सकता है दवाई फिर भी ली गई हो। रोकी गई या अभी इंतज़ार में रहने वाली खुराकें गिनी नहीं गईं। यह चिकित्सा सलाह नहीं है।",
     "familyWhatsappSub": "{me, select, yes {आपको} other {{name} को}} मिलने वाले संदेश देखें"
+  },
+  "monitor": {
+    "title": "मॉनिटर",
+    "ist": "IST",
+    "yourTime": "आपके समय {time}",
+    "loading": "लोड हो रहा है…",
+    "updatedSeconds": "{count} सेकंड पहले अपडेट",
+    "updatedMinutes": "{count} मिनट पहले अपडेट",
+    "refresh": "अभी ताज़ा करें",
+    "refreshing": "ताज़ा हो रहा है…",
+    "forbidden": "यह पेज सिर्फ़ ऐप के मालिक के लिए है।",
+    "error": "मॉनिटर नहीं खुला। 30 सेकंड में फिर कोशिश होगी।",
+    "tabsLabel": "मॉनिटर के हिस्से",
+    "tab": {
+      "overview": "सेहत",
+      "families": "परिवार",
+      "activity": "गतिविधि",
+      "feedback": "सुझाव",
+      "pilot": "पायलट आँकड़े"
+    },
+    "healthTitle": "क्या सब ठीक चल रहा है?",
+    "level": {
+      "green": "सब ठीक",
+      "amber": "देखें",
+      "red": "ख़राब"
+    },
+    "check": {
+      "scheduler": "रिमाइंडर जॉब",
+      "reminders_on_time": "समय पर",
+      "replies_in": "जवाब आ रहे हैं",
+      "gateway": "व्हाट्सऐप गेटवे",
+      "webhook_rejections": "वेबहुक कॉल",
+      "failed_sends": "न भेजे गए",
+      "whatsapp_volume": "संदेशों की संख्या",
+      "consent_pending": "सहमति",
+      "low_stock": "कम स्टॉक"
+    },
+    "since": "{time} से",
+    "todo": {
+      "scheduler": "देखें कि बैकएंड चल रहा है और CHHAON_SCHEDULER_ENABLED true है (docs/admin-monitor.md)।",
+      "reminders_on_time": "बैकएंड लॉग में 'scheduler step' या 'send failed' देखें; गेटवे जुड़ा है या नहीं देखें।",
+      "replies_in": "गेटवे डैशबोर्ड खोलें: सेशन जुड़ा है? हमारे सर्वर का वेबहुक है?",
+      "gateway": "गेटवे डैशबोर्ड खोलें: सेशन फिर जोड़ें (QR स्कैन करें) और वेबहुक न हो तो जोड़ें।",
+      "webhook_rejections": "गेटवे का वेबहुक सीक्रेट और सर्वर का WHATSAPP_WEBHOOK_SECRET एक जैसे होने चाहिए।",
+      "failed_sends": "नीचे परिवार खोलें: क्या नंबर बदला या ब्लॉक हुआ?",
+      "whatsapp_volume": "धीरे करें: अनौपचारिक नंबर से बहुत संदेश जाने पर बैन हो सकता है।",
+      "consent_pending": "परिवार से कहें कि व्यक्ति व्हाट्सऐप पर YES लिखे।",
+      "low_stock": "परिवार को भी यह दिखता है; हमें कुछ ठीक नहीं करना।"
+    },
+    "allGood": "हर जाँच हरी है।",
+    "alertsTitle": "खुली समस्याएँ",
+    "noOpenAlerts": "कोई खुली समस्या नहीं।",
+    "openedAt": "{time} को खुली",
+    "alertHistory": "पिछली समस्याएँ",
+    "gatewayTitle": "व्हाट्सऐप और सर्वर",
+    "todayTitle": "आज",
+    "t": {
+      "sent": "भेजे गए रिमाइंडर",
+      "ofScheduled": "आज के {count} में से",
+      "taken": "ली गई",
+      "takenLate": "+ {count} देर से ली",
+      "missed": "छूटी",
+      "waiting": "जवाब का इंतज़ार",
+      "notSentYet": "{count} अभी नहीं भेजे",
+      "sentLate": "15 मिनट से ज़्यादा देर से भेजे",
+      "checkins": "हाल-चाल के जवाब",
+      "callMe": "{count} ने कॉल माँगा",
+      "alerts": "परिवार को अलर्ट",
+      "alertsWhatsapp": "{count} व्हाट्सऐप पर भेजे",
+      "messages": "व्हाट्सऐप संदेश",
+      "messagesAvg": "7 दिन का औसत {avg}"
+    },
+    "volumeTitle": "रोज़ के संदेश, पिछले 8 दिन ({limit} से ऊपर पीला)",
+    "upcomingTitle": "अगले 2 घंटे",
+    "nothingUpcoming": "अगले 2 घंटे में कुछ नहीं।",
+    "checkin": "सुबह का हाल-चाल",
+    "receiver": {
+      "person": "व्यक्ति को",
+      "caregiver": "परिवार के सदस्य को",
+      "helper": "सहायक {name} को"
+    },
+    "willNotSend": "नहीं भेजा जाएगा (सहमति नहीं)",
+    "activityTitle": "ताज़ा घटनाएँ",
+    "nothingYet": "अभी कुछ नहीं।",
+    "kind": {
+      "dose_sent": "रिमाइंडर भेजा",
+      "dose_taken": "ली गई",
+      "dose_taken_late": "देर से ली",
+      "dose_missed": "छूटी",
+      "checkin_sent": "हाल-चाल भेजा",
+      "checkin_answered": "हाल-चाल का जवाब",
+      "checkin_missed": "हाल-चाल छूटा",
+      "consent_given": "व्हाट्सऐप पर हाँ कहा",
+      "opted_out": "संदेश बंद किए",
+      "alert": "अलर्ट",
+      "sign_up": "नया देखभालकर्ता",
+      "message_in": "व्हाट्सऐप संदेश आया"
+    },
+    "alertType": {
+      "dose_missed": "दवा छूटी",
+      "checkin_missed": "हाल-चाल छूटा",
+      "checkin_call_requested": "कॉल माँगा",
+      "parent_stopped": "STOP भेजा",
+      "parent_declined": "मना किया",
+      "parent_consented": "हाँ कहा",
+      "parent_resumed": "फिर शुरू किया",
+      "whatsapp_failed": "व्हाट्सऐप नहीं पहुँचा",
+      "reminder_not_sent": "रिमाइंडर नहीं गया",
+      "refill_needed": "दवा मँगानी है",
+      "out_of_stock": "दवा ख़त्म"
+    },
+    "feedbackTitle": "देखभालकर्ताओं के सुझाव",
+    "fbKind": {
+      "idea": "सुझाव",
+      "problem": "समस्या",
+      "praise": "तारीफ़",
+      "other": "अन्य"
+    },
+    "unknownSender": "भेजने वाला पता नहीं",
+    "pictures": "{count, plural, one {# फ़ोटो} other {# फ़ोटो}}",
+    "pilotTitle": "पायलट आँकड़े",
+    "p": {
+      "caregivers": "देखभालकर्ता",
+      "active": "इस हफ़्ते {count} सक्रिय",
+      "parents": "जिन्होंने हाँ कहा",
+      "parentsSub": "{waiting} इंतज़ार में · {stopped} बंद",
+      "reminders": "पक्के रिमाइंडर (7 दिन)",
+      "missed": "{count} छूटे",
+      "checkins": "हाल-चाल के जवाब (7 दिन)"
+    },
+    "openStats": "पूरे पायलट आँकड़े खोलें",
+    "openStatsSub": "चार्ट, प्लान, लव लूप और पुराने सुझाव",
+    "g": {
+      "session": "सेशन",
+      "number": "नंबर",
+      "status": "स्थिति",
+      "notConfigured": "सेट नहीं (ड्राई-रन)",
+      "webhooks": "जवाबों के वेबहुक",
+      "lastOut": "आख़िरी भेजा संदेश",
+      "rejected": "ठुकराए वेबहुक कॉल (24 घंटे)",
+      "none": "कोई नहीं",
+      "version": "सर्वर बिल्ड",
+      "unknown": "पता नहीं",
+      "uptime": "चल रहा है",
+      "uptimeValue": "{hours} घंटे {minutes} मिनट"
+    },
+    "rejection": {
+      "bad_signature": "ग़लत हस्ताक्षर",
+      "no_secret": "सीक्रेट सेट नहीं",
+      "server_error": "सर्वर गड़बड़ी",
+      "bad_request": "ग़लत अनुरोध"
+    },
+    "familiesTitle": "सभी परिवार",
+    "search": "नाम, फ़ोन या ईमेल खोजें",
+    "filterLabel": "सिर्फ़ ये दिखाएँ",
+    "filterAll": "सभी",
+    "badge": {
+      "no_reply_2d": "2 दिन से जवाब नहीं",
+      "consent_pending": "सहमति बाकी",
+      "checkin_missed": "हाल-चाल छूटा",
+      "low_stock": "कम स्टॉक",
+      "send_failed": "भेजना विफल",
+      "paused_by_plan": "प्लान से रुका",
+      "opted_out": "बंद"
+    },
+    "noMatch": "कोई परिवार नहीं मिला।",
+    "care": {
+      "older": "माता-पिता",
+      "pregnant": "गर्भावस्था",
+      "child": "बच्चा"
+    },
+    "self": "ख़ुद",
+    "todayOf": "आज {done}/{total}",
+    "noCaregiver": "कोई देखभालकर्ता नहीं",
+    "wa": "व्हाट्सऐप",
+    "consentYes": "सहमत",
+    "consentNo": "अभी सहमति नहीं",
+    "lastReply": "आख़िरी जवाब {time}",
+    "replySpeed": "~{minutes} मिनट में जवाब",
+    "medsCount": "{count, plural, one {# दवा} other {# दवाएँ}}",
+    "msgs": "आज {today} संदेश, 7 दिन में {week}",
+    "caregiverSeen": "देखभालकर्ता आख़िरी बार सक्रिय {time}",
+    "familyTitle": "परिवार",
+    "auditNote": "इस परिवार को आपका देखना दर्ज होता है।",
+    "f": {
+      "profile": "प्रोफ़ाइल",
+      "whatsapp": "व्हाट्सऐप",
+      "care": "देखभाल",
+      "timezone": "समय क्षेत्र",
+      "receiver": "रिमाइंडर किसे",
+      "consent": "सहमति",
+      "checkin": "हाल-चाल",
+      "conditions": "बीमारियाँ",
+      "allergies": "एलर्जी",
+      "blood": "ब्लड ग्रुप",
+      "members": "परिवार के सदस्य",
+      "alerts": "अलर्ट",
+      "medicines": "दवाएँ",
+      "stock": "स्टॉक {stock} (मँगाएँ {refill} पर)",
+      "critical": "ज़रूरी",
+      "doses": "खुराक, पिछले 7 दिन",
+      "due": "समय (IST)",
+      "medicine": "दवा",
+      "status": "स्थिति",
+      "sent": "भेजा",
+      "replied": "जवाब",
+      "late": "{minutes} मिनट देर",
+      "timesNote": "समय भारत के हिसाब से, नीचे UTC।",
+      "checkins": "हाल-चाल",
+      "sentReplied": "भेजा {sent}, जवाब {replied}",
+      "alertsSent": "परिवार को अलर्ट (7 दिन)",
+      "viaWhatsapp": "व्हाट्सऐप पर भेजा",
+      "consentAsked": "सहमति {count} बार माँगी, आख़िरी {time}"
+    },
+    "off": "बंद",
+    "doseStatus": {
+      "pending": "अभी नहीं भेजा",
+      "sent": "इंतज़ार",
+      "taken": "ली गई",
+      "taken_late": "देर से ली",
+      "missed": "छूटी",
+      "skipped": "छोड़ी"
+    },
+    "checkinStatus": {
+      "pending": "अभी नहीं भेजा",
+      "sent": "इंतज़ार",
+      "replied": "जवाब मिला",
+      "missed": "जवाब नहीं"
+    },
+    "reason": {
+      "any": {
+        "check_failed": "जाँच ख़ुद नहीं चल पाई।"
+      },
+      "scheduler": {
+        "ok": "{minutes_ago} मिनट पहले चला।",
+        "stale": "आख़िरी बार {minutes_ago} मिनट पहले चला: रिमाइंडर नहीं जा रहे।",
+        "never": "यह कभी चला दर्ज नहीं हुआ।"
+      },
+      "reminders_on_time": {
+        "ok": "हर रिमाइंडर समय पर गया।",
+        "stuck": "{stuck} रिमाइंडर 15 मिनट से ज़्यादा देर से अटके हैं।",
+        "late": "आज {late_today} रिमाइंडर 15 मिनट से ज़्यादा देर से गए (सबसे ज़्यादा {worst_late_minutes} मिनट); 24 घंटे में {not_sent_24h} गए ही नहीं।"
+      },
+      "replies_in": {
+        "ok": "पिछले 3 घंटे में {inbound_3h} व्हाट्सऐप संदेश आए।",
+        "silent": "पिछले 3 घंटे में {sent_3h} रिमाइंडर गए पर कोई जवाब नहीं आया।",
+        "quiet": "24 घंटे में {sent_24h} रिमाइंडर गए और कोई संदेश नहीं आया।"
+      },
+      "gateway": {
+        "ok": "{number} से जुड़ा, जवाबों के {webhooks} वेबहुक।",
+        "not_configured": "इस सर्वर पर गेटवे सेट नहीं (ड्राई-रन)।",
+        "unreachable": "गेटवे जवाब नहीं दे रहा ({error})।",
+        "no_session": "गेटवे पर {session_name} नाम का सेशन नहीं है।",
+        "logged_out": "सेशन {session_status} है: QR फिर स्कैन करें।",
+        "no_webhook": "जुड़ा है, पर कोई वेबहुक जवाब हम तक नहीं भेजता: जवाब खो रहे हैं।",
+        "webhook_unknown": "जुड़ा है, पर वेबहुक सूची नहीं पढ़ी जा सकी।"
+      },
+      "webhook_rejections": {
+        "ok": "पिछले घंटे कोई वेबहुक कॉल नहीं ठुकराया ({rejected_24h} 24 घंटे में)।",
+        "some_rejected": "पिछले घंटे {rejected_1h} वेबहुक कॉल ठुकराए गए।",
+        "all_rejected": "पिछले घंटे हर वेबहुक कॉल ठुकराया गया ({rejected_1h})।"
+      },
+      "failed_sends": {
+        "ok": "24 घंटे में कोई भेजना विफल नहीं।",
+        "failures": "{failed_24h} रिमाइंडर नहीं पहुँचे, {alerts_retrying} अलर्ट अटके (24 घंटे)।"
+      },
+      "whatsapp_volume": {
+        "ok": "आज {today} संदेश (7 दिन का औसत {daily_average_7d})।",
+        "high": "आज {today} संदेश, {amber_per_day} से ज़्यादा: बैन का ख़तरा।",
+        "jump": "आज {today} संदेश, औसत ({daily_average_7d}) के 3 गुना से ज़्यादा।"
+      },
+      "consent_pending": {
+        "ok": "कोई इंतज़ार में नहीं।",
+        "recent": "{waiting} इंतज़ार में, सब हाल में पूछे गए।",
+        "waiting": "{waiting_over_24h} ने एक दिन से ज़्यादा से हाँ नहीं कहा।"
+      },
+      "low_stock": {
+        "ok": "कोई दवा कम नहीं।",
+        "low": "{low} दवाएँ मँगाने के स्तर पर या नीचे ({empty} ख़त्म)।"
+      }
+    }
   }
 }

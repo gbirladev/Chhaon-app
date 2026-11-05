@@ -1,4 +1,4 @@
-import { Component, createContext, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ErrorInfo, type ReactNode } from "react";
+import { Component, Suspense, createContext, lazy, useContext, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ErrorInfo, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { supabase } from "./lib/supabase";
 import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired } from "./lib/auth";
@@ -31,6 +31,8 @@ import { ChildWeightEditor, KeyFactLines } from "./screens/KeyFacts";
 import { factLines, useChildInfo } from "./lib/childFacts";
 import { yearsSince } from "./lib/keyFacts";
 import { StatsScreen } from "./screens/Stats";
+// The owner-only Monitor loads on its own, so nobody else downloads it.
+const MonitorScreen = lazy(() => import("./screens/Monitor").then((m) => ({ default: m.MonitorScreen })));
 import { FeedbackScreen } from "./screens/Feedback";
 import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
@@ -90,6 +92,7 @@ type Screen =
   | "appointments"
   | "plans"
   | "stats"
+  | "monitor"
   | "safety"
   | "feedback"
   | "love"
@@ -307,7 +310,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "activity"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "activity"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -2020,7 +2023,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <VaccinesLink go={go} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{tWho("familyWhatsappSub", receiverValues(recipient, userId, { call, you: tWho("you"), someone: tWho("someone") }))}</p></div><Icon name="chevron" /></button>
-      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><Icon3D name="chart" /><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
+      {isAdmin && <button className="feature-link" onClick={() => go("monitor")}><Icon3D name="chart" /><div><strong>{t("monitorLink")}</strong><p>{t("monitorSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
       <button className="feature-link" onClick={() => go("feedback")}><Icon3D name="feedback" /><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
@@ -2111,7 +2114,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2484,6 +2487,7 @@ export default function App() {
           {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
+          {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}

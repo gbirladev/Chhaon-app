@@ -563,6 +563,8 @@
     "planPilotSub": "What you can add during the pilot",
     "statsLink": "Pilot stats",
     "statsSub": "How many people use it, and does it work",
+    "monitorLink": "Monitor",
+    "monitorSub": "Every family, live: is everything working?",
     "feedbackLink": "Send feedback",
     "feedbackSub": "Ideas, problems or thanks for the Chhaon team",
     "selfNote": "This is your own profile. It is private to you, so there is nobody to invite."
@@ -1699,5 +1701,286 @@
     "apptRemindNoConsent": "{me, select, yes {You have} other {{name} has}} not agreed to WhatsApp messages yet, so no reminder will be sent for now.",
     "doctorNote": "Based on the replies to WhatsApp reminders (sent to {name}). \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice.",
     "familyWhatsappSub": "See the messages {me, select, yes {you receive} other {{name} receives}}"
+  },
+  "monitor": {
+    "title": "Monitor",
+    "ist": "IST",
+    "yourTime": "{time} your time",
+    "loading": "Loading…",
+    "updatedSeconds": "Updated {count} s ago",
+    "updatedMinutes": "Updated {count} min ago",
+    "refresh": "Refresh now",
+    "refreshing": "refreshing…",
+    "forbidden": "This page is only for the app's owner.",
+    "error": "Could not load the Monitor. It will try again in 30 seconds.",
+    "tabsLabel": "Monitor sections",
+    "tab": {
+      "overview": "Health",
+      "families": "Families",
+      "activity": "Activity",
+      "feedback": "Feedback",
+      "pilot": "Pilot stats"
+    },
+    "healthTitle": "Is everything working?",
+    "level": {
+      "green": "All good",
+      "amber": "Check",
+      "red": "Broken"
+    },
+    "check": {
+      "scheduler": "Reminder job",
+      "reminders_on_time": "On time",
+      "replies_in": "Replies coming in",
+      "gateway": "WhatsApp gateway",
+      "webhook_rejections": "Webhook calls",
+      "failed_sends": "Failed sends",
+      "whatsapp_volume": "Message volume",
+      "consent_pending": "Consent",
+      "low_stock": "Low stock"
+    },
+    "since": "Since {time}",
+    "todo": {
+      "scheduler": "Check the backend is running and CHHAON_SCHEDULER_ENABLED is true (docs/admin-monitor.md).",
+      "reminders_on_time": "Look at the backend log for 'scheduler step' or 'send failed'; check the gateway is connected.",
+      "replies_in": "Open the gateway dashboard: is the session connected and does it have a webhook to our server?",
+      "gateway": "Open the gateway dashboard: reconnect the session (scan the QR) and add the webhook if it is missing.",
+      "webhook_rejections": "The webhook secret in the gateway and WHATSAPP_WEBHOOK_SECRET on the server must be the same.",
+      "failed_sends": "Open the family below: was the number changed or blocked?",
+      "whatsapp_volume": "Slow down: an unofficial number sending a lot can be banned.",
+      "consent_pending": "Ask the family to have the person reply YES on WhatsApp.",
+      "low_stock": "The families see this too; nothing to fix on our side."
+    },
+    "allGood": "Every check is green.",
+    "alertsTitle": "Open problems",
+    "noOpenAlerts": "No open problems.",
+    "openedAt": "Opened {time}",
+    "alertHistory": "Earlier problems",
+    "gatewayTitle": "WhatsApp and server",
+    "todayTitle": "Today",
+    "t": {
+      "sent": "Reminders sent",
+      "ofScheduled": "of {count} due today",
+      "taken": "Taken",
+      "takenLate": "+ {count} taken late",
+      "missed": "Missed",
+      "waiting": "Waiting for reply",
+      "notSentYet": "{count} not sent yet",
+      "sentLate": "Sent >15 min late",
+      "checkins": "Check-ins answered",
+      "callMe": "{count} asked for a call",
+      "alerts": "Family alerts",
+      "alertsWhatsapp": "{count} sent on WhatsApp",
+      "messages": "WhatsApp messages",
+      "messagesAvg": "7-day average {avg}"
+    },
+    "volumeTitle": "Messages per day, last 8 days (amber above {limit})",
+    "upcomingTitle": "Next 2 hours",
+    "nothingUpcoming": "Nothing due in the next 2 hours.",
+    "checkin": "morning check-in",
+    "receiver": {
+      "person": "to the person",
+      "caregiver": "to a family member",
+      "helper": "to helper {name}"
+    },
+    "willNotSend": "will not be sent (no consent)",
+    "activityTitle": "Latest events",
+    "nothingYet": "Nothing yet.",
+    "kind": {
+      "dose_sent": "Reminder sent",
+      "dose_taken": "Taken",
+      "dose_taken_late": "Taken late",
+      "dose_missed": "Missed",
+      "checkin_sent": "Check-in sent",
+      "checkin_answered": "Check-in answered",
+      "checkin_missed": "Check-in missed",
+      "consent_given": "Said yes on WhatsApp",
+      "opted_out": "Stopped messages",
+      "alert": "Alert",
+      "sign_up": "New caregiver",
+      "message_in": "WhatsApp message in"
+    },
+    "alertType": {
+      "dose_missed": "dose missed",
+      "checkin_missed": "check-in missed",
+      "checkin_call_requested": "asked for a call",
+      "parent_stopped": "sent STOP",
+      "parent_declined": "said no",
+      "parent_consented": "said yes",
+      "parent_resumed": "started again",
+      "whatsapp_failed": "WhatsApp not delivered",
+      "reminder_not_sent": "reminder not sent",
+      "refill_needed": "refill needed",
+      "out_of_stock": "out of stock"
+    },
+    "feedbackTitle": "Feedback from caregivers",
+    "fbKind": {
+      "idea": "Idea",
+      "problem": "Problem",
+      "praise": "Praise",
+      "other": "Other"
+    },
+    "unknownSender": "unknown sender",
+    "pictures": "{count, plural, one {# picture} other {# pictures}}",
+    "pilotTitle": "Pilot stats",
+    "p": {
+      "caregivers": "Caregivers",
+      "active": "{count} active this week",
+      "parents": "People who agreed",
+      "parentsSub": "{waiting} waiting · {stopped} stopped",
+      "reminders": "Reminders confirmed (7 days)",
+      "missed": "{count} missed",
+      "checkins": "Check-ins answered (7 days)"
+    },
+    "openStats": "Open the full pilot stats",
+    "openStatsSub": "Charts, plans, love loop and the old feedback list",
+    "g": {
+      "session": "Session",
+      "number": "Number",
+      "status": "Status",
+      "notConfigured": "not configured (dry-run)",
+      "webhooks": "Webhooks for replies",
+      "lastOut": "Last message sent",
+      "rejected": "Refused webhook calls (24 h)",
+      "none": "none",
+      "version": "Server build",
+      "unknown": "unknown",
+      "uptime": "Running for",
+      "uptimeValue": "{hours} h {minutes} min"
+    },
+    "rejection": {
+      "bad_signature": "wrong signature",
+      "no_secret": "no secret set",
+      "server_error": "server error",
+      "bad_request": "bad request"
+    },
+    "familiesTitle": "Every family",
+    "search": "Search name, phone or email",
+    "filterLabel": "Show only",
+    "filterAll": "All",
+    "badge": {
+      "no_reply_2d": "No reply 2 days",
+      "consent_pending": "Consent pending",
+      "checkin_missed": "Check-in missed",
+      "low_stock": "Low stock",
+      "send_failed": "Send failed",
+      "paused_by_plan": "Paused by plan",
+      "opted_out": "Stopped"
+    },
+    "noMatch": "No family matches.",
+    "care": {
+      "older": "Parent",
+      "pregnant": "Pregnancy",
+      "child": "Child"
+    },
+    "self": "self",
+    "todayOf": "{done}/{total} today",
+    "noCaregiver": "no caregiver",
+    "wa": "WhatsApp",
+    "consentYes": "agreed",
+    "consentNo": "not agreed yet",
+    "lastReply": "Last reply {time}",
+    "replySpeed": "replies in ~{minutes} min",
+    "medsCount": "{count, plural, one {# medicine} other {# medicines}}",
+    "msgs": "{today} msgs today, {week} in 7 days",
+    "caregiverSeen": "Caregiver last active {time}",
+    "familyTitle": "Family",
+    "auditNote": "Your look at this family is recorded.",
+    "f": {
+      "profile": "Profile",
+      "whatsapp": "WhatsApp",
+      "care": "Care",
+      "timezone": "Time zone",
+      "receiver": "Reminders go",
+      "consent": "Consent",
+      "checkin": "Check-in",
+      "conditions": "Conditions",
+      "allergies": "Allergies",
+      "blood": "Blood group",
+      "members": "Family members",
+      "alerts": "alerts",
+      "medicines": "Medicines",
+      "stock": "stock {stock} (refill at {refill})",
+      "critical": "critical",
+      "doses": "Doses, last 7 days",
+      "due": "Due (IST)",
+      "medicine": "Medicine",
+      "status": "Status",
+      "sent": "Sent",
+      "replied": "Replied",
+      "late": "{minutes} min late",
+      "timesNote": "Times in India time, UTC below.",
+      "checkins": "Check-ins",
+      "sentReplied": "sent {sent}, replied {replied}",
+      "alertsSent": "Alerts to the family (7 days)",
+      "viaWhatsapp": "sent on WhatsApp",
+      "consentAsked": "Consent asked {count} times, last {time}"
+    },
+    "off": "off",
+    "doseStatus": {
+      "pending": "Not sent yet",
+      "sent": "Waiting",
+      "taken": "Taken",
+      "taken_late": "Taken late",
+      "missed": "Missed",
+      "skipped": "Skipped"
+    },
+    "checkinStatus": {
+      "pending": "Not sent yet",
+      "sent": "Waiting",
+      "replied": "Answered",
+      "missed": "No answer"
+    },
+    "reason": {
+      "any": {
+        "check_failed": "The check itself could not run."
+      },
+      "scheduler": {
+        "ok": "Ran {minutes_ago} min ago.",
+        "stale": "Last ran {minutes_ago} min ago: reminders are NOT going out.",
+        "never": "It has never recorded a run."
+      },
+      "reminders_on_time": {
+        "ok": "Every reminder due went out on time.",
+        "stuck": "{stuck} reminder(s) are more than 15 min overdue and not sent.",
+        "late": "{late_today} sent more than 15 min late today (worst {worst_late_minutes} min); {not_sent_24h} never sent in 24 h."
+      },
+      "replies_in": {
+        "ok": "{inbound_3h} WhatsApp message(s) came in during the last 3 hours.",
+        "silent": "{sent_3h} reminders went out in the last 3 hours and NO reply came in.",
+        "quiet": "{sent_24h} reminders in 24 hours and no message came in."
+      },
+      "gateway": {
+        "ok": "Connected as {number}, {webhooks} webhook(s) for replies.",
+        "not_configured": "No gateway is set on this server (dry-run).",
+        "unreachable": "The gateway is not answering ({error}).",
+        "no_session": "The gateway has no session named {session_name}.",
+        "logged_out": "The session is {session_status}: scan the QR code again.",
+        "no_webhook": "Connected, but NO webhook sends replies to us: parent replies are lost.",
+        "webhook_unknown": "Connected, but the webhook list could not be read."
+      },
+      "webhook_rejections": {
+        "ok": "No webhook call refused in the last hour ({rejected_24h} in 24 h).",
+        "some_rejected": "{rejected_1h} webhook call(s) refused in the last hour.",
+        "all_rejected": "Every webhook call in the last hour was refused ({rejected_1h})."
+      },
+      "failed_sends": {
+        "ok": "No failed sends in 24 hours.",
+        "failures": "{failed_24h} reminder(s) not delivered, {alerts_retrying} family alert(s) failing (24 h)."
+      },
+      "whatsapp_volume": {
+        "ok": "{today} messages today (7-day average {daily_average_7d}).",
+        "high": "{today} messages today, over {amber_per_day}: ban risk.",
+        "jump": "{today} messages today, more than 3× the average ({daily_average_7d})."
+      },
+      "consent_pending": {
+        "ok": "Nobody is waiting.",
+        "recent": "{waiting} waiting, all asked recently.",
+        "waiting": "{waiting_over_24h} have not said yes for more than a day."
+      },
+      "low_stock": {
+        "ok": "No medicine is running low.",
+        "low": "{low} medicine(s) at or below the refill level ({empty} empty)."
+      }
+    }
   }
 }

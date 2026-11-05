@@ -15,7 +15,7 @@ const MARKETING_RUPEES = 0.86;
 const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : null);
 
 /** The owner's numbers: how many people use it and whether the reminders work. Totals only; nobody's name, number or email is here. */
-export function StatsScreen({ go }: { go: (screen: "family") => void }) {
+export function StatsScreen({ go }: { go: (screen: "monitor") => void }) {
   const t = useTranslations("stats");
   const locale = useLocale();
   const [stats, setStats] = useState<PilotStats | "error" | null>(null);
@@ -32,7 +32,7 @@ export function StatsScreen({ go }: { go: (screen: "family") => void }) {
 
   return (
     <main className="scroll-page no-nav stats-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle")} back={() => go("family")} />
+      <AppHeader title={t("title")} subtitle={t("subtitle")} back={() => go("monitor")} />
       {stats === null && <p className="note" role="status">{t("loading")}</p>}
       {stats === "error" && <p className="note" role="alert">{t("error")}</p>}
       {stats && stats !== "error" && (() => {

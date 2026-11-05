@@ -37,7 +37,8 @@ jobs:
           cache: maven
 
       - name: Build JAR
-        run: mvn -B -DskipTests clean package
+        # The commit goes into META-INF/build-info.properties so the admin Monitor shows which build is running.
+        run: mvn -B -DskipTests -Dchhaon.git-sha=${GITHUB_SHA} clean package
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

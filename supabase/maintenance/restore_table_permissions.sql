@@ -18,6 +18,13 @@ declare
   s text;
 begin
   foreach s in array array[
+    -- admin Monitor tables (migration 0054): backend only
+    'revoke all on table public.admin_alerts from public, anon, authenticated, service_role',
+    'grant DELETE, INSERT, SELECT, UPDATE on table public.admin_alerts to service_role',
+    'revoke all on table public.admin_audit from public, anon, authenticated, service_role',
+    'grant DELETE, INSERT, SELECT, UPDATE on table public.admin_audit to service_role',
+    'revoke all on table public.admin_webhook_rejections from public, anon, authenticated, service_role',
+    'grant DELETE, INSERT, SELECT, UPDATE on table public.admin_webhook_rejections to service_role',
     'revoke all on table public.appointments from public, anon, authenticated, service_role',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.appointments to anon',
     'grant DELETE, REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.appointments to authenticated',
