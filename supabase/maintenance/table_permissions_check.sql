@@ -32,6 +32,7 @@
 --   reactions | 20 | 20 | 20 | 20 | t | t
 --   report_values | 8 | 8 | 8 | 8 | t | t
 --   reports | 9 | 9 | 9 | 2 | t | t
+--   weekly_summary_sends | 8 | 0 | 0 | 0 | f | t   (migration 0048)
 --   whatsapp_events | 2 | 2 | 2 | 2 | t | t
 
 select c.relname as tbl,

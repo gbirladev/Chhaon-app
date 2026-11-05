@@ -124,6 +124,8 @@ begin
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE on table public.reports to authenticated',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.reports to service_role',
     'grant UPDATE (report_date, type) on public.reports to authenticated',
+    'revoke all on table public.weekly_summary_sends from public, anon, authenticated, service_role',
+    'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.weekly_summary_sends to service_role',
     'revoke all on table public.whatsapp_events from public, anon, authenticated, service_role',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.whatsapp_events to anon',
     'grant DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.whatsapp_events to authenticated',
