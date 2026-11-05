@@ -4,6 +4,7 @@ import { AppHeader, Field, Icon, useDialog, useToast } from "../App";
 import { FEEDBACK_BUCKET, FEEDBACK_KINDS, FEEDBACK_MAX, FEEDBACK_MAX_IMAGES, loadAdminFeedback, prepareImage, sendFeedback, uploadFeedbackImage, type FeedbackItem, type FeedbackKind, type PreparedImage } from "../lib/feedback";
 import { signedUrls } from "../lib/wallet";
 import "./feedback.css";
+import { formatDateTime } from "../lib/format";
 
 type Picture = { id: string; image: PreparedImage; preview: string; path: string | null };
 
@@ -159,7 +160,7 @@ export function FeedbackInbox() {
     }).catch(() => { if (!cancelled) setItems("error"); });
     return () => { cancelled = true; };
   }, []);
-  const when = (iso: string) => new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  const when = (iso: string) => formatDateTime(new Date(iso), locale, undefined, { day: "numeric", month: "short", year: "numeric" });
   return (
     <section className="feedback-inbox" aria-label={t("inboxTitle")}>
       <h2>{t("inboxTitle")}</h2>

@@ -5,6 +5,7 @@ import { FeedbackInbox } from "./Feedback";
 import { LoveStatsSection } from "./Love";
 import { loadPilotStats, type PilotStats } from "../lib/stats";
 import "./stats.css";
+import { formatDateTime } from "../lib/format";
 
 // Meta's per-message fees in India (rupees, GST extra) as found on third-party pages: an UPPER estimate, because a reminder sent
 // while the parent's 24-hour window is open is free. Check Meta's rate card before relying on it.
@@ -110,7 +111,7 @@ export function StatsScreen({ go }: { go: (screen: "family") => void }) {
             <div className="tiles">
               <div className="tile wide"><span className="label">{t("messages")}</span><span className="value">{number(s.whatsapp7d.utility + s.whatsapp7d.marketing)}</span><span className="sub">{t("messagesSub", { utility: s.whatsapp7d.utility, marketing: s.whatsapp7d.marketing })}</span><span className="sub">{t("fee", { rupees: number(fee) })}</span></div>
             </div>
-            <p className="note">{t("note", { time: new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(s.generatedAt)) })}</p>
+            <p className="note">{t("note", { time: formatDateTime(new Date(s.generatedAt), locale, undefined, { day: "numeric", month: "short", year: "numeric" }) })}</p>
             <LoveStatsSection />
             <FeedbackInbox />
           </>

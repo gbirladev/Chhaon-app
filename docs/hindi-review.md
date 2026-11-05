@@ -670,3 +670,45 @@ lines that now name who to call.
 | whatsapp.stopped(You) / noNumber / loadError | {name} ने STOP लिखा है। जब तक {name} START नहीं लिखते, कुछ नहीं भेजा जाएगा। / अभी कोई WhatsApp नंबर नहीं है। ... / संदेश लोड नहीं हो पाए। ... | {name} replied STOP. ... / No WhatsApp number yet. ... / Could not load the messages. ... | |
 | whatsapp.confirmed / replied / waiting / noReply (+You) | {name} ने पुष्टि की ✅ / {name} ने जवाब दिया / {name} के जवाब का इंतज़ार / {name} का जवाब नहीं आया | {name} confirmed ✅ / replied / Waiting for {name}'s reply / No reply from {name} | |
 | whatsapp.helper / helperYou | {name} 1 लिखकर या 👍 भेजकर जवाब देते हैं। जवाब एक मिनट के भीतर आपके छाँव ऐप में दिखता है। | {name} replies by typing 1 or sending 👍. The answer shows in your Chhaon app within a minute. | |
+
+## Part R4: first impressions (added 2026-11-05, branch `r4-first-impressions`)
+
+App only; nothing new is sent on WhatsApp. New welcome text (it now speaks of parents, a pregnancy and a baby), the second line of
+each person in the "whose care" switcher, and the grouped notifications. Two consistency changes, no new words: every time is now
+written "दोपहर 3:41" (part of the day first, never "3:41 दोपहर" or Intl's "3:41 pm"), and small labels are no longer uppercased in
+Hindi ("WHATSAPP रिमाइंडर" stays "WhatsApp रिमाइंडर"). Please check "गर्भवती · हफ़्ता 24" and "रिमाइंडर Sunita (maid) को" read
+naturally as a short line under a name.
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| welcome.headline | जिनकी आप देखभाल करते हैं, उनके लिए WhatsApp पर दवा की याद। | Medicine reminders on WhatsApp for the people you care for. | |
+| welcome.body | माता-पिता, गर्भावस्था, छोटा बच्चा। याद उन्हें, या उनकी मदद करने वाले को, WhatsApp पर मिलती है। कुछ भी इंस्टॉल नहीं करना। | Your parents, a pregnancy, a baby. Reminders reach them, or whoever helps them, on WhatsApp. Nothing to install. | |
+| welcome.chipTaken2 | ✓ आयरन की गोली ली | ✓ Iron tablet taken | |
+| welcome.chipOkay2 | सुनीता को भेजा | Sent to Sunita | |
+| welcome.chipTaken3 | ✓ विटामिन D की बूँदें दीं | ✓ Vitamin D drops given | |
+| welcome.chipOkay3 | शुक्रवार को टीका | Vaccine due Friday | |
+| person.older | बुज़ुर्ग माता-पिता | Older parent | |
+| person.pregnant | गर्भावस्था | Pregnancy | |
+| person.child | बच्चा | Child | |
+| person.self | मैं | Me | |
+| person.selfLine | आप · आपकी अपनी दवाइयाँ | You · your own medicines | |
+| person.pregnantLine | गर्भवती | Pregnant | |
+| person.pregnantWeek | गर्भवती · हफ़्ता {week} | Pregnant · week {week} | |
+| person.ageYears | {age} साल | {age} years | |
+| person.toName | रिमाइंडर {name} को | reminders to {name} | |
+| person.toYou | रिमाइंडर आपको | reminders to you | |
+| person.someone | कोई और | someone else | |
+| notif.filterLabel | किसकी सूचनाएँ देखें | Show notifications for | |
+| notif.everyone | सभी | Everyone | |
+| notif.markAllRead | सब पढ़ा हुआ करें | Mark all as read | |
+| notif.seeAll | सभी {count} देखें | See all {count} | |
+| notif.seeLess | कम दिखाएँ | Show less | |
+| notif.since | {date} से | since {date} | |
+| notif.latest | आख़िरी: {when} | latest {when} | |
+| notif.group_reminder_not_sent | {count} रिमाइंडर नहीं भेजे जा सके | {count} reminders could not be sent | |
+| notif.group_dose_missed | {count} खुराकों की पुष्टि नहीं हुई | {count} doses not confirmed | |
+| notif.group_checkin_missed | सुबह के {count} चेक-इन का जवाब नहीं आया | {count} morning check-ins without a reply | |
+| notif.group_whatsapp_failed | {count} WhatsApp संदेश नहीं पहुँचे | {count} WhatsApp messages not delivered | |
+| notif.group_other | ऐसी {count} सूचनाएँ | {count} alerts like this | |
+| notif.deleteGroup | ये {count} सूचनाएँ हटाएँ | Delete these {count} notifications | |
+| notif.noneForPerson | अभी {call} के लिए कोई सूचना नहीं। | Nothing for {call} right now. | |

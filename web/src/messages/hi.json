@@ -91,9 +91,13 @@
   "welcome": {
     "chipTaken": "✓ दवा ली",
     "chipOkay": "पापा ठीक हैं",
+    "chipTaken2": "✓ आयरन की गोली ली",
+    "chipOkay2": "सुनीता को भेजा",
+    "chipTaken3": "✓ विटामिन D की बूँदें दीं",
+    "chipOkay3": "शुक्रवार को टीका",
     "eyebrow": "दूर रहकर भी देखभाल",
-    "headline": "हर दिन अपने माता-पिता के पास रहें।",
-    "body": "दवाइयाँ, रिपोर्ट और रोज़ की सेहत, WhatsApp के ज़रिए प्यार से जुड़ी हुई।",
+    "headline": "जिनकी आप देखभाल करते हैं, उनके लिए WhatsApp पर दवा की याद।",
+    "body": "माता-पिता, गर्भावस्था, छोटा बच्चा। याद उन्हें, या उनकी मदद करने वाले को, WhatsApp पर मिलती है। कुछ भी इंस्टॉल नहीं करना।",
     "inviteBanner": "आपको एक परिवार समूह में बुलाया गया है। आगे बढ़ने के लिए लॉग इन करें।",
     "phoneLabel": "फ़ोन नंबर",
     "emailLabel": "ईमेल पता",
@@ -727,7 +731,21 @@
     "love_not_delivered_other": "{call} को आपका संदेश नहीं भेजा गया।",
     "love_parent_opted_out": "{call} ने कहा कि अब दिल न भेजें। रिमाइंडर और चेक-इन पहले की तरह चलेंगे।",
     "love_parent_opted_in": "{call} ने कहा कि वे फिर से दिल पाना चाहते हैं।",
-    "parent_message": "{call} ने आपको WhatsApp पर लिखा है। आज की स्क्रीन पर देखें।"
+    "parent_message": "{call} ने आपको WhatsApp पर लिखा है। आज की स्क्रीन पर देखें।",
+    "filterLabel": "किसकी सूचनाएँ देखें",
+    "everyone": "सभी",
+    "markAllRead": "सब पढ़ा हुआ करें",
+    "seeAll": "सभी {count} देखें",
+    "seeLess": "कम दिखाएँ",
+    "since": "{date} से",
+    "latest": "आख़िरी: {when}",
+    "group_reminder_not_sent": "{count} रिमाइंडर नहीं भेजे जा सके",
+    "group_dose_missed": "{count} खुराकों की पुष्टि नहीं हुई",
+    "group_checkin_missed": "सुबह के {count} चेक-इन का जवाब नहीं आया",
+    "group_whatsapp_failed": "{count} WhatsApp संदेश नहीं पहुँचे",
+    "group_other": "ऐसी {count} सूचनाएँ",
+    "deleteGroup": "ये {count} सूचनाएँ हटाएँ",
+    "noneForPerson": "अभी {call} के लिए कोई सूचना नहीं।"
   },
   "medicine": {
     "title": "दवा की जानकारी",
@@ -767,6 +785,19 @@
     "switched": "अब {call} की जानकारी दिख रही है।",
     "addSelf": "खुद को जोड़ें",
     "selfTag": "आप · आपकी अपनी दवाइयाँ"
+  },
+  "person": {
+    "older": "बुज़ुर्ग माता-पिता",
+    "pregnant": "गर्भावस्था",
+    "child": "बच्चा",
+    "self": "मैं",
+    "selfLine": "आप · आपकी अपनी दवाइयाँ",
+    "pregnantLine": "गर्भवती",
+    "pregnantWeek": "गर्भवती · हफ़्ता {week}",
+    "ageYears": "{age} साल",
+    "toName": "रिमाइंडर {name} को",
+    "toYou": "रिमाइंडर आपको",
+    "someone": "कोई और"
   },
   "callDefaults": {
     "father": "पापा",

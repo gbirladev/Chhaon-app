@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./childHome.css";
+import { PersonBadge } from "./PersonBadge";
 import { useLocale, useTranslations } from "use-intl";
 import { Icon, parentCall, useDialog } from "../App";
 import type { Recipient } from "../lib/api";
@@ -180,7 +181,7 @@ export function ChildHome({ recipient, go, onLanguage, onBell, onPeople, unread 
     <div className="child-home">
       <header className="home-header">
         <button className="parent-profile" aria-haspopup="dialog" onClick={onPeople}>
-          <span className="initials-avatar child-avatar" aria-hidden="true">{([...recipient.name][0] ?? "C").toUpperCase()}</span>
+          <PersonBadge name={call} kind="child" />
           <span>
             <small className="child-kicker">{ageText ? t("kicker", { age: ageText }) : t("kickerNoAge")}</small>
             <strong>{call} <Icon name="down" size={16} /></strong>

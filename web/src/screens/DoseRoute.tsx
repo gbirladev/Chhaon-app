@@ -1,5 +1,21 @@
 import { useMemo, type ReactNode } from "react";
+import { useLocale } from "use-intl";
+import { joinClock, suffixFirst } from "../lib/format";
 import "./route.css";
+
+/** A dose time with the part of the day small, in the shared order: "8:00 AM" in English, "सुबह 8:00" in Hindi. */
+export function ClockTime({ stop, strong = false, space = true }: { stop: { time: string; suffix: string }; strong?: boolean; space?: boolean }) {
+  const first = suffixFirst(useLocale());
+  const time = strong ? <strong>{stop.time}</strong> : <>{stop.time}</>;
+  const suffix = <small>{stop.suffix}</small>;
+  const gap = space ? " " : null;
+  return first ? <>{suffix}{gap}{time}</> : <>{time}{gap}{suffix}</>;
+}
+
+/** The same as plain text. */
+export function ClockText({ stop }: { stop: { time: string; suffix: string } }) {
+  return <>{joinClock(stop, useLocale())}</>;
+}
 
 export type RouteStop = {
   id: string;
@@ -107,7 +123,7 @@ export function DoseRoute({ stops, avatar, startLabel, endLabel, nextLabel, curv
               {isNext && <span className="route-flag" style={{ left: `${p.x}%` }} aria-hidden="true">{nextLabel}</span>}
               <div className={`route-card ${onLeft ? "right" : "left"}`}>
                 <h3><span className="route-name">{s.name}</span>{s.dose && <small className="route-dose">{s.dose}</small>}</h3>
-                <p className="route-meta"><strong>{s.time}</strong> <small>{s.suffix}</small><span className="sr-only"> {s.pill}</span></p>
+                <p className="route-meta"><ClockTime stop={s} strong /><span className="sr-only"> {s.pill}</span></p>
               </div>
             </li>
           );

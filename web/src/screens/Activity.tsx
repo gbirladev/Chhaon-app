@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Icon, useToast } from "../App";
-import { formatClock, formatDate, type Language } from "../lib/format";
+import { formatClock, formatDate, formatDateTime, type Language } from "../lib/format";
 import { groupByDay, helperLabel, loadFeed, setHeart, type FeedItem, type FeedPerson } from "../lib/activity";
 import "./activity.css";
 import { Icon3D } from "./Icon3D";
+import { PersonBadge } from "./PersonBadge";
+import { personKindFrom } from "../lib/person";
 
 /**
  * Family activity feed (feature 4): a read-only list of what happened for everyone the caregiver cares for, last 7 days, newest
@@ -21,8 +23,6 @@ const ICON: Record<FeedItem["kind"], string> = {
   dose_taken: "check", dose_missed: "bell", checkin_answered: "check", checkin_missed: "bell", vaccine_given: "check",
   appointment_added: "calendar", medicine_added: "pill", medicine_paused: "pill", consent_given: "phone", consent_stopped: "phone",
 };
-
-const initialOf = (name: string) => ([...name.trim()][0] ?? "?").toUpperCase();
 
 /** One sentence per item, following who received the reminder (the person, a helper, a family member) or who marked it. */
 function useSentence() {
@@ -143,7 +143,7 @@ export function ActivityScreen({ go }: { go: (screen: "family") => void }) {
     if (item.kind === "dose_missed" && item.dueAt) parts[0] = t("dueAt", { time: clock(item.dueAt, item) });
     if (item.kind === "vaccine_given" && item.dueAt) parts.push(t("givenOn", { date: formatDate(new Date(item.dueAt), language, { day: "numeric", month: "short", timeZone: "UTC" }) }));
     if (item.kind === "vaccine_given" && item.detail) parts.push(t("doseLabel", { dose: item.detail }));
-    if (item.kind === "appointment_added" && item.dueAt) parts.push(t("onDate", { date: formatDate(new Date(item.dueAt), language, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: zone(item) }) }));
+    if (item.kind === "appointment_added" && item.dueAt) parts.push(t("onDate", { date: formatDateTime(new Date(item.dueAt), language, zone(item)) }));
     return parts.join(" · ");
   };
 
@@ -158,7 +158,7 @@ export function ActivityScreen({ go }: { go: (screen: "family") => void }) {
           <button type="button" className={filter === null ? "selected" : ""} aria-pressed={filter === null} onClick={() => load(null)}>{t("all")}</button>
           {people.map((p) => (
             <button type="button" key={p.id} className={filter === p.id ? "selected" : ""} aria-pressed={filter === p.id} onClick={() => load(p.id)}>
-              <span className={`feed-initial ${p.careType ?? "older"}`} aria-hidden="true">{initialOf(chipLabel(p))}</span>{chipLabel(p)}
+              <PersonBadge name={chipLabel(p)} kind={personKindFrom(p.careType, p.isSelf)} size="sm" />{chipLabel(p)}
             </button>
           ))}
         </div>
@@ -179,7 +179,10 @@ export function ActivityScreen({ go }: { go: (screen: "family") => void }) {
               const person = personOf(item.recipientId);
               return (
                 <li key={`${item.recipientId}:${item.key}`} className={`feed-item ${TONE[item.kind]}`}>
-                  <span className="feed-icon" aria-hidden="true"><Icon name={ICON[item.kind]} size={18} /></span>
+                  {/* Everyone's feed: whose item it is (avatar + care-type icon), with what happened as a small mark on it. */}
+                  {filter === null && people.length > 1 && person
+                    ? <span className="feed-who"><PersonBadge name={chipLabel(person)} kind={personKindFrom(person.careType, person.isSelf)} size="md" lazy /><span className={`feed-mark ${TONE[item.kind]}`} aria-hidden="true"><Icon name={ICON[item.kind]} size={11} /></span></span>
+                    : <span className="feed-icon" aria-hidden="true"><Icon name={ICON[item.kind]} size={18} /></span>}
                   <div className="feed-text">
                     <p>{sentence(item, person)}</p>
                     <small>{meta(item)}</small>

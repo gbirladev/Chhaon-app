@@ -1,0 +1,59 @@
+/* R4 "first impressions": welcome examples, switcher rows, notifications (person chip, filter, groups), the bottom toast, Hindi labels. */
+
+/* Welcome: the example bubbles change every few seconds (an older parent, a pregnancy, a baby). */
+.logo-hero .floating-chip { animation: chipIn .45s ease-out; }
+@keyframes chipIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .logo-hero .floating-chip { animation: none; } }
+
+/* Person switcher: the avatar's corner icon needs a little room. */
+.parent-option { gap: 14px; }
+.parent-option .person-badge { margin-right: 2px; }
+.parent-option small { line-height: 1.35; }
+.parent-profile .person-badge { margin-right: 3px; }
+
+/* Family tab hero: the cared-for person next to the family members. */
+.hero-people { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 60px; }
+.hero-people .avatar-stack { height: auto; }
+
+/* Activity feed: whose item (avatar), with what happened as a small mark at its top left. */
+.feed-who { position: relative; flex: 0 0 auto; }
+.feed-who .person-badge { width: 38px; height: 38px; border-radius: 12px; font-size: 1rem; }
+.feed-who .person-badge .person-type { width: 20px; height: 20px; }
+.feed-who .person-badge .person-type img { width: 16px; height: 16px; }
+.feed-mark { position: absolute; left: -5px; top: -5px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--s-e1f2ee); color: var(--t-1c7167); box-shadow: 0 0 0 2px var(--surface); }
+.feed-mark.warn { background: var(--s-f6f1e6); color: var(--t-5c4a14); }
+.feed-chips .person-badge.sm .person-type { right: -5px; bottom: -5px; }
+
+/* Notifications */
+.sheet-head .notif-mark { margin-left: auto; min-height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--primary-text);
+  font: inherit; font-size: max(0.8125rem, 12px); font-weight: 700; cursor: pointer; white-space: nowrap; }
+.sheet-head .notif-mark + .sheet-x { margin-left: 0; }
+/* The sticky head sits at the scroll box's padding edge (22px down) and covered the filter chips: stick it to the very top instead. */
+.notif-sheet .sheet-head { top: -22px; }
+@media (max-height: 520px) { .notif-sheet .sheet-head { top: -16px; } }
+.notif-filter { display: flex; gap: 8px; margin: 0 0 10px; overflow-x: auto; scrollbar-width: none; }
+.notif-filter::-webkit-scrollbar { display: none; }
+.notif-filter button { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 22px;
+  border: 1px solid var(--b-d9e4e1); background: var(--surface); color: var(--text-soft); font: inherit; font-size: max(0.875rem, 12px); font-weight: 600; cursor: pointer; white-space: nowrap; }
+.notif-filter button > b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.notif-filter button.selected { background: var(--s-e1f2ee); border-color: var(--b-76b8ad); color: var(--t-1c7167); }
+.notif-filter button > span:last-child { min-width: 22px; padding: 1px 6px; border-radius: 11px; background: var(--field); color: var(--text-muted); font-size: 12px; font-weight: 700; text-align: center; }
+.swipe-row .person-chip { align-self: flex-start; margin-bottom: 2px; }
+.swipe-row .notif-more { align-self: flex-start; min-height: 40px; margin: 0 0 -8px -2px; padding: 0 2px; border: 0; background: transparent; color: var(--primary-text);
+  font: inherit; font-size: max(0.875rem, 12px); font-weight: 700; text-decoration: underline; cursor: pointer; }
+.swipe-row.notif-child { padding-left: 30px; background: var(--field); }
+.swipe-row.notif-child.unread:before { left: 16px; }
+
+/* "Now showing Mummy.": above the bottom bar, so it never covers the bell at the top right. */
+.toast.bottom { top: auto; right: auto; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%); animation: toastUp .28s cubic-bezier(.2,.9,.3,1.1); }
+.toast.bottom.leaving { animation: toastDown .3s ease-in forwards; }
+@keyframes toastUp { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes toastDown { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, 10px); } }
+@media (prefers-reduced-motion: reduce) { .toast.bottom, .toast.bottom.leaving { animation: none; } }
+
+/* Hindi has no capital letters: uppercase only turns the English words inside a Hindi label ("WHATSAPP रिमाइंडर") into shouting,
+   and letter-spacing breaks the joins of Devanagari letters. So in Hindi the small labels keep their case and normal spacing. */
+html[lang="hi"] :is(.field > label, .field-label, .login-card > label, .theme-label, .child-home .child-kicker, .child-hero-kicker,
+  .pregnancy-text small, .ds-kicker, .ds-facts dt, .eyebrow, .parent-profile small) { text-transform: none; letter-spacing: 0; }
+html[lang="hi"] * { text-transform: none; }

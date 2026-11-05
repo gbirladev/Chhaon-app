@@ -1,5 +1,5 @@
 Microsoft Fluent Emoji (3D style), https://github.com/microsoft/fluentui-emoji
-The images in this folder are resized (96x96 WebP) copies of the "3D" PNGs from that repository, used under the MIT License below.
+The images in this folder are resized (96x96 or 64x64 WebP) copies of the "3D" PNGs from that repository, used under the MIT License below.
 
 MIT License
 

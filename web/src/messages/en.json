@@ -91,9 +91,13 @@
   "welcome": {
     "chipTaken": "✓ Medicine taken",
     "chipOkay": "Papa is okay",
+    "chipTaken2": "✓ Iron tablet taken",
+    "chipOkay2": "Sent to Sunita",
+    "chipTaken3": "✓ Vitamin D drops given",
+    "chipOkay3": "Vaccine due Friday",
     "eyebrow": "CARE, EVEN FROM FAR AWAY",
-    "headline": "Stay close to your parents, every day.",
-    "body": "Medicines, reports and daily well-being, lovingly connected through WhatsApp.",
+    "headline": "Medicine reminders on WhatsApp for the people you care for.",
+    "body": "Your parents, a pregnancy, a baby. Reminders reach them, or whoever helps them, on WhatsApp. Nothing to install.",
     "inviteBanner": "You were invited to join a family circle. Log in to continue.",
     "phoneLabel": "Phone number",
     "emailLabel": "Email address",
@@ -727,7 +731,21 @@
     "love_not_delivered_other": "Your message to {call} was not sent.",
     "love_parent_opted_out": "{call} asked for no more hearts. Reminders and check-ins continue as before.",
     "love_parent_opted_in": "{call} said they would like hearts again.",
-    "parent_message": "{call} wrote to you on WhatsApp. See it on the Today screen."
+    "parent_message": "{call} wrote to you on WhatsApp. See it on the Today screen.",
+    "filterLabel": "Show notifications for",
+    "everyone": "Everyone",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all {count}",
+    "seeLess": "Show less",
+    "since": "since {date}",
+    "latest": "latest {when}",
+    "group_reminder_not_sent": "{count} reminders could not be sent",
+    "group_dose_missed": "{count} doses not confirmed",
+    "group_checkin_missed": "{count} morning check-ins without a reply",
+    "group_whatsapp_failed": "{count} WhatsApp messages not delivered",
+    "group_other": "{count} alerts like this",
+    "deleteGroup": "Delete these {count} notifications",
+    "noneForPerson": "Nothing for {call} right now."
   },
   "medicine": {
     "title": "Medicine details",
@@ -767,6 +785,19 @@
     "switched": "Now showing {call}.",
     "addSelf": "Add myself",
     "selfTag": "You · your own medicines"
+  },
+  "person": {
+    "older": "Older parent",
+    "pregnant": "Pregnancy",
+    "child": "Child",
+    "self": "Me",
+    "selfLine": "You · your own medicines",
+    "pregnantLine": "Pregnant",
+    "pregnantWeek": "Pregnant · week {week}",
+    "ageYears": "{age} years",
+    "toName": "reminders to {name}",
+    "toYou": "reminders to you",
+    "someone": "someone else"
   },
   "callDefaults": {
     "father": "Papa",

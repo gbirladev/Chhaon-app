@@ -13,7 +13,10 @@ export function hmParts(hour: number, minute: number, language: string): { time:
   return { time, suffix: h < 12 ? "AM" : "PM" };
 }
 
-const joinClock = ({ time, suffix }: { time: string; suffix: string }, language: string) => (language === "hi" ? `${suffix} ${time}` : `${time} ${suffix}`);
+/** One order for every time on screen: "3:41 PM" in English, "दोपहर 3:41" in Hindi (never "3:41 दोपहर"). */
+export const joinClock = ({ time, suffix }: { time: string; suffix: string }, language: string) => (language === "hi" ? `${suffix} ${time}` : `${time} ${suffix}`);
+/** True when the part of the day comes before the digits (Hindi): for screens that style the two parts differently. */
+export const suffixFirst = (language: string) => language === "hi";
 
 /** "07:30:00" (a schedule time) -> "7:30 AM" / "सुबह 7:30". */
 export function clockLabel(time: string, language: string) {
@@ -56,4 +59,12 @@ export function formatDate(date: Date, language: string, options: Intl.DateTimeF
 export function localMinutes(date: Date, timeZone: string): number {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).formatToParts(date).map((p) => [p.type, p.value]));
   return Number(parts.hour) * 60 + Number(parts.minute);
+}
+
+/** The phone's own time zone. */
+export const deviceZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/** "5 Nov, 3:41 PM" / "5 नव॰, दोपहर 3:41": a date and a time with the time in the shared order (Intl's Hindi "3:41 pm" is never used). */
+export function formatDateTime(date: Date, language: string, timeZone: string = deviceZone(), dateOptions: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }) {
+  return `${formatDate(date, language, { ...dateOptions, timeZone })}, ${formatClock(date, timeZone, language)}`;
 }
