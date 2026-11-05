@@ -1,0 +1,43 @@
+/* Care type + pregnancy (Pregnancy.tsx). Colours come from the theme tokens, so light and dark both work. */
+
+/* "Who are you caring for?": three large choices side by side, wrapping on narrow phones. */
+.care-type-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.care-type-option { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; padding: 10px 6px;
+  border: 1px solid var(--b-d9e4e1); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; font-weight: 700; text-align: center; cursor: pointer; }
+.care-type-option.selected { background: var(--s-e1f2ee); border-color: var(--b-76b8ad); color: var(--primary-text); box-shadow: inset 0 0 0 1px var(--b-76b8ad); }
+.care-type-option.soon { opacity: .55; cursor: not-allowed; }
+.care-type-option small { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.care-type-emoji { font-size: 26px; line-height: 1; }
+.care-type-label { font-size: .875rem; line-height: 1.2; overflow-wrap: anywhere; }
+
+/* Today: the pregnancy week card. */
+.pregnancy-card { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 10px; padding: 12px; border: 1px solid var(--b-e0ece8); border-radius: 14px;
+  background: var(--surface); box-shadow: 0 2px 10px var(--sh-1e443f-a05); }
+.pregnancy-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; background: var(--s-e6f2ee); display: grid; place-items: center; font-size: 22px; }
+.pregnancy-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+.pregnancy-text small { color: var(--text-muted); font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.pregnancy-text strong { font-size: .9375rem; line-height: 1.35; }
+.pregnancy-bar { display: block; height: 6px; margin-top: 4px; border-radius: 999px; background: var(--s-f4f8f7); overflow: hidden; }
+.pregnancy-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary-text); }
+.pregnancy-card .inline-link { align-self: flex-start; margin: 0 0 -10px; padding-left: 0; font-size: .875rem; }
+
+/* Add medicine: the supplement name chips. */
+.supplement-chips { margin: 0 0 14px; }
+.supplement-chips .hint { margin: 0 0 6px; }
+.supplement-chips .choice-chips button { min-height: 44px; }
+.supplement-chips .form-note { margin-top: 6px; }
+
+/* Appointments: the usual checks list. */
+.usual-checks { margin: 16px 0 96px; padding: 14px; border: 1px solid var(--b-e0ece8); border-radius: 14px; background: var(--surface); }
+.usual-checks h2 { margin: 0; font-size: 1rem; }
+.usual-checks .form-note { margin-top: 6px; }
+.usual-checks ul { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.usual-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--b-e0ece8); }
+.usual-check:first-child { border-top: 0; }
+.usual-check-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.usual-check-text strong { font-size: .9375rem; }
+.usual-check-text small { color: var(--text-muted); font-size: .8125rem; }
+.usual-check-text em { font-style: normal; font-weight: 700; }
+.usual-check.now .usual-check-text em { color: var(--primary-text); }
+.usual-check.passed { opacity: .6; }
+.usual-check-add.secondary-button { width: auto; flex: 0 0 auto; min-height: 44px; padding: 0 14px; }

@@ -40,6 +40,8 @@ import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
 import type { PillColour, PillShape } from "./lib/pillLook";
+import { careTypeOf, dueDateOk, hindiOrdinal, isPregnancy, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
+import { CareTypePicker, PregnancyCard, SupplementChips } from "./screens/Pregnancy";
 
 type Screen =
   | "welcome"
@@ -452,6 +454,20 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   // "What do you call them?" starts from a friendly default for the relation until the caregiver types their own.
   const [callName, setCallName] = useState(recipient ? parentCall(recipient, language) : defaultCallName("father", language));
   const [callTouched, setCallTouched] = useState(!!recipient);
+  // Who they care for (migration 0043): an older parent (default, every existing profile) or a pregnancy. Not for "Me".
+  const [careType, setCareType] = useState<CareType>(careTypeOf(recipient));
+  const pregnant = !isSelf && careType === "pregnant";
+  const [dueDate, setDueDate] = useState(recipient?.due_date ?? "");
+  const pk = (key: string) => (pregnant ? `${key}Pregnant` : key);   // the pregnancy wording of a label ("Her name")
+  const chooseCareType = (next: CareType) => {
+    setCareType(next);
+    // A new profile follows the choice until the caregiver picks a relation or a name by hand.
+    if (!recipient && relation === (next === "pregnant" ? "father" : "spouse")) {
+      const nextRelation = next === "pregnant" ? "spouse" : "father";
+      setRelation(nextRelation);
+      if (!callTouched) setCallName(defaultCallName(nextRelation, language));
+    }
+  };
   const typedPhone = normalizePhone(phoneText);
   // Another profile of yours that already uses this number: a warning only (a couple may share one phone); the database refuses it for your own profile.
   const [sharedWith, setSharedWith] = useState<{ name: string; isSelf: boolean } | null>(null);
@@ -487,7 +503,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     const data = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string>;
     const found: Record<string, string> = {};
     const name = (data.name ?? "").trim();
-    if (!name) found["f-name"] = t("errName");
+    if (!name) found["f-name"] = t(pk("errName"));
     const whatsapp = normalizePhone(data.whatsapp ?? "");
     if (!whatsapp) found["f-whatsapp"] = t("invalidPhone");
     const timezone = data.timezone || zoneValue;   // always the box: it starts at the stored zone, or the number's country (India: Asia/Kolkata)
@@ -499,6 +515,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     const badTags = (list: string[]) => list.length > 30 || list.some((item) => item.length > 80);
     if (badTags(conditions)) found["f-conditions"] = t("errTags");
     if (badTags(allergies)) found["f-allergies"] = t("errTags");
+    // The due date is optional; when typed it must be plausible on HER calendar (the backend checks the same window).
+    if (pregnant && dueDate && !dueDateOk(dueDate, todayIn(timezone))) found["f-dueDate"] = t("errDueDate");
     setErrors(found);
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
 
@@ -518,6 +536,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       allergies,
       bloodGroup: data.bloodGroup || null,
       ...(isSelf && !recipient ? { isSelf: true } : {}),
+      // "" clears the due date; the backend also clears it whenever the profile is not a pregnancy.
+      ...(isSelf ? {} : { careType: pregnant ? "pregnant" : "older", dueDate: pregnant ? dueDate : "" }),
     };
     setBusy(true);
     let recipientId = recipient?.id;
@@ -541,17 +561,19 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   };
   return (
     <main className="scroll-page no-nav">
-      <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
+      <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : pregnant ? t(recipient ? "titleEditPregnant" : "titleNewPregnant") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : pregnant ? t("subtitlePregnant") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
       <form id="parent-form" className="form-card" onSubmit={saveProfile} noValidate>
-        <Field id="f-name" label={t(isSelf ? "nameSelf" : "name")} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
+        {!isSelf && <CareTypePicker value={careType} onChange={chooseCareType} />}
+        {pregnant && <Field id="f-dueDate" label={t("dueDate")} error={errors["f-dueDate"]} hint={t("dueDateHint")}><input {...fieldProps("f-dueDate", errors)} name="dueDate" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></Field>}
+        <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} defaultValue={recipient?.name ?? ""} /></Field>
         {!isSelf && <div className="two-col">
           <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>
           <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); if (!callTouched) setCallName(defaultCallName(event.target.value, language)); }}>{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>
         </div>}
-        {!isSelf && <Field id="f-callName" label={t("callName")} hint={t("callNameHint")}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
-        <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : "whatsappHint")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        {!isSelf && <Field id="f-callName" label={t("callName")} hint={t(pk("callNameHint"))}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
+        <Field id="f-whatsapp" label={t(isSelf ? "whatsappSelf" : "whatsapp")} error={errors["f-whatsapp"]} hint={t(isSelf ? "whatsappHintSelf" : pk("whatsappHint"))}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {sharedWith && <p className="form-note" role="status">{t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
-        <Field id="f-timezone" label={t("timezone")} hint={t("timezoneHint")}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
+        <Field id="f-timezone" label={t(pk("timezone"))} hint={t(pk("timezoneHint"))}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
         {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
         <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
         <div className="two-col">
@@ -559,7 +581,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
           <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
         </div>
         <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
-        {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : "note")}</p>}
+        {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : pk("note"))}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
       <button className="primary-button sticky-action" type="submit" form="parent-form" disabled={busy}>{busy ? t("saving") : recipient ? t("saveEdit") : t("save")}</button>
@@ -1039,6 +1061,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
 
       {checkinCard()}
 
+      {recipient && isPregnancy(recipient) && <PregnancyCard recipient={recipient} language={language} onChecks={() => go("appointments")} />}
+
       {recipient && <LoveCard recipient={recipient} call={call} />}
 
       {recipient && <NextAppointment recipient={recipient} go={() => go("appointments")} />}
@@ -1161,6 +1185,13 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
   const [doseUnit, setDoseUnit] = useState<string>(initialDose.unit);
   const [pillColour, setPillColour] = useState<PillColour | null>(medicine?.pillColour ?? null);
   const [pillShape, setPillShape] = useState<PillShape | null>(medicine?.pillShape ?? null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  // Pregnancy: a supplement chip fills ONLY the name; the dose and times are typed from the prescription.
+  const pickSupplement = (name: string) => {
+    if (!nameInput.current) return;
+    nameInput.current.value = name;
+    document.getElementById("f-dose")?.focus();
+  };
   const expireSession = useSessionExpired();
   const [photoError, setPhotoError] = useState(false);
   /** Only a readable, non-empty image is accepted; anything else shows the photo error right away. */
@@ -1267,10 +1298,11 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
       <label className="photo-upload large-upload"><input type="file" accept="image/*" onChange={(event) => void pickPhoto(event)} /><span className="camera-disc"><Icon name="camera" size={30} /></span><span><strong>{photo?.name || t(medicine?.photoUrl ? "photoKept" : "photoTitle")}</strong><small>{t("photoHint", { call: parentCall(recipient, language) })}</small></span><em>{photo || medicine?.photoUrl ? t("changePhoto") : t("openCamera")}</em></label>
       {photoError && <p role="alert" className="form-error">{t("errPhoto")}</p>}
       <form id="medicine-form" className="form-card" onSubmit={save} noValidate>
-        <Field id="f-name" label={t("name")} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} placeholder={t("namePlaceholder")} defaultValue={medicine?.name ?? ""} /></Field>
+        {!editing && isPregnancy(recipient) && <SupplementChips personLanguage={recipient.language === "en" ? "en" : "hi"} onPick={pickSupplement} />}
+        <Field id="f-name" label={t("name")} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} ref={nameInput} name="name" autoComplete="off" maxLength={100} placeholder={t("namePlaceholder")} defaultValue={medicine?.name ?? ""} /></Field>
         <Field id="f-dose" label={t("dosage")} error={errors["f-dose"]}>
           <div className="two-col dose-row">
-            <input {...fieldProps("f-dose", errors)} name="doseAmount" inputMode="decimal" defaultValue={initialDose.amount} placeholder={COUNTABLE_UNITS.has(doseUnit) ? "1" : "500"} />
+            <input {...fieldProps("f-dose", errors)} name="doseAmount" inputMode="decimal" defaultValue={initialDose.amount} placeholder={isPregnancy(recipient) ? undefined : COUNTABLE_UNITS.has(doseUnit) ? "1" : "500"} />
             <select aria-label={t("doseUnit")} value={doseUnit} onChange={(event) => setDoseUnit(event.target.value)}>
               {DOSE_UNITS.map((unit) => <option key={unit} value={unit}>{tAll(`units.${unit}`, { count: 1 })}</option>)}
             </select>
@@ -1851,6 +1883,12 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
   const sampleDose = sample?.dose ? localizeDose(sample.dose, tParent) : "500 mg";
   const sampleTime = sample?.times[0] ? clockLabel(sample.times[0], parentLanguage) : clockLabel("08:30", parentLanguage);
   const tz = recipient?.timezone ?? "Asia/Kolkata";
+  // A pregnancy gets the gentler wording with the week (MessageTexts.pregnancyDoseReminder / pregnancyCheckin).
+  const pregnant = isPregnancy(recipient);
+  const pregWeek = pregnant && recipient?.due_date ? pregnancyStatus(recipient.due_date, todayIn(tz))?.week ?? null : null;
+  const weekLine = pregWeek !== null ? <p>{msg("pregnancyWeek", { week: pregWeek, ordinal: hindiOrdinal(pregWeek) })}</p> : null;
+  const hello = pregnant ? <><p>{msg("goodMorning", { call: parentName })}</p>{weekLine}</> : <p>{msg("hello", { call: parentName })}</p>;
+  const howAreYou = pregnant ? <>{weekLine}<p>{msg("feelingToday")}</p></> : <p>{msg("areYouOkay")}</p>;
 
   // The real history: what was sent in the last 3 days and how the parent answered (null = still loading).
   const [activity, setActivity] = useState<Activity[] | null>(null);
@@ -1886,7 +1924,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
           <div key={a.id}>
             {heading}
             <div className="wa-message medicine-message">
-              <p>{msg("hello", { call: parentName })}</p><p>{msg("medicineTimeNow")}</p>
+              {hello}<p>{msg("medicineTimeNow")}</p>
               <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{a.name}{a.dosage ? ` ${localizeDose(a.dosage, tParent)}` : ""}</strong></span></div>
               <small>{time(a.at)} ✓✓</small>
             </div>
@@ -1900,7 +1938,7 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
         <div key={a.id}>
           {heading}
           <div className="wa-message">
-            <p>{msg("goodMorning", { call: parentName })}</p><p>{msg("areYouOkay")}</p><small>{time(a.at)} ✓✓</small>
+            <p>{msg("goodMorning", { call: parentName })}</p>{howAreYou}<small>{time(a.at)} ✓✓</small>
             <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
           </div>
           {a.status === "replied" && <div className="wa-reply"><p>{t("replied", { call: callUi })}</p><small>{a.respondedAt ? time(a.respondedAt) : ""}</small></div>}
@@ -1917,20 +1955,20 @@ function WhatsApp({ go, recipient, medicines }: { go: (screen: Screen) => void; 
       <header className="wa-header"><button onClick={() => go("family")} aria-label={t("back")}><Icon name="back" /></button><span className="wa-logo"><Icon name="heart" size={19} /></span><div><strong>Chhaon</strong><small>{t("title")}</small></div></header>
       <div className="wa-chat">
         {!waitingForData && <div className={`wa-helper${real ? "" : " preview-note"}`} style={{ marginTop: 0, marginBottom: 8 }}>{real ? t("realNote", { call: callUi }) : t("sampleNote", { call: callUi })}</div>}
-        <div className="wa-helper" style={{ marginTop: 0, marginBottom: 14 }}>{t("sentIn", { call: callUi, language: tProfile(parentLanguage === "en" ? "langEnglish" : "langHindi") })}</div>
+        <div className="wa-helper" style={{ marginTop: 0, marginBottom: 14 }}>{t(pregnant ? "sentInPregnant" : "sentIn", { call: callUi, language: tProfile(parentLanguage === "en" ? "langEnglish" : "langHindi") })}</div>
         {real && realItems(real)}
         {!real && !waitingForData && (
           <>
             <div className="wa-date">{t("today")}</div>
             <div className="wa-message medicine-message">
-              <p>{msg("hello", { call: parentName })}</p><p>{msg("medicineTime")}</p>
+              {hello}<p>{msg("medicineTime")}</p>
               <div className="wa-med-photo"><div className="blister"><i /><i /><i /><i /><i /><i /></div><span><strong>{sampleName} {sampleDose}</strong><small>{sample ? "" : msg("medicineDose")}</small></span></div>
               <small>{sampleTime} ✓✓</small>
               <button type="button" disabled>{msg("taken")}</button>
             </div>
             <div className="wa-date next-day">{t("tomorrow")}</div>
             <div className="wa-message">
-              <p>{msg("goodMorning", { call: parentName })}</p><p>{msg("areYouOkay")}</p><small>{clockLabel("08:00", parentLanguage)} ✓✓</small>
+              <p>{msg("goodMorning", { call: parentName })}</p>{howAreYou}<small>{clockLabel("08:00", parentLanguage)} ✓✓</small>
               <div className="wa-buttons"><button type="button" disabled>{msg("okay")}</button><button type="button" disabled>{msg("callMe")}</button></div>
             </div>
           </>

@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -100,6 +102,7 @@ public class CareRecipientService {
         r.setEmergencyContacts(toContacts(req.emergencyContacts()));
         if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
         if (Boolean.TRUE.equals(req.caregiverAttested())) r.setCaregiverAttestedAt(now);
+        applyCareType(r, req.careType(), req.dueDate());
 
         try {
             recipients.saveAndFlush(r);
@@ -132,6 +135,7 @@ public class CareRecipientService {
         if (Boolean.TRUE.equals(req.caregiverAttested()) && r.getCaregiverAttestedAt() == null) {
             r.setCaregiverAttestedAt(OffsetDateTime.now());
         }
+        applyCareType(r, req.careType(), req.dueDate());
         r.setUpdatedAt(OffsetDateTime.now());
         // DB triggers handle consent reset on phone change and dose clearing on timezone change.
         try {
@@ -155,6 +159,52 @@ public class CareRecipientService {
     }
 
     // --- helpers ---
+
+    /** Care types the app offers today. 'child' is in the database already but waits for step 3 (date of birth, guardian). */
+    private static final Set<String> OFFERED_CARE_TYPES = Set.of("older", "pregnant");
+    /** A due date the family types must be plausible: up to about 10 months ahead, at most about 2 months past. */
+    static final int DUE_DATE_MAX_AHEAD_DAYS = 300;
+    static final int DUE_DATE_MAX_PAST_DAYS = 60;
+
+    /**
+     * Care type and due date, after the other fields (the time zone decides "today" for the due-date window).
+     * careType null = keep (new profile: older). dueDate null = keep, "" = clear, "YYYY-MM-DD" = set (window checked only when
+     * it changes, so an old date never blocks editing something else). Not a pregnancy = no due date: switching away from
+     * pregnant clears it. A self profile ("Me") stays older.
+     */
+    private static void applyCareType(CareRecipient r, String careTypeIn, String dueDateIn) {
+        String type = careTypeIn == null ? (r.getCareType() == null ? "older" : r.getCareType()) : careTypeIn.trim();
+        if (!OFFERED_CARE_TYPES.contains(type)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Unknown care type: " + clip(type));
+        }
+        if (r.isSelf() && !"older".equals(type)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Your own profile cannot have a care type");
+        }
+        r.setCareType(type);
+        if (!"pregnant".equals(type)) {
+            r.setDueDate(null);
+            return;
+        }
+        if (dueDateIn == null) return;   // keep
+        if (dueDateIn.isBlank()) { r.setDueDate(null); return; }
+        LocalDate due;
+        try {
+            due = LocalDate.parse(dueDateIn.trim());
+        } catch (DateTimeParseException e) {
+            throw new ResponseStatusException(BAD_REQUEST, "Due date must look like 2027-03-14");
+        }
+        if (due.equals(r.getDueDate())) return;
+        LocalDate today = LocalDate.now(ZoneId.of(r.getTimezone()));
+        if (due.isAfter(today.plusDays(DUE_DATE_MAX_AHEAD_DAYS)) || due.isBefore(today.minusDays(DUE_DATE_MAX_PAST_DAYS))) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "The due date should be within the next 10 months (or at most 2 months ago)");
+        }
+        r.setDueDate(due);
+    }
+
+    private static String clip(String s) {
+        return s.length() > 20 ? s.substring(0, 20) : s;
+    }
 
     private CareRecipient requireMemberRecipient(UUID userId, UUID id) {
         return recipients.findForUser(id, userId)
@@ -285,6 +335,8 @@ public class CareRecipientService {
                 fromContacts(r.getEmergencyContacts()),
                 r.getCheckinTime(),
                 r.isSelf(),
+                r.getCareType(),
+                r.getDueDate(),
                 r.getCaregiverAttestedAt(),
                 r.getConsentAt(),
                 r.getOptedOutAt(),

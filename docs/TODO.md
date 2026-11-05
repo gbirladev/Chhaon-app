@@ -561,3 +561,27 @@ entries whose files are all gone.
       Until then: on a deletion request, the owner can remove the folders by hand in the Sydney Storage dashboard.
 - [ ] The old Supabase Auth user (email login) is removed too, best effort (`delete from auth.users`); if the database user of the
       backend may not do that, the erasure still succeeds and a warning is logged (no phone or health data in it).
+
+## Care type + Pregnancy (docs/use-cases.md step 1, built 2026-11-05 on branch `care-type`, NOT pushed, NOT on Sydney)
+- "Who are you caring for?" on the add/edit person form: Older parent (default; every existing profile) / Pregnancy / Child (shown as
+  "coming soon", not selectable). Pregnancy adds an optional due date and words the form, the WhatsApp preview and the "Add another
+  person" button for her.
+- Today: pregnancy card "Week 24 · 2nd trimester · 112 days to go (due 25 Feb 2027)", counted on HER time zone. Nothing about the baby.
+- Add medicine (pregnancy only): name chips "Iron + folic acid", "Calcium + vitamin D3", "Folic acid" that fill the NAME only, with
+  "Use the dose your doctor prescribed." (no dose placeholder on her form).
+- Doctor visits (pregnancy only): "Common checks — confirm with your doctor" with week windows; "+ Add" opens a NEW appointment with the
+  check's name in the notes and a suggested date in the window. List in `web/src/lib/pregnancyChecks.ts`.
+- WhatsApp: pregnancy dose reminder and daily check-in with a time-of-day greeting and "Week 24 today 💛"; same *1* / *2* replies.
+  Older parents get exactly the old texts.
+- Database: migration `20261105000043_care_type.sql` (`care_type` older|pregnant|child default older, `due_date` pregnant only).
+- API (`/api/v1/recipients`): `careType` ("older" | "pregnant"; "child" refused until step 3) and `dueDate` ("YYYY-MM-DD"). Left out =
+  keep (new profile: older), dueDate "" = clear. Due date window: at most 300 days ahead, 60 days past, checked only when it changes.
+  Switching away from pregnant clears the due date. The caregiver's own profile ("Me") stays older.
+- **Deploy order (the backend checks its tables at start-up, `ddl-auto=validate`):**
+  1. [ ] Paste `supabase/migrations/20261105000043_care_type.sql` into the Sydney SQL Editor (safe to run twice; the current backend
+     and web keep working with the extra columns).
+  2. [ ] Then deploy the backend. Deployed BEFORE step 1 it fails to start (missing column `care_type`).
+  3. [ ] Then the web app (it reads missing fields as "older", so it is safe with an old backend, but the choice is not saved until step 2).
+- [ ] Gynaecologist reads the usual checks and supplement names (`web/src/lib/pregnancyChecks.ts`) before families are told.
+- [ ] Hindi reviewed by a native speaker (`docs/hindi-review.md`, Part 7).
+- [ ] Decide later: a per-person on/off for the daily check-in (today a pregnancy gets the check-in with the gentle wording).

@@ -18,6 +18,7 @@ type RecipientDto = {
   bloodGroup: string | null; doctorContacts: ContactDto[] | null; emergencyContacts: ContactDto[] | null;
   checkinTime: string | null; isSelf: boolean; caregiverAttestedAt: string | null; consentAt: string | null;
   optedOutAt: string | null; consentRequestedAt: string | null; createdAt: string; updatedAt: string;
+  careType?: string | null; dueDate?: string | null;   // absent from a backend older than the care-type change (migration 0043)
 };
 const toRecipient = (d: RecipientDto): Recipient => ({
   id: d.id, circle_id: d.circleId, name: d.name, relation: d.relation ?? "other", call_name: d.callName,
@@ -27,6 +28,7 @@ const toRecipient = (d: RecipientDto): Recipient => ({
   checkin_time: d.checkinTime, is_self: d.isSelf, caregiver_attested_at: d.caregiverAttestedAt,
   consent_at: d.consentAt, opted_out_at: d.optedOutAt, consent_requested_at: d.consentRequestedAt,
   created_at: d.createdAt, updated_at: d.updatedAt,
+  care_type: d.careType === "pregnant" || d.careType === "child" ? d.careType : "older", due_date: d.dueDate ?? null,
 } as unknown as Recipient);
 
 /** The caregiver's own profile from the Java API; shared by alerts/layout/privacy/admin reads. */

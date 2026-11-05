@@ -17,6 +17,12 @@ public final class RecipientDtos {
 
     public record ContactDto(String name, String phone) {}
 
+    /*
+     * careType: "older" | "pregnant" ("child" is not offered yet). Left out: "older" on create, unchanged on update.
+     * dueDate: "YYYY-MM-DD", pregnant only. Left out or null: unchanged on update; "" clears it. A profile that is not a
+     * pregnancy never keeps a due date (switching away from pregnant clears it).
+     */
+
     /** Create a parent profile. Mirrors the web form + create_care_recipient RPC payload. */
     public record CreateRecipientRequest(
             @NotBlank @Size(max = 100) String name,
@@ -35,7 +41,9 @@ public final class RecipientDtos {
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             Boolean caregiverAttested,
-            Boolean isSelf) {
+            Boolean isSelf,
+            String careType,
+            String dueDate) {
     }
 
     /** Update a parent profile. Editable fields only; is_self and circle are immutable. */
@@ -55,7 +63,9 @@ public final class RecipientDtos {
             List<ContactDto> doctorContacts,
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
-            Boolean caregiverAttested) {
+            Boolean caregiverAttested,
+            String careType,
+            String dueDate) {
     }
 
     public record RecipientResponse(
@@ -77,6 +87,8 @@ public final class RecipientDtos {
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             boolean isSelf,
+            String careType,
+            LocalDate dueDate,
             OffsetDateTime caregiverAttestedAt,
             OffsetDateTime consentAt,
             OffsetDateTime optedOutAt,

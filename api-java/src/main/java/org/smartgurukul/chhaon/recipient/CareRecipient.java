@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** The aging parent (or a "self" profile) a caregiver manages. Maps public.care_recipients. */
+/** The person a caregiver manages: an aging parent, a pregnancy (care_type), or a "self" profile. Maps public.care_recipients. */
 @Entity
 @Table(name = "care_recipients")
 @Getter
@@ -81,6 +81,14 @@ public class CareRecipient {
 
     @Column(name = "is_self", nullable = false)
     private boolean self = false;
+
+    /** older (default) | pregnant | child (migration 0043). Decides the wording in the app and on WhatsApp. */
+    @Column(name = "care_type", nullable = false)
+    private String careType = "older";
+
+    /** The due date the doctor gave; pregnant only (the database refuses it on any other care type). */
+    @Column(name = "due_date")
+    private LocalDate dueDate;
 
     @Column(name = "caregiver_attested_at")
     private OffsetDateTime caregiverAttestedAt;

@@ -2,6 +2,7 @@ package org.smartgurukul.chhaon.scheduler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.recipient.Pregnancy;
 import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
 import org.smartgurukul.chhaon.whatsapp.MessageTexts;
 import org.smartgurukul.chhaon.whatsapp.WhatsAppSender;
@@ -204,7 +205,7 @@ public class SchedulerService {
         List<Object> p = new ArrayList<>();
         p.add(doseMissedMinutes);
         String sql = "select de.id dose_id, r.id recipient_id, r.circle_id, r.is_self, r.whatsapp_phone, r.language, " +
-                "r.call_name, " +
+                "r.call_name, r.name recipient_name, r.timezone, r.care_type, r.due_date, " +
                 "(r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 " and not exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone)) allowed, " +
                 "m.id medicine_id, m.name medicine_name, " +
@@ -228,9 +229,7 @@ public class SchedulerService {
                     "update dose_events set status='sent', sent_at=now() where id=? and status='pending'", doseId);
             if (claimed != 1) continue; // another tick took it
             try {
-                String text = MessageTexts.doseReminder((String) row.get("language"),
-                        (String) row.get("call_name"), (String) row.get("medicine_name"),
-                        (String) row.get("pill_colour"), (String) row.get("pill_shape"));
+                String text = doseText(row);
                 String msgId = wa.send((String) row.get("whatsapp_phone"), text);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id=?", msgId, doseId);
                 sent++;
@@ -300,7 +299,8 @@ public class SchedulerService {
 
     private int sendCheckins(UUID scope) {
         List<Object> p = new ArrayList<>();
-        String sql = "select r.id recipient_id, r.timezone, r.checkin_time, r.circle_id, r.whatsapp_phone, r.language, r.call_name " +
+        String sql = "select r.id recipient_id, r.timezone, r.checkin_time, r.circle_id, r.whatsapp_phone, r.language, r.call_name, " +
+                "r.name recipient_name, r.care_type, r.due_date " +
                 "from care_recipients r " +
                 "where r.consent_at is not null and r.opted_out_at is null and r.whatsapp_phone is not null " +
                 "and r.is_self = false " +
@@ -328,7 +328,7 @@ public class SchedulerService {
             if (claimed != 1) continue;
             try {
                 String msgId = wa.send((String) row.get("whatsapp_phone"),
-                        MessageTexts.checkin((String) row.get("language"), (String) row.get("call_name")));
+                        checkinText(row, today));
                 rememberCheckinMessageId(recipientId, today, msgId);
                 sent++;
             } catch (Exception sendEx) {
@@ -376,6 +376,47 @@ public class SchedulerService {
     }
 
     // --- helpers ---
+
+    private static boolean pregnant(Map<String, Object> row) {
+        return "pregnant".equals(row.get("care_type"));
+    }
+
+    /** For a pregnancy the message greets her by what the family calls her, else her first name (never "Papa"). */
+    private static String pregnancyName(Map<String, Object> row) {
+        String call = (String) row.get("call_name");
+        if (call != null && !call.isBlank()) return call;
+        String name = (String) row.get("recipient_name");
+        return name == null || name.isBlank() ? "" : name.trim().split("\\s+")[0];
+    }
+
+    private static ZoneId zoneOf(Object tz) {
+        try { return ZoneId.of((String) tz); } catch (Exception e) { return ZoneId.of("Asia/Kolkata"); }
+    }
+
+    private static LocalDate dueDate(Map<String, Object> row) {
+        Object d = row.get("due_date");
+        return d instanceof java.sql.Date sql ? sql.toLocalDate() : d instanceof LocalDate ld ? ld : null;
+    }
+
+    /** The dose reminder: older parents get the text they always got; a pregnancy gets the week and a gentler greeting. */
+    static String doseText(Map<String, Object> row) {
+        String language = (String) row.get("language");
+        if (!pregnant(row)) {
+            return MessageTexts.doseReminder(language, (String) row.get("call_name"), (String) row.get("medicine_name"),
+                    (String) row.get("pill_colour"), (String) row.get("pill_shape"));
+        }
+        ZonedDateTime local = Instant.now().atZone(zoneOf(row.get("timezone")));
+        return MessageTexts.pregnancyDoseReminder(language, pregnancyName(row), (String) row.get("medicine_name"),
+                (String) row.get("pill_colour"), (String) row.get("pill_shape"),
+                Pregnancy.week(dueDate(row), local.toLocalDate()), local.getHour());
+    }
+
+    /** The daily check-in; for a pregnancy the gentle "How are you feeling today?" with the week. */
+    static String checkinText(Map<String, Object> row, LocalDate localToday) {
+        String language = (String) row.get("language");
+        if (!pregnant(row)) return MessageTexts.checkin(language, (String) row.get("call_name"));
+        return MessageTexts.pregnancyCheckin(language, pregnancyName(row), Pregnancy.week(dueDate(row), localToday));
+    }
 
     /** One notification row per circle member (payload carries ids only, never health data/phones). */
     private void notifyCircle(UUID circleId, String type, String payloadJson) {

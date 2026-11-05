@@ -147,6 +147,67 @@ the sheet when it is in Hindi; {doctor} and {clinic} are what the family typed (
 
 Doctor QR cards (`web/public/doctors.html`): when a clinic name is typed, each card ends with the name and "For our patients · हमारे मरीज़ों के लिए".
 
+## Part 7: care type and pregnancy (added 2026-11-05, branch `care-type`)
+
+A family can now choose "Pregnancy" when adding a person. WhatsApp texts go to the pregnant woman herself (so Hindi verbs are feminine:
+"महसूस कर रही हैं"). Week numbers use ordinals: पहला, दूसरा, तीसरा, चौथा, 5वाँ, छठा, 7वाँ ... 24वाँ (`MessageTexts.hindiOrdinal`).
+
+WhatsApp (`api-java/.../whatsapp/MessageTexts.java`, `pregnancyDoseReminder` / `pregnancyCheckin`):
+
+| Text | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| Greeting before 12:00 | सुप्रभात शिवानी ☀️ | Good morning Shivani | |
+| Greeting 12:00-17:00 | नमस्ते शिवानी 🌤️ | Good afternoon Shivani | |
+| Greeting after 17:00 | शुभ संध्या शिवानी 🌙 | Good evening Shivani | |
+| Week line | आज आपका 24वाँ हफ़्ता है 💛 | Week 24 today | |
+| Medicine line | *आयरन + फ़ोलिक एसिड* लेने का समय हो गया है 💊 | Time for your Iron + folic acid | |
+| No medicine name | दवा लेने का समय हो गया है 💊 | Time for your medicine | |
+| Reply line (unchanged) | लेने के बाद *1* लिखकर भेजिए ✅ | Reply 1 once taken | |
+| Check-in question | आज आप कैसा महसूस कर रही हैं? | How are you feeling today? | |
+| Check-in answers (unchanged) | ठीक हैं तो *1* लिखें 😊 / फ़ोन चाहिए तो *2* लिखें 📞 | Reply 1 if fine / 2 for a call | |
+
+App (`web/src/messages/hi.json`):
+
+| Key | Hindi | English meaning | OK / better wording |
+|---|---|---|---|
+| profile.careType | आप किसकी देखभाल कर रहे हैं? | Who are you caring for? | |
+| profile.careOlder / carePregnant / careChild | बुज़ुर्ग माता-पिता / गर्भावस्था / बच्चा | Older parent / Pregnancy / Child | |
+| profile.careSoon | जल्द आ रहा है | Coming soon | |
+| profile.titleNewPregnant | होने वाली माँ को जोड़ें | Add the mother-to-be | |
+| profile.titleEditPregnant | उनकी जानकारी | Her details | |
+| profile.subtitlePregnant | गर्भावस्था में दवा और जाँच के रिमाइंडर | Medicine reminders and check-ups during the pregnancy | |
+| profile.namePregnant / errNamePregnant | उनका नाम / कृपया उनका नाम लिखें। | Her name / Please enter her name. | |
+| profile.whatsappHintPregnant | वह नंबर जिस पर वे WhatsApp इस्तेमाल करती हैं। रिमाइंडर इसी नंबर पर जाएँगे। | The number she uses on WhatsApp. Reminders go to this number. | |
+| profile.timezonePregnant / timezoneHintPregnant | उनका टाइम ज़ोन / रिमाइंडर उनके इस समय पर जाएँगे। | Her time zone / Reminders go out at this time of day for her. | |
+| profile.callNameHintPregnant | अलर्ट में और उन्हें मिलने वाले संदेशों में यही नाम इस्तेमाल होगा, जैसे शिवानी। | Used in alerts and in the messages she receives, e.g. Shivani. | |
+| profile.notePregnant | रिमाइंडर भेजने से पहले हम उनसे WhatsApp पर सहमति माँगेंगे। | We'll ask her for permission before sending reminders. | |
+| profile.dueDate | डिलीवरी की संभावित तारीख़ | Due date | |
+| profile.dueDateHint | डॉक्टर की बताई तारीख़। इससे हम गर्भावस्था का हफ़्ता दिखाते हैं। | The date your doctor gave. We show the week from it. | |
+| profile.errDueDate | कृपया अगले 10 महीनों के अंदर की तारीख़ चुनें। | Please pick a due date within the next 10 months. | |
+| pregnancy.cardTitle | गर्भावस्था | Pregnancy | |
+| pregnancy.week | हफ़्ता {week} | Week {week} | |
+| pregnancy.trimester1/2/3 | पहली / दूसरी / तीसरी तिमाही | 1st / 2nd / 3rd trimester | |
+| pregnancy.daysToGo | {count} दिन बाकी | {count} days to go | |
+| pregnancy.dueParen | (तारीख़ {date}) | (due {date}) | |
+| pregnancy.dueToday / duePassed / dueOnly | आज डिलीवरी की संभावित तारीख़ है / डिलीवरी की संभावित तारीख़ {date} थी / डिलीवरी की संभावित तारीख़: {date} | The due date is today / was {date} / Due date: {date} | |
+| pregnancy.checksLink | आम जाँचें | Usual checks | |
+| pregnancy.checksTitle | आम जाँचें — डॉक्टर से पक्का करें | Common checks — confirm with your doctor | |
+| pregnancy.checksNote | यह एक आम सूची है, डॉक्टरी सलाह नहीं। आपके डॉक्टर इन्हें अलग तरह से तय कर सकते हैं। अपने आप कुछ नहीं जुड़ता: जोड़ें दबाने पर अपॉइंटमेंट बनता है, जिसे आप बदल सकते हैं। | A general list, not medical advice ... | |
+| pregnancy.weeks / everyVisit | हफ़्ता {from}–{to} / हर जाँच पर | Weeks {from}–{to} / At every visit | |
+| pregnancy.windowNow / windowPast | अभी / समय निकल गया | Now / Time has passed | |
+| pregnancy.addCheck / addCheckLabel | जोड़ें / {name} को अपॉइंटमेंट में जोड़ें | Add / Add {name} as an appointment | |
+| pregnancy.needDueDate | ये जाँचें कब होती हैं, यह देखने के लिए उनकी जानकारी में डिलीवरी की तारीख़ डालें। | Add the due date to see when these usually happen. | |
+| pregnancy.supplementsTitle | आम सप्लीमेंट | Common supplements | |
+| pregnancy.supplementsNote | इससे सिर्फ़ नाम भरता है। खुराक वही डालें जो डॉक्टर ने लिखी है। | Fills in the name only. Use the dose your doctor prescribed. | |
+| whatsapp.msg.pregnancyWeek | आज आपका {ordinal} हफ़्ता है 💛 | Week {week} today | |
+| whatsapp.msg.feelingToday | आज आप कैसा महसूस कर रही हैं? | How are you feeling today? | |
+| whatsapp.sentInPregnant | {call} को ये संदेश {language} में मिलते हैं। आप यह उनकी जानकारी में बदल सकते हैं। | ... You can change this in her details. | |
+| parents.add (changed for everyone) | किसी और को जोड़ें | Add another person (was: एक और माता-पिता जोड़ें) | |
+
+Check names and supplement names (`web/src/lib/pregnancyChecks.ts`; the supplement name is what the WhatsApp reminder says):
+पहली जाँच (रजिस्ट्रेशन) और खून की जाँचें, शुरुआती (डेटिंग) स्कैन, NT स्कैन, एनॉमली स्कैन, शुगर की जाँच (GTT), ग्रोथ स्कैन, BP और वज़न;
+आयरन + फ़ोलिक एसिड, कैल्शियम + विटामिन D3, फ़ोलिक एसिड.
+
 ## Still to come
 
 Appointment reminders are not ported to the Java backend yet; their Hindi texts will need the same review once merged.

@@ -57,6 +57,66 @@ public final class MessageTexts {
                 + lookLine + "\n\nReply *1* once you have taken it ✅";
     }
 
+    /**
+     * For a pregnancy (care_type = pregnant, migration 0043): a greeting for the time of day, the pregnancy week when the due
+     * date is known, then the medicine. Same pill-look line and the same reply as for everyone (*1* = taken), so the reply
+     * classifier is unchanged. Example: "Good morning Shivani ☀️\nWeek 24 today 💛\nTime for your *Iron + folic acid* 💊".
+     *
+     * @param week      completed pregnancy weeks (recipient.Pregnancy#week), or null to leave the line out
+     * @param localHour the hour on the PERSON's clock (0-23), for good morning / afternoon / evening
+     */
+    public static String pregnancyDoseReminder(String language, String callName, String medicine, String pillColour,
+                                               String pillShape, Integer week, int localHour) {
+        String med = clean(medicine, 60);
+        String look = pillLook(language, pillColour, pillShape);
+        String lookLine = look.isEmpty() ? "" : "\n" + look;
+        String head = greeting(language, callName, localHour) + weekLine(language, week);
+        if (hi(language)) {
+            return head + "\n" + (med.isEmpty() ? "दवा" : "*" + med + "*") + " लेने का समय हो गया है 💊"
+                    + lookLine + "\n\nलेने के बाद *1* लिखकर भेजिए ✅";
+        }
+        return head + "\nTime for your " + (med.isEmpty() ? "medicine" : "*" + med + "*") + " 💊"
+                + lookLine + "\n\nReply *1* once you have taken it ✅";
+    }
+
+    /** The gentler daily check-in for a pregnancy: same answers as everyone (*1* fine, *2* call me). */
+    public static String pregnancyCheckin(String language, String callName, Integer week) {
+        String head = greeting(language, callName, 8) + weekLine(language, week);
+        if (hi(language)) {
+            return head + "\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
+        }
+        return head + "\nHow are you feeling today?\n\nReply *1* if you are fine 😊\nReply *2* if you want a call 📞";
+    }
+
+    /** "Good morning Shivani ☀️" / "सुप्रभात Shivani ☀️", by the hour on the person's clock. */
+    private static String greeting(String language, String callName, int localHour) {
+        String n = who(callName);
+        boolean morning = localHour >= 4 && localHour < 12;
+        boolean afternoon = localHour >= 12 && localHour < 17;
+        if (hi(language)) {
+            return morning ? "सुप्रभात" + n + " ☀️" : afternoon ? "नमस्ते" + n + " 🌤️" : "शुभ संध्या" + n + " 🌙";
+        }
+        return morning ? "Good morning" + n + " ☀️" : afternoon ? "Good afternoon" + n + " 🌤️" : "Good evening" + n + " 🌙";
+    }
+
+    /** "\nWeek 24 today 💛" / "\nआज आपका 24वाँ हफ़्ता है 💛", or "" without a week. */
+    private static String weekLine(String language, Integer week) {
+        if (week == null || week < 1 || week > 42) return "";
+        return hi(language) ? "\nआज आपका " + hindiOrdinal(week) + " हफ़्ता है 💛" : "\nWeek " + week + " today 💛";
+    }
+
+    /** 1 पहला, 2 दूसरा, 3 तीसरा, 4 चौथा, 6 छठा, otherwise 24वाँ. */
+    static String hindiOrdinal(int n) {
+        return switch (n) {
+            case 1 -> "पहला";
+            case 2 -> "दूसरा";
+            case 3 -> "तीसरा";
+            case 4 -> "चौथा";
+            case 6 -> "छठा";
+            default -> n + "वाँ";
+        };
+    }
+
     // Colour words in English, Hindi with a feminine noun (गोली) and Hindi with a masculine noun (कैप्सूल), plus a coloured dot.
     // Only these fixed values are used (the database refuses anything else), so no caregiver text reaches the parent here.
     private static final Map<String, String[]> COLOURS = Map.of(

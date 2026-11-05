@@ -6,6 +6,8 @@ import { ConfirmSheet } from "./Invites";
 import { createAppointment, deleteAppointment, loadAppointments, updateAppointment, doctorName, localTimeExists, utcToZoned, zonedToUtc, type Appointment } from "../lib/appointments";
 import { formatClock, formatDate, type Language } from "../lib/format";
 import type { Recipient } from "../lib/api";
+import { isPregnancy } from "../lib/pregnancy";
+import { UsualChecks, type CheckPrefill } from "./Pregnancy";
 
 const when = (iso: string, tz: string, language: Language) => {
   const day = formatDate(new Date(iso), language, { weekday: "short", day: "numeric", month: "short", timeZone: tz });
@@ -38,14 +40,15 @@ export function NextAppointment({ recipient, go }: { recipient: Recipient; go: (
   );
 }
 
-function AppointmentSheet({ recipient, existing, onClose, onSaved }: { recipient: Recipient; existing: Appointment | null; onClose: () => void; onSaved: () => void }) {
+function AppointmentSheet({ recipient, existing, prefill, onClose, onSaved }: { recipient: Recipient; existing: Appointment | null; prefill?: CheckPrefill; onClose: () => void; onSaved: () => void }) {
   const t = useTranslations("appointments");
   const language = useLocale() as Language;
   const toast = useToast();
   const dialog = useDialog(onClose);
   const tz = recipient.timezone ?? "Asia/Kolkata";
   const call = parentCall(recipient, language);
-  const initial = existing ? utcToZoned(existing.at, tz) : { date: "", time: "" };
+  // A usual pregnancy check ("+ Add") only suggests a date and a note; the family fills in the rest and saves (or cancels).
+  const initial = existing ? utcToZoned(existing.at, tz) : { date: prefill?.date ?? "", time: "" };
   const today = utcToZoned(new Date().toISOString(), tz).date;
   const [remind, setRemind] = useState(existing?.remind ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -106,7 +109,7 @@ function AppointmentSheet({ recipient, existing, onClose, onSaved }: { recipient
           </div>
           <p className="form-note appt-tz">{t("tzNote", { call })}</p>
           <Field id="a-location" label={t("location")}><input id="a-location" name="location" maxLength={200} autoComplete="off" placeholder={t("locationPlaceholder")} defaultValue={existing?.location ?? ""} /></Field>
-          <Field id="a-notes" label={t("notes")}><textarea id="a-notes" name="notes" maxLength={500} rows={2} defaultValue={existing?.notes ?? ""} /></Field>
+          <Field id="a-notes" label={t("notes")}><textarea id="a-notes" name="notes" maxLength={500} rows={2} defaultValue={existing?.notes ?? prefill?.notes ?? ""} /></Field>
           <label className="toggle-row">
             <span><strong>{t("remind", { call })}</strong><small>{canRemind ? t("remindHint") : t("remindNoConsent", { call })}</small></span>
             <input type="checkbox" role="switch" checked={remind} onChange={(event) => setRemind(event.target.checked)} /><i className={remind ? "" : "off"} />
@@ -128,7 +131,7 @@ export function AppointmentsScreen({ go, recipient }: { go: (screen: "today") =>
   const language = useLocale() as Language;
   const [list, setList] = useState<Appointment[] | null>(null);
   const [error, setError] = useState(false);
-  const [sheet, setSheet] = useState<{ existing: Appointment | null } | null>(null);
+  const [sheet, setSheet] = useState<{ existing: Appointment | null; prefill?: CheckPrefill } | null>(null);
   const [showPast, setShowPast] = useState(false);
   const tz = recipient?.timezone ?? "Asia/Kolkata";
   const refresh = async () => {
@@ -166,8 +169,9 @@ export function AppointmentsScreen({ go, recipient }: { go: (screen: "today") =>
           {showPast && <section className="appt-list">{past.slice(0, 20).map((a) => card(a, true))}</section>}
         </>
       )}
+      {isPregnancy(recipient) && <UsualChecks recipient={recipient} uiLanguage={language} onAdd={(prefill) => setSheet({ existing: null, prefill })} />}
       <button className="fab" onClick={() => setSheet({ existing: null })}><Icon name="plus" /><span>{t("add")}</span></button>
-      {sheet && <AppointmentSheet recipient={recipient} existing={sheet.existing} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); void refresh(); }} />}
+      {sheet && <AppointmentSheet recipient={recipient} existing={sheet.existing} prefill={sheet.prefill} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); void refresh(); }} />}
     </main>
   );
 }

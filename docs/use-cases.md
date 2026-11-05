@@ -56,6 +56,22 @@ The existing "Me" profile (`is_self`) stays as it is.
 3. **Child**: date of birth, guardian confirmation, vaccination schedule, reminders only to the adult who gives the medicine.
 4. Before telling real families: gynaecologist reads the pregnancy checks; paediatrician reads the vaccine table; native Hindi read.
 
+## Step 1 as built (2026-11-05, branch `care-type`)
+
+- **NEEDS GYNAECOLOGIST REVIEW before families are told about it:** the "Usual checks" list (names and week windows) and the
+  supplement names, both in ONE file: `web/src/lib/pregnancyChecks.ts`. Shown as "Common checks — confirm with your doctor"; nothing is
+  added automatically ("+ Add" only opens a new appointment with the name in the notes and a suggested date for the family to edit).
+- Care type is chosen on the add/edit person form. **Child** is shown as "coming soon" (greyed, not selectable) so families see it is
+  planned, and the backend refuses `child` until step 3. The caregiver's own profile ("Me") has no choice and stays older.
+- **Due date**: optional for a pregnancy (the week card waits for it). Accepted from about 2 months past to about 10 months ahead
+  (60 / 300 days, on her calendar), checked only when it changes so an old date never blocks other edits. Switching away from
+  pregnant clears it (the database also refuses a due date on a non-pregnancy), so a hidden date can never linger.
+- **Week** = completed weeks from the due date (280-day term), same sum in Java (`recipient/Pregnancy.java`) and web
+  (`web/src/lib/pregnancy.ts`). Trimesters: weeks 0-13, 14-27, 28+. No number shown before week 1 or after week 42.
+- **Daily check-in for a pregnancy:** kept ON (a per-person on/off is not built yet) but with the gentle wording
+  "How are you feeling today?" and the week; the family is still alerted when there is no reply. A per-person switch is a TODO.
+- WhatsApp texts for a pregnancy greet by the time of day on her clock and keep the usual replies (*1* taken / fine, *2* call me).
+
 ## Sources
 - PMSMA (MoHFW): https://pmsma.mohfw.gov.in/about-scheme/ , NHM PMSMA guideline PDF:
   https://nhm.gov.in/images/pdf/programmes/maternal-health/guidelines/Pradhan_Mantri_Surakshit_Matritva_Abhiyan.pdf
