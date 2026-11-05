@@ -493,3 +493,12 @@ Instead of the re-consent plan above, the owner ran `update care_recipients set 
 - Java change (about 160 lines + 150 to 250 lines of tests): `WhatsAppSender.sendPoll(...)` using the gateway poll route; send dose reminder, check-in and consent as polls; store the poll message id in `dose_events.whatsapp_message_id` (and the check-in equivalent); handle `poll.vote` in `GatewayEventService` (map option to Taken / Not yet / OK / Call me, idempotent, a retracted vote = no answer).
 - Risks: vote decryption unproven; a vote can be changed or removed; senders the gateway cannot turn into a phone number (`@lid`) are still ignored; a poll cannot carry the medicine photo; the ban risk of an unofficial sender stays.
 - **Cheap feasibility test first (about 1 hour, buddy, no code from us):** send one poll to a phone with the gateway's poll route (`POST /api/messages/{sessionId}/{jid}/poll`, API key header `X-API-Key`), tap an option, and check whether anything about the vote reaches the gateway's webhook log. If a decrypted vote shows up, build B; if not, do not.
+
+## DECISION 2026-11-05 (owner): new WhatsApp number, keep the self-hosted gateway
+The old gateway number was banned on 2026-11-05. The owner linked a NEW number to the same gateway and keeps the unofficial route
+(Meta's official API stays on hold; cost estimate in this file's history: about ₹100-400/month for 30 families).
+- [ ] Parents agree again on the new number (Send again in the app, parent replies 1). Never set consent_at by hand for real families.
+- [ ] Tell families to save the new number as "Chhaon" (saved contacts are reported less).
+- [ ] Restart reminders for ONE parent first (CHHAON_SCHEDULER_ONLY_RECIPIENT), then everyone.
+- [ ] Lower ban risk: only consented parents, low volume at first, no burst sends, no links; keep a spare number ready.
+- [ ] Still open: the "0 of 1 taken" reply seen before the ban (SESSION_HANDOFF.md 0.6).
