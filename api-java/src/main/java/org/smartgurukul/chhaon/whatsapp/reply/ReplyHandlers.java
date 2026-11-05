@@ -207,7 +207,7 @@ public class ReplyHandlers {
     // ---------------------------------------------------------------- doses
 
     /** Tablets used by one dose: "2 tablets" -> 2, "1.5 capsules" -> 2 (rounded up); anything else counts as 1; capped at 10. */
-    static int unitsPerDose(String dosage) {
+    public static int unitsPerDose(String dosage) {
         Matcher match = TABLETS.matcher(dosage == null ? "" : dosage.toLowerCase());
         if (!match.matches()) return 1;
         return Math.min(Math.max(1, (int) Math.ceil(Double.parseDouble(match.group(1)))), 10);

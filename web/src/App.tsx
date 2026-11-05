@@ -39,6 +39,8 @@ import { daysLeft, loadPlanOverview, loadPlanPauses, PLANS_ENABLED, type PlanOve
 import { loadSchedulerAge, SCHEDULER_STALE_SECONDS } from "./lib/scheduler";
 import { type RouteStop } from "./screens/DoseRoute";
 import { DoseLayouts, LayoutSheet, useTodayLayout } from "./screens/DoseLayouts";
+import { DoseGivenList } from "./screens/DoseGiven";
+import { isManual } from "./lib/doseGiven";
 import { alertsHidden, hideAlerts } from "./lib/alertsHidden";
 import { forgetDoctorAddresses } from "./lib/doctorAddress";
 import { PillGlyph, PillLookPicker, usePillLookText } from "./screens/PillLook";
@@ -996,6 +998,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   const [layout, saveLayout] = useTodayLayout();
   const [styleOpen, setStyleOpen] = useState(false);
   const styleToast = useToast();
+  const [reloadKey, setReloadKey] = useState(0);   // bumped after "Mark as given" / Undo
 
   // Today's doses and the check-in come from the database (written by the WhatsApp replies and the scheduler).
   useEffect(() => {
@@ -1024,7 +1027,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       window.removeEventListener("online", onReturn);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipient?.id, recipient?.timezone]);
+  }, [recipient?.id, recipient?.timezone, reloadKey]);
 
   // The "Call" buttons dial the person: when the reminders go to a helper or the family, whatsapp_phone is not the person's number.
   const phone = receiverOf(recipient).reminder_to === "person" ? recipient?.whatsapp_phone ?? null : null;
@@ -1074,7 +1077,8 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     const parts = clockParts(new Date(d.scheduledAt), tz, language);
     const future = new Date(d.scheduledAt).getTime() > Date.now();
     const pill =
-      d.status === "taken" ? (["taken", "today.taken"] as const)
+      isManual(d.confirmSource) ? (["taken", "doseGiven.pill"] as const)
+      : d.status === "taken" ? (["taken", "today.taken"] as const)
       : d.status === "taken_late" ? (["taken", "today.takenLate"] as const)
       : d.status === "missed" ? (["missed", "today.missed"] as const)
       : d.status === "skipped" ? (["notsent", "today.notSent"] as const)
@@ -1159,6 +1163,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
             <DoseLayouts layout={layout} stops={visibleDoses.map(routeStop)} avatar={([...(recipient?.name ?? "P")][0] ?? "P").toUpperCase()} startLabel={t("today.routeStart")} endLabel={t("today.routeEnd")} nextLabel={t("today.routeNext")} />
           </div>
         )}
+        {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}
         {doses !== null && visibleDoses.length === 0 && (
           <div className="empty-note">
             <strong>{medicines.length === 0 ? t("today.noMedicinesTitle") : t("today.dosesEmpty")}</strong>

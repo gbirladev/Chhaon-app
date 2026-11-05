@@ -41,9 +41,13 @@ public class DataController {
 
     public record MemberRow(String userId, String role, String name, String email, String phone) {}
     public record NotificationRow(String id, String type, JsonNode payload, OffsetDateTime readAt, OffsetDateTime createdAt) {}
-    public record DoseRow(String id, String status, OffsetDateTime scheduledAt, String name, String dosage, boolean active) {}
+    /** confirmSource: whatsapp | caregiver_in_person | caregiver_told (null while not confirmed); confirmedBy* = the family member
+     *  who marked it given (migration 20261105000047). */
+    public record DoseRow(String id, String status, OffsetDateTime scheduledAt, String name, String dosage, boolean active,
+                          OffsetDateTime respondedAt, String confirmSource, String confirmedBy, String confirmedByName) {}
     public record CheckinRow(String id, String status, OffsetDateTime sentAt, OffsetDateTime respondedAt) {}
-    public record ActivityDoseRow(String id, String status, OffsetDateTime sentAt, OffsetDateTime respondedAt, String name, String dosage) {}
+    public record ActivityDoseRow(String id, String status, OffsetDateTime sentAt, OffsetDateTime respondedAt, String name, String dosage,
+                                  String confirmSource, String confirmedBy, String confirmedByName, OffsetDateTime scheduledAt) {}
     public record TodayResponse(List<DoseRow> doses, CheckinRow checkin) {}
     public record ActivityResponse(List<ActivityDoseRow> doses, List<CheckinRow> checkins) {}
     public record MedicineName(String id, String name) {}
@@ -137,15 +141,18 @@ public class DataController {
         CareRecipient r = requireRecipient(user, recipientId);
         OffsetDateTime now = OffsetDateTime.now();
         List<DoseRow> doses = jdbc.query("""
-                        select d.id, d.status, d.scheduled_at, m.name, m.dosage, m.active
+                        select d.id, d.status, d.scheduled_at, m.name, m.dosage, m.active,
+                               d.responded_at, d.confirm_source, d.confirmed_by, cp.name
                         from dose_events d
                         join medicine_schedules s on s.id = d.schedule_id
                         join medicines m on m.id = s.medicine_id
+                        left join profiles cp on cp.id = d.confirmed_by
                         where m.recipient_id = ? and d.scheduled_at between ? and ?
                         order by d.scheduled_at
                         """,
                 (rs, i) -> new DoseRow(rs.getString(1), rs.getString(2), odt(rs.getTimestamp(3)),
-                        rs.getString(4), rs.getString(5), rs.getBoolean(6)),
+                        rs.getString(4), rs.getString(5), rs.getBoolean(6),
+                        odt(rs.getTimestamp(7)), rs.getString(8), rs.getString(9), rs.getString(10)),
                 recipientId, Timestamp.from(now.minusHours(36).toInstant()), Timestamp.from(now.plusHours(36).toInstant()));
         LocalDate localToday = LocalDate.now(zoneOf(r.getTimezone()));
         CheckinRow checkin = jdbc.query("""
@@ -157,7 +164,8 @@ public class DataController {
         return new TodayResponse(doses, checkin);
     }
 
-    /** What was really sent in the last few days (dose reminders + check-ins), newest first. */
+    /** What was really sent in the last few days (dose reminders + check-ins), newest first. Doses a family member marked given
+     *  (never sent, e.g. given before the reminder) are included too, with sentAt null. */
     @GetMapping("/recipients/{recipientId}/activity")
     public ActivityResponse activity(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID recipientId,
                                      @RequestParam(defaultValue = "3") int days) {
@@ -165,16 +173,21 @@ public class DataController {
         int span = Math.max(1, Math.min(days, 14));
         Timestamp from = Timestamp.from(OffsetDateTime.now().minusDays(span).toInstant());
         List<ActivityDoseRow> doses = jdbc.query("""
-                        select d.id, d.status, d.sent_at, d.responded_at, m.name, m.dosage
+                        select d.id, d.status, d.sent_at, d.responded_at, m.name, m.dosage,
+                               d.confirm_source, d.confirmed_by, cp.name, d.scheduled_at
                         from dose_events d
                         join medicine_schedules s on s.id = d.schedule_id
                         join medicines m on m.id = s.medicine_id
-                        where m.recipient_id = ? and d.sent_at is not null and d.sent_at >= ?
-                        order by d.sent_at desc limit 300
+                        left join profiles cp on cp.id = d.confirmed_by
+                        where m.recipient_id = ?
+                          and ((d.sent_at is not null and d.sent_at >= ?)
+                               or (d.confirmed_by is not null and d.responded_at >= ?))
+                        order by coalesce(d.sent_at, d.responded_at) desc limit 300
                         """,
                 (rs, i) -> new ActivityDoseRow(rs.getString(1), rs.getString(2), odt(rs.getTimestamp(3)),
-                        odt(rs.getTimestamp(4)), rs.getString(5), rs.getString(6)),
-                recipientId, from);
+                        odt(rs.getTimestamp(4)), rs.getString(5), rs.getString(6),
+                        rs.getString(7), rs.getString(8), rs.getString(9), odt(rs.getTimestamp(10))),
+                recipientId, from, from);
         List<CheckinRow> checkins = jdbc.query("""
                         select id, status, sent_at, responded_at from checkins
                         where recipient_id = ? and sent_at is not null and sent_at >= ?

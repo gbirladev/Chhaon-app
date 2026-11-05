@@ -585,3 +585,37 @@ list).
 | vaccines.markGivenNoDate | लग गया, तारीख़ पता नहीं | Given, date not known | |
 | vaccines.markNotYet | अभी नहीं लगा | Not given yet | |
 | vaccines.addGivenDate | टीका लगने की तारीख़ जोड़ें (ज़रूरी नहीं) | Add the date it was given (optional) | |
+
+## Part 16: "Mark as given" on Today (added 2026-11-05, branch `f2-gave-in-person`)
+
+App only (`doseGiven` in hi.json); nothing new is sent on WhatsApp. "दी गई दर्ज करें" is meant as "record as given"; please check it
+reads naturally for a dose given by a helper as well as one the person took.
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| doseGiven.title | पुष्टि नहीं आई? दी गई दर्ज करें | Not confirmed yet? Mark it given | |
+| doseGiven.mark | दी गई दर्ज करें | Mark as given | |
+| doseGiven.call / callLabel | कॉल / {name} को कॉल करें | Call / Call {name} | |
+| doseGiven.sheetTitle | {name} कैसे दी गई? | How was {name} given? | |
+| doseGiven.sheetHint | समय {time} था। सेव करने पर यह 'ली गई' दर्ज होगी और स्टॉक कम होगा, ठीक WhatsApp जवाब की तरह। | Due at {time}. Saving marks it as taken and lowers the stock, just like a WhatsApp reply. | |
+| doseGiven.optHelperTold | {helper} ने दे दी (फ़ोन पर बताया) | {helper} gave it (told me on the phone) | |
+| doseGiven.optPersonTold | {call} ने ले ली (मुझे बताया) | {call} took it (told me) | |
+| doseGiven.optInPerson | मैंने दी / मैंने लेते देखा | I gave it / I saw it taken | |
+| doseGiven.optSelf | मैंने ले ली | I took it | |
+| doseGiven.save / cancel | सेव करें / रद्द करें | Save / Cancel | |
+| doseGiven.markedBy | {name} ने दी गई दर्ज की, {time} | Marked given by {name}, {time} | |
+| doseGiven.markedByYou | आपने दी गई दर्ज की, {time} | Marked given by you, {time} | |
+| doseGiven.toldSuffix | फ़ोन पर बताया गया | told on the phone | |
+| doseGiven.someone | परिवार के एक सदस्य | a family member | |
+| doseGiven.undo | वापस लें | Undo | |
+| doseGiven.pill | दी गई (दर्ज) | Marked given | |
+| doseGiven.marked | {name} दी गई दर्ज हो गई | {name} marked as given | |
+| doseGiven.undone | वापस ले लिया। खुराक फिर से इंतज़ार में है। | Undone. The dose is waiting again. | |
+| doseGiven.alreadyWhatsapp | WhatsApp पर पहले ही पुष्टि हो चुकी है। | Already confirmed on WhatsApp. | |
+| doseGiven.alreadyMarked | परिवार में किसी ने पहले ही दी गई दर्ज कर दी है। | Someone in the family already marked it as given. | |
+| doseGiven.tooEarly | इस खुराक का समय अभी नहीं हुआ। | This dose is not due yet. | |
+| doseGiven.tooOld | यह खुराक बहुत पुरानी है, अब बदल नहीं सकते। | This dose is too old to change. | |
+| doseGiven.notAllowed | यह खुराक अभी दर्ज नहीं हो सकती। | This dose cannot be marked now. | |
+| doseGiven.undoTooLate | वापस सिर्फ़ 10 मिनट तक ले सकते हैं। | Undo is only possible for 10 minutes. | |
+| doseGiven.undoNotPossible | इसे अब वापस नहीं लिया जा सकता। | This can no longer be undone. | |
+| doseGiven.failed | सेव नहीं हुआ। इंटरनेट देखकर फिर से कोशिश करें। | Could not save. Please check your internet and try again. | |
