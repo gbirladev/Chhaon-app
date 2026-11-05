@@ -204,7 +204,8 @@
   .sample p { margin: 0; }
   .sample .s-kicker { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
   .sample .s-name { font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
-  .sample .s-sub { color: var(--muted); padding-bottom: 10px; border-bottom: 2px solid var(--teal); }
+  .sample .s-sub { color: var(--muted); }
+  .sample .s-for { margin-top: 4px; font-weight: 700; padding-bottom: 10px; border-bottom: 2px solid var(--teal); }
   .sample dl { margin: 10px 0 0; display: grid; gap: 6px; }
   .sample dl div { display: grid; grid-template-columns: 7.5em 1fr; gap: 8px; }
   .sample dt { color: var(--muted); font-size: .8rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding-top: 2px; }
@@ -229,8 +230,11 @@
   .card svg { width: 3.6cm; height: 3.6cm; margin: 6pt 0 4pt; }
   .card .c-scan { font-size: 9pt; color: var(--muted); }
   .card .c-url { font-size: 9pt; font-weight: 700; }
-  .card .c-clinic { font-size: 9pt; color: var(--muted); margin-top: auto; }
-  .card .c-clinic:empty { display: none; }
+  /* Optional clinic line: the card reads as the clinic's own card for its patients. Nothing about the doctor is promoted. */
+  .card .c-clinic { margin-top: auto; padding-top: 3pt; line-height: 1.2; max-width: 100%; }
+  .card .c-clinic[hidden] { display: none; }
+  .card .c-clinic-name { font-size: 9.5pt; font-weight: 700; overflow-wrap: anywhere; }
+  .card .c-clinic-for { font-size: 8pt; color: var(--muted); }
 
   @media print {
     @page { size: A4; margin: 1cm; }
@@ -324,12 +328,13 @@
 
   <section id="see" aria-labelledby="sample-h">
     <h2 id="sample-h">What you will see</h2>
-    <p>One page, in English or Hindi, printed or sent on WhatsApp by the family. This is an example with made-up data:</p>
+    <p>One page, in English or Hindi, printed or sent on WhatsApp by the family, who can address it to you. This is an example with made-up data:</p>
     <article class="sample" aria-label="Example summary with made-up data">
       <span class="tag">Example · made-up data</span>
       <p class="s-kicker">Medicine summary</p>
       <p class="s-name">Sample Patient</p>
       <p class="s-sub">68 years • Lucknow</p>
+      <p class="s-for">Prepared for: Dr Sample Doctor, Sample Clinic</p>
       <dl>
         <div><dt>Blood group</dt><dd>A+</dd></div>
         <div><dt>Conditions</dt><dd>Type 2 diabetes, High BP</dd></div>
@@ -417,7 +422,7 @@
 
   <section id="cards">
     <h2>Print QR cards for your desk</h2>
-    <label for="clinic">Clinic name (optional, printed small on the card)</label>
+    <label for="clinic">Clinic name (optional, printed at the bottom of each card with "For our patients")</label>
     <input id="clinic" maxlength="60" autocomplete="organization" placeholder="e.g. Sharma Clinic, Lucknow" />
     <p class="hint">Prints 6 cards on one A4 sheet. Cut along the dashed lines.</p>
     <div class="preview" id="preview"></div>
@@ -476,7 +481,11 @@
       el.appendChild(qrSvg(target));
       el.appendChild(line("c-scan", "Scan with your phone camera · फ़ोन कैमरे से स्कैन करें"));
       el.appendChild(line("c-url", "chhaon.site/app"));
-      el.appendChild(line("c-clinic", ""));
+      var foot = line("c-clinic", "");
+      foot.hidden = true;
+      foot.appendChild(line("c-clinic-name", ""));
+      foot.appendChild(line("c-clinic-for", "For our patients · हमारे मरीज़ों के लिए"));
+      el.appendChild(foot);
       return el;
     }
 
@@ -485,11 +494,23 @@
     preview.appendChild(card());
     for (var i = 0; i < 6; i++) sheet.appendChild(card());
 
+    // One plain line: control characters and invisible direction marks removed, spaces collapsed, at most 60 characters.
+    function cleanClinic(value) {
+      var text = value.replace(/[\u0000-\u001F\u007F-\u009F‎‏‪-‮⁦-⁩﻿]/g, " ").replace(/\s+/g, " ").trim();
+      return Array.from(text).slice(0, 60).join("").trim();
+    }
     var clinic = document.getElementById("clinic");
-    clinic.addEventListener("input", function () {
-      var text = clinic.value.trim() ? "From " + clinic.value.trim() : "";
-      document.querySelectorAll(".c-clinic").forEach(function (el) { el.textContent = text; });
-    });
+    function showClinic() {
+      var text = cleanClinic(clinic.value);
+      document.querySelectorAll(".c-clinic").forEach(function (el) {
+        el.hidden = !text;
+        el.querySelector(".c-clinic-name").textContent = text;
+      });
+    }
+    clinic.addEventListener("input", showClinic);
+    // The browser may refill the box after Back or a reload without an "input" event: show what is in it.
+    window.addEventListener("pageshow", showClinic);
+    showClinic();
     document.getElementById("print").addEventListener("click", function () { window.print(); });
   })();
 </script>

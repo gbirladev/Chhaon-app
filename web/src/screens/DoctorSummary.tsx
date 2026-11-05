@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import "./doctorSummary.css";
 import { createTranslator, useLocale, useTranslations } from "use-intl";
-import { AppHeader, Icon, parentCall, shareContent } from "../App";
+import { AppHeader, Field, Icon, parentCall, shareContent } from "../App";
 import { MESSAGES } from "../i18n";
 import { loadAdherence, type Adherence } from "../lib/adherence";
+import { CLINIC_MAX, DOCTOR_MAX, cleanLine, cleanTyped, loadDoctorAddress, saveDoctorAddress, withoutTitle, type DoctorAddress } from "../lib/doctorAddress";
 import { describeTimes, formatDate, localizeDose, type Language, type T } from "../lib/format";
 import type { Medicine, Recipient } from "../lib/api";
 
@@ -29,6 +30,8 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   const [today] = useState(() => new Date());
   // The result is stored with the parent it belongs to, so a different parent never shows the previous one's history.
   const [loaded, setLoaded] = useState<{ id: string; adherence: Adherence | null } | null>(null);
+  // Optional: the family's own doctor, so the sheet reads "Prepared for: Dr ..., ...". Kept per parent on this device.
+  const [address, setAddress] = useState<{ id: string; value: DoctorAddress } | null>(null);
 
   // While this screen is open, printing shows only the sheet (see doctorSummary.css).
   useEffect(() => {
@@ -59,11 +62,23 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
   // Stored as a key ("after_food"); shown in the sheet's language. Anything else is shown as it was typed.
   const instruction = (value: string | null) => (value ? (INSTRUCTION_LABEL[value] ? ts(INSTRUCTION_LABEL[value]) : value) : "");
   const medicineLine = (name: string, dose: string | null) => [name, dose && localizeDose(dose, ts)].filter(Boolean).join(" ");
+  // Until the family edits it, read what this device last used (or the profile's first doctor) for this parent.
+  const typed = address?.id === recipient.id ? address.value : loadDoctorAddress(recipient.id, recipient.doctor_contacts);
+  const editAddress = (field: keyof DoctorAddress, raw: string) => {
+    const value = { ...typed, [field]: cleanTyped(raw, field === "doctor" ? DOCTOR_MAX : CLINIC_MAX) };
+    setAddress({ id: recipient.id, value });
+    saveDoctorAddress(recipient.id, value);
+  };
+  const doctor = withoutTitle(cleanLine(typed.doctor, DOCTOR_MAX));
+  const clinic = cleanLine(typed.clinic, CLINIC_MAX);
+  const preparedFor = doctor && clinic ? sd("preparedForBoth", { doctor, clinic })
+    : doctor ? sd("preparedForDoctor", { doctor }) : clinic ? sd("preparedForClinic", { clinic }) : "";
   const hasHistory = !!adherence && adherence.total > 0;
   const overall = adherence ? sd("overall", { confirmed: adherence.confirmed, total: adherence.total, percent: percent(adherence.confirmed, adherence.total) }) : "";
 
   const shareText = [
     `${sd("sheetTitle")} — ${recipient.name}`,
+    ...(preparedFor ? [preparedFor] : []),
     ageCity,
     `${ts("emergency.bloodGroup")}: ${recipient.blood_group ?? unknown}`,
     `${ts("emergency.conditions")}: ${recipient.conditions.join(", ") || unknown}`,
@@ -104,11 +119,23 @@ export function DoctorSummaryScreen({ go, recipient, medicines }: { go: (screen:
         ))}
       </div>
 
+      <section className="ds-for" aria-labelledby="ds-for-title">
+        <h2 id="ds-for-title">{t("forTitle")}</h2>
+        <p className="hint">{t("forHint")}</p>
+        <Field id="ds-doctor" label={t("doctorName")}>
+          <input id="ds-doctor" autoComplete="off" maxLength={DOCTOR_MAX} placeholder={t("doctorPlaceholder")} value={typed.doctor} onChange={(event) => editAddress("doctor", event.target.value)} />
+        </Field>
+        <Field id="ds-clinic" label={t("clinicName")}>
+          <input id="ds-clinic" autoComplete="off" maxLength={CLINIC_MAX} placeholder={t("clinicPlaceholder")} value={typed.clinic} onChange={(event) => editAddress("clinic", event.target.value)} />
+        </Field>
+      </section>
+
       <article className="ds-sheet" lang={sheetLanguage}>
         <header>
           <p className="ds-kicker">{sd("sheetTitle")}</p>
           <h2>{recipient.name}</h2>
           {ageCity && <p className="ds-sub">{ageCity}</p>}
+          {preparedFor && <p className="ds-for-line">{preparedFor}</p>}
         </header>
 
         <dl className="ds-facts">

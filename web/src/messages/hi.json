@@ -1191,6 +1191,15 @@
     "count": "{total} में से {confirmed}",
     "notActive": "अभी चालू नहीं",
     "checkins": "रोज़ का हालचाल {total} में से {answered} दिन बताया गया",
+    "forTitle": "आपके डॉक्टर (ज़रूरी नहीं)",
+    "forHint": "सारांश में सबसे ऊपर दिखेगा। सिर्फ़ इसी फ़ोन में सेव रहता है।",
+    "doctorName": "डॉक्टर का नाम",
+    "doctorPlaceholder": "जैसे: अनीता शर्मा",
+    "clinicName": "क्लिनिक या अस्पताल",
+    "clinicPlaceholder": "जैसे: सिटी क्लिनिक, पुणे",
+    "preparedForBoth": "किसके लिए: डॉ. {doctor}, {clinic}",
+    "preparedForDoctor": "किसके लिए: डॉ. {doctor}",
+    "preparedForClinic": "किसके लिए: {clinic}",
     "note": "यह {name} के WhatsApp रिमाइंडर पर दिए गए जवाबों पर आधारित है। \"पुष्ट नहीं\" का मतलब है कि जवाब नहीं आया; हो सकता है दवाई फिर भी ली गई हो। रोकी गई या अभी इंतज़ार में रहने वाली खुराकें गिनी नहीं गईं। यह चिकित्सा सलाह नहीं है।"
   },
   "appearance": {
