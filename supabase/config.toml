@@ -287,6 +287,17 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
+# Send-SMS hook: instead of a paid SMS provider, our backend relays the login code over WhatsApp (WA-AKG gateway).
+# Hosted project: enable this hook in the dashboard (Authentication -> Hooks) pointing at
+# https://api.chhaon.site/hooks/supabase-sms, and set SUPABASE_SEND_SMS_HOOK_SECRET on the backend to the secret shown.
+# Local dev: the [auth.sms.test_otp] map below already works without any delivery, so the hook is left OFF here. To
+# exercise the real path locally, run the Java backend on :8080, set its secret, and enable the two lines below
+# (the auth container reaches the host at host.docker.internal).
+# [auth.hook.send_sms]
+# enabled = true
+# uri = "http://host.docker.internal:8080/hooks/supabase-sms"
+# secrets = "env(SUPABASE_SEND_SMS_HOOK_SECRET)"
+
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
 # Local dev: dummy credentials; test_otp numbers never actually send an SMS.

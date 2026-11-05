@@ -92,4 +92,15 @@ public final class MessageTexts {
         return "Namaste" + name + " 🙏\nChhaon would like to send you important alerts here (for example a missed medicine of your parent)."
                 + "\n\nReply *1* to turn alerts on ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
+
+    /**
+     * The login one-time code, delivered over WhatsApp (Supabase "Send SMS" hook). Bilingual, because at login time
+     * we do not yet know the user's language. The code is Supabase-generated digits; it is sanitised defensively so a
+     * surprising value can never inject WhatsApp formatting.
+     */
+    public static String loginOtp(String code) {
+        String c = clean(code, 12);
+        return "Chhaon login code: *" + c + "*\nDo not share this code with anyone."
+                + "\n\nछाँव लॉगिन कोड: *" + c + "*\nयह कोड किसी के साथ साझा न करें।";
+    }
 }

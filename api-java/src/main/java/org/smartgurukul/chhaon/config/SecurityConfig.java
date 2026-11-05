@@ -45,7 +45,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/api/v1/whatsapp/webhook",
                                 // The gateway's signed webhook (HMAC checked by the controller, fails closed).
-                                "/webhooks/whatsapp-gateway").permitAll()
+                                "/webhooks/whatsapp-gateway",
+                                // Supabase "Send SMS" auth hook (Standard-Webhooks signature checked by the controller, fails closed).
+                                "/hooks/supabase-sms").permitAll()
                         // Which optional features are on: no login, no secrets (the web app asks before it signs in).
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/features").permitAll()
                         .anyRequest().authenticated())
