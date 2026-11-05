@@ -9,6 +9,7 @@ import {
   type LoveSettings, type LoveStats, type ParentMessage, type Reaction, type SendFailure,
 } from "../lib/love";
 import "./love.css";
+import { Icon3D } from "./Icon3D";
 
 /** One thing the parent did that a caregiver can answer with a little love: a taken dose (or a time slot of them) or an answered check-in. */
 type Moment = { key: string; kind: "dose" | "checkin"; at: string; names: string[] };
@@ -178,7 +179,7 @@ export function LoveLink({ go, hidden = false }: { go: (screen: "love") => void;
   if (!features.love || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("love")}>
-      <span style={{ background: "var(--s-fdecea)", color: "var(--t-b4443a)" }} aria-hidden="true">❤️</span>
+      <Icon3D name="love" />
       <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
       <Icon name="chevron" />
     </button>

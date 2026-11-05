@@ -8,6 +8,7 @@ import {
 } from "../lib/escalation";
 import { formatClock, type Language } from "../lib/format";
 import "./safetynet.css";
+import { Icon3D } from "./Icon3D";
 
 /** The Safety net: what happens when a parent does not answer. Nudge first, tell the family only when it matters. */
 export function SafetyNetScreen({ go, recipient, medicines, onMedicinesChanged }: {
@@ -176,7 +177,7 @@ export function SafetyNetLink({ go, hidden = false }: { go: (screen: "safety") =
   if (!features.escalation || hidden) return null;
   return (
     <button className="feature-link" onClick={() => go("safety")}>
-      <span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="shield" /></span>
+      <Icon3D name="shield" />
       <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
       <Icon name="chevron" />
     </button>

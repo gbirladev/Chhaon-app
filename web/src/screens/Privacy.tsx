@@ -6,6 +6,7 @@ import type { CircleMember, Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
 import { acceptPrivacy, deleteMyAccount, deleteParentData, downloadMyData, loadPrivacyState } from "../lib/privacy";
 import "./privacy.css";
+import { Icon3D } from "./Icon3D";
 
 type Go = (screen: "policy" | "terms" | "privacyData" | "welcome" | "family" | "goodbye", options?: { replace?: boolean }) => void;
 
@@ -156,7 +157,7 @@ export function Goodbye({ go }: { go: Go }) {
   const t = useTranslations("privacy");
   return (
     <main className="onboarding">
-      <div className="empty-state goodbye"><Icon name="heart" size={44} /><strong>{t("goodbyeTitle")}</strong><p>{t("goodbyeBody")}</p></div>
+      <div className="empty-state goodbye"><Icon3D name="heart" size={64} className="empty-3d" eager /><strong>{t("goodbyeTitle")}</strong><p>{t("goodbyeBody")}</p></div>
       <button className="primary-button" onClick={() => go("welcome", { replace: true })}>{t("goodbyeAction")}</button>
     </main>
   );

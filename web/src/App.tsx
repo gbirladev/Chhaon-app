@@ -53,6 +53,7 @@ import { WeeklyCard } from "./screens/WeeklySummary";
 import { initialReceiverMode, receiverName, receiverOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
+import { Icon3D } from "./screens/Icon3D";
 
 type Screen =
   | "activity"
@@ -1063,7 +1064,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
     const state = checkin?.status === "replied" ? "replied" : checkin?.status === "sent" ? "sent" : "none";
     return (
       <button className={`checkin-line ${state}`} onClick={() => go("whatsapp")} aria-label={t("today.seeMessages")}>
-        <span className="okay-icon" aria-hidden="true">{state === "replied" ? "✓" : "…"}</span>
+        <span className="checkin-sun" aria-hidden="true"><Icon3D name="sun" size={28} eager /><span className="okay-icon">{state === "replied" ? "✓" : "…"}</span></span>
         <span className="checkin-text">
           <strong>{t(state === "replied" ? "today.checkinOkay" : state === "sent" ? "today.checkinWaiting" : "today.checkinNone", { call })}</strong>
           <small>{state === "replied" ? t("today.checkinReplied", { time: time(checkin?.responded_at ?? checkin?.sent_at ?? null) }) : state === "sent" ? (checkin?.sent_at ? t("today.checkinSentAt", { time: time(checkin.sent_at) }) : "") : t("today.checkinNoneHint")}</small>
@@ -1108,6 +1109,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}
         {doses !== null && visibleDoses.length === 0 && (
           <div className="empty-note">
+            <Icon3D name="pill" size={64} className="empty-3d" />
             <strong>{medicines.length === 0 ? t("today.noMedicinesTitle") : t("today.dosesEmpty")}</strong>
             {medicines.length === 0 && <p>{t("today.noMedicinesBody")}</p>}
             {medicines.length === 0 && <button className="primary-button" onClick={() => go("addMedicine")}>{t("medicines.add")}</button>}
@@ -1564,7 +1566,7 @@ function ReportsSoon({ recipient }: { recipient: Recipient | null }) {
     <main className="scroll-page">
       <AppHeader title={t("title")} subtitle={t("subtitle")} />
       <section className="empty-note">
-        <span className="camera-disc" aria-hidden="true"><Icon name="report" size={30} /></span>
+        <span className="camera-disc with-3d" aria-hidden="true"><Icon3D name="page" size={48} eager /></span>
         <strong>{t("soonTitle")}</strong>
         <p>{t("soonBody", { call: parentCall(recipient, language) })}</p>
         <p>{t("soonNote")}</p>
@@ -1615,12 +1617,12 @@ function ReportsLive({ recipient, onOpen }: { recipient: Recipient | null; onOpe
 
   return (
     <main className="scroll-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle")} />
+      <AppHeader title={t("title")} subtitle={t("subtitle")} action={<Icon3D name="page" size={40} eager className="header-3d" />} />
       <label className={`upload-card${reading ? " busy" : ""}`}><input type="file" accept="image/*,.pdf,application/pdf" disabled={reading} onChange={upload} /><span><Icon name="upload" /></span><div><strong>{reading ? t("reading") : t("uploadTitle")}</strong><p>{reading ? t("readingHint") : t("uploadHint")}</p></div><Icon name="chevron" size={19} /></label>
       <div className="section-title reports-title"><div><h2>{t("recent")}</h2><p>{t("sorted")}</p></div></div>
       {loadError && <p role="alert" className="form-error">{t("loadFailed")}</p>}
       {reports === null && !loadError && <div className="skeleton card" aria-busy="true" />}
-      {reports !== null && reports.length === 0 && <div className="empty-note"><strong>{t("emptyTitle")}</strong><p>{t("emptyBody")}</p></div>}
+      {reports !== null && reports.length === 0 && <div className="empty-note"><Icon3D name="page" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody")}</p></div>}
       <section className="reports-list">
         {(reports ?? []).map((r) => (
           <button className="report-card" key={r.id} onClick={() => onOpen(r.id)}>
@@ -1878,18 +1880,18 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         title={confirming.kind === "remove" ? ti("removeTitle", { name: name(confirming.member) }) : ti("leaveTitle", { call })}
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
-      <button className="feature-link emergency-link" onClick={() => go("emergency")}><span><Icon name="heart" /></span><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link emergency-link" onClick={() => go("emergency")}><Icon3D name="heart" /><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <ActivityLink go={go} />
       <VaccinesLink go={go} recipient={recipient} />
-      <button className="feature-link" onClick={() => go("doctor")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="report" /></span><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
-      <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><span><Icon name="phone" /></span><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
-      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="chart" /></span><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
+      <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{t("whatsappSub")}</p></div><Icon name="chevron" /></button>
+      {isAdmin && <button className="feature-link" onClick={() => go("stats")}><Icon3D name="chart" /><div><strong>{t("statsLink")}</strong><p>{t("statsSub")}</p></div><Icon name="chevron" /></button>}
       <InstallLink />
-      <button className="feature-link" onClick={() => go("feedback")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="send" /></span><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
+      <button className="feature-link" onClick={() => go("feedback")}><Icon3D name="feedback" /><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
       <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
       <LoveLink go={go} hidden={!!recipient?.is_self} />
-      <button className="feature-link" onClick={() => go("plans")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="heart" /></span><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
-      {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="shield" /></span><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
+      <button className="feature-link" onClick={() => go("plans")}><Icon3D name="plan" /><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
+      {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><Icon3D name="lock" /><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
   );
@@ -1942,7 +1944,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
       <header className="emergency-title">
         <button onClick={() => go("family")} aria-label={t("common.goBack")}><Icon name="back" /></button>
         <div><h1 style={{ margin: 0, font: "inherit", fontWeight: 700, fontSize: 17, letterSpacing: ".6px" }}>{e("title")}</h1><small>{e("subtitle")}</small></div>
-        <Icon name="heart" />
+        <Icon3D name="heart" size={32} eager />
       </header>
       <section className="emergency-id">
         <div className="emergency-head"><span className="initials-avatar large" aria-hidden="true">{([...recipient.name][0] ?? "?").toUpperCase()}</span><div><h2>{recipient.name}</h2><p>{ageCity || notAdded}</p></div><span>{recipient.blood_group ?? "?"}</span></div>

@@ -3,6 +3,7 @@ import { useTranslations } from "use-intl";
 import { Icon, useDialog } from "../App";
 import { dismissInstallHelp, isStandalone, promptInstall, useInstallState, type InstallPlatform } from "../lib/install";
 import "./install.css";
+import { Icon3D } from "./Icon3D";
 
 const Steps = ({ platform }: { platform: InstallPlatform }) => {
   const t = useTranslations("install");
@@ -63,7 +64,7 @@ export function InstallLink() {
   return (
     <>
       <button className="feature-link" onClick={() => setOpen(true)}>
-        <span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="phone" /></span>
+        <Icon3D name="install" />
         <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
         <Icon name="chevron" />
       </button>

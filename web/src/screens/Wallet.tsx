@@ -9,6 +9,7 @@ import {
 } from "../lib/wallet";
 import { ConfirmSheet } from "./Invites";
 import "./wallet.css";
+import { Icon3D } from "./Icon3D";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -196,7 +197,7 @@ export function WalletScreen({ recipient, onOpen, onUpgrade }: { recipient: Reci
 
   return (
     <main className="scroll-page wallet-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle", { call })} />
+      <AppHeader title={t("title")} subtitle={t("subtitle", { call })} action={<Icon3D name="page" size={40} eager className="header-3d" />} />
       {usage && usage.max !== null && usage.used >= usage.max ? (
         <section className="wallet-full" role="status">
           <strong>{usage.used > usage.max ? t("overTitle") : t("fullTitle")}</strong>
@@ -225,7 +226,7 @@ export function WalletScreen({ recipient, onOpen, onUpgrade }: { recipient: Reci
 
       {error && <p role="alert" className="form-error">{t("loadFailed")} <button className="inline-link" onClick={() => void refresh()}>{t("retry")}</button></p>}
       {docs === null && !error && <div className="skeleton card" aria-busy="true" />}
-      {docs !== null && docs.length === 0 && <div className="empty-note"><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call })}</p></div>}
+      {docs !== null && docs.length === 0 && <div className="empty-note"><Icon3D name="camera" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call })}</p></div>}
       {docs !== null && docs.length > 0 && shown.length === 0 && <p className="note-quiet">{t("noMatch")}</p>}
       <section className="reports-list">
         {shown.map((d) => (

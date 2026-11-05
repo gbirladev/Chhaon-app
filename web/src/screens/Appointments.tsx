@@ -8,6 +8,7 @@ import { formatClock, formatDate, type Language } from "../lib/format";
 import type { Recipient } from "../lib/api";
 import { isPregnancy } from "../lib/pregnancy";
 import { UsualChecks, type CheckPrefill } from "./Pregnancy";
+import { Icon3D } from "./Icon3D";
 
 const when = (iso: string, tz: string, language: Language) => {
   const day = formatDate(new Date(iso), language, { weekday: "short", day: "numeric", month: "short", timeZone: tz });
@@ -30,7 +31,7 @@ export function NextAppointment({ recipient, go }: { recipient: Recipient; go: (
   if (next === undefined) return null;
   return (
     <button className={`next-visit${next ? "" : " empty"}`} onClick={go}>
-      <span className="next-visit-icon" aria-hidden="true"><Icon name="calendar" size={18} /></span>
+      <Icon3D name="calendar" size={28} />
       <span className="next-visit-text">
         <strong>{next ? t("with", { doctor: doctorName(next.doctor) }) : t("addFirst")}</strong>
         {next && <em>{when(next.at, tz, language)}</em>}
@@ -158,10 +159,10 @@ export function AppointmentsScreen({ go, recipient }: { go: (screen: "today") =>
   );
   return (
     <main className="scroll-page">
-      <AppHeader title={t("title")} subtitle={t("subtitle", { call: parentCall(recipient, language) })} back={() => go("today")} />
+      <AppHeader title={t("title")} subtitle={t("subtitle", { call: parentCall(recipient, language) })} back={() => go("today")} action={<Icon3D name="calendar" size={40} eager className="header-3d" />} />
       {error && <p role="alert" className="form-error">{t("loadFailed")}</p>}
       {list === null && !error && <div className="skeleton card" aria-busy="true" />}
-      {list !== null && upcoming.length === 0 && <div className="empty-note"><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call: parentCall(recipient, language) })}</p></div>}
+      {list !== null && upcoming.length === 0 && <div className="empty-note"><Icon3D name="calendar" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call: parentCall(recipient, language) })}</p></div>}
       {upcoming.length > 0 && <section className="appt-list" aria-label={t("upcoming")}>{upcoming.map((a) => card(a, false))}</section>}
       {past.length > 0 && (
         <>

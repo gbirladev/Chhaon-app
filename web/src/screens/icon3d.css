@@ -1,0 +1,27 @@
+/* 3D picture icons (Icon3D.tsx). Width/height come from the attributes, so there is no layout shift while loading. */
+.icon-3d { flex: 0 0 auto; display: inline-block; object-fit: contain; vertical-align: middle; user-select: none; -webkit-user-drag: none; }
+/* Dark mode: a faint light rim so the darker parts of an icon do not sink into a dark card. */
+:root[data-theme="dark"] .icon-3d:not(.icon-3d-flat) { filter: drop-shadow(0 0 1px rgb(255 255 255 / .35)); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) .icon-3d:not(.icon-3d-flat) { filter: drop-shadow(0 0 1px rgb(255 255 255 / .35)); }
+}
+/* The flat fallback when an image fails: a soft theme-coloured tile like the old icons. */
+.icon-3d-flat { display: inline-grid; place-items: center; border-radius: 30%; background: var(--s-e3f3ef); color: var(--primary-text); }
+
+/* Family page feature links: the 3D icon replaces the coloured tile. */
+.feature-link > .icon-3d { width: 38px; height: 38px; }
+
+/* The slim Today cards: one small 3D icon at the start, the card keeps its height. */
+.checkin-line > .icon-3d, .next-visit > .icon-3d { width: 28px; height: 28px; }
+/* Check-in: the sun with the small state mark (✓ / …) as a badge on its corner. */
+.checkin-sun { position: relative; flex: 0 0 auto; display: inline-flex; }
+.checkin-line .checkin-sun .okay-icon { position: absolute; right: -5px; bottom: -4px; width: 16px; height: 16px; font-size: 10px; box-shadow: 0 0 0 2px var(--surface); }
+
+/* Screen headers (doctor visits, reports, emergency card): a picture at the right end. */
+.page-header > .header-3d { width: 40px; height: 40px; align-self: center; }
+.emergency-title > .icon-3d { width: 32px; height: 32px; }
+
+/* Empty states. */
+.empty-3d { display: block; margin: 0 auto 10px; }
+.empty-note > .icon-3d.empty-3d, .empty-state > .icon-3d.empty-3d { width: 64px; height: 64px; }
+.camera-disc.with-3d { box-shadow: none; background: transparent; }

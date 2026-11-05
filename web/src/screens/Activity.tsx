@@ -4,6 +4,7 @@ import { AppHeader, Icon, useToast } from "../App";
 import { formatClock, formatDate, type Language } from "../lib/format";
 import { groupByDay, helperLabel, loadFeed, setHeart, type FeedItem, type FeedPerson } from "../lib/activity";
 import "./activity.css";
+import { Icon3D } from "./Icon3D";
 
 /**
  * Family activity feed (feature 4): a read-only list of what happened for everyone the caregiver cares for, last 7 days, newest
@@ -201,7 +202,7 @@ export function ActivityLink({ go }: { go: (screen: "activity") => void }) {
   const t = useTranslations("activity");
   return (
     <button className="feature-link" onClick={() => go("activity")}>
-      <span style={{ background: "var(--s-e3f3ef)", color: "var(--primary-text)" }}><Icon name="users" /></span>
+      <Icon3D name="people" />
       <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
       <Icon name="chevron" />
     </button>
