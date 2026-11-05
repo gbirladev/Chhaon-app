@@ -8,6 +8,12 @@
 .ph-week b { font-size: 44px; line-height: 1; font-weight: 700; color: var(--primary-text); }
 .ph-week span { font-size: .9375rem; color: var(--text-label); overflow-wrap: anywhere; }
 .ph-week.only { font-size: 1rem; font-weight: 700; }
+/* Baby's approximate size (babySize.ts): one 3D icon beside one calm line, the "approximate" note under it. */
+.ph-size { display: flex; align-items: center; gap: 10px; margin: 0; }
+.ph-size-icon { flex: 0 0 auto; width: 52px; height: 52px; object-fit: contain; }
+.ph-size-emoji { flex: 0 0 auto; width: 52px; text-align: center; font-size: 34px; line-height: 52px; }
+.ph-size-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: .9375rem; line-height: 1.35; color: var(--text); overflow-wrap: anywhere; }
+.ph-size-text small { font-size: max(.75rem, 12px); color: var(--text-muted); }
 .ph-bar { display: block; height: 10px; border-radius: 999px; background: var(--s-f4f8f7); overflow: hidden; }
 .ph-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary-text); }
 .ph-due { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; margin: 0; font-size: max(.8125rem, 12px); color: var(--text-muted); font-weight: 600; }

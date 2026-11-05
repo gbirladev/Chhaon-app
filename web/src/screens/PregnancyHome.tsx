@@ -7,6 +7,7 @@ import { doctorName, loadAppointments, type Appointment } from "../lib/appointme
 import { formatClock, formatDate, localDate, localizeDose, type Language } from "../lib/format";
 import { addDays, daysBetween, dateOfWeek, pregnancyStatus, suggestDate, todayIn } from "../lib/pregnancy";
 import { USUAL_CHECKS, type UsualCheck } from "../lib/pregnancyChecks";
+import { babySizeFor, babySizeIcon, roundCm, roundWeight, type BabySize } from "../lib/babySize";
 import { loadDocuments } from "../lib/wallet";
 import { AppointmentSheet } from "./Appointments";
 import type { CheckPrefill } from "./Pregnancy";
@@ -15,7 +16,8 @@ import type { CheckPrefill } from "./Pregnancy";
  * FEATURE 7, "Pregnancy timeline home": what Today shows when the selected person is a pregnancy (care_type = pregnant).
  * The week hero, today's medicines (supplements) as a checklist, and one timeline that merges the common checks
  * (pregnancyChecks.ts, NEEDS GYNAECOLOGIST REVIEW) with her real doctor visits, ending at the due date.
- * Nothing about the sex of the baby, no diet / baby-size content (docs/use-cases.md). Older and child people never see this.
+ * Nothing about the sex of the baby, no diet content (docs/use-cases.md). One calm "about the size of a mango" line on the week
+ * card (babySize.ts, NEEDS GYNAECOLOGIST REVIEW). Older and child people never see this.
  */
 type Go = (screen: "profile" | "medicines" | "addMedicine" | "appointments" | "reports") => void;
 
@@ -24,6 +26,26 @@ const showDay = (ymd: string, language: Language, weekday = false) =>
   formatDate(new Date(`${ymd}T12:00:00Z`), language, { ...(weekday ? { weekday: "short" } : {}), day: "numeric", month: "short", ...(weekday ? {} : { year: "numeric" }), timeZone: "UTC" });
 
 const checkName = (check: UsualCheck, language: Language) => (language === "hi" ? check.name.hi : check.name.en);
+
+/** "Baby is about the size of a mango · about 14 cm, 190 g" with the item's 3D icon (the emoji if the image fails). */
+function BabySizeLine({ size, language }: { size: BabySize; language: Language }) {
+  const t = useTranslations();
+  const [failed, setFailed] = useState<string | null>(null);
+  const item = language === "hi" ? size.item.hi : size.item.en;
+  const w = roundWeight(size.g);
+  const weight = w.unit === "g" ? t("pregnancyHome.babyGrams", { value: w.value }) : t("pregnancyHome.babyKg", { value: w.value });
+  return (
+    <p className="ph-size">
+      {failed === size.icon
+        ? <span className="ph-size-emoji" aria-hidden="true">{size.emoji}</span>
+        : <img key={size.icon} className="ph-size-icon" src={babySizeIcon(size)} alt={item} width={52} height={52} loading="lazy" decoding="async" onError={() => setFailed(size.icon)} />}
+      <span className="ph-size-text">
+        {t("pregnancyHome.babySize", { item, cm: roundCm(size.cm), weight })}
+        <small>{t("pregnancyHome.babySizeNote")}</small>
+      </span>
+    </p>
+  );
+}
 
 /** A visit "is" a common check when its notes (or doctor line) carry the check's name, which is what "+ Add" writes. */
 const matchCheck = (a: Appointment) => {
@@ -54,6 +76,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
   const today = todayIn(tz);
   const status = due ? pregnancyStatus(due, today) : null;
   const week = status?.week ?? null;
+  const size = babySizeFor(week);   // weeks 8-40 only (babySize.ts, NEEDS GYNAECOLOGIST REVIEW)
   const [visits, setVisits] = useState<{ id: string; list: Appointment[] } | null>(null);
   const [visitsError, setVisitsError] = useState(false);
   const [reportDays, setReportDays] = useState<Set<string>>(new Set());
@@ -170,6 +193,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
           ) : (
             <p className="ph-week only">{t("pregnancy.dueOnly", { date: showDay(due, language) })}</p>
           )}
+          {size && <BabySizeLine size={size} language={language} />}
           {week !== null && (
             <span className="ph-bar" role="progressbar" aria-valuemin={0} aria-valuemax={40} aria-valuenow={Math.min(40, week)} aria-label={t("pregnancyHome.progress", { week })}>
               <i style={{ width: `${Math.min(100, (week / 40) * 100)}%` }} />

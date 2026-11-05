@@ -61,6 +61,11 @@ The existing "Me" profile (`is_self`) stays as it is.
 - **NEEDS GYNAECOLOGIST REVIEW before families are told about it:** the "Usual checks" list (names and week windows) and the
   supplement names, both in ONE file: `web/src/lib/pregnancyChecks.ts`. Shown as "Common checks — confirm with your doctor"; nothing is
   added automatically ("+ Add" only opens a new appointment with the name in the notes and a suggested date for the family to edit).
+- **Baby's approximate size (added by the owner, branch `r5-baby-size`), ALSO NEEDS GYNAECOLOGIST REVIEW before release:** one line on
+  the week card, e.g. "Baby is about the size of a corn cob (bhutta) · about 30 cm, 600 g", with a small 3D icon (Microsoft Fluent
+  Emoji, MIT) and "Approximate — every baby grows differently." Weeks 8-40 only; no line without a due date. All numbers and the
+  comparisons are in ONE file: `web/src/lib/babySize.ts` (sources in its header). Size only: nothing about the sex of the baby,
+  no "normal / small / big", no advice.
 - Care type is chosen on the add/edit person form. **Child** is shown as "coming soon" (greyed, not selectable) so families see it is
   planned, and the backend refuses `child` until step 3. The caregiver's own profile ("Me") has no choice and stays older.
 - **Due date**: optional for a pregnancy (the week card waits for it). Accepted from about 2 months past to about 10 months ahead

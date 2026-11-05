@@ -619,3 +619,20 @@ reads naturally for a dose given by a helper as well as one the person took.
 | doseGiven.undoTooLate | वापस सिर्फ़ 10 मिनट तक ले सकते हैं। | Undo is only possible for 10 minutes. | |
 | doseGiven.undoNotPossible | इसे अब वापस नहीं लिया जा सकता। | This can no longer be undone. | |
 | doseGiven.failed | सेव नहीं हुआ। इंटरनेट देखकर फिर से कोशिश करें। | Could not save. Please check your internet and try again. | |
+
+## Part R5: baby's approximate size on the pregnancy week card (added 2026-11-05, branch `r5-baby-size`)
+
+App only (`pregnancyHome.babySize*` in hi.json, item names in `web/src/lib/babySize.ts`); nothing is sent on WhatsApp. The item
+names are written in the oblique form because they sit before "जितना" ("एक संतरे जितना", "एक भुट्टे जितना"); the same text is
+the image's alt text. Please check they read naturally, and that "अंदाज़न" is the right calm word for "approximate".
+
+| Key | Hindi | English | OK? |
+|---|---|---|---|
+| pregnancyHome.babySize | बच्चा लगभग {item} जितना है · लगभग {cm} सेमी, {weight} | Baby is about the size of {item} · about {cm} cm, {weight} | |
+| pregnancyHome.babyGrams / babyKg | {value} ग्राम / {value} किलो | {value} g / {value} kg | |
+| pregnancyHome.babySizeNote | अंदाज़न — हर बच्चा अलग तरह से बढ़ता है। | Approximate — every baby grows differently. | |
+| babySize.ts weeks 8-13 | एक राजमा के दाने, एक अंगूर, एक स्ट्रॉबेरी, लहसुन की एक गाँठ, एक नींबू, एक प्याज़ | a rajma bean, a grape, a strawberry, a garlic bulb, a lemon, an onion | |
+| babySize.ts weeks 14-19 | एक सेब, एक संतरे, एक नाशपाती, एक बड़े आलू, एक आम, एक खीरे | an apple, an orange, a pear, a big potato, a mango, a cucumber | |
+| babySize.ts weeks 20-25 | एक लंबी गाजर, एक लंबी ककड़ी, एक लंबे बैंगन, पालक की एक गड्डी, एक भुट्टे, एक ब्रोकली | a long carrot, a long kakdi, a long brinjal, a bunch of spinach, a corn cob (bhutta), a broccoli | |
+| babySize.ts weeks 26-31 | एक बड़े गोल बैंगन, एक पत्तागोभी, एक नारियल, एक अनानास, एक छोटे ख़रबूज़े, एक बड़े अनानास | a big round brinjal, a cabbage, a coconut, a pineapple, a small melon (kharbuja), a big pineapple | |
+| babySize.ts weeks 32-40 | एक ख़रबूज़े, एक बड़े ख़रबूज़े, एक छोटे तरबूज़, एक तरबूज़ | a melon (kharbuja), a big melon, a small watermelon, a watermelon | |

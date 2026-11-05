@@ -1324,7 +1324,11 @@
     "done": "Done",
     "reportInReports": "Report in Reports",
     "delivery": "Delivery",
-    "footer": "Common checks — confirm with your doctor. Not medical advice."
+    "footer": "Common checks — confirm with your doctor. Not medical advice.",
+    "babySize": "Baby is about the size of {item} · about {cm} cm, {weight}",
+    "babyGrams": "{value} g",
+    "babyKg": "{value} kg",
+    "babySizeNote": "Approximate — every baby grows differently."
   },
   "appearance": {
     "colourLabel": "Colour",
