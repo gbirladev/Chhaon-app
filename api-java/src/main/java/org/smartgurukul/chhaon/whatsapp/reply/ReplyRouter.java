@@ -19,7 +19,8 @@ import java.util.UUID;
  *   <li>The message QUOTES one of our messages (swipe-reply): its id equals the stored whatsapp_message_id of a dose
  *       reminder or a daily check-in, so it answers exactly that one.</li>
  *   <li>Otherwise the most recent dose reminder still awaiting a reply ({@value #SENT_DOSE_HOURS} h at most).</li>
- *   <li>Otherwise today's daily check-in still awaiting a reply.</li>
+ *   <li>Otherwise today's daily check-in still awaiting a reply; but a plain YES goes to a dose marked missed in the
+ *       last {@value #LATE_DOSE_HOURS} h if that reminder was sent AFTER the check-in (it answers what we sent last).</li>
  *   <li>Otherwise a dose that was marked missed in the last {@value #LATE_DOSE_HOURS} h, confirmed late ("taken_late").</li>
  *   <li>Otherwise unknown: one short friendly help text, at most once every few hours per number.</li>
  * </ol>
@@ -127,11 +128,20 @@ public class ReplyRouter {
         if (intent == Intent.YES || intent == Intent.ACK || intent == Intent.CHECKIN_OK
                 || intent == Intent.NO || intent == Intent.CHECKIN_CALL_ME) {
             Map<String, Object> checkin = firstOrNull(jdbc.queryForList(
-                    "select c.id from checkins c join care_recipients r on r.id = c.recipient_id " +
+                    "select c.id, c.sent_at from checkins c join care_recipients r on r.id = c.recipient_id " +
                             "where c.status in ('sent', 'missed') and c.sent_at > now() - make_interval(hours => ?) " +
                             "and " + ACTIVE_OF_PHONE + " order by (c.status = 'sent') desc, c.sent_at desc limit 1",
                     CHECKIN_HOURS, m.phone()));
             if (checkin != null) {
+                // A plain "1" fits both the check-in and a dose that was just marked missed: it answers the message we sent
+                // LAST. (Otherwise a late "1" to an afternoon reminder was read as the morning check-in and the dose stayed
+                // missed: "0 of 1 taken".)
+                if (intent == Intent.YES) {
+                    Map<String, Object> missed = missedDose(m.phone());
+                    if (missed != null && ((Timestamp) missed.get("sent_at")).after((Timestamp) checkin.get("sent_at"))) {
+                        return new Dose((UUID) missed.get("id"), false, "late");
+                    }
+                }
                 boolean call = intent == Intent.NO || intent == Intent.CHECKIN_CALL_ME;
                 return new Checkin((UUID) checkin.get("id"), call, "latest");
             }
@@ -139,16 +149,21 @@ public class ReplyRouter {
 
         // (5b) a dose that was already marked missed a little while ago: a late "taken"
         if (intent == Intent.YES || intent == Intent.TAKEN || intent == Intent.TAKEN_ALL) {
-            Map<String, Object> missed = firstOrNull(jdbc.queryForList(
-                    "select de.id from dose_events de " + DOSE_JOIN +
-                            "where de.status = 'missed' and de.scheduled_at > now() - make_interval(hours => ?) " +
-                            "and " + ACTIVE_OF_PHONE + " order by de.scheduled_at desc limit 1",
-                    LATE_DOSE_HOURS, m.phone()));
+            Map<String, Object> missed = missedDose(m.phone());
             if (missed != null) return new Dose((UUID) missed.get("id"), intent == Intent.TAKEN_ALL, "late");
         }
 
         // (6) we do not know what this answers
         return new Help(language, false);
+    }
+
+    /** The latest dose of this number marked missed in the last {@value #LATE_DOSE_HOURS} h, with when it was sent. */
+    private Map<String, Object> missedDose(String phone) {
+        return firstOrNull(jdbc.queryForList(
+                "select de.id, coalesce(de.sent_at, de.scheduled_at) sent_at from dose_events de " + DOSE_JOIN +
+                        "where de.status = 'missed' and de.scheduled_at > now() - make_interval(hours => ?) " +
+                        "and " + ACTIVE_OF_PHONE + " order by de.scheduled_at desc limit 1",
+                LATE_DOSE_HOURS, phone));
     }
 
     // ---------------------------------------------------------------- quote
