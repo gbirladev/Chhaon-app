@@ -68,6 +68,19 @@ public class MedicineController {
         return service.setFlags(user.id(), id, request);
     }
 
+    /** "Stopped taking it": hidden, no reminders, history kept. Idempotent. */
+    @PostMapping("/api/v1/medicines/{id}/archive")
+    public MedicineResponse archive(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
+        return service.archive(user.id(), id);
+    }
+
+    /** An archived medicine back on the list, active again. 400 when the plan's limit is reached. Idempotent. */
+    @PostMapping("/api/v1/medicines/{id}/restore")
+    public MedicineResponse restore(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
+        return service.restore(user.id(), id);
+    }
+
+    /** For a medicine added by mistake only: removes its dose history too. */
     @DeleteMapping("/api/v1/medicines/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {

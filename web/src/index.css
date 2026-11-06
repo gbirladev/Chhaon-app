@@ -139,6 +139,14 @@ button { cursor: pointer; }
 .med-copy h3 { margin: 0; font-size: 0.9375rem; }.med-copy p { margin: 3px 0 7px; color: var(--text-muted); font-size: max(0.625rem, 12px); }.med-copy small { color: var(--t-1d6b4b); font-weight: 600; font-size: max(0.5625rem, 12px); }
 .med-copy small.low-stock { color: var(--t-a8481f); }
 .med-card > button { border: 0; background: transparent; color: var(--text-muted); padding: 8px 0 8px 8px; }
+/* Archived medicines ("stopped taking it"): a collapsed section under the list, each with a Restore button. */
+.archived-medicines { margin-top: 22px; padding-bottom: 72px; }
+.archived-toggle { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; border: 1px solid var(--b-cfe0dc); border-radius: 14px; background: var(--surface); color: var(--primary-text); font: inherit; font-weight: 700; cursor: pointer; }
+.archived-chevron { display: inline-flex; transform: rotate(90deg); transition: transform .2s; }
+.archived-chevron.open { transform: rotate(-90deg); }
+.archived-medicines > .form-note { margin: 10px 2px; }
+.archived-card .med-copy { margin-left: 2px; min-height: 44px; cursor: pointer; opacity: .75; }
+.med-card > .restore-button { flex: 0 0 auto; min-height: 44px; min-width: 88px; padding: 0 14px; border: 1px solid var(--b-cfe0dc); border-radius: 12px; background: var(--surface); color: var(--primary-text); font-weight: 700; }
 .fab { position: absolute; bottom: 100px; right: 20px; height: 48px; border: 0; border-radius: 24px; padding: 0 17px; background: var(--primary); color: var(--on-fill); box-shadow: 0 7px 22px var(--sh-247c72-a3); display: flex; align-items: center; gap: 7px; font-size: max(0.75rem, 12px); font-weight: 700; }
 
 /* Reports */

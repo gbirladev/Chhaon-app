@@ -40,6 +40,10 @@ public class Medicine {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /** When the family archived it ("stopped taking it", migration 0056); null = not archived. Archived = always inactive. */
+    @Column(name = "archived_at")
+    private OffsetDateTime archivedAt;
+
     /** one of after_food | before_food | with_food, or null. */
     @Column(name = "instructions")
     private String instructions;

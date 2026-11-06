@@ -415,7 +415,12 @@
     "summaryPausedHint": "Resume one to restart reminders.",
     "paused": "Paused",
     "pausedByPlan": "Paused: plan limit",
-    "critical": "Critical"
+    "critical": "Critical",
+    "archived": "Stopped medicines ({count})",
+    "archivedHint": "No reminders for these. Their history is kept for the doctor summary.",
+    "stoppedOn": "Stopped on {date}",
+    "restore": "Taking again",
+    "restoreName": "Taking {name} again"
   },
   "add": {
     "title": "Add medicine",
@@ -874,14 +879,24 @@
     "resume": "Resume reminders",
     "pausedNote": "Paused. No reminders are sent for this medicine.",
     "delete": "Delete medicine",
-    "confirmTitle": "Delete {name}?",
-    "confirmBody": "Its reminders will stop and its history will be removed. This cannot be undone.",
-    "confirmYes": "Yes, delete",
+    "confirmTitle": "Delete {name} for good?",
+    "confirmBody": "Only if it was added by mistake. Its whole history is deleted too, so the doctor summary will not show it. If the medicine was stopped, choose \"Stopped taking it\" instead. This cannot be undone.",
+    "confirmYes": "Yes, delete for good",
     "cancel": "Cancel",
     "errSave": "Could not save. Please try again.",
     "lowAlertSent": "Running low. We've told your family.",
     "outAlertSent": "Out of stock. We've told your family.",
-    "edit": "Edit details"
+    "edit": "Edit details",
+    "archive": "Stopped taking it",
+    "archiveHint": "Reminders stop. Its history stays for the doctor.",
+    "archiveTitle": "Stopped taking {name}?",
+    "archiveBody": "Reminders stop and it moves to \"Stopped medicines\" at the bottom of the list. What was taken so far stays in the history. You can bring it back any time.",
+    "archiveYes": "Yes, stopped",
+    "archived": "{name} moved to stopped medicines",
+    "archivedNote": "Stopped on {date}. No reminders are sent. Its history is kept.",
+    "restore": "Taking it again",
+    "restored": "{name} is back on the list. Reminders start again.",
+    "deleteMistake": "Added by mistake? Delete it"
   },
   "parents": {
     "title": "Whose care are you looking at?",
@@ -1719,6 +1734,7 @@
     },
     "medicineAdded": "New medicine for {call}: {medicine}",
     "medicinePaused": "{call}'s {medicine} was paused",
+    "medicineStopped": "{call} stopped taking {medicine}",
     "consentGiven": {
       "person": "{call} agreed to get WhatsApp reminders",
       "by": "{by} agreed to get {call}'s WhatsApp reminders",

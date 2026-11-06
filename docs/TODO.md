@@ -32,6 +32,29 @@ Feature freeze after polls + admin Monitor; no new screens, themes or website wo
 - [ ] Admin Monitor, later additions (after a few days of use): (canary card done, see above); poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
       (amber at 70%); which migrations have run on Sydney (from the migration tracking table).
 
+## Archive a medicine instead of deleting it (built 2026-11-06, migration 0056)
+
+"Stopped taking it" is now the normal way to take a medicine off the list; delete stays only for "added by mistake".
+- Archived = `medicines.archived_at` set AND `active = false` (check constraint `medicines_archived_not_active`), so every
+  place that already skips paused medicines (dose generation, plan pauses, low-stock trigger, emergency card, weekly
+  summary, Monitor) skips archived ones too. Pause (inactive, not archived) is unchanged.
+- Archiving deletes the medicine's waiting (`pending`) doses at once (trigger); sent / taken / missed doses stay, so the
+  doctor summary's last 30 days and the activity feed keep the history. Queued refill / out-of-stock WhatsApp alerts for it
+  are skipped. The activity feed shows "{call} stopped taking {medicine}" (`medicine_stopped`).
+- Plan limit (`limit_medicines`): archived medicines do not count; a parent can hold 200 medicines in all (ceiling).
+  Restoring checks the limit again (trigger `medicines_restore_limit`; the app shows the usual "plan limit" message).
+- API: `POST /api/v1/medicines/{id}/archive` and `/restore` (idempotent); `archivedAt` in the medicine JSON;
+  `PATCH active=true` on an archived medicine is a 409 (restore it instead).
+- Web: detail screen has "Stopped taking it" (with a confirm sheet) and a small "Added by mistake? Delete it" with a
+  stronger warning; the Medicines list has a collapsed "Stopped medicines (n)" section with a "Taking again" button.
+- [ ] **Deploy order:** (1) paste `supabase/migrations/20261106000056_medicine_archive.sql` on Sydney (safe twice),
+      (2) push the backend (it maps `archived_at`; `ddl-auto=validate` fails to start without the column), (3) web.
+      Between (2) and (3) an old web app shows a blank line for a `medicine_stopped` feed item; harmless.
+- [ ] Hindi review of the new texts ("दवा बंद कर दी", "वापस चालू करें", "बंद की गई दवाइयाँ").
+- [ ] Open: a dose already SENT when a medicine is archived can still turn "missed" and alert the family once. Left as is
+      (the parent may still answer it); revisit if families find it confusing.
+- [ ] Open: the medicine photo of an archived medicine is kept (needed if it is restored); delete still removes it.
+
 ## WhatsApp replies lost after the number change (found and fixed 2026-11-05)
 
 The new number's gateway session had no webhook, so from about 08:00 to 20:00 IST no parent reply reached the backend
@@ -115,7 +138,7 @@ Open items from the second backend review
 - [ ] An exception between claiming a dose and the send `try` (template building) would leave it `sent` with nothing sent. No reachable trigger today; wrap it when touching that code.
 
 Found by the journey and verification agents (round 3), still open
-- [ ] **Archive instead of delete for medicines:** deleting a medicine also deletes its dose history (cascade). For health records, prefer "archive" (hidden, history kept) and keep delete for mistakes.
+- [x] **Archive instead of delete for medicines:** built 2026-11-06 (migration 0056), see "Archive a medicine instead of deleting it" above.
 - [ ] **Offline app shell** and the ~8 s "Loading…" before the retry notice when the backend is down.
 - [ ] **Reload on `#/profile`** goes to Today (by design); a parent deleted mid-edit drops the user on a blank add-parent form without a message.
 - [ ] **WhatsApp preview** shows the parent's first real medicine; a fuller preview (real reminder + check-in templates exactly as approved by Meta) once templates are approved.
