@@ -7,8 +7,8 @@ import { doctorName, loadAppointments, type Appointment } from "../lib/appointme
 import { formatClock, formatDate, localDate, localizeDose, type Language } from "../lib/format";
 import { addDays, daysBetween, dateOfWeek, pregnancyStatus, suggestDate, todayIn } from "../lib/pregnancy";
 import { USUAL_CHECKS, type UsualCheck } from "../lib/pregnancyChecks";
-import { babySizeFor, babySizeIcon, roundCm, roundWeight, type BabySize } from "../lib/babySize";
 import { loadDocuments } from "../lib/wallet";
+import { WeekCard, WeekStyleSheet, useWeekStyle, type WeekCardProps } from "./WeekStyles";
 import { AppointmentSheet } from "./Appointments";
 import type { CheckPrefill } from "./Pregnancy";
 
@@ -26,26 +26,6 @@ const showDay = (ymd: string, language: Language, weekday = false) =>
   formatDate(new Date(`${ymd}T12:00:00Z`), language, { ...(weekday ? { weekday: "short" } : {}), day: "numeric", month: "short", ...(weekday ? {} : { year: "numeric" }), timeZone: "UTC" });
 
 const checkName = (check: UsualCheck, language: Language) => (language === "hi" ? check.name.hi : check.name.en);
-
-/** "Baby is about the size of a mango · about 14 cm, 190 g" with the item's 3D icon (the emoji if the image fails). */
-function BabySizeLine({ size, language }: { size: BabySize; language: Language }) {
-  const t = useTranslations();
-  const [failed, setFailed] = useState<string | null>(null);
-  const item = language === "hi" ? size.item.hi : size.item.en;
-  const w = roundWeight(size.g);
-  const weight = w.unit === "g" ? t("pregnancyHome.babyGrams", { value: w.value }) : t("pregnancyHome.babyKg", { value: w.value });
-  return (
-    <p className="ph-size">
-      {failed === size.icon
-        ? <span className="ph-size-emoji" aria-hidden="true">{size.emoji}</span>
-        : <img key={size.icon} className="ph-size-icon" src={babySizeIcon(size)} alt={item} width={52} height={52} loading="lazy" decoding="async" onError={() => setFailed(size.icon)} />}
-      <span className="ph-size-text">
-        {t("pregnancyHome.babySize", { item, cm: roundCm(size.cm), weight })}
-        <small>{t("pregnancyHome.babySizeNote")}</small>
-      </span>
-    </p>
-  );
-}
 
 /** A visit "is" a common check when its notes (or doctor line) carry the check's name, which is what "+ Add" writes. */
 const matchCheck = (a: Appointment) => {
@@ -76,12 +56,18 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
   const today = todayIn(tz);
   const status = due ? pregnancyStatus(due, today) : null;
   const week = status?.week ?? null;
-  const size = babySizeFor(week);   // weeks 8-40 only (babySize.ts, NEEDS GYNAECOLOGIST REVIEW)
   const [visits, setVisits] = useState<{ id: string; list: Appointment[] } | null>(null);
   const [visitsError, setVisitsError] = useState(false);
   const [reportDays, setReportDays] = useState<Set<string>>(new Set());
   const [sheet, setSheet] = useState<CheckPrefill | null>(null);
   const [reload, setReload] = useState(0);
+  const [weekStyle, setWeekStyle] = useWeekStyle();
+  const [styleOpen, setStyleOpen] = useState(false);
+  const weekCard = (dueDate: string, st: NonNullable<typeof status>): WeekCardProps => ({
+    week: st.week, status: st, language, name: recipient.call_name ?? recipient.name,
+    dueText: st.week === null ? t("pregnancy.dueOnly", { date: showDay(dueDate, language) }) : t("pregnancyHome.dueOn", { date: showDay(dueDate, language) }),
+    daysText: st.daysToGo > 0 ? t("pregnancy.daysToGo", { count: st.daysToGo }) : st.daysToGo === 0 ? t("pregnancy.dueToday") : t("pregnancy.duePassed", { date: showDay(dueDate, language) }),
+  });
   // "Now" for past / upcoming, ticking every minute (Today itself refreshes the doses every 30 s).
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => { const id = window.setInterval(() => setNowMs(Date.now()), 60_000); return () => window.clearInterval(id); }, []);
@@ -187,23 +173,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
   return (
     <div className="pregnancy-home">
       {due && status ? (
-        <section className="ph-hero" aria-label={t("pregnancy.cardTitle")}>
-          {week !== null ? (
-            <p className="ph-week"><b>{week}</b><span>{t("pregnancyHome.weeksWord", { count: week })}{status.trimester ? ` · ${t(`pregnancy.trimester${status.trimester}`)}` : ""}</span></p>
-          ) : (
-            <p className="ph-week only">{t("pregnancy.dueOnly", { date: showDay(due, language) })}</p>
-          )}
-          {size && <BabySizeLine size={size} language={language} />}
-          {week !== null && (
-            <span className="ph-bar" role="progressbar" aria-valuemin={0} aria-valuemax={40} aria-valuenow={Math.min(40, week)} aria-label={t("pregnancyHome.progress", { week })}>
-              <i style={{ width: `${Math.min(100, (week / 40) * 100)}%` }} />
-            </span>
-          )}
-          <p className="ph-due">
-            <span>{status.daysToGo > 0 ? t("pregnancy.daysToGo", { count: status.daysToGo }) : status.daysToGo === 0 ? t("pregnancy.dueToday") : t("pregnancy.duePassed", { date: showDay(due, language) })}</span>
-            {status.daysToGo > 0 && <span>{t("pregnancyHome.dueOn", { date: showDay(due, language) })}</span>}
-          </p>
-        </section>
+        <WeekCard style={weekStyle} {...weekCard(due, status)} onStyle={() => setStyleOpen(true)} />
       ) : (
         <button type="button" className="ph-hero ph-nodue" onClick={() => go("profile")}>
           <span className="ph-nodue-icon" aria-hidden="true"><Icon name="calendar" size={22} /></span>
@@ -259,6 +229,7 @@ export function PregnancyHome({ recipient, language, doses, dosesError, medicine
 
       {alerts}
 
+      {styleOpen && due && status && <WeekStyleSheet current={weekStyle} card={weekCard(due, status)} onClose={() => setStyleOpen(false)} onSave={(next) => { setWeekStyle(next); setStyleOpen(false); }} />}
       {sheet && <AppointmentSheet recipient={recipient} existing={null} prefill={sheet} onClose={() => setSheet(null)} onSaved={() => { setSheet(null); setReload((n) => n + 1); }} />}
     </div>
   );

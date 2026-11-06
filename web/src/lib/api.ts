@@ -63,8 +63,8 @@ export const PRESET_TIMES = { Morning: "08:00", Afternoon: "13:00", Night: "20:0
 export type Preset = keyof typeof PRESET_TIMES;
 
 /**
- * Accepts the ways people really type a number: "98100 12345", "+91 98100 12345", "09810012345", "919810012345",
- * "0091 98100 12345", "+1 415 555 0123". Returns E.164, or null when it cannot be right (letters such as "ext 4",
+ * Accepts the ways people really type a number: "99999 00001", "+91 99999 00001", "09999900001", "919999900001",
+ * "0091 99999 00001", "+1 415 555 0123". Returns E.164, or null when it cannot be right (letters such as "ext 4",
  * a wrong length, or an Indian mobile that does not start with 6-9) so we never message a wrong number.
  */
 export function normalizePhone(input: string): string | null {

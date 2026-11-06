@@ -46,7 +46,7 @@ export function describeTimes(times: string[], t: T, language: string) {
 export function localizeDose(dose: string, t: T) {
   const match = /^([\d.]+)\s+(\w+?)s?$/.exec(dose.trim());
   const unit = match?.[2];
-  if (!match || !unit || !["mg", "mcg", "g", "ml", "tablet", "capsule", "drop", "unit", "puff", "tsp"].includes(unit)) return dose;
+  if (!match || !unit || !["mg", "mcg", "g", "ml", "tablet", "capsule", "sachet", "drop", "unit", "puff", "tsp"].includes(unit)) return dose;
   const key = unit === "drop" ? "drops" : unit === "unit" ? "units" : unit === "puff" ? "puffs" : unit;
   return `${match[1]} ${t(`units.${key}`, { count: Number(match[1]) })}`;
 }

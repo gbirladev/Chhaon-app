@@ -59,7 +59,7 @@ export default function PublicEmergency() {
   const dose = (d: string) => {
     const m = /^([\d.]+)\s+(\w+?)s?$/.exec(d.trim());
     const unit = m?.[2];
-    return m && unit && ["tablet", "capsule"].includes(unit) ? `${m[1]} ${units(unit as "tablet" | "capsule", { count: Number(m[1]) })}` : d;
+    return m && unit && ["tablet", "capsule", "sachet"].includes(unit) ? `${m[1]} ${units(unit as "tablet" | "capsule" | "sachet", { count: Number(m[1]) })}` : d;
   };
   const times = (list: string[]) => list.map((x) => { const p = PRESETS[x]; return p ? WORDS[lang][p] : clock(x, lang); }).join(WORDS[lang].and);
 

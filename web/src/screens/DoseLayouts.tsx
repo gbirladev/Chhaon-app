@@ -6,6 +6,7 @@ import { ClockText, ClockTime, DoseRoute, type RouteStop } from "./DoseRoute";
 import { joinClock } from "../lib/format";
 import "./layouts.css";
 import "./todayTidy.css";
+import "./doseTheme.css";
 
 /** Preview of several ways to show Today's medicines, so one can be chosen. Same data for all of them. */
 export type DoseLayout = "route" | "curvy" | "timeline" | "arc" | "focus" | "ring" | "pillbox" | "ladder" | "clock" | "chat" | "simple";
@@ -297,7 +298,12 @@ function SimpleList({ stops }: Props) {
   );
 }
 
+/** Every style sits in .dose-theme so its colours follow the chosen theme (doseTheme.css); display: contents adds no box. */
 export function DoseLayouts({ layout, ...props }: Props & { layout: DoseLayout }) {
+  return <div className="dose-theme" style={{ display: "contents" }}><DoseLayoutBody layout={layout} {...props} /></div>;
+}
+
+function DoseLayoutBody({ layout, ...props }: Props & { layout: DoseLayout }) {
   if (layout === "simple") return <SimpleList {...props} />;
   if (layout === "route") return <DoseRoute {...props} />;
   if (layout === "curvy") return <DoseRoute {...props} curvy />;

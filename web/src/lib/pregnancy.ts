@@ -55,6 +55,10 @@ export function pregnancyStatus(dueDate: string, today: string): PregnancyStatus
 /** The date on which the pregnancy reaches the start of `week`, for a due date. */
 export const dateOfWeek = (dueDate: string, week: number) => addDays(dueDate, week * 7 - TERM_DAYS);
 
+/** Due date from the first day of the last period (LMP + 280 days, Naegele's rule), and back. */
+export const dueFromLmp = (lmp: string) => addDays(lmp, TERM_DAYS);
+export const lmpFromDue = (dueDate: string) => addDays(dueDate, -TERM_DAYS);
+
 /** True when a typed due date is inside the window the backend accepts. */
 export function dueDateOk(dueDate: string, today: string): boolean {
   const days = daysBetween(today, dueDate);

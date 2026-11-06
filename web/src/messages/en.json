@@ -83,6 +83,7 @@
     "ml": "ml",
     "tablet": "{count, plural, one {tablet} other {tablets}}",
     "capsule": "{count, plural, one {capsule} other {capsules}}",
+    "sachet": "{count, plural, one {sachet} other {sachets}}",
     "drops": "drops",
     "units": "units",
     "puffs": "puffs",
@@ -155,7 +156,7 @@
     "save": "Save & continue",
     "saveEdit": "Save changes",
     "saving": "Saving…",
-    "invalidPhone": "Please enter a valid WhatsApp number, e.g. +91 98100 12345.",
+    "invalidPhone": "Please enter a valid WhatsApp number, e.g. +91 99999 00001.",
     "invalidAge": "Please enter a valid age.",
     "errTags": "Please keep to 30 items, each under 80 letters, separated by commas.",
     "errName": "Please enter your parent's name.",
@@ -215,6 +216,13 @@
     "dueDate": "Due date",
     "dueDateHint": "The date your doctor gave. We show the pregnancy week from it.",
     "errDueDate": "Please pick a due date within the next 10 months.",
+    "dateModeLabel": "Which date do you know?",
+    "dateModeEdd": "Due date (EDD)",
+    "dateModeLmp": "Last period (LMP)",
+    "lmpDate": "First day of the last period",
+    "lmpHint": "We work out the due date from it (40 weeks later).",
+    "lmpHintDue": "Due date: {date} · week {week} now.",
+    "errLmp": "Please pick a date within the last 10 months, not in the future.",
     "receiverTitle": "Who gets the WhatsApp reminders?",
     "receiverPerson": "{call}",
     "receiverMe": "Me",
@@ -415,8 +423,23 @@
     "lookHint": "Helps {call} pick the right one without reading. The WhatsApp reminder will say it too.",
     "colour": "Colour",
     "shape": "Shape",
-    "pillColours": { "white": "White", "yellow": "Yellow", "orange": "Orange", "pink": "Pink", "red": "Red", "blue": "Blue", "green": "Green", "brown": "Brown", "purple": "Purple" },
-    "pillShapes": { "round": "Round", "oval": "Oval", "long": "Long", "capsule": "Capsule" },
+    "pillColours": {
+      "white": "White",
+      "yellow": "Yellow",
+      "orange": "Orange",
+      "pink": "Pink",
+      "red": "Red",
+      "blue": "Blue",
+      "green": "Green",
+      "brown": "Brown",
+      "purple": "Purple"
+    },
+    "pillShapes": {
+      "round": "Round",
+      "oval": "Oval",
+      "long": "Long",
+      "capsule": "Capsule"
+    },
     "photoTitle": "Upload medicine strip photo",
     "photoHint": "Helps {call} recognise the right medicine",
     "openCamera": "Add photo",
@@ -665,7 +688,12 @@
     "pregnant": "PREGNANT",
     "born": "Born {date} ({age})",
     "bornOnly": "Born {date}",
-    "age": { "days": "{n, plural, one {# day} other {# days}}", "weeks": "{n, plural, one {# week} other {# weeks}}", "months": "{n, plural, one {# month} other {# months}}", "years": "{n, plural, one {# year} other {# years}}" },
+    "age": {
+      "days": "{n, plural, one {# day} other {# days}}",
+      "weeks": "{n, plural, one {# week} other {# weeks}}",
+      "months": "{n, plural, one {# month} other {# months}}",
+      "years": "{n, plural, one {# year} other {# years}}"
+    },
     "weight": "Weight {kg} kg, on {date}",
     "weightNoDate": "Weight {kg} kg",
     "weightTitle": "Weight (for the emergency card)",
@@ -1459,7 +1487,15 @@
     "defaultTag": "Default",
     "backToDefault": "Back to Chhaon colours",
     "done": "Done",
-    "palettes": { "chhaon": "Chhaon", "classic": "Classic", "teal": "Teal", "blue": "Blue", "saffron": "Saffron", "rose": "Rose", "custom": "Custom" },
+    "palettes": {
+      "chhaon": "Chhaon",
+      "classic": "Classic",
+      "teal": "Teal",
+      "blue": "Blue",
+      "saffron": "Saffron",
+      "rose": "Rose",
+      "custom": "Custom"
+    },
     "title": "Appearance",
     "hint": "Choose how Chhaon looks on this phone.",
     "system": "System",
@@ -1506,7 +1542,14 @@
     "dose": "Dose {n}",
     "booster": "Booster",
     "boosterN": "Booster {n}",
-    "age": { "birth": "At birth", "weeks": "{n} weeks", "months": "{n} months", "monthsRange": "{from}-{to} months", "years": "{n} years", "yearsRange": "{from}-{to} years" },
+    "age": {
+      "birth": "At birth",
+      "weeks": "{n} weeks",
+      "months": "{n} months",
+      "monthsRange": "{from}-{to} months",
+      "years": "{n} years",
+      "yearsRange": "{from}-{to} years"
+    },
     "note": {
       "hepb4": "IAP: a 4th dose of Hepatitis B is safe and permitted when it is part of a combination vaccine. Ask your doctor whether it applies.",
       "rotavirus3": "IAP: not needed with the 2-dose rotavirus vaccine RV1 (GSK); other brands have 3 doses. Ask your doctor.",
@@ -2006,5 +2049,57 @@
       "dayValue": "{ok} of {sent} answered in time",
       "messagesToday": "Test messages today"
     }
+  },
+  "weekStyle": {
+    "title": "Week card style",
+    "subtitle": "Try each style with her real week, then keep the one you like.",
+    "change": "Change the week card style",
+    "use": "Use this style",
+    "cancel": "Cancel",
+    "cm": "{value} cm",
+    "sizeLine": "Baby is about the size of {item}",
+    "of40": "of 40",
+    "length": "length",
+    "weight": "weight",
+    "daysLeft": "days to go",
+    "trimester": "trimester",
+    "growing": "Baby is growing 🌱",
+    "thisWeek": "This week · {week}",
+    "lastWeek": "Last week",
+    "nextWeek": "Next week",
+    "wk": "wk",
+    "storyTitle": "Your baby this week 💛",
+    "storyLine": "About the size of {item}: around {cm} and {weight}.",
+    "share": "Share",
+    "copied": "Copied",
+    "classic": {
+      "name": "Simple",
+      "desc": "The week, a small picture and the progress bar. Quick to read."
+    },
+    "hero": {
+      "name": "Big picture",
+      "desc": "A large picture of this week's size, with length and weight."
+    },
+    "ring": {
+      "name": "Ring",
+      "desc": "The picture inside a 40-week circle, with three quick numbers."
+    },
+    "grow": {
+      "name": "Growing",
+      "desc": "Last week, this week and next week side by side."
+    },
+    "night": {
+      "name": "Calm night",
+      "desc": "Dark and quiet with one big number. Easy on the eyes at night."
+    },
+    "story": {
+      "name": "Story",
+      "desc": "A warm note from the baby that you can share with the family."
+    },
+    "tiles": {
+      "name": "Tiles",
+      "desc": "The weeks at the top and everything for this week in tiles."
+    },
+    "weeksLeft": "{count, plural, one {# week} other {# weeks}} to go"
   }
 }

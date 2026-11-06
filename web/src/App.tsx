@@ -53,7 +53,7 @@ import { PersonBadge } from "./screens/PersonBadge";
 import { initialOf, personKindOf, usePersonLine } from "./lib/person";
 import "./screens/firstImpressions.css";
 import type { PillColour, PillShape } from "./lib/pillLook";
-import { careTypeOf, dueDateOk, isPregnancy, todayIn, type CareType } from "./lib/pregnancy";
+import { careTypeOf, dueDateOk, dueFromLmp, isPregnancy, lmpFromDue, pregnancyStatus, todayIn, type CareType } from "./lib/pregnancy";
 import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
@@ -500,6 +500,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   const [careType, setCareType] = useState<CareType>(careTypeOf(recipient));
   const pregnant = !isSelf && careType === "pregnant";
   const [dueDate, setDueDate] = useState(recipient?.due_date ?? "");
+  // The family may know the due date (EDD) or only the first day of the last period (LMP). Only the due date is stored:
+  // in LMP mode the box shows due - 280 days and typing in it sets due = LMP + 280.
+  const [dateMode, setDateMode] = useState<"edd" | "lmp">("edd");
   // A child (migration 0045): date of birth + "I am the parent or legal guardian", saved through the child endpoint after the profile.
   const child = !isSelf && careType === "child";
   const [childDetails, setChildDetails] = useState<ChildDetails>({ dob: recipient?.dob ?? "", guardian: false });
@@ -612,7 +615,8 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (badTags(conditions)) found["f-conditions"] = t("errTags");
     if (badTags(allergies)) found["f-allergies"] = t("errTags");
     // The due date is optional; when typed it must be plausible on HER calendar (the backend checks the same window).
-    if (pregnant && dueDate && !dueDateOk(dueDate, todayIn(timezone))) found["f-dueDate"] = t("errDueDate");
+    if (pregnant && dueDate && dateMode === "lmp" && (lmpFromDue(dueDate) > todayIn(timezone) || !dueDateOk(dueDate, todayIn(timezone)))) found["f-dueDate"] = t("errLmp");
+    else if (pregnant && dueDate && !dueDateOk(dueDate, todayIn(timezone))) found["f-dueDate"] = t("errDueDate");
     if (child) Object.assign(found, childDetailsErrors(childDetails, todayIn(timezone), guardianDone, { errDob: tAll("vaccines.errDob"), errGuardian: tAll("vaccines.errGuardian") }));
     setErrors(found);
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
@@ -676,7 +680,11 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       <AppHeader title={isSelf ? t(recipient ? "titleSelfEdit" : "titleSelfAdd") : pregnant ? t(recipient ? "titleEditPregnant" : "titleNewPregnant") : child ? t(recipient ? "titleEditChild" : "titleNewChild") : adding ? t("titleAdd") : recipient ? t("titleEdit") : t("titleNew")} subtitle={isSelf ? t(recipient ? "subtitleSelfEdit" : "subtitleSelfAdd") : pregnant ? t("subtitlePregnant") : child ? t("subtitleChild") : adding ? t("subtitleAdd") : recipient ? t("subtitleEdit") : t("subtitleNew")} back={recipient || adding ? () => go("today") : undefined} />
       <form id="parent-form" className="form-card" onSubmit={saveProfile} noValidate>
         {!isSelf && <CareTypePicker value={careType} onChange={chooseCareType} />}
-        {pregnant && <Field id="f-dueDate" label={t("dueDate")} error={errors["f-dueDate"]} hint={t("dueDateHint")}><input {...fieldProps("f-dueDate", errors)} name="dueDate" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></Field>}
+        {pregnant && <div className="choice-chips" role="group" aria-label={t("dateModeLabel")}>
+          {(["edd", "lmp"] as const).map((mode) => <button type="button" key={mode} className={dateMode === mode ? "selected" : ""} aria-pressed={dateMode === mode} onClick={() => setDateMode(mode)}>{t(mode === "edd" ? "dateModeEdd" : "dateModeLmp")}</button>)}
+        </div>}
+        {pregnant && dateMode === "edd" && <Field id="f-dueDate" label={t("dueDate")} error={errors["f-dueDate"]} hint={t("dueDateHint")}><input {...fieldProps("f-dueDate", errors)} name="dueDate" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></Field>}
+        {pregnant && dateMode === "lmp" && <Field id="f-dueDate" label={t("lmpDate")} error={errors["f-dueDate"]} hint={dueDate ? t("lmpHintDue", { date: formatDate(new Date(`${dueDate}T00:00:00`), language, { day: "numeric", month: "long", year: "numeric" }), week: pregnancyStatus(dueDate, todayIn(zoneValue))?.week ?? "-" }) : t("lmpHint")}><input {...fieldProps("f-dueDate", errors)} name="lmpDate" type="date" max={todayIn(zoneValue)} value={dueDate ? lmpFromDue(dueDate) : ""} onChange={(event) => setDueDate(event.target.value ? dueFromLmp(event.target.value) : "")} /></Field>}
         {child && <ChildDetailsFields value={childDetails} onChange={setChildDetails} today={todayIn(zoneValue)} errors={errors} guardianLocked={guardianDone} />}
         <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} value={nameText} onChange={(event) => changeName(event.target.value)} /></Field>
         {!isSelf && careType === "older" && <div className="two-col">
@@ -687,7 +695,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
         {!isSelf && <Field id="f-callName" label={t(pk("callName"))} hint={t(pk("callNameHint"))}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
         {!isSelf && <ReceiverChoice mode={receiver} onMode={chooseReceiver} call={callName.trim()} chip={t(pregnant ? "receiverPersonFallbackPregnant" : "receiverPersonFallback")} careType={careType} otherName={receiverName(storedReceiver) || t("receiverFamilyMember")}
           helperName={helperName} helperRelation={helperRelation} onHelperName={setHelperName} onHelperRelation={setHelperRelation} nameError={errors["f-helperName"]} />}
-        <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t(pk("whatsappHint")) : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t(pregnant ? "personWordPregnant" : child ? "personWordChild" : "receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 98100 12345" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
+        <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t(pk("whatsappHint")) : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t(pregnant ? "personWordPregnant" : child ? "personWordChild" : "receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 99999 00001" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {sharedWith && <p className="form-note" role="status">{receiver === "caregiver" && sharedWith.isSelf ? t("sharedNumberMe") : t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
         {!isSelf && receiver !== "person" && <ReceiverLanguageField value={reminderLang} onChange={setReminderLang} mode={receiver} name={receiver === "helper" ? helperName : receiver === "other" ? receiverName(storedReceiver) : ""} />}
         {!isSelf && !child && receiver === "person" && <CheckinSwitch on={checkinOn} pregnant={pregnant} onChange={(on) => { setCheckinOn(on); setCheckinTouched(true); }} />}
@@ -1352,8 +1360,8 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
 // The generated RPC types mark optional arguments as required; SQL accepts NULL for them.
 const orNull = <T,>(value: T | null | undefined) => (value ?? null) as T;
 
-const DOSE_UNITS = ["mg", "mcg", "g", "ml", "tablet", "capsule", "drops", "units", "puffs", "tsp"] as const;
-const COUNTABLE_UNITS = new Set(["tablet", "capsule"]);
+const DOSE_UNITS = ["mg", "mcg", "g", "ml", "tablet", "capsule", "sachet", "drops", "units", "puffs", "tsp"] as const;
+const COUNTABLE_UNITS = new Set(["tablet", "capsule", "sachet"]);
 
 /** 500 + "mg" -> "500 mg"; 2 + "tablet" -> "2 tablets"; 0.5 + "tablet" -> "0.5 tablet". Stored as canonical English. */
 function formatDose(amount: number, unit: string) {
@@ -1370,7 +1378,7 @@ const MAX_TIMES = 8;   // reminder times for one medicine
 function parseDose(dose: string): { amount: string; unit: string; unreadable: boolean } {
   const text = dose.trim();
   const match = text.match(/^(\d{1,6}(?:[.,]\d{1,2})?)\s*([a-z]+)$/i);  // "500 mg" and legacy "500mg"
-  const unit = match?.[2].toLowerCase().replace(/^(tablet|capsule)s$/, "$1") ?? "";
+  const unit = match?.[2].toLowerCase().replace(/^(tablet|capsule|sachet)s$/, "$1") ?? "";
   if (!match || !(DOSE_UNITS as readonly string[]).includes(unit)) return { amount: "", unit: "mg", unreadable: !!text };
   return { amount: match[1], unit, unreadable: false };
 }

@@ -1,0 +1,34 @@
+/* Today medicine styles follow the chosen colour theme (Family tab → colours) and light/dark mode.
+   route.css and layouts.css were drawn with fixed teal/green tokens that palettes.css never remaps, so every theme showed the
+   old green route. Inside .dose-theme (DoseLayouts.tsx) those tokens are re-pointed at the theme: "done" uses the theme colour,
+   backgrounds and map land use the theme's surface/field tints. Missed (red), next (orange) and the finish flag (gold) keep their
+   meaning colours. Browsers without color-mix keep the old fixed colours. */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .dose-theme {
+    --mix: var(--primary);
+    /* done / taken */
+    --t-3a9d72: var(--primary); --f-3a9d72: var(--primary); --b-3a9d72: var(--primary);
+    --t-1d6b4b: var(--primary-text);
+    --f-46b283: color-mix(in srgb, var(--mix) 72%, #fff); --f-2f8a63: var(--primary);
+    --b-3a9d72-a18: color-mix(in srgb, var(--mix) 18%, transparent); --b-3a9d72-a25: color-mix(in srgb, var(--mix) 25%, transparent);
+    --sh-3a9d72-a3: color-mix(in srgb, var(--mix) 30%, transparent); --sh-3a9d72-a5: color-mix(in srgb, var(--mix) 50%, transparent);
+    --sh-2f8a63-a25: color-mix(in srgb, var(--mix) 25%, transparent); --sh-2f8a63-a35: color-mix(in srgb, var(--mix) 35%, transparent);
+    --s-e6f4ec: color-mix(in srgb, var(--mix) 12%, var(--surface)); --s-eaf6ee: color-mix(in srgb, var(--mix) 10%, var(--surface));
+    --s-eaf7ef: color-mix(in srgb, var(--mix) 10%, var(--surface)); --s-f1f9f4: color-mix(in srgb, var(--mix) 6%, var(--surface));
+    --s-ecf8f2-a92: color-mix(in srgb, color-mix(in srgb, var(--mix) 10%, var(--surface)) 92%, transparent);
+    /* parks and soft tints on the map */
+    --f-78be96-a14: color-mix(in srgb, var(--mix) 12%, transparent); --f-78be96-a16: color-mix(in srgb, var(--mix) 14%, transparent);
+    --s-cfe8c8: color-mix(in srgb, var(--mix) 22%, var(--surface)); --s-d3e8c9: color-mix(in srgb, var(--mix) 20%, var(--surface));
+    --s-dcecd3: color-mix(in srgb, var(--mix) 16%, var(--surface));
+    /* backgrounds, land and borders: the theme's own paper colours */
+    --s-fff6e6: var(--surface); --s-fbfaf3: var(--surface); --s-f3faf7: color-mix(in srgb, var(--mix) 4%, var(--surface));
+    --s-eef6ef: color-mix(in srgb, var(--mix) 6%, var(--surface)); --s-e9edf8: var(--field);
+    --s-ffeccb: var(--surface); --s-fff6e0: var(--surface); --s-f6f8ea: color-mix(in srgb, var(--mix) 4%, var(--surface));
+    --s-fff3dc: var(--surface); --s-f8f6e8: color-mix(in srgb, var(--mix) 3%, var(--surface));
+    --s-f1eee6: color-mix(in srgb, var(--mix) 5%, var(--field)); --s-f4f6f1: var(--field); --s-ece5dd: color-mix(in srgb, var(--mix) 8%, var(--field));
+    --s-eef1f0: var(--field); --s-eef2f0: var(--field); --s-f0f4f2: var(--field);
+    --b-e2ddd0: var(--line); --b-e4e9e0: var(--line); --b-e4eeea: var(--line); --b-e1e9e6: var(--line); --b-e2e9e5: var(--line);
+    --b-e6e8e0: var(--line); --b-e8ece6: var(--line); --b-eef2f0: var(--line-soft); --b-e0d8cd: var(--line);
+    --t-ddd7c8: var(--line); --of-e9ece4: var(--line);
+  }
+}
