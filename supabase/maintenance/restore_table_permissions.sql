@@ -146,3 +146,22 @@ begin
     end;
   end loop;
 end $$;
+
+-- profiles.referred_by / heard_from (migration 0058): family members may read each other's profile rows, but not which doctor or
+-- channel brought someone. The table-wide SELECT given back above is replaced by SELECT on every other column. Skipped when the
+-- columns do not exist yet.
+do $$
+declare
+  v_cols text;
+begin
+  if not exists (select 1 from information_schema.columns
+                  where table_schema = 'public' and table_name = 'profiles' and column_name = 'referred_by') then
+    raise notice 'skipped (not in this database): profiles referral column lock';
+    return;
+  end if;
+  select string_agg(quote_ident(column_name), ', ' order by ordinal_position) into v_cols
+    from information_schema.columns
+   where table_schema = 'public' and table_name = 'profiles' and column_name not in ('referred_by', 'heard_from');
+  revoke select on public.profiles from anon, authenticated;
+  execute format('grant select (%s) on public.profiles to authenticated', v_cols);
+end $$;

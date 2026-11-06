@@ -47,6 +47,7 @@ create trigger profiles_keep_first_referral before update on public.profiles
 -- Table-wide SELECT is replaced by SELECT on every other column. Re-running this file re-grants all columns that exist
 -- then, so a profiles column added by a LATER migration must be granted there (or this block run again):
 --   grant select (<new column>) on public.profiles to authenticated;
+-- supabase/tests/referral.test.sql fails when one is forgotten, and supabase/maintenance/restore_table_permissions.sql re-applies this lock.
 do $$
 declare
   v_cols text;

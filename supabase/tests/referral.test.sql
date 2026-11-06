@@ -1,7 +1,7 @@
 -- Doctor code and "How did you hear about Chhaon?" (migration 20261106000058). Run with: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(23);
 
 -- an admin, a caregiver (Asha) and her brother (Ravi) in the same family, and an outsider
 insert into auth.users (id, email, instance_id, aud, role) values
@@ -81,6 +81,14 @@ select cmp_ok((select (e ->> 'signups')::int from jsonb_array_elements(public.ad
   '>=', 1, 'answers are counted');
 select ok(public.admin_referral_stats()::text !~ '@|\+[0-9]{8}|Secret|Ravi|Outsider', 'no email, phone number or name in the counts');
 reset role;
+
+-- Guard for later migrations: the referral lock lists the readable profiles columns one by one, so a NEW profiles column is
+-- unreadable for signed-in users until it is granted. This fails as soon as that happens (fix: grant select (<column>) on
+-- public.profiles to authenticated, or run the lock block of 20261106000058_referral.sql again).
+select is((select coalesce(string_agg(column_name, ', ' order by column_name), '') from information_schema.columns
+            where table_schema = 'public' and table_name = 'profiles' and column_name not in ('referred_by', 'heard_from')
+              and not has_column_privilege('authenticated', 'public.profiles', column_name, 'SELECT')),
+  '', 'every profiles column except the two referral columns is readable by signed-in users');
 
 select * from finish();
 rollback;
