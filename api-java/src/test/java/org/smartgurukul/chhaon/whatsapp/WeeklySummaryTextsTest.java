@@ -50,12 +50,12 @@ class WeeklySummaryTextsTest {
     void hindi() {
         assertThat(WeeklySummaryTexts.message("hi", List.of(mummy()), "Asia/Kolkata")).isEqualTo("""
                 छाँव साप्ताहिक 🗓️ · Mummy
-                30 अक्टू – 5 नव
+                30 अक्टूबर – 5 नवंबर
                 दवा की पुष्टि: 28 में से 26
                 छूटी: Metformin मंगल रात, गुरु रात
                 किसने दी: Sunita 24 · आप 2
                 जल्द मँगाएँ: Metformin (6 बची)
-                अगली मुलाक़ात: Dr Mehta, मंगल 10 नव, सुबह 11:00
+                अगली मुलाक़ात: Dr Mehta, मंगल 10 नवंबर, सुबह 11:00
 
                 पूरी जानकारी छाँव ऐप में।
                 ये अलर्ट बंद करने के लिए STOP लिखें।""");

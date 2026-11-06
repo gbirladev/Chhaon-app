@@ -104,17 +104,18 @@ public final class MessageTexts {
     /** A run of digits this long is a phone number, not a dose: such a "dose" is never sent (owner's fraud rule). */
     private static final Pattern LONG_NUMBER = Pattern.compile("\\d{6,}");
     // unit -> {English one, English other, Hindi one, Hindi other}; same units and words as web/src/lib/format.ts localizeDose.
-    private static final Map<String, String[]> UNITS = Map.of(
-            "mg", new String[] {"mg", "mg", "mg", "mg"},
-            "mcg", new String[] {"mcg", "mcg", "mcg", "mcg"},
-            "g", new String[] {"g", "g", "g", "g"},
-            "ml", new String[] {"ml", "ml", "ml", "ml"},
-            "tablet", new String[] {"tablet", "tablets", "गोली", "गोलियाँ"},
-            "capsule", new String[] {"capsule", "capsules", "कैप्सूल", "कैप्सूल"},
-            "drop", new String[] {"drop", "drops", "बूँद", "बूँदें"},
-            "unit", new String[] {"unit", "units", "यूनिट", "यूनिट"},
-            "puff", new String[] {"puff", "puffs", "पफ़", "पफ़"},
-            "tsp", new String[] {"tsp", "tsp", "चम्मच", "चम्मच"});
+    private static final Map<String, String[]> UNITS = Map.ofEntries(
+            Map.entry("mg", new String[] {"mg", "mg", "mg", "mg"}),
+            Map.entry("mcg", new String[] {"mcg", "mcg", "mcg", "mcg"}),
+            Map.entry("g", new String[] {"g", "g", "g", "g"}),
+            Map.entry("ml", new String[] {"ml", "ml", "ml", "ml"}),
+            Map.entry("tablet", new String[] {"tablet", "tablets", "गोली", "गोलियाँ"}),
+            Map.entry("capsule", new String[] {"capsule", "capsules", "कैप्सूल", "कैप्सूल"}),
+            Map.entry("sachet", new String[] {"sachet", "sachets", "पाउच", "पाउच"}),
+            Map.entry("drop", new String[] {"drop", "drops", "बूँद", "बूँदें"}),
+            Map.entry("unit", new String[] {"unit", "units", "यूनिट", "यूनिट"}),
+            Map.entry("puff", new String[] {"puff", "puffs", "पफ़", "पफ़"}),
+            Map.entry("tsp", new String[] {"tsp", "tsp", "चम्मच", "चम्मच"}));
 
     /**
      * The stored dose ("2.5 ml", "1 tablet", "2 tablets": canonical English from the app) in the receiver's language: "1 गोली",
@@ -210,8 +211,8 @@ public final class MessageTexts {
         String by = clean(caregiverName, 40);
         if (hi(language)) {
             return "नमस्ते" + who(callName) + " 🙏\n"
-                    + (by.isEmpty() ? "आपका परिवार आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहता है।"
-                                    : by + " आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहते हैं।")
+                    + (by.isEmpty() ? "आपका परिवार चाहता है कि आपको WhatsApp पर दवा का समय याद दिलाया जाए।"
+                                    : by + " आपको WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।")
                     + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         return "Namaste" + who(callName) + " 🙏\n" + (by.isEmpty() ? "Your family" : by)

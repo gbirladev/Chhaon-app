@@ -51,7 +51,7 @@ class ReminderTextsTest {
     @Test
     void severalMedicinesAreOneTextWithOneQuestionAndOnlyOne() {
         String hi = ReminderTexts.doseText(Reader.person("hi", "Shivani"), TWO, ReminderTexts.slotTime("hi", LocalTime.of(20, 0)));
-        assertThat(hi).isEqualTo("नमस्ते Shivani 🙏\nरात 8:00 की दवाएं:\n• *Argipreg* · 1 sachet\n"
+        assertThat(hi).isEqualTo("नमस्ते Shivani 🙏\nरात 8:00 की दवाएं:\n• *Argipreg* · 1 पाउच\n"
                 + "• *Metformin 500* · 1 गोली · 🔵 नीली गोल गोली\n\nसब ले लीं? जवाब में बस *1* लिखें");
         String en = ReminderTexts.doseText(Reader.person("en", "Papa"), TWO, ReminderTexts.slotTime("en", LocalTime.of(20, 0)));
         assertThat(en).isEqualTo("Namaste Papa 🙏\nYour 8:00 pm medicines:\n• *Argipreg* · 1 sachet\n"
@@ -83,7 +83,7 @@ class ReminderTextsTest {
     @Test
     void theDosePollHasNoFormattingAndTheAgreedOptions() {
         Poll hi = ReminderTexts.dosePoll(Reader.person("hi", "Shivani"), TWO, "रात 8:00");
-        assertThat(hi.question()).isEqualTo("नमस्ते Shivani 🙏\n💊 रात 8:00 की दवाएं: Argipreg (1 sachet), Metformin 500 (1 गोली)\nले लीं?");
+        assertThat(hi.question()).isEqualTo("नमस्ते Shivani 🙏\n💊 रात 8:00 की दवाएं: Argipreg (1 पाउच), Metformin 500 (1 गोली)\nले लीं?");
         assertThat(hi.options()).containsExactly("✅ ले ली", "⏰ थोड़ी देर में");
         Poll en = ReminderTexts.dosePoll(Reader.person("en", "Papa"), ONE, "8:00 pm");
         assertThat(en.question()).isEqualTo("Namaste Papa 🙏\n💊 Medicine time: Ecosprin 150 (1 tablet, 🔵 Blue round tablet)\nTaken it?");
@@ -94,8 +94,8 @@ class ReminderTextsTest {
         assertThat(ReminderTexts.dosePoll(Reader.receiver("en", "helper", "Sunita", "Papa"), ONE, "8:00 pm").options())
                 .containsExactly("✅ Given", "⏰ Later");
         Poll checkin = ReminderTexts.checkinPoll(Reader.person("hi", "Papa"));
-        assertThat(checkin.question()).isEqualTo("सुप्रभात Papa ☀️🙏\nआज आप कैसे हैं?");
-        assertThat(checkin.options()).containsExactly("😊 ठीक हूँ", "📞 फ़ोन कीजिए");
+        assertThat(checkin.question()).isEqualTo("सुप्रभात Papa ☀️🙏\nआज आपकी तबीयत कैसी है?");
+        assertThat(checkin.options()).containsExactly("😊 ठीक हूँ", "📞 बात करनी है");
         assertThat(ReminderTexts.checkinPoll(Reader.person("en", "Papa")).options()).containsExactly("😊 I'm fine", "📞 Please call me");
     }
 
@@ -123,7 +123,8 @@ class ReminderTextsTest {
         assertThat(ReminderTexts.doseVote("✅ Taken", 1)).isEqualTo(-1);       // contradicting
         assertThat(ReminderTexts.doseVote("Maybe", 0)).isEqualTo(-1);          // not our label
         assertThat(ReminderTexts.doseVote(null, 2)).isEqualTo(-1);
-        assertThat(ReminderTexts.checkinVote("📞 फ़ोन कीजिए", 1)).isEqualTo(1);
+        assertThat(ReminderTexts.checkinVote("📞 फ़ोन कीजिए", 1)).isEqualTo(1);   // the label on polls sent before 6 Nov 2026
+        assertThat(ReminderTexts.checkinVote("📞 बात करनी है", 1)).isEqualTo(1);
         assertThat(ReminderTexts.checkinVote("😊 I'm fine", 0)).isEqualTo(0);
         assertThat(ReminderTexts.checkinVote("✅ Taken", 0)).isEqualTo(-1);    // a dose label on a check-in
     }

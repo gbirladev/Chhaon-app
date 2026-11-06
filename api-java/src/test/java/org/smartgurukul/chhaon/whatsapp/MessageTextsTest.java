@@ -40,7 +40,7 @@ class MessageTextsTest {
         assertThat(en).startsWith("Good morning Papa").contains("How are you today?").endsWith("Reply *1* if you are fine 😊\nReply *2* if you want a call 📞");
         String hi = MessageTexts.checkin("hi", "पापा");
         clean(hi);
-        assertThat(hi).startsWith("सुप्रभात पापा").contains("ठीक हैं तो *1* लिखें").endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
+        assertThat(hi).startsWith("सुप्रभात पापा").contains("ठीक हैं तो *1* लिखें").endsWith("बात करनी हो तो *2* लिखें 📞");
     }
 
     @Test
@@ -50,7 +50,7 @@ class MessageTextsTest {
         assertThat(en).contains("Namaste Papa").contains("Ananya").contains("Reply *1* or 👍 to start ✅").contains("Reply *2* if you do not want this").endsWith("You can reply STOP any time.");
         String hi = MessageTexts.consentRequest("hi", "पापा", "Ananya");
         clean(hi);
-        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("Ananya आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहते हैं।").contains("*1* या 👍 भेजें ✅").contains("*2* लिखें").endsWith("STOP लिखकर रोक सकते हैं।");
+        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("Ananya आपको WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।").contains("*1* या 👍 भेजें ✅").contains("*2* लिखें").endsWith("STOP लिखकर रोक सकते हैं।");
     }
 
     @Test
@@ -76,7 +76,7 @@ class MessageTextsTest {
             assertThat(MessageTexts.checkin("en", blank)).startsWith("Good morning ☀️🙏");
             assertThat(MessageTexts.checkin("hi", blank)).startsWith("सुप्रभात ☀️🙏");
             assertThat(MessageTexts.consentRequest("en", blank, blank)).startsWith("Namaste 🙏\nYour family would like");
-            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपका परिवार आपको WhatsApp पर दवा के हल्के रिमाइंडर भेजना चाहता है।").doesNotContain("आपके परिवार");
+            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपका परिवार चाहता है कि आपको WhatsApp पर दवा का समय याद दिलाया जाए।").doesNotContain("आपके परिवार");
         }
         assertThat(MessageTexts.doseReminder("en", "Papa", null)).doesNotContain("(").doesNotContain("null");
         assertThat(MessageTexts.doseReminder("en", "Papa", "  ")).doesNotContain("()");
@@ -95,6 +95,9 @@ class MessageTextsTest {
         assertThat(MessageTexts.localizeDose("en", "1 tablet")).isEqualTo("1 tablet");
         assertThat(MessageTexts.localizeDose("en", "1.5 tablets")).isEqualTo("1.5 tablets");
         assertThat(MessageTexts.localizeDose("hi", "2 tablets")).isEqualTo("2 गोलियाँ");
+        assertThat(MessageTexts.localizeDose("en", "2 sachets")).isEqualTo("2 sachets");
+        assertThat(MessageTexts.localizeDose("hi", "1 sachet")).isEqualTo("1 पाउच");
+        assertThat(org.smartgurukul.chhaon.whatsapp.reply.ReplyHandlers.unitsPerDose("2 sachets")).isEqualTo(2);
         assertThat(MessageTexts.localizeDose("hi", "0.5 tablet")).isEqualTo("0.5 गोली");
         assertThat(MessageTexts.localizeDose("hi", "1 capsule")).isEqualTo("1 कैप्सूल");
         assertThat(MessageTexts.localizeDose("hi", "2.5 ml")).isEqualTo("2.5 ml");

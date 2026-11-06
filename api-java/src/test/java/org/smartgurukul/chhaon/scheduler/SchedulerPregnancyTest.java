@@ -84,8 +84,8 @@ class SchedulerPregnancyTest extends DbTest {
 
         assertThat(wa.sentTo(f.phone())).hasSize(1);
         assertThat(wa.sentTo(f.phone()).get(0).text())
-                .startsWith("सुप्रभात शिवानी ☀️\nआज आप कैसा महसूस कर रही हैं?")   // R2: the check-in never says the week
-                .endsWith("फ़ोन चाहिए तो *2* लिखें 📞");
+                .startsWith("सुप्रभात शिवानी ☀️\nआज आपकी तबीयत कैसी है?")   // R2: the check-in never says the week
+                .endsWith("बात करनी हो तो *2* लिखें 📞");
     }
 
     @Test

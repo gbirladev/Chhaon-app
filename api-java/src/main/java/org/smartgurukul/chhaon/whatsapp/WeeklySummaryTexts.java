@@ -102,7 +102,7 @@ public final class WeeklySummaryTexts {
 
     private static String name(String language, String name) {
         String n = MessageTexts.clean(name, 40);
-        return n.isEmpty() ? AlertTexts.fallbackParent(language) : n;
+        return n.isEmpty() ? (hi(language) ? "परिवार का एक सदस्य" : AlertTexts.fallbackParent(language)) : n;
     }
 
     private static String weekWord(String language, int week) {
@@ -212,7 +212,7 @@ public final class WeeklySummaryTexts {
     private static final String[] EN_DAYS = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
     private static final String[] HI_DAYS = {"सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि", "रवि"};
     private static final String[] EN_MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-    private static final String[] HI_MONTHS = {"जन", "फ़र", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अग", "सित", "अक्टू", "नव", "दिस"};
+    private static final String[] HI_MONTHS = {"जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"};
 
     private static String weekday(String language, DayOfWeek d) {
         return (hi(language) ? HI_DAYS : EN_DAYS)[d.getValue() - 1];

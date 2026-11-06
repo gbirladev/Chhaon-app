@@ -53,15 +53,15 @@ public final class AlertTexts {
         String w = when == null || when.isBlank() ? null : MessageTexts.clean(when, 60);
         String body = switch (type) {
             case "dose_missed" -> h
-                    ? p + " ने " + (w == null ? "आज " : w + " की ") + (many ? count + " दवाइयाँ" : "दवा " + med)
-                        + " लेने की पुष्टि नहीं की है।\nएक बार " + p + " को फ़ोन करके हाल पूछ लें।"
+                    ? p + " ने अभी तक नहीं बताया कि " + (w == null ? "आज की " : w + " की ") + (many ? count + " दवाइयाँ ले ली हैं" : "दवा " + med + " ले ली है")
+                        + "।\nएक बार " + p + " को फ़ोन करके हाल पूछ लें।"
                     : p + " has not confirmed " + (many ? count + " medicines" : med) + (w == null ? " today" : " (due " + w + ")")
                         + ".\nYou may want to call " + p + ".";
             case "checkin_missed" -> h
                     ? p + " ने आज सुबह के चेक-इन का जवाब नहीं दिया है।\nएक बार " + p + " को फ़ोन करके पूछ लें कि सब ठीक है।"
                     : p + " has not replied to today's morning check-in.\nYou may want to call " + p + " to make sure all is well.";
             case "checkin_call_requested" -> h
-                    ? p + " ने आज के चेक-इन में फ़ोन करने को कहा है।\nजब हो सके, " + p + " को फ़ोन कर लें।"
+                    ? p + " ने आज के चेक-इन में लिखा है कि बात करनी है।\nजब हो सके, " + p + " को फ़ोन कर लें।"
                     : p + " asked for a call in today's check-in.\nPlease call " + p + " when you can.";
             case "refill_needed" -> h
                     ? p + " की दवा " + med + " कम बची है।\nदोबारा मँगाने का समय है।"
@@ -106,8 +106,8 @@ public final class AlertTexts {
         String body = switch (type) {
             case "dose_missed" -> h
                     ? p + " की " + (many ? count + " दवाइयों" : "दवा " + med) + (w == null ? " (आज)" : " (" + w + ")")
-                        + " की पुष्टि नहीं हुई। रिमाइंडर " + toR + " भेजा गया था।\n"
-                        + (you ? "कृपया देख लें कि " + p + " ने दवा ले ली है।" : "एक बार " + receiver + " को फ़ोन करके पूछ लें।")
+                        + (many ? " दी गईं" : " दी गई") + " या नहीं, इसका जवाब नहीं आया। रिमाइंडर " + toR + " भेजा गया था।\n"
+                        + (you ? "कृपया देख लें कि " + p + (many ? " ने दवाइयाँ ले ली हैं या नहीं।" : " ने दवा ले ली है या नहीं।") : "एक बार " + receiver + " को फ़ोन करके पूछ लें।")
                     : p + "'s " + (many ? count + " medicines" : "medicine " + med) + (w == null ? " today" : " (due " + w + ")")
                         + (many ? " were" : " was") + " not confirmed. The reminder went to " + toR + ".\n"
                         + (you ? "Please check that " + p + " has had it." : "You may want to call " + receiver + ".");
@@ -117,7 +117,7 @@ public final class AlertTexts {
                     : "We could not send the reminder for " + p + "'s medicine " + med + " to " + toR + ".\n"
                         + (you ? "Please make sure it is given." : "Please make sure it is given, or call " + receiver + ".");
             case "parent_stopped" -> h
-                    ? (you ? "आपने" : p + " के रिमाइंडर पाने वाले " + receiver + " ने") + " WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए "
+                    ? (you ? "आपने" : p + " के रिमाइंडर " + receiver + " को जाते थे। उन्होंने") + " WhatsApp पर छाँव के संदेश बंद कर दिए हैं, इसलिए "
                         + p + " के रिमाइंडर रुके हुए हैं।"
                     : (you ? "you" : receiver + ", who gets " + p + "'s reminders,") + " stopped Chhaon messages on WhatsApp, so "
                         + p + "'s reminders are paused.";

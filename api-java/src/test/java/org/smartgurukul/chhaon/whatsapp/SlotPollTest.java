@@ -88,7 +88,7 @@ class SlotPollTest extends DbTest {
         assertThat(counters.get("doses_sent")).isEqualTo(3);
         assertThat(wa.sentTo(s.f().phone())).hasSize(1);
         String text = wa.sentTo(s.f().phone()).get(0).text();
-        assertThat(text).startsWith("नमस्ते पापा 🙏\n").contains(" की दवाएं:\n• *Argipreg* · 1 sachet\n• *Ecosprin 150* · 2 गोलियाँ\n")
+        assertThat(text).startsWith("नमस्ते पापा 🙏\n").contains(" की दवाएं:\n• *Argipreg* · 1 पाउच\n• *Ecosprin 150* · 2 गोलियाँ\n")
                 .contains("• *Metformin 500* · 1 गोली").endsWith("सब ले लीं? जवाब में बस *1* लिखें");
         String id = messageIdOf(s.doses().get(0));
         assertThat(id).isNotBlank();
@@ -169,7 +169,7 @@ class SlotPollTest extends DbTest {
         List<Poll> polls = wa.pollsTo(s.f().phone());
         assertThat(polls).hasSize(1);
         Poll poll = polls.get(0);
-        assertThat(poll.question()).startsWith("नमस्ते पापा 🙏\n💊 ").contains("Argipreg (1 sachet), Ecosprin 150 (2 गोलियाँ), Metformin 500 (1 गोली)")
+        assertThat(poll.question()).startsWith("नमस्ते पापा 🙏\n💊 ").contains("Argipreg (1 पाउच), Ecosprin 150 (2 गोलियाँ), Metformin 500 (1 गोली)")
                 .endsWith("\nले लीं?").doesNotContain("*");
         assertThat(poll.options()).containsExactly("✅ ले ली", "⏰ थोड़ी देर में");
         for (UUID d : s.doses()) assertThat(messageIdOf(d)).isEqualTo(poll.messageId());
@@ -338,8 +338,8 @@ class SlotPollTest extends DbTest {
         scheduler(f).tick(f.recipientId());
 
         Poll poll = wa.pollsTo(f.phone()).get(0);
-        assertThat(poll.question()).isEqualTo("सुप्रभात पापा ☀️🙏\nआज आप कैसे हैं?");
-        assertThat(poll.options()).containsExactly("😊 ठीक हूँ", "📞 फ़ोन कीजिए");
+        assertThat(poll.question()).isEqualTo("सुप्रभात पापा ☀️🙏\nआज आपकी तबीयत कैसी है?");
+        assertThat(poll.options()).containsExactly("😊 ठीक हूँ", "📞 बात करनी है");
         UUID checkin = todaysCheckin(f);
 
         vote(poll.messageId(), f.phone(), "📞 फ़ोन कीजिए", 1);

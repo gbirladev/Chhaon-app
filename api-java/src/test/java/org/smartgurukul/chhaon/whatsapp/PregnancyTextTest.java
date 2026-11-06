@@ -46,7 +46,7 @@ class PregnancyTextTest {
         assertThat(en).isEqualTo("Good morning Shivani ☀️\nHow are you feeling today?\n\nReply *1* if you are fine 😊\nReply *2* if you want a call 📞");
         String hi = MessageTexts.pregnancyCheckin("hi", "शिवानी");
         chatSized(hi);
-        assertThat(hi).isEqualTo("सुप्रभात शिवानी ☀️\nआज आप कैसा महसूस कर रही हैं?\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞");
+        assertThat(hi).isEqualTo("सुप्रभात शिवानी ☀️\nआज आपकी तबीयत कैसी है?\n\nठीक हैं तो *1* लिखें 😊\nबात करनी हो तो *2* लिखें 📞");
     }
 
     @Test
@@ -82,7 +82,7 @@ class PregnancyTextTest {
         assertThat(MessageTexts.doseReminder("en", "Papa", "Metformin"))
                 .isEqualTo("Namaste Papa 🙏\nMedicine time: *Metformin*\n\nTaken it? Just reply *1*");
         assertThat(MessageTexts.checkin("hi", "पापा"))
-                .isEqualTo("सुप्रभात पापा ☀️🙏\nआज आप कैसे हैं?\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞");
+                .isEqualTo("सुप्रभात पापा ☀️🙏\nआज आपकी तबीयत कैसी है?\n\nठीक हैं तो *1* लिखें 😊\nबात करनी हो तो *2* लिखें 📞");
     }
 
     @Test

@@ -417,6 +417,6 @@ class ReminderReceiverTest extends DbTest {
         assertThat(fx.phoneOptedOut(helper)).isTrue();
         List<Sent> got = alertsTo(alerts);
         assertThat(got).hasSize(1);
-        assertThat(got.get(0).text()).contains("पापा के रिमाइंडर पाने वाले Sunita (maid) ने").contains("पापा के रिमाइंडर रुके हुए हैं");
+        assertThat(got.get(0).text()).contains("पापा के रिमाइंडर Sunita (maid) को जाते थे। उन्होंने").contains("पापा के रिमाइंडर रुके हुए हैं");
     }
 }

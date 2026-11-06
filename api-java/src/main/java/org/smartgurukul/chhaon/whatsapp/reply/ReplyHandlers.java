@@ -37,7 +37,7 @@ public class ReplyHandlers {
     /** At most one "I did not understand" text per number in this many hours, so a chat can never loop. */
     static final int HELP_RATE_LIMIT_HOURS = 6;
 
-    private static final Pattern TABLETS = Pattern.compile("\\s*(\\d+(?:\\.\\d+)?)\\s+(?:tablets?|capsules?)\\s*");
+    private static final Pattern TABLETS = Pattern.compile("\\s*(\\d+(?:\\.\\d+)?)\\s+(?:tablets?|capsules?|sachets?)\\s*");
 
     private final JdbcTemplate jdbc;
     private final CircleNotifier notifier;
@@ -208,7 +208,7 @@ public class ReplyHandlers {
 
     // ---------------------------------------------------------------- doses
 
-    /** Tablets used by one dose: "2 tablets" -> 2, "1.5 capsules" -> 2 (rounded up); anything else counts as 1; capped at 10. */
+    /** Tablets used by one dose: "2 tablets" -> 2, "1.5 capsules" -> 2 (rounded up), "1 sachet" -> 1; anything else counts as 1; capped at 10. */
     public static int unitsPerDose(String dosage) {
         Matcher match = TABLETS.matcher(dosage == null ? "" : dosage.toLowerCase());
         if (!match.matches()) return 1;

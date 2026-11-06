@@ -91,7 +91,7 @@ public final class ReceiverTexts {
             String hello = "नमस्ते" + greet(language, reminderTo, receiverName) + " 🙏\n";
             String body;
             if (CAREGIVER.equals(reminderTo)) {
-                body = "आपने " + p + " की दवाओं के रिमाइंडर यहाँ WhatsApp पर पाना चुना है।";
+                body = "आपने " + p + " की दवाओं के रिमाइंडर यहाँ WhatsApp पर मँगवाए हैं।";
             } else {
                 body = by.isEmpty()
                         ? p + " का परिवार आपको यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहता है।"

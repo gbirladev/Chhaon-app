@@ -50,7 +50,9 @@ public final class ReminderTexts {
     public static final String FINE_EN = "😊 I'm fine";
     public static final String FINE_HI = "😊 ठीक हूँ";
     public static final String CALL_EN = "📞 Please call me";
-    public static final String CALL_HI = "📞 फ़ोन कीजिए";
+    public static final String CALL_HI = "📞 बात करनी है";
+    /** The label polls sent before 2026-11-06 carry: a vote on one of those must still count. */
+    static final String CALL_HI_OLD = "📞 फ़ोन कीजिए";
 
     /** Option 0 = yes (taken / given / I am fine), option 1 = later / call me. */
     public static final int YES = 0;
@@ -59,7 +61,7 @@ public final class ReminderTexts {
     private static final List<String> DOSE_YES = List.of(TAKEN_EN, TAKEN_HI, GIVEN_EN, GIVEN_HI);
     private static final List<String> DOSE_LATER = List.of(LATER_EN, LATER_HI);
     private static final List<String> CHECKIN_FINE = List.of(FINE_EN, FINE_HI);
-    private static final List<String> CHECKIN_CALL = List.of(CALL_EN, CALL_HI);
+    private static final List<String> CHECKIN_CALL = List.of(CALL_EN, CALL_HI, CALL_HI_OLD);
 
     public record Poll(String question, List<String> options) {}
 
@@ -199,7 +201,7 @@ public final class ReminderTexts {
     /** The daily check-in as a text: one question, *1* = fine, *2* = call me. */
     public static String checkinText(Reader r) {
         if (r.hi()) {
-            return checkinHead(r) + "\n" + checkinQuestion(r) + "\n\nठीक हैं तो *1* लिखें 😊\nफ़ोन चाहिए तो *2* लिखें 📞";
+            return checkinHead(r) + "\n" + checkinQuestion(r) + "\n\nठीक हैं तो *1* लिखें 😊\nबात करनी हो तो *2* लिखें 📞";
         }
         return checkinHead(r) + "\n" + checkinQuestion(r) + "\n\nReply *1* if you are fine 😊\nReply *2* if you want a call 📞";
     }
@@ -222,7 +224,7 @@ public final class ReminderTexts {
         return new Poll(question, doseOptions(r.language(), r.reminderTo()));
     }
 
-    /** The daily check-in as a poll: 😊 ठीक हूँ / 📞 फ़ोन कीजिए. */
+    /** The daily check-in as a poll: 😊 ठीक हूँ / 📞 बात करनी है. */
     public static Poll checkinPoll(Reader r) {
         String q = checkinHead(r) + "\n" + checkinQuestion(r);
         if (q.length() > POLL_QUESTION_MAX) q = q.substring(0, POLL_QUESTION_MAX - 1) + "…";
@@ -251,8 +253,8 @@ public final class ReminderTexts {
     }
 
     private static String checkinQuestion(Reader r) {
-        if (r.pregnant()) return r.hi() ? "आज आप कैसा महसूस कर रही हैं?" : "How are you feeling today?";
-        return r.hi() ? "आज आप कैसे हैं?" : "How are you today?";
+        if (r.pregnant()) return r.hi() ? "आज आपकी तबीयत कैसी है?" : "How are you feeling today?";
+        return r.hi() ? "आज आपकी तबीयत कैसी है?" : "How are you today?";
     }
 
     /** For a receiver: "Papa की दवा का समय" / "Time for Papa's medicine"; for the person "". */
