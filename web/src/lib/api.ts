@@ -101,6 +101,11 @@ export async function updateRecipientApi(id: string, body: Record<string, unknow
   return toRecipient(await apiFetch<RecipientDto>(`/api/v1/recipients/${id}`, { method: "PUT", body }));
 }
 
+/** "Your doctors" (lib/doctors.ts): replaces the whole list; the backend checks every field and the phone. */
+export async function saveDoctorsApi(id: string, doctors: { name: string; speciality: string | null; clinic: string | null; phone: string | null; address: string | null }[]): Promise<Recipient> {
+  return toRecipient(await apiFetch<RecipientDto>(`/api/v1/recipients/${id}/doctors`, { method: "PUT", body: { doctors } }));
+}
+
 /** Medicine names by id for every parent (notifications about a parent that is not the one on screen still name the medicine). */
 export async function loadMedicineNames(): Promise<Record<string, string>> {
   try {

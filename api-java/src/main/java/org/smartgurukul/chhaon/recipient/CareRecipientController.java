@@ -2,6 +2,7 @@ package org.smartgurukul.chhaon.recipient;
 
 import jakarta.validation.Valid;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.CreateRecipientRequest;
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.DoctorsRequest;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.RecipientResponse;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.UpdateRecipientRequest;
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
@@ -54,6 +55,14 @@ public class CareRecipientController {
                                     @PathVariable UUID id,
                                     @Valid @RequestBody UpdateRecipientRequest request) {
         return service.update(user.id(), id, request);
+    }
+
+    /** "Your doctors": the whole list at once (at most 5). */
+    @PutMapping("/{id}/doctors")
+    public RecipientResponse updateDoctors(@AuthenticationPrincipal AuthenticatedUser user,
+                                           @PathVariable UUID id,
+                                           @RequestBody DoctorsRequest request) {
+        return service.updateDoctors(user.id(), id, request == null ? null : request.doctors());
     }
 
     @DeleteMapping("/{id}")

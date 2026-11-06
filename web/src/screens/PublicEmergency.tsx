@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createTranslator } from "use-intl";
 import en from "../messages/en.json";
 import hi from "../messages/hi.json";
-import { fetchPublicCard, publicLinkToken, type CardResult, type PublicCard } from "../lib/emergencyPublic";
+import { fetchPublicCard, fetchPublicDoctors, publicLinkToken, type CardResult, type PublicCard, type PublicDoctor } from "../lib/emergencyPublic";
 import { keyFactLines, todayOn } from "../lib/keyFacts";
 import "./publicEmergency.css";
 
@@ -42,15 +42,19 @@ function clock(time: string, lang: Lang) {
 export default function PublicEmergency() {
   const [lang, setLang] = useState<Lang>(initialLanguage);
   const [result, setResult] = useState<CardResult | null>(null);
+  const [doctors, setDoctors] = useState<PublicDoctor[] | null>(null);
   const token = publicLinkToken(window.location.hash);
   const t = createTranslator({ locale: lang, messages: MESSAGES[lang], namespace: "publicCard" });
   const units = createTranslator({ locale: lang, messages: MESSAGES[lang], namespace: "units" });
 
   const load = useCallback(() => {
     setResult(null);
+    setDoctors(null);
     if (!token) { setResult({ kind: "off" }); return () => undefined; }
     const controller = new AbortController();
     void fetchPublicCard(token, controller.signal).then((r) => { if (!controller.signal.aborted) setResult(r); });
+    // The family's doctors, asked at the same time; if this fails the card still shows its one doctor name.
+    void fetchPublicDoctors(token, controller.signal).then((d) => { if (!controller.signal.aborted) setDoctors(d); });
     return () => controller.abort();
   }, [token]);
   useEffect(() => load(), [load]);
@@ -92,7 +96,17 @@ export default function PublicEmergency() {
               <h3>{t("medicines")}</h3>
               {c.medicines.length ? <ul>{c.medicines.map((m, i) => <li key={i}><strong>{[m.name, m.dose && dose(m.dose)].filter(Boolean).join(" ")}</strong>{m.times.length > 0 && <span>{times(m.times)}</span>}</li>)}</ul> : <p>{t("none")}</p>}
             </section>
-            {c.doctor && <section className="pe-card"><h3>{t("doctor")}</h3><p>{c.doctor}</p></section>}
+            {doctors && doctors.length > 0 ? (
+              <section className="pe-card">
+                <h3>{t(doctors.length > 1 ? "doctors" : "doctor")}</h3>
+                {doctors.map((d, i) => {
+                  const who = d.speciality ? `${d.name} (${d.speciality})` : d.name;
+                  return d.phone
+                    ? <a key={i} className="pe-call" href={`tel:${d.phone}`}><span><strong>{who}</strong><small>{d.phone}</small></span><b>{t("callDoctor")}</b></a>
+                    : <p key={i}>{who}</p>;
+                })}
+              </section>
+            ) : doctors === null && c.doctor && <section className="pe-card"><h3>{t("doctor")}</h3><p>{c.doctor}</p></section>}
             {c.contacts.length > 0 && (
               <section className="pe-card">
                 <h3>{t("contacts")}</h3>

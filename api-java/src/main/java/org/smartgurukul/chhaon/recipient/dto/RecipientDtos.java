@@ -17,6 +17,12 @@ public final class RecipientDtos {
 
     public record ContactDto(String name, String phone) {}
 
+    /** A doctor in "Your doctors": name required, the rest optional (an older row may have only name + phone). */
+    public record DoctorDto(String name, String phone, String speciality, String clinic, String address) {}
+
+    /** PUT /api/v1/recipients/{id}/doctors: the whole list (at most 5), in the order the family sees it. */
+    public record DoctorsRequest(List<DoctorDto> doctors) {}
+
     /*
      * careType: "older" | "pregnant" | "child" (a child never has reminderTo = person: 400). Left out: "older" on create, unchanged on update.
      * dueDate: "YYYY-MM-DD", pregnant only. Left out or null: unchanged on update; "" clears it. A profile that is not a
@@ -37,7 +43,7 @@ public final class RecipientDtos {
             List<String> conditions,
             List<String> allergies,
             String bloodGroup,
-            List<ContactDto> doctorContacts,
+            List<DoctorDto> doctorContacts,
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             Boolean caregiverAttested,
@@ -68,7 +74,7 @@ public final class RecipientDtos {
             List<String> conditions,
             List<String> allergies,
             String bloodGroup,
-            List<ContactDto> doctorContacts,
+            List<DoctorDto> doctorContacts,
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             Boolean caregiverAttested,
@@ -99,7 +105,7 @@ public final class RecipientDtos {
             List<String> conditions,
             List<String> allergies,
             String bloodGroup,
-            List<ContactDto> doctorContacts,
+            List<DoctorDto> doctorContacts,
             List<ContactDto> emergencyContacts,
             LocalTime checkinTime,
             boolean isSelf,

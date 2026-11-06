@@ -104,7 +104,8 @@ Product / reliability
 - [ ] **Text size in `rem`:** sizes are now rem with a 12px floor; a full pass to rem for every unit would honour system font scaling everywhere.
 - [x] **Code splitting:** done. The JS is split into index (about 70 KB gzip), App (about 101 KB gzip), the Hindi texts (about 31 KB gzip) and the tiny public emergency page; only what the screen needs loads.
 - [ ] **Dark mode** is not designed (the app forces a light colour scheme).
-- [ ] **Doctor and emergency contacts** are in the schema but the Figma profile form does not collect them, so the emergency card shows caregivers' phones instead.
+- [x] **Doctor and emergency contacts** are in the schema but the Figma profile form does not collect them, so the emergency card shows caregivers' phones instead.
+      Doctors: done 2026-11-06 ("Your doctors", see below). Emergency contacts other than the family: still not collected (open).
 - [ ] **Real family invites** (step 9): the Invite button says "coming soon"; roles are owner + member.
 - [ ] **Medicine editing** (name, times, dose): only stock, pause and delete exist today.
 
@@ -418,6 +419,23 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
 (reviews, moderation, upkeep); (3) a wrong or outdated recommendation becomes Chhaon's liability; (4) Google Maps and Practo already do this better and free.
 - [ ] **Instead, if wanted:** (a) a plain link on the appointments screen that opens a Google Maps or Practo search for the specialty in the parent's city (no ranking,
       no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
+  - [x] (b) **"Your doctors" built 2026-11-06.** Family > Your doctors (`web/src/screens/Doctors.tsx`, `web/src/lib/doctors.ts`): up to 5 doctors per
+        person with name (required), speciality, clinic or hospital, phone, address; add, edit, remove. Each doctor: one-tap Call (`tel:`) and Directions
+        (a Google Maps search of the typed clinic + address in a new tab; Chhaon never asks for anyone's location). No ranking, no suggestions.
+        Stored in the existing `care_recipients.doctor_contacts` jsonb (no column change). Backend: `PUT /api/v1/recipients/{id}/doctors` (any family
+        member; checks name, lengths, phone with the app's phone rules; never echoes the phone), `recipient/Doctors.java`; the profile form no longer
+        sends the list, and an older app that sends back what it read changes nothing. Emergency card in the app: each doctor (name, speciality, phone)
+        with a Call button and in the shared text; "Add doctors" button when none. Public card: new function `public_emergency_doctors(token)`
+        (migration `20261106000059_your_doctors.sql`): name, speciality, phone only (no clinic or address), at most 5; `public_emergency_card` is NOT
+        changed (the page falls back to its single doctor name if the new function is missing). Doctor summary: the first doctor's name and now also
+        clinic are the starting "Prepared for" values.
+        **Deploy order:** (1) Sydney SQL: paste `20261106000059_your_doctors.sql` (safe to run twice; it revokes and re-grants the new function to anon +
+        authenticated); (2) push the backend (Java), (3) then the web. Web before backend would make "Save doctor" fail (no endpoint yet).
+        Tests: `DoctorsApiTest` (4), `supabase/tests/your_doctors.test.sql` (16). `restore_function_permissions.sql` lists the new function.
+  - [ ] Open: Indian **landline** numbers are refused (the app's phone rules accept mobiles only), but many clinics have landlines. Decide whether
+        doctors may have landlines (they never get WhatsApp messages, only `tel:` links).
+  - [ ] Open: two family members editing the list at the same moment: the last save wins (no merge). Fine for the pilot.
+  - [ ] Open: native Hindi read of the `doctors` texts in `hi.json`. Browser check at phone width not done by the build agent (no local backend run).
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
 
 ## Permissions on the Sydney database differed from the migrations (found 2026-11-03): functions AND tables FIXED and verified
