@@ -63,13 +63,14 @@ import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } fr
 import { WeeklyCard } from "./screens/WeeklySummary";
 import { saveHeardFrom, sendPendingReferral, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
 import { HeardFromQuestion } from "./screens/Referral";
-import { hasCheckin, initialReceiverMode, receiverName, receiverOf, receiverValues, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
+import { hasCheckin, initialReceiverMode, receiverName, receiverOf, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
 import { SlimNotice } from "./screens/SlimNotice";
 import { UpdateBanner } from "./screens/UpdateBanner";
+import { FeatureEntry } from "./screens/FeatureEntry";
 import { CardIcon } from "./screens/TodayCard";
 import { Logo } from "./screens/Logo";
 
@@ -1430,7 +1431,7 @@ function Medicines({ go, medicines: all, loading, error, onOpen, onChanged }: { 
           </>}
         </section>
       )}
-      <button className="fab" onClick={() => go("addMedicine")}><Icon name="plus" /><span>{t("medicines.add")}</span></button>
+      <button className="fab" onClick={() => go("addMedicine")} aria-label={t("medicines.add")} title={t("medicines.add")}><Icon name="plus" size={26} strokeWidth={2.4} /><span aria-hidden="true">{t("medicines.add")}</span></button>
     </main>
   );
 }
@@ -2126,7 +2127,6 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   const t = useTranslations("family");
   const td = useTranslations("doctorSummary");
   const ti = useTranslations("invites");
-  const tWho = useTranslations("who");
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { let cancelled = false; loadIsAdmin().then((v) => { if (!cancelled) setIsAdmin(v); }).catch(() => {}); return () => { cancelled = true; }; }, []);
   const language = useLocale() as Language;
@@ -2137,7 +2137,9 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   const [invitesVersion, setInvitesVersion] = useState(0);
   const [confirming, setConfirming] = useState<{ kind: "remove"; member: CircleMember } | { kind: "leave" } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
   const me = members.find((m) => m.userId === userId);
+  const avatarColour = (index: number) => (index % 3 === 0 ? "teal" : index % 3 === 1 ? "orange" : "plum");
   const confirmAction = async () => {
     if (!circleId || !confirming || actionBusy) return;
     setActionBusy(true);
@@ -2153,46 +2155,58 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   return (
     <main className="scroll-page">
       <AppHeader title={t("title")} subtitle={t("subtitle")} action={<ThemeButton />} />
-      {!recipient?.is_self && <section className="family-hero">
-        <div className="hero-people">{recipient && <PersonBadge name={call} kind={personKindOf(recipient)} size="lg" />}<div className="avatar-stack">{members.slice(0, 3).map((m) => <span key={m.userId}>{initials(m)}</span>)}</div></div>
-        <h2>{t("heroTitle", { count: members.length, call })}</h2>
-        <p>{t("heroBody")}</p>
-        <button onClick={() => setInviteOpen(true)} disabled={!circleId}><Icon name="plus" size={18} /> {t("invite")}</button>
+      {!recipient?.is_self && <section className="family-hero-compact" aria-label={t("membersTitle")}>
+        {recipient && <PersonBadge name={call} kind={personKindOf(recipient)} size="md" />}
+        <button type="button" className="hero-members" aria-expanded={membersOpen} aria-controls="family-members" onClick={() => setMembersOpen((v) => !v)}>
+          <strong>{t("heroTitle", { count: members.length, call })}</strong>
+          <small><span>{members.map((m) => (m.userId === userId ? t("you") : name(m))).join(", ")}</span> · {t(membersOpen ? "hideMembers" : "showMembers")}<Icon name="down" size={14} /></small>
+        </button>
+        <button className="hero-invite" onClick={() => setInviteOpen(true)} disabled={!circleId} aria-label={t("invite")}><Icon name="plus" size={18} /> {t("inviteShort")}</button>
       </section>}
-      {recipient?.is_self && <p className="form-note">{t("selfNote")}</p>}
-      <ReceiverNote recipient={recipient} userId={userId} call={call} />
-      <WeeklyCard recipient={recipient} />
-      {circleId && !recipient?.is_self && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
-      <div className="section-title members-title"><div><h2>{t("membersTitle")}</h2><p>{t("membersSub")}</p></div></div>
+      {(membersOpen || !!recipient?.is_self) && <div id="family-members" className="family-members">
+      <p className="form-note">{t("membersSub")}</p>
       <AlertsCard />
       <section className="member-list">
         {members.map((m, index) => (
           <div className="member" key={m.userId}>
-            <span className={`member-avatar ${index % 3 === 0 ? "teal" : index % 3 === 1 ? "orange" : "plum"}`}>{initials(m)}</span>
+            <span className={`member-avatar ${avatarColour(index)}`}>{initials(m)}</span>
             <div><h3>{name(m)} {m.userId === userId && <em>{t("you")}</em>}</h3><p>{t(m.role === "owner" ? "roleOwner" : "roleMember")}</p></div>
             {me?.role === "owner" && m.role === "member" && <button className="member-action" onClick={() => setConfirming({ kind: "remove", member: m })} aria-label={ti("removeLabel", { name: name(m) })}>{ti("remove")}</button>}
           </div>
         ))}
       </section>
       {me?.role === "member" && <button className="account-link leave-link" onClick={() => setConfirming({ kind: "leave" })}>{ti("leave")}</button>}
+      </div>}
+      {recipient?.is_self && <p className="form-note">{t("selfNote")}</p>}
+      <ReceiverNote recipient={recipient} userId={userId} call={call} />
+      <WeeklyCard recipient={recipient} compact />
+      {circleId && !recipient?.is_self && <PendingInvites circleId={circleId} version={invitesVersion} onChanged={() => setInvitesVersion((v) => v + 1)} />}
+      {!membersOpen && <AlertsCard compact />}
+      <h2 className="family-section-title">{recipient && !recipient.is_self ? t("sectionFor", { call }) : t("sectionHealth")}</h2>
+      <div className="feature-grid">
+        <FeatureEntry look="tile" className="emergency-tile" icon="heart" title={t("emergencyTitle")} onClick={() => go("emergency")} />
+        <DoctorsLink look="tile" go={() => go("doctors")} recipient={recipient} />
+        <FeatureEntry look="tile" icon="doctor" title={td("linkTitle")} onClick={() => go("doctor")} />
+        <ActivityLink look="tile" go={go} />
+        <FeatureEntry look="tile" icon="whatsapp" title={t("tileWhatsapp")} onClick={() => go("whatsapp")} />
+        <SafetyNetLink look="tile" go={go} hidden={!!recipient?.is_self} />
+        <LoveLink look="tile" go={go} hidden={!!recipient?.is_self} />
+        <VaccinesLink look="tile" go={go} recipient={recipient} />
+      </div>
+
       {inviteOpen && circleId && <InviteSheet circleId={circleId} call={call} onClose={() => setInviteOpen(false)} onCreated={() => setInvitesVersion((v) => v + 1)} />}
       {confirming && <ConfirmSheet busy={actionBusy} onCancel={() => setConfirming(null)} onConfirm={() => void confirmAction()}
         title={confirming.kind === "remove" ? ti("removeTitle", { name: name(confirming.member) }) : ti("leaveTitle", { call })}
         body={confirming.kind === "remove" ? ti("removeBody", { call }) : ti("leaveBody", { call })}
         confirm={confirming.kind === "remove" ? ti("removeConfirm") : ti("leaveConfirm")} />}
-      <button className="feature-link emergency-link" onClick={() => go("emergency")}><Icon3D name="heart" /><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
-      <ActivityLink go={go} />
-      <VaccinesLink go={go} recipient={recipient} />
-      <DoctorsLink go={() => go("doctors")} recipient={recipient} />
-      <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
-      <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{tWho("familyWhatsappSub", receiverValues(recipient, userId, { call, you: tWho("you"), someone: tWho("someone") }))}</p></div><Icon name="chevron" /></button>
-      {isAdmin && <button className="feature-link" onClick={() => go("monitor")}><Icon3D name="chart" /><div><strong>{t("monitorLink")}</strong><p>{t("monitorSub")}</p></div><Icon name="chevron" /></button>}
-      <InstallLink />
-      <button className="feature-link" onClick={() => go("feedback")}><Icon3D name="feedback" /><div><strong>{t("feedbackLink")}</strong><p>{t("feedbackSub")}</p></div><Icon name="chevron" /></button>
-      <SafetyNetLink go={go} hidden={!!recipient?.is_self} />
-      <LoveLink go={go} hidden={!!recipient?.is_self} />
-      <button className="feature-link" onClick={() => go("plans")}><Icon3D name="plan" /><div><strong>{t(PLANS_ENABLED ? "plansLink" : "planPilotLink")}</strong><p>{t(PLANS_ENABLED ? "plansSub" : "planPilotSub")}</p></div><Icon name="chevron" /></button>
-      {PRIVACY_ENABLED && (<button className="feature-link" onClick={() => go("privacyData")}><Icon3D name="lock" /><div><strong>{t("privacyLink")}</strong><p>{t("privacyLinkSub")}</p></div><Icon name="chevron" /></button>)}
+      <h2 className="family-section-title">{t("sectionMore")}</h2>
+      <div className="more-list">
+        <FeatureEntry look="row" icon="plan" title={t(PLANS_ENABLED ? "plansLink" : "planPilotLink")} onClick={() => go("plans")} />
+        {PRIVACY_ENABLED && <FeatureEntry look="row" icon="lock" title={t("privacyLink")} onClick={() => go("privacyData")} />}
+        <InstallLink look="row" />
+        <FeatureEntry look="row" icon="feedback" title={t("feedbackLink")} onClick={() => go("feedback")} />
+        {isAdmin && <FeatureEntry look="row" icon="chart" title={t("monitorLink")} onClick={() => go("monitor")} />}
+      </div>
       <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
   );

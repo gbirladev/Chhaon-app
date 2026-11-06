@@ -4,7 +4,7 @@ import { AppHeader, Icon, useToast } from "../App";
 import { formatClock, formatDate, formatDateTime, type Language } from "../lib/format";
 import { groupByDay, helperLabel, loadFeed, setHeart, type FeedItem, type FeedPerson } from "../lib/activity";
 import "./activity.css";
-import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { PersonBadge } from "./PersonBadge";
 import { personKindFrom } from "../lib/person";
 import { CardIcon } from "./TodayCard";
@@ -203,15 +203,9 @@ export function ActivityScreen({ go }: { go: (screen: "family") => void }) {
 }
 
 /** On the Family tab. */
-export function ActivityLink({ go }: { go: (screen: "activity") => void }) {
+export function ActivityLink({ go, look }: { go: (screen: "activity") => void; look?: EntryLook }) {
   const t = useTranslations("activity");
-  return (
-    <button className="feature-link" onClick={() => go("activity")}>
-      <Icon3D name="people" />
-      <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
-      <Icon name="chevron" />
-    </button>
-  );
+  return <FeatureEntry look={look} icon="people" title={t("linkTitle")} sub={t("linkSub")} onClick={() => go("activity")} />;
 }
 
 /** A small text link on Today. */

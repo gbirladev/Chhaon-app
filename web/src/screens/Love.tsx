@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
-import { AppHeader, Field, Icon, parentCall, useDialog, useToast } from "../App";
+import { AppHeader, Field, parentCall, useDialog, useToast } from "../App";
 import { loadCheckin, loadTodayDoses, type Recipient, type TodayCheckin, type TodayDose } from "../lib/api";
 import { useFeatures } from "../lib/escalation";
 import { formatClock, type Language } from "../lib/format";
@@ -9,7 +9,7 @@ import {
   type LoveSettings, type LoveStats, type ParentMessage, type Reaction, type SendFailure,
 } from "../lib/love";
 import "./love.css";
-import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { CardIcon } from "./TodayCard";
 
 /** One thing the parent did that a caregiver can answer with a little love: a taken dose (or a time slot of them) or an answered check-in. */
@@ -174,17 +174,11 @@ export function LoveCard({ recipient, call }: { recipient: Recipient; call: stri
 }
 
 /** The Family tab entry, shown only when the server has the love loop switched on. */
-export function LoveLink({ go, hidden = false }: { go: (screen: "love") => void; hidden?: boolean }) {
+export function LoveLink({ go, hidden = false, look }: { go: (screen: "love") => void; hidden?: boolean; look?: EntryLook }) {
   const t = useTranslations("love");
   const features = useFeatures();
   if (!features.love || hidden) return null;
-  return (
-    <button className="feature-link" onClick={() => go("love")}>
-      <Icon3D name="love" />
-      <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
-      <Icon name="chevron" />
-    </button>
-  );
+  return <FeatureEntry look={look} icon="love" title={t("linkTitle")} sub={t("linkSub")} onClick={() => go("love")} />;
 }
 
 /** Settings: switch the love messages on or off for one parent, say what the parent calls you, see what they wrote back. */

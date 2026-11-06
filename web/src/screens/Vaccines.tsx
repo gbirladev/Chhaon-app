@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Field, Icon, parentCall, useDialog, useToast } from "../App";
 import type { Recipient } from "../lib/api";
 import type { Language } from "../lib/format";
-import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { CardIcon } from "./TodayCard";
 import {
   ageGroup, childDetailsErrors, doseText, fmtPlainDate as fmt, isChild, loadChild, loadVaccines, localToday, makeVaccinePlan, saveChild,
@@ -381,17 +381,11 @@ export function VaccinesScreen({ go, recipient }: { go: (screen: "family") => vo
 // ---------------------------------------------------------------- entry points (shown only for a child)
 
 /** The Family tab entry. Shows nothing unless the profile is a child (care type from the care-type branch). */
-export function VaccinesLink({ go, recipient }: { go: (screen: "vaccines") => void; recipient: Recipient | null }) {
+export function VaccinesLink({ go, recipient, look }: { go: (screen: "vaccines") => void; recipient: Recipient | null; look?: EntryLook }) {
   const t = useTranslations("vaccines");
   const language = useLocale() as Language;
   if (!isChild(recipient)) return null;
-  return (
-    <button className="feature-link" onClick={() => go("vaccines")}>
-      <Icon3D name="vaccine" />
-      <div><strong>{t("linkTitle")}</strong><p>{t("linkSub", { call: parentCall(recipient, language) })}</p></div>
-      <Icon name="chevron" />
-    </button>
-  );
+  return <FeatureEntry look={look} icon="vaccine" title={t("linkTitle")} sub={t("linkSub", { call: parentCall(recipient, language) })} onClick={() => go("vaccines")} />;
 }
 
 /** A small card on Today: the next open vaccine, or an invitation to set the plan up. Only for a child. */

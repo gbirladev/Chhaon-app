@@ -1,0 +1,39 @@
+/* Family page on one phone screen (2026-11-07): members inside the top card, a one-line week, one 4-column grid of tiles,
+   and "More" as small two-column buttons. Text never below 12px. */
+.family-section-title { margin: 14px 2px 6px; font-size: max(0.6875rem, 12px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+/* 12 columns so every row is full, whatever the number of tiles (some hide: Safety net, Love, Vaccines): 4 per row by
+   default; 5 = 3+2, 6 = 3+3, 7 = 4+3, and 1 to 3 share one row. A browser without :has() simply shows 4 per row. */
+.feature-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+.feature-grid > * { grid-column: span 3; }
+.feature-grid:has(> :last-child:nth-child(1)) > * { grid-column: span 12; }
+.feature-grid:has(> :last-child:nth-child(2)) > * { grid-column: span 6; }
+.feature-grid:has(> :last-child:nth-child(3)) > *,
+.feature-grid:has(> :last-child:nth-child(5)) > *,
+.feature-grid:has(> :last-child:nth-child(6)) > * { grid-column: span 4; }
+.feature-grid:has(> :last-child:nth-child(5)) > :nth-child(n+4) { grid-column: span 6; }
+.feature-grid:has(> :last-child:nth-child(7)) > :nth-child(n+5) { grid-column: span 4; }
+.feature-tile { min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 2px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); text-align: center; font: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; cursor: pointer; overflow-wrap: anywhere; hyphens: auto; }
+.feature-tile:active { transform: scale(.97); }
+.feature-tile.emergency-tile { background: var(--s-fff1ec); border-color: transparent; }
+.feature-tile > .icon-3d { width: 30px; height: 30px; }
+
+.more-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.more-row { width: 100%; min-height: 46px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text-soft); font: inherit; font-size: max(0.8125rem, 12px); line-height: 1.2; text-align: left; cursor: pointer; }
+.more-row > span { flex: 1; min-width: 0; }
+.more-row > svg { display: none; }
+.more-row > .icon-3d { width: 22px; height: 22px; flex-shrink: 0; }
+
+.family-hero-compact { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.family-hero-compact .hero-members { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.family-hero-compact .hero-members strong { display: block; color: var(--text); font-size: max(0.9375rem, 12px); line-height: 1.3; }
+.family-hero-compact .hero-members small { display: flex; align-items: center; gap: 4px; color: var(--primary-text); font-size: max(0.8125rem, 12px); font-weight: 600; white-space: nowrap; }
+.family-hero-compact .hero-members small span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.family-hero-compact .hero-members[aria-expanded="true"] small svg { transform: rotate(180deg); }
+.family-hero-compact .hero-invite { flex-shrink: 0; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--primary); color: var(--on-fill); font: inherit; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.family-members { margin-bottom: 8px; }
+
+.weekly-line { width: 100%; min-height: 46px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text-soft); font: inherit; font-size: max(0.8125rem, 12px); text-align: left; cursor: pointer; }
+.weekly-line span { flex: 1; min-width: 0; }
+.weekly-line b { color: var(--text); }
+.weekly-line svg { flex-shrink: 0; color: var(--text-muted); }
+.weekly-line[aria-expanded="true"] svg { transform: rotate(180deg); }

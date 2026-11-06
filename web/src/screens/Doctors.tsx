@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Field, Icon, parentCall, useDialog, useToast } from "../App";
 import { ConfirmSheet } from "./Invites";
 import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { normalizeCallablePhone, saveDoctorsApi, type Recipient } from "../lib/api";
 import { cleanTyped } from "../lib/doctorAddress";
 import { ADDRESS_MAX, CLINIC_MAX, DOCTORS_MAX, NAME_MAX, SPECIALITY_MAX, directionsUrl, doctorsOf, toPayload, type Doctor } from "../lib/doctors";
@@ -17,17 +18,11 @@ const Pin = () => (
 );
 
 /** The Family link to this screen, with how many doctors are saved. */
-export function DoctorsLink({ go, recipient }: { go: () => void; recipient: Recipient | null }) {
+export function DoctorsLink({ go, recipient, look }: { go: () => void; recipient: Recipient | null; look?: EntryLook }) {
   const t = useTranslations("doctors");
   const language = useLocale() as Language;
   const count = doctorsOf(recipient?.doctor_contacts).length;
-  return (
-    <button className="feature-link" onClick={go}>
-      <Icon3D name="doctor" />
-      <div><strong>{t("linkTitle")}</strong><p>{count ? t("linkCount", { count }) : t("linkSub", { call: parentCall(recipient, language) })}</p></div>
-      <Icon name="chevron" />
-    </button>
-  );
+  return <FeatureEntry look={look} icon="doctors" title={t("linkTitle")} sub={count ? t("linkCount", { count }) : t("linkSub", { call: parentCall(recipient, language) })} onClick={go} />;
 }
 
 function DoctorSheet({ existing, onClose, onSave, onRemove }: { existing: Doctor | null; onClose: () => void; onSave: (doctor: Doctor) => Promise<boolean>; onRemove: () => Promise<boolean> }) {
@@ -119,9 +114,9 @@ export function DoctorsScreen({ go, recipient, onChanged }: { go: (screen: "fami
 
   return (
     <main className="scroll-page no-nav">
-      <AppHeader title={t("title")} subtitle={t("subtitle", { call })} back={() => go("family")} action={<Icon3D name="doctor" size={40} eager className="header-3d" />} />
+      <AppHeader title={t("title")} subtitle={t("subtitle", { call })} back={() => go("family")} action={<Icon3D name="doctors" size={40} eager className="header-3d" />} />
       {list.length === 0 && (
-        <div className="empty-note"><Icon3D name="doctor" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call })}</p></div>
+        <div className="empty-note"><Icon3D name="doctors" size={64} className="empty-3d" /><strong>{t("emptyTitle")}</strong><p>{t("emptyBody", { call })}</p></div>
       )}
       {list.length > 0 && (
         <section className="doctor-list" aria-label={t("title")}>

@@ -576,6 +576,15 @@
     "errFile": "Could not open the file."
   },
   "family": {
+    "sectionFor": "For {call}",
+    "sectionHealth": "Health and care",
+    "sectionMessages": "WhatsApp messages",
+    "sectionMore": "More",
+    "tileWhatsapp": "WhatsApp preview",
+    "inviteShort": "Invite",
+    "membersCount": "{count, plural, one {# person} other {# people}}",
+    "showMembers": "Show",
+    "hideMembers": "Hide",
     "title": "Family circle",
     "subtitle": "Caring together",
     "heroTitle": "{count, plural, one {# person cares for {call}} other {# people care for {call}}}",
@@ -1683,6 +1692,9 @@
     "addGivenDate": "Add the date it was given (optional)"
   },
   "weekly": {
+    "lineConfirmed": "{confirmed} of {total} confirmed",
+    "lineQuiet": "nothing to show yet",
+    "lineRefills": "{count, plural, one {# refill soon} other {# refills soon}}",
     "title": "This week",
     "period": "{from} – {to}",
     "pregnancyWeek": "Week {n}",

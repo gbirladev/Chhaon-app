@@ -576,6 +576,15 @@
     "errFile": "फ़ाइल नहीं खुल सकी।"
   },
   "family": {
+    "sectionFor": "{call} के लिए",
+    "sectionHealth": "सेहत और देखभाल",
+    "sectionMessages": "WhatsApp संदेश",
+    "sectionMore": "और",
+    "tileWhatsapp": "WhatsApp झलक",
+    "inviteShort": "बुलाएँ",
+    "membersCount": "{count, plural, one {# व्यक्ति} other {# लोग}}",
+    "showMembers": "दिखाएँ",
+    "hideMembers": "छिपाएँ",
     "title": "परिवार",
     "subtitle": "साथ मिलकर देखभाल",
     "heroTitle": "{count, plural, one {# व्यक्ति {call} की देखभाल करता है} other {# लोग {call} की देखभाल करते हैं}}",
@@ -1683,6 +1692,9 @@
     "addGivenDate": "टीका लगने की तारीख़ जोड़ें (ज़रूरी नहीं)"
   },
   "weekly": {
+    "lineConfirmed": "{total} में से {confirmed} की पुष्टि",
+    "lineQuiet": "अभी दिखाने को कुछ नहीं",
+    "lineRefills": "{count, plural, one {# दवा जल्द मँगाएँ} other {# दवाइयाँ जल्द मँगाएँ}}",
     "title": "इस हफ़्ते",
     "period": "{from} – {to}",
     "pregnancyWeek": "हफ़्ता {n}",

@@ -3,7 +3,7 @@ import { useTranslations } from "use-intl";
 import { Icon, useDialog } from "../App";
 import { dismissInstallHelp, isStandalone, promptInstall, useInstallState, type InstallPlatform } from "../lib/install";
 import "./install.css";
-import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { SlimNotice } from "./SlimNotice";
 
 const Steps = ({ platform }: { platform: InstallPlatform }) => {
@@ -53,18 +53,14 @@ export function InstallBanner() {
 }
 
 /** The Family tab entry, so the help is still there after "Not now". Hidden on desktop and once installed. */
-export function InstallLink() {
+export function InstallLink({ look }: { look?: EntryLook }) {
   const t = useTranslations("install");
   const { platform } = useInstallState();
   const [open, setOpen] = useState(false);
   if (platform === "other" || isStandalone()) return null;
   return (
     <>
-      <button className="feature-link" onClick={() => setOpen(true)}>
-        <Icon3D name="install" />
-        <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
-        <Icon name="chevron" />
-      </button>
+      <FeatureEntry look={look} icon="install" title={t("linkTitle")} sub={t("linkSub")} onClick={() => setOpen(true)} />
       {open && <InstallSheet onClose={() => setOpen(false)} />}
     </>
   );

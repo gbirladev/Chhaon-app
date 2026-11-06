@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./weeklySummary.css";
 import { useLocale, useTranslations } from "use-intl";
-import { parentCall } from "../App";
+import { parentCall, Icon } from "../App";
 import type { Recipient } from "../lib/api";
 import { formatClock, formatDate, type Language } from "../lib/format";
 import { doseText, plainDate } from "../lib/vaccines";
@@ -15,13 +15,15 @@ import { loadWeekSummary, showGivers, weekIsQuiet, type WeekGiver, type WeekSumm
 const day = (iso: string, language: Language, withWeekday = false) =>
   formatDate(plainDate(iso), language, { ...(withWeekday ? { weekday: "short" } : {}), day: "numeric", month: "short", timeZone: "UTC" });
 
-export function WeeklyCard({ recipient }: { recipient: Recipient | null }) {
+/** `compact`: one tappable line ("This week: 19 of 21 confirmed · 2 refills soon") that opens the full card (Family page). */
+export function WeeklyCard({ recipient, compact = false }: { recipient: Recipient | null; compact?: boolean }) {
   const t = useTranslations("weekly");
   const tv = useTranslations("vaccines");
   const language = useLocale() as Language;
   const recipientId = recipient?.id;
   const self = !!recipient?.is_self;
   const [week, setWeek] = useState<WeekSummary | null>(null);
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!recipientId || self) return;   // a week of another person is never shown (checked below)
     let cancelled = false;
@@ -39,8 +41,18 @@ export function WeeklyCard({ recipient }: { recipient: Recipient | null }) {
   }
   const quiet = weekIsQuiet(week);
   const percent = week.total > 0 ? Math.round((week.confirmed / week.total) * 100) : 0;
+  const line = compact && (
+    <button type="button" className="weekly-line" aria-expanded={open} aria-controls="weekly-full" onClick={() => setOpen((v) => !v)}>
+      <span><b>{t("title")}:</b> {[week.total > 0 ? t("lineConfirmed", { confirmed: week.confirmed, total: week.total }) : t("lineQuiet"),
+        week.refills.length > 0 ? t("lineRefills", { count: week.refills.length }) : ""].filter(Boolean).join(" · ")}</span>
+      <Icon name="down" size={16} />
+    </button>
+  );
+  if (compact && !open) return line;
   return (
-    <section className="weekly-card" aria-labelledby="weekly-title">
+    <>
+    {line}
+    <section className="weekly-card" id="weekly-full" aria-labelledby="weekly-title">
       <header>
         <h2 id="weekly-title">{t("title")}{week.pregnancyWeek ? <em> · {t("pregnancyWeek", { n: week.pregnancyWeek })}</em> : null}</h2>
         <small>{t("period", { from: day(week.from, language), to: day(week.to, language) })}</small>
@@ -62,5 +74,6 @@ export function WeeklyCard({ recipient }: { recipient: Recipient | null }) {
       </dl>
       <p className="weekly-note">{t("note")}</p>
     </section>
+    </>
   );
 }

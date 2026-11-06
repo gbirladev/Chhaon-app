@@ -26,6 +26,8 @@ select { padding-right: 34px; background-repeat: no-repeat; background-position:
 .scroll-page.no-nav { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
 .bottom-nav { height: calc(84px + env(safe-area-inset-bottom)); padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 .fab { bottom: calc(100px + env(safe-area-inset-bottom)); }
+/* A page with the floating "+" scrolls its last card above it (the button is 52px tall, 100px up). */
+.scroll-page:has(> .fab) { padding-bottom: calc(168px + env(safe-area-inset-bottom)); }
 .wa-input { bottom: calc(10px + env(safe-area-inset-bottom)); }
 
 /* On phones the app fills the screen: the page scrolls inside the frame so the bottom nav stays pinned.
@@ -153,7 +155,6 @@ html[lang="hi"] .status, html[lang="hi"] .tag { font-size: max(0.78rem, 12.5px);
 .page-header { align-items: flex-start; }
 .page-header h1 { padding-top: 7px; }
 .page-header > div { flex: 1; }
-.medicine-list { padding-bottom: 76px; }
 .two-col { align-items: end; }
 .two-col > * { min-width: 0; }
 .stepper { gap: 12px; flex-wrap: nowrap; }
@@ -205,6 +206,7 @@ html[lang="hi"] .status, html[lang="hi"] .tag { font-size: max(0.78rem, 12.5px);
   .bottom-nav button { height: 56px; min-height: 56px; }
   .fab { bottom: calc(80px + env(safe-area-inset-bottom)); }
   .scroll-page { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .scroll-page:has(> .fab) { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
 }
 
 /* Welcome illustration */

@@ -140,14 +140,31 @@ button { cursor: pointer; }
 .med-copy small.low-stock { color: var(--t-a8481f); }
 .med-card > button { border: 0; background: transparent; color: var(--text-muted); padding: 8px 0 8px 8px; }
 /* Archived medicines ("stopped taking it"): a collapsed section under the list, each with a Restore button. */
-.archived-medicines { margin-top: 22px; padding-bottom: 72px; }
+.archived-medicines { margin-top: 22px; }
 .archived-toggle { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; border: 1px solid var(--b-cfe0dc); border-radius: 14px; background: var(--surface); color: var(--primary-text); font: inherit; font-weight: 700; cursor: pointer; }
 .archived-chevron { display: inline-flex; transform: rotate(90deg); transition: transform .2s; }
 .archived-chevron.open { transform: rotate(-90deg); }
 .archived-medicines > .form-note { margin: 10px 2px; }
 .archived-card .med-copy { margin-left: 2px; min-height: 44px; cursor: pointer; opacity: .75; }
 .med-card > .restore-button { flex: 0 0 auto; min-height: 44px; min-width: 88px; padding: 0 14px; border: 1px solid var(--b-cfe0dc); border-radius: 12px; background: var(--surface); color: var(--primary-text); font-weight: 700; }
-.fab { position: absolute; bottom: 100px; right: 20px; height: 48px; border: 0; border-radius: 24px; padding: 0 17px; background: var(--primary); color: var(--on-fill); box-shadow: 0 7px 22px var(--sh-247c72-a3); display: flex; align-items: center; gap: 7px; font-size: max(0.75rem, 12px); font-weight: 700; }
+.fab { position: absolute; bottom: 100px; right: 20px; height: 52px; min-width: 52px; border: 0; border-radius: 26px; padding: 0 13px; background: var(--primary); background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 72%, #fff), var(--primary) 70%); color: var(--on-fill); box-shadow: 0 8px 20px var(--sh-247c72-a3); display: flex; align-items: center; justify-content: center; gap: 0; font-size: max(0.8125rem, 12px); font-weight: 700; cursor: pointer; animation: fab-pop .38s cubic-bezier(.3, 1.5, .5, 1) both, fab-ring 1.6s ease-out .5s 2; transition: transform .15s ease, box-shadow .2s ease, gap .2s ease; }
+/* Small round "+" (2026-11-07). The words are read by screen readers and slide out on hover where there is a mouse. */
+.fab > svg { transition: transform .25s ease; flex-shrink: 0; }
+.fab > span { max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width .25s ease, opacity .2s ease; }
+.fab:active { transform: scale(.92); }
+.fab:active > svg { transform: rotate(90deg); }
+.fab:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent); outline-offset: 3px; }
+@media (hover: hover) {
+  .fab:hover { gap: 6px; transform: translateY(-2px); box-shadow: 0 12px 26px var(--sh-247c72-a3); }
+  .fab:hover > svg { transform: rotate(90deg); }
+  .fab:hover > span { max-width: 160px; opacity: 1; }
+}
+@keyframes fab-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fab-ring {
+  0% { box-shadow: 0 8px 20px var(--sh-247c72-a3), 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent); }
+  100% { box-shadow: 0 8px 20px var(--sh-247c72-a3), 0 0 0 16px color-mix(in srgb, var(--primary) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .fab, .fab > svg, .fab > span { animation: none; transition: none; } }
 
 /* Reports */
 .upload-card { width: 100%; display: flex; align-items: center; text-align: left; gap: 12px; padding: 15px; border: 1px dashed var(--b-77afa7); background: var(--s-edf7f4); border-radius: 17px; color: var(--t-264e49); }

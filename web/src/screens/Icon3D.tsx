@@ -15,6 +15,7 @@ import "./icon3d.css";
 const ICONS = {
   heart: { file: "red-heart", flat: "heart" },
   doctor: { file: "stethoscope", flat: "report" },
+  doctors: { file: "health-worker", flat: "users" },
   whatsapp: { file: "telephone-receiver", flat: "phone" },
   shield: { file: "shield", flat: "shield" },
   chart: { file: "bar-chart", flat: "chart" },

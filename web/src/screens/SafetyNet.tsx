@@ -10,7 +10,7 @@ import {
 } from "../lib/escalation";
 import { formatClock, type Language } from "../lib/format";
 import "./safetynet.css";
-import { Icon3D } from "./Icon3D";
+import { FeatureEntry, type EntryLook } from "./FeatureEntry";
 import { SlimNotice } from "./SlimNotice";
 
 /** The Safety net: what happens when a parent does not answer. Nudge first, tell the family only when it matters. */
@@ -177,15 +177,9 @@ export function EscalationProgress({ recipient, call }: { recipient: Recipient; 
 }
 
 /** The Family tab entry, shown only when the server has the ladder switched on. */
-export function SafetyNetLink({ go, hidden = false }: { go: (screen: "safety") => void; hidden?: boolean }) {
+export function SafetyNetLink({ go, hidden = false, look }: { go: (screen: "safety") => void; hidden?: boolean; look?: EntryLook }) {
   const t = useTranslations("safety");
   const features = useFeatures();
   if (!features.escalation || hidden) return null;
-  return (
-    <button className="feature-link" onClick={() => go("safety")}>
-      <Icon3D name="shield" />
-      <div><strong>{t("linkTitle")}</strong><p>{t("linkSub")}</p></div>
-      <Icon name="chevron" />
-    </button>
-  );
+  return <FeatureEntry look={look} icon="shield" title={t("linkTitle")} sub={t("linkSub")} onClick={() => go("safety")} />;
 }
