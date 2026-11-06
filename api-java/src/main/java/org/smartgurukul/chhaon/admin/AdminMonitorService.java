@@ -16,8 +16,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * Read-only views across EVERY family for the owner's Monitor (service role, RLS bypassed: the caller was checked by
- * {@link AdminGuard}). For now everything is shown, names and phone numbers included (the only accounts are the owner's own family;
- * docs/TODO.md: switch to masked phones before real families join). Nothing here is ever logged.
+ * {@link AdminGuard}). Names are shown (the owner needs them to help a family); every phone number is masked by {@link PhoneMask}
+ * before it leaves (country code + last 4 digits), so the full number never reaches the browser. Nothing here is ever logged.
  */
 @Service
 public class AdminMonitorService {
@@ -111,7 +111,7 @@ public class AdminMonitorService {
             rows = familyRows(FAMILIES_SQL.replace("AUTH_SEEN", ""));
         }
         for (Map<String, Object> row : rows) row.put("badges", badges(row));
-        return rows;
+        return PhoneMask.maskRows(rows);
     }
 
     private List<Map<String, Object>> familyRows(String sql) {
@@ -201,11 +201,11 @@ public class AdminMonitorService {
                 adminId, recipientId, circleId);
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("recipient", Rows.value(found.get(0).get("recipient")));
-        out.put("members", Rows.clean(jdbc.queryForList(
+        out.put("recipient", PhoneMask.maskFields(Rows.value(found.get(0).get("recipient"))));   // whatsapp_phone, contacts' phones
+        out.put("members", PhoneMask.maskRows(Rows.clean(jdbc.queryForList(
                 "select p.id user_id, p.name, p.email, p.phone, m.role::text role, m.parent_calls_me, m.created_at joined_at, p.plan, " +
                 "p.trial_ends_at, p.language, p.timezone, p.alert_phone, p.alert_consent_at, p.is_admin, p.created_at signed_up_at " +
-                "from care_circle_members m join profiles p on p.id = m.user_id where m.circle_id = ? order by m.role, p.name", circleId)));
+                "from care_circle_members m join profiles p on p.id = m.user_id where m.circle_id = ? order by m.role, p.name", circleId))));
         out.put("medicines", Rows.clean(jdbc.queryForList(
                 "select m.id, m.name, m.dosage, m.instructions, m.active, m.critical, m.stock_count, m.refill_threshold, " +
                 "m.photo_url is not null has_photo, m.pill_colour, m.pill_shape, m.created_at, " +
@@ -284,7 +284,7 @@ public class AdminMonitorService {
     /** Doses and check-ins due in the next {@code hours} hours (default 2), soonest first. */
     public List<Map<String, Object>> upcoming(int hours) {
         int h = Math.max(1, Math.min(hours, 24));
-        return Rows.clean(jdbc.queryForList(
+        return PhoneMask.maskRows(Rows.clean(jdbc.queryForList(
                 "select * from (" +
                 " select 'dose' kind, de.scheduled_at due_at, r.id recipient_id, r.name recipient_name, r.timezone, r.reminder_to, " +
                 "   r.reminder_name, r.whatsapp_phone, " +
@@ -305,16 +305,16 @@ public class AdminMonitorService {
                 "   and x.due_at > now() - interval '5 minutes' and x.due_at <= now() + make_interval(hours => ?) " +
                 "   and not exists(select 1 from checkins c where c.recipient_id = r.id and c.date = (now() at time zone r.timezone)::date " +
                 "     and c.status <> 'pending')" +
-                ") u order by due_at, recipient_name", h, h));
+                ") u order by due_at, recipient_name", h, h)));
     }
 
     // ---------------------------------------------------------------- feedback
 
     public List<Map<String, Object>> feedback(int limit) {
         int n = Math.max(1, Math.min(limit, 200));
-        return Rows.clean(jdbc.queryForList(
+        return PhoneMask.maskRows(Rows.clean(jdbc.queryForList(
                 "select f.id, f.created_at, f.kind, f.message, f.rating, f.screen, f.app_language, cardinality(f.images) images, " +
                 "p.id user_id, p.name, p.email, p.phone from feedback f left join profiles p on p.id = f.user_id " +
-                "order by f.created_at desc limit ?", n));
+                "order by f.created_at desc limit ?", n)));
     }
 }

@@ -74,9 +74,13 @@ web falls back to the old direct Storage calls.
 
 ## Admin Monitor (built 2026-11-05, docs/admin-monitor.md)
 - [ ] **Sydney: paste `supabase/migrations/20261105000054_admin_monitor.sql` BEFORE deploying the backend** that contains the Monitor.
-- [ ] **Masked phone numbers before real families join.** The Monitor shows full names, numbers and medicines because the only
-      accounts are the owner's own family. Mask phones (e.g. +91 ••••• •0001) in `/api/v1/admin/families*`, `/upcoming`,
-      `/feedback-inbox` and the gateway number before the first outside family signs up. Every family view is already audited (`admin_audit`).
+- [x] **Masked phone numbers BUILT (2026-11-06).** The backend masks every phone before it leaves (`admin/PhoneMask.java`: country
+      code + last 4 digits, `+91 ••••• •0001`; short/odd numbers fully hidden): any field ending in `phone` at any depth in
+      `/api/v1/admin/families`, `/families/{id}` (parent number, caregivers' phone + alert_phone, emergency + doctor contacts),
+      `/upcoming`, `/feedback-inbox`, and the gateway / canary number in `/gateway` and the `gateway` health check. Tests: `PhoneMaskTest`
+      + `AdminMonitorApiTest.noAdminEndpointSendsAFullPhoneNumber` (all 12 admin GET endpoints, no 8+ digit run in the JSON).
+      Names, e-mails and medicines are still shown (needed to help a family; every family view is audited in `admin_audit`).
+      **Deploy: backend only** (`api-java`, no migration, no web change; the Monitor just shows the masked text).
 - [ ] **E-mail alerts for Monitor problems** (today dashboard only): implement `AdminAlertNotifier` with Resend
       (`RESEND_API_KEY` + `ADMIN_ALERT_EMAIL`, later from `alerts@chhaon.site`), as a `@Primary` bean; never phone numbers or health data in the mail.
 - [ ] **Separate admin website later**: the `/api/v1/admin/*` endpoints are plain JSON so they can be reused as they are.
