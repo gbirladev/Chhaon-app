@@ -13,4 +13,12 @@
 .plans-page .plan-note a { display: inline-block; margin-top: 8px; min-height: 44px; line-height: 44px; font-weight: 700; color: var(--primary-text); }
 .plans-page .plan-trial { margin-top: 14px; padding: 14px; border-radius: 14px; background: var(--s-e3f3ef); border: 1px solid var(--b-b9dcd4); color: var(--text); line-height: 1.5; }
 .plans-page .plan-trial p { margin: 6px 0 0; font-size: max(0.9375rem, 12px); }
+.plans-page .plan-upcoming { margin: 22px 0 8px; }
+.plans-page .plan-upcoming h2 { margin: 0; font-size: 1.1875rem; color: var(--text); }
+.plans-page .plan-upcoming-intro { margin: 6px 2px 0; color: var(--text-muted); font-size: max(0.9375rem, 12px); line-height: 1.5; }
+.plans-page .plan-upcoming-item { background: var(--surface); border: 1px dashed var(--line); border-radius: 16px; padding: 16px; margin-top: 12px; }
+.plans-page .plan-upcoming-item h3 { margin: 0; font-size: 1.0625rem; color: var(--text); line-height: 1.35; }
+.plans-page .plan-upcoming-item p { margin: 0; color: var(--text-soft); font-size: max(0.9375rem, 12px); line-height: 1.55; }
+.plans-page .plan-tag.soon { background: var(--s-fff4de); color: var(--t-6b4b0a); flex-shrink: 0; }
+.plans-page .plan-upcoming > a { display: inline-block; margin-top: 10px; min-height: 44px; line-height: 44px; font-weight: 700; color: var(--primary-text); }
 .plans-page .plan-trial.ended { background: var(--s-fff4de); border-color: var(--b-f0d9a5); color: var(--t-6b4b0a); }

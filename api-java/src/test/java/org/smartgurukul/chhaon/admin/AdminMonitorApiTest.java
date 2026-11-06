@@ -262,6 +262,68 @@ class AdminMonitorApiTest extends DbTest {
         assertThat(row.path("caregivers").get(0).path("name").asText()).isEqualTo("Ananya");
     }
 
+    // ---------------------------------------------------------------- masked phone numbers
+
+    /** A phone-shaped run of digits on its own (not inside a uuid, not the fraction of a timestamp): 8 or more, maybe after "+". */
+    private static final java.util.regex.Pattern LONG_DIGITS = java.util.regex.Pattern.compile("(?<![.\\w-])\\+?\\d{8,}(?![\\w-])");
+
+    @Test
+    void noAdminEndpointSendsAFullPhoneNumber() throws Exception {
+        String parent = "+919999900011";
+        String caregiver = "+919999900012";
+        String alerts = "+919999900013";
+        String emergency = "+919999900014";
+        String doctor = "+919999900015";
+        String reminderUser = "+919999900016";
+        Family f = family(parent);
+        fx.jdbc().update("update profiles set phone = ? where id = ?", caregiver, f.userId());
+        fx.alertsOn(f.userId(), fx.track(alerts));
+        UUID sibling = fx.member(f, "Rohan");
+        fx.jdbc().update("update profiles set phone = ? where id = ?", fx.track(reminderUser), sibling);
+        fx.jdbc().update("update care_recipients set reminder_user_id = ?, emergency_contacts = ?::jsonb, doctor_contacts = ?::jsonb where id = ?",
+                sibling, "[{\"name\":\"Uncle\",\"phone\":\"" + emergency + "\"}]", "[{\"name\":\"Dr Rao\",\"phone\":\"" + doctor + "\"}]",
+                f.recipientId());
+        Fixtures.Med med = fx.medicine(f, "Metformin", "500 mg", 20, LocalTime.of(8, 0));
+        fx.dose(med.scheduleId(), Instant.now().plus(1, ChronoUnit.HOURS), "pending", null, null);
+        fx.dose(med.scheduleId(), Instant.now().minus(2, ChronoUnit.HOURS), "taken", Instant.now().minus(2, ChronoUnit.HOURS), null);
+        fx.jdbc().update("insert into feedback (user_id, kind, message) values (?, 'idea', 'Bigger buttons please')", f.userId());
+
+        List<String> urls = List.of("/api/v1/admin/health", "/api/v1/admin/alerts", "/api/v1/admin/overview", "/api/v1/admin/families",
+                "/api/v1/admin/families/" + f.recipientId(), "/api/v1/admin/activity", "/api/v1/admin/upcoming",
+                "/api/v1/admin/feedback-inbox", "/api/v1/admin/gateway?fresh=true", "/api/v1/admin/stats", "/api/v1/admin/love-stats",
+                "/api/v1/admin/feedback");
+        for (String url : urls) {
+            String body = mvc.perform(get(url).header("Authorization", bearer(admin, true)))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(LONG_DIGITS.matcher(body).find()).as("a full number in %s: %s", url, body).isFalse();
+            for (String p : List.of(parent, caregiver, alerts, emergency, doctor, reminderUser)) {
+                assertThat(body).as(url).doesNotContain(p.substring(3));   // not even without the country code
+            }
+        }
+
+        // what the Monitor shows instead: country code + last 4 digits
+        JsonNode detail = getJson("/api/v1/admin/families/" + f.recipientId());
+        assertThat(detail.path("recipient").path("whatsapp_phone").asText()).isEqualTo("+91 ••••• •0011");
+        assertThat(detail.path("recipient").path("emergency_contacts").get(0).path("phone").asText()).isEqualTo("+91 ••••• •0014");
+        assertThat(detail.path("recipient").path("emergency_contacts").get(0).path("name").asText()).isEqualTo("Uncle");
+        assertThat(detail.path("recipient").path("doctor_contacts").get(0).path("phone").asText()).isEqualTo("+91 ••••• •0015");
+        assertThat(detail.path("recipient").path("name").asText()).isEqualTo("Rajesh");   // names stay
+        JsonNode owner = null;
+        for (JsonNode m : detail.path("members")) if (m.path("user_id").asText().equals(f.userId().toString())) owner = m;
+        assertThat(owner.path("phone").asText()).isEqualTo("+91 ••••• •0012");
+        assertThat(owner.path("alert_phone").asText()).isEqualTo("+91 ••••• •0013");
+
+        JsonNode row = null;
+        for (JsonNode r : getJson("/api/v1/admin/families")) if (r.path("recipient_id").asText().equals(f.recipientId().toString())) row = r;
+        assertThat(row.path("whatsapp_phone").asText()).isEqualTo("+91 ••••• •0011");
+        assertThat(row.path("reminder_user_phone").asText()).isEqualTo("+91 ••••• •0016");
+        assertThat(row.path("caregivers").toString()).contains("+91 ••••• •0012").contains("Ananya");
+        assertThat(row.path("badges").toString()).doesNotContain("consent_pending");   // badges still read the real values
+
+        assertThat(getJson("/api/v1/admin/upcoming").toString()).contains("+91 ••••• •0011").contains("Metformin");
+        assertThat(getJson("/api/v1/admin/feedback-inbox").get(0).path("phone").asText()).isEqualTo("+91 ••••• •0012");
+    }
+
     @Test
     void timestampsComeBackAsUtcIsoText() {
         assertThat(Rows.value(Timestamp.from(Instant.parse("2026-11-05T08:30:00Z")))).isEqualTo("2026-11-05T08:30:00Z");

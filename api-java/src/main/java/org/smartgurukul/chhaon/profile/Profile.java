@@ -77,6 +77,15 @@ public class Profile {
     @Column(name = "alert_consent_at")
     private OffsetDateTime alertConsentAt;
 
+    // How the caregiver found Chhaon (migration 0058). Set once (the database keeps the first value); counted for the admin only.
+    /** Doctor code from the QR card (?ref=D001), upper case. */
+    @Column(name = "referred_by")
+    private String referredBy;
+
+    /** Optional sign-up answer: doctor / friend_family / whatsapp / google / other. */
+    @Column(name = "heard_from")
+    private String heardFrom;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

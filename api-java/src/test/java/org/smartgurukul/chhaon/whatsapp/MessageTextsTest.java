@@ -171,4 +171,21 @@ class MessageTextsTest {
         assertThat(ReplyTexts.stopped("en")).contains("START");
         assertThat(ReplyTexts.consentNo("hi")).contains("START");
     }
+
+    @Test
+    void everyYesReplyEndsWithTheAntiFraudLine() {
+        assertThat(ReplyTexts.neverAsks("en"))
+                .isEqualTo("🔒 Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone does, it is not us.");
+        assertThat(ReplyTexts.neverAsks("hi"))
+                .isEqualTo("🔒 छाँव आपसे कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगेगा। अगर कोई माँगे, तो वह हम नहीं हैं।");
+        for (String lang : List.of("en", "hi")) {
+            for (String t : List.of(ReplyTexts.consentYes(lang), ReceiverTexts.consentYes(lang, "Papa"))) {
+                clean(t);
+                assertThat(t).contains("STOP").endsWith("\n\n" + ReplyTexts.neverAsks(lang));
+                assertThat(DEVANAGARI.matcher(t).find()).isEqualTo(lang.equals("hi"));
+            }
+        }
+        // Not added to the caregiver's own alerts reply: it goes to the app user, not a parent.
+        assertThat(ReplyTexts.alertsOn("en")).doesNotContain("Aadhaar");
+    }
 }

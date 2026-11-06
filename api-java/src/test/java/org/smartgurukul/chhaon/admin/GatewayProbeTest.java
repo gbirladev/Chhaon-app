@@ -29,7 +29,7 @@ class GatewayProbeTest {
                   "{\"url\":\"https://other.example.test/\",\"isActive\":false,\"events\":[\"*\"]}]}"),
                 Instant.now());
         assertThat(s.sessionStatus()).isEqualTo("CONNECTED");
-        assertThat(s.number()).isEqualTo("+919999900009");
+        assertThat(s.number()).isEqualTo("+91 ••••• •0009");   // masked: the full number never reaches the browser
         assertThat(s.webhooks()).isEqualTo(1);
         assertThat(s.webhookTargets()).containsExactly("https://api.example.test/webhooks/whatsapp-gateway");
         assertThat(s.toString()).doesNotContain("never-kept");

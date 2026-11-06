@@ -1,7 +1,7 @@
 /**
  * "Prepared for: Dr <name>, <clinic>" on the doctor summary. The family types it for THEIR OWN doctor; it is never shown to
- * anyone else and never promotes a clinic. Kept on this device only (per parent), not on the server: the parent profile has
- * doctor contacts (name + phone) but no clinic, so the first doctor's name is only the starting value.
+ * anyone else and never promotes a clinic. Kept on this device only (per parent), not on the server: the first doctor in
+ * "Your doctors" (name + clinic) is only the starting value, and the family can change it for one visit.
  */
 export const DOCTOR_MAX = 60;
 export const CLINIC_MAX = 80;
@@ -43,9 +43,10 @@ export function loadDoctorAddress(recipientId: string, doctorContacts: unknown):
   try { saved = parse(localStorage.getItem(PREFIX + recipientId)); } catch { /* storage blocked */ }
   if (saved) return saved;
   const first = Array.isArray(doctorContacts)
-    ? doctorContacts.find((c): c is { name: string } => !!c && typeof c === "object" && typeof (c as { name?: unknown }).name === "string" && !!cleanLine((c as { name: string }).name, DOCTOR_MAX))
+    ? doctorContacts.find((c): c is { name: string; clinic?: unknown } => !!c && typeof c === "object" && typeof (c as { name?: unknown }).name === "string" && !!cleanLine((c as { name: string }).name, DOCTOR_MAX))
     : undefined;
-  return { doctor: first ? cleanLine(first.name, DOCTOR_MAX) : "", clinic: "" };
+  // "Your doctors" (2026-11-06) also keeps the first doctor's clinic or hospital.
+  return { doctor: first ? cleanLine(first.name, DOCTOR_MAX) : "", clinic: first && typeof first.clinic === "string" ? cleanLine(first.clinic, CLINIC_MAX) : "" };
 }
 
 export function saveDoctorAddress(recipientId: string, value: DoctorAddress) {

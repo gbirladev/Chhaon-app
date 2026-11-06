@@ -18,11 +18,11 @@ import { CardIcon } from "./TodayCard";
 type Tone = "ok" | "warn" | "info";
 const TONE: Record<FeedItem["kind"], Tone> = {
   dose_taken: "ok", dose_missed: "warn", checkin_answered: "ok", checkin_missed: "warn", vaccine_given: "ok",
-  appointment_added: "info", medicine_added: "info", medicine_paused: "info", consent_given: "ok", consent_stopped: "warn",
+  appointment_added: "info", medicine_added: "info", medicine_paused: "info", medicine_stopped: "info", consent_given: "ok", consent_stopped: "warn",
 };
 const ICON: Record<FeedItem["kind"], string> = {
   dose_taken: "check", dose_missed: "bell", checkin_answered: "check", checkin_missed: "bell", vaccine_given: "check",
-  appointment_added: "calendar", medicine_added: "pill", medicine_paused: "pill", consent_given: "phone", consent_stopped: "phone",
+  appointment_added: "calendar", medicine_added: "pill", medicine_paused: "pill", medicine_stopped: "pill", consent_given: "phone", consent_stopped: "phone",
 };
 
 /** One sentence per item, following who received the reminder (the person, a helper, a family member) or who marked it. */
@@ -44,6 +44,7 @@ function useSentence() {
       case "appointment_added": return t(`appointmentAdded.${who === "you" || who === "by" ? who : "none"}`, { call, by, doctor: thing });
       case "medicine_added": return t("medicineAdded", { call, medicine: thing });
       case "medicine_paused": return t("medicinePaused", { call, medicine: thing });
+      case "medicine_stopped": return t("medicineStopped", { call, medicine: thing });
       case "consent_given": return t(`consentGiven.${who === "you" || who === "by" ? who : "person"}`, { call, by });
       case "consent_stopped": return t(`consentStopped.${who === "you" || who === "by" ? who : "person"}`, { call, by });
     }

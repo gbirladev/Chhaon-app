@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 /**
- * The pilot cap (docs/pilot-cap.md, migration 20261106000056): how many WhatsApp numbers get messages while we are in pilot, and
+ * The pilot cap (docs/pilot-cap.md, migration 20261107000060): how many WhatsApp numbers get messages while we are in pilot, and
  * a line for the rest. The decisions live in the database (pilot_admit is serialized there); this class only calls them.
  *
  * <p>Read defensively: until the migration has run (Sydney: SQL first, then push) {@link #admit} lets everyone in and

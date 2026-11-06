@@ -24,6 +24,7 @@ Questions to keep in mind: Is it warm and respectful (आप, not तुम)? Is
 | Message | Hindi | English meaning | OK / better wording |
 |---|---|---|---|
 | consentYes | धन्यवाद 🙏 अब आपको यहाँ दवा के हल्के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें। | Thank you 🙏 You will now get gentle medicine reminders here. Reply STOP any time to stop. | |
+| consentYes, last line (also after "1" from a helper / caregiver; new 2026-11-06, please check) | 🔒 छाँव आपसे कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगेगा। अगर कोई माँगे, तो वह हम नहीं हैं। | 🔒 Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone does, it is not us. | |
 | consentNo | कोई बात नहीं। हम आपको कोई संदेश नहीं भेजेंगे। मन बदले तो START लिखें। | No problem. We will not send you any messages. If you change your mind, reply START. | |
 | stopped | ठीक है, हमने सभी संदेश बंद कर दिए हैं। दोबारा चाहिए तो START लिखें। | Okay, we have stopped all messages. Reply START if you want them again. | |
 | resumed | वापसी पर स्वागत है 🙏 रिमाइंडर फिर से शुरू हो गए हैं। | Welcome back 🙏 Reminders have started again. | |
@@ -325,7 +326,7 @@ Please check especially the possessives ("पापा की दवा", "प�
 | Consent, helper | नमस्ते सुनीता जी 🙏 / Ganesh आपको यहाँ WhatsApp पर पापा की दवाओं के रिमाइंडर भेजना चाहते हैं। / शुरू करने के लिए *1* लिखें ✅ / नहीं चाहिए तो *2* लिखें / कभी भी STOP लिखकर रोक सकते हैं। | Namaste Sunita ji 🙏 / Ganesh would like to send you reminders for Papa's medicines here on WhatsApp. / Reply *1* to start ✅ ... | |
 | Consent, helper, no caregiver name | पापा का परिवार आपको यहाँ WhatsApp पर पापा की दवाओं के रिमाइंडर भेजना चाहता है। | Papa's family would like to send you reminders for Papa's medicines here on WhatsApp. | |
 | Consent, caregiver | आपने पापा की दवाओं के रिमाइंडर यहाँ WhatsApp पर पाना चुना है। | You chose to get Papa's medicine reminders here on WhatsApp. | |
-| After "1" to consent | धन्यवाद 🙏 अब आपको यहाँ पापा की दवा के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें। | Thank you 🙏 You will now get Papa's medicine reminders here. Reply STOP any time to stop. | |
+| After "1" to consent | धन्यवाद 🙏 अब आपको यहाँ पापा की दवा के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें। / 🔒 छाँव आपसे कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगेगा। अगर कोई माँगे, तो वह हम नहीं हैं। | Thank you 🙏 You will now get Papa's medicine reminders here. Reply STOP any time to stop. / 🔒 Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone does, it is not us. | |
 | After "diya" / "1" | धन्यवाद 🙏 पापा की दवा Metformin नोट कर ली ✅ | Thank you 🙏 Noted for Papa: Metformin ✅ | |
 | After "2" (helper) | ठीक है 🙏 पापा को दवा देने के बाद 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once you have given Papa the medicine. | |
 | After "2" (caregiver) | ठीक है 🙏 पापा के दवा लेने के बाद 1 लिखकर भेज दीजिए। | Okay 🙏 Please reply 1 once Papa has taken the medicine. | |

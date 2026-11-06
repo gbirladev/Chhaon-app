@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
- * The pilot cap (docs/pilot-cap.md, migration 20261106000056) through the routes the web app calls: a full pilot makes the
+ * The pilot cap (docs/pilot-cap.md, migration 20261107000060) through the routes the web app calls: a full pilot makes the
  * consent request wait with a place in line, the line moves when a seat frees, and the owner sees and reorders the line.
  * The limits are set relative to the seats already in use, and the settings row is removed afterwards (a fresh test database
  * has none, which means "cap off", so other tests are not affected).

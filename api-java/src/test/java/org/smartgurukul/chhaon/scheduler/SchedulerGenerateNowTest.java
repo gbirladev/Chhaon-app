@@ -62,6 +62,18 @@ class SchedulerGenerateNowTest extends DbTest {
     }
 
     @Test
+    void aDatabaseFailureIsSwallowedAndMakesNothing() {
+        // every database call fails
+        JdbcTemplate broken = org.mockito.Mockito.mock(JdbcTemplate.class, invocation -> {
+            throw new org.springframework.dao.DataAccessResourceFailureException("simulated database trouble");
+        });
+        SchedulerService failing = new SchedulerService(broken, wa, true, 60, 180, 120, 24, "all");
+
+        assertThat(failing.generateNow(UUID.randomUUID())).isZero();
+        assertThat(wa.sent()).isEmpty();
+    }
+
+    @Test
     void aTimeThatAlreadyPassedTodayGetsNoDose() {
         Family f = fx.family("en", true);
         UUID medicineId = UUID.randomUUID();

@@ -29,10 +29,33 @@ Feature freeze after polls + admin Monitor; no new screens, themes or website wo
 - [ ] Burn-in: 7 days, owner's family + 5-10 friendly families, zero silent failures, then start marketing.
 - [ ] Meanwhile: "Join the first 50 families" waitlist on the website.
 - [ ] Pilot cap BUILT on branch `pilot-cap` (docs/pilot-cap.md): 50 WhatsApp numbers, 5 new a day, a waiting line with "#N in line",
-      3-8 s between scheduler sends. To switch on: SQL `20261106000056_pilot_cap.sql` on Sydney first, then push.
+      3-8 s between scheduler sends. To switch on: SQL `20261107000060_pilot_cap.sql` on Sydney first, then push.
 - [ ] Long term: plan the move to Meta's WhatsApp API once families pay.
 - [ ] Admin Monitor, later additions (after a few days of use): (canary card done, see above); poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
       (amber at 70%); which migrations have run on Sydney (from the migration tracking table).
+
+## Archive a medicine instead of deleting it (built 2026-11-06, migration 0056)
+
+"Stopped taking it" is now the normal way to take a medicine off the list; delete stays only for "added by mistake".
+- Archived = `medicines.archived_at` set AND `active = false` (check constraint `medicines_archived_not_active`), so every
+  place that already skips paused medicines (dose generation, plan pauses, low-stock trigger, emergency card, weekly
+  summary, Monitor) skips archived ones too. Pause (inactive, not archived) is unchanged.
+- Archiving deletes the medicine's waiting (`pending`) doses at once (trigger); sent / taken / missed doses stay, so the
+  doctor summary's last 30 days and the activity feed keep the history. Queued refill / out-of-stock WhatsApp alerts for it
+  are skipped. The activity feed shows "{call} stopped taking {medicine}" (`medicine_stopped`).
+- Plan limit (`limit_medicines`): archived medicines do not count; a parent can hold 200 medicines in all (ceiling).
+  Restoring checks the limit again (trigger `medicines_restore_limit`; the app shows the usual "plan limit" message).
+- API: `POST /api/v1/medicines/{id}/archive` and `/restore` (idempotent); `archivedAt` in the medicine JSON;
+  `PATCH active=true` on an archived medicine is a 409 (restore it instead).
+- Web: detail screen has "Stopped taking it" (with a confirm sheet) and a small "Added by mistake? Delete it" with a
+  stronger warning; the Medicines list has a collapsed "Stopped medicines (n)" section with a "Taking again" button.
+- [ ] **Deploy order:** (1) paste `supabase/migrations/20261106000056_medicine_archive.sql` on Sydney (safe twice),
+      (2) push the backend (it maps `archived_at`; `ddl-auto=validate` fails to start without the column), (3) web.
+      Between (2) and (3) an old web app shows a blank line for a `medicine_stopped` feed item; harmless.
+- [ ] Hindi review of the new texts ("दवा बंद कर दी", "वापस चालू करें", "बंद की गई दवाइयाँ").
+- [ ] Open: a dose already SENT when a medicine is archived can still turn "missed" and alert the family once. Left as is
+      (the parent may still answer it); revisit if families find it confusing.
+- [ ] Open: the medicine photo of an archived medicine is kept (needed if it is restored); delete still removes it.
 
 ## WhatsApp replies lost after the number change (found and fixed 2026-11-05)
 
@@ -76,9 +99,13 @@ web falls back to the old direct Storage calls.
 
 ## Admin Monitor (built 2026-11-05, docs/admin-monitor.md)
 - [ ] **Sydney: paste `supabase/migrations/20261105000054_admin_monitor.sql` BEFORE deploying the backend** that contains the Monitor.
-- [ ] **Masked phone numbers before real families join.** The Monitor shows full names, numbers and medicines because the only
-      accounts are the owner's own family. Mask phones (e.g. +91 ••••• •0001) in `/api/v1/admin/families*`, `/upcoming`,
-      `/feedback-inbox` and the gateway number before the first outside family signs up. Every family view is already audited (`admin_audit`).
+- [x] **Masked phone numbers BUILT (2026-11-06).** The backend masks every phone before it leaves (`admin/PhoneMask.java`: country
+      code + last 4 digits, `+91 ••••• •0001`; short/odd numbers fully hidden): any field ending in `phone` at any depth in
+      `/api/v1/admin/families`, `/families/{id}` (parent number, caregivers' phone + alert_phone, emergency + doctor contacts),
+      `/upcoming`, `/feedback-inbox`, and the gateway / canary number in `/gateway` and the `gateway` health check. Tests: `PhoneMaskTest`
+      + `AdminMonitorApiTest.noAdminEndpointSendsAFullPhoneNumber` (all 12 admin GET endpoints, no 8+ digit run in the JSON).
+      Names, e-mails and medicines are still shown (needed to help a family; every family view is audited in `admin_audit`).
+      **Deploy: backend only** (`api-java`, no migration, no web change; the Monitor just shows the masked text).
 - [ ] **E-mail alerts for Monitor problems** (today dashboard only): implement `AdminAlertNotifier` with Resend
       (`RESEND_API_KEY` + `ADMIN_ALERT_EMAIL`, later from `alerts@chhaon.site`), as a `@Primary` bean; never phone numbers or health data in the mail.
 - [ ] **Separate admin website later**: the `/api/v1/admin/*` endpoints are plain JSON so they can be reused as they are.
@@ -106,7 +133,8 @@ Product / reliability
 - [ ] **Text size in `rem`:** sizes are now rem with a 12px floor; a full pass to rem for every unit would honour system font scaling everywhere.
 - [x] **Code splitting:** done. The JS is split into index (about 70 KB gzip), App (about 101 KB gzip), the Hindi texts (about 31 KB gzip) and the tiny public emergency page; only what the screen needs loads.
 - [ ] **Dark mode** is not designed (the app forces a light colour scheme).
-- [ ] **Doctor and emergency contacts** are in the schema but the Figma profile form does not collect them, so the emergency card shows caregivers' phones instead.
+- [x] **Doctor and emergency contacts** are in the schema but the Figma profile form does not collect them, so the emergency card shows caregivers' phones instead.
+      Doctors: done 2026-11-06 ("Your doctors", see below). Emergency contacts other than the family: still not collected (open).
 - [ ] **Real family invites** (step 9): the Invite button says "coming soon"; roles are owner + member.
 - [ ] **Medicine editing** (name, times, dose): only stock, pause and delete exist today.
 
@@ -117,7 +145,7 @@ Open items from the second backend review
 - [ ] An exception between claiming a dose and the send `try` (template building) would leave it `sent` with nothing sent. No reachable trigger today; wrap it when touching that code.
 
 Found by the journey and verification agents (round 3), still open
-- [ ] **Archive instead of delete for medicines:** deleting a medicine also deletes its dose history (cascade). For health records, prefer "archive" (hidden, history kept) and keep delete for mistakes.
+- [x] **Archive instead of delete for medicines:** built 2026-11-06 (migration 0056), see "Archive a medicine instead of deleting it" above.
 - [ ] **Offline app shell** and the ~8 s "Loading…" before the retry notice when the backend is down.
 - [ ] **Reload on `#/profile`** goes to Today (by design); a parent deleted mid-edit drops the user on a blank add-parent form without a message.
 - [ ] **WhatsApp preview** shows the parent's first real medicine; a fuller preview (real reminder + check-in templates exactly as approved by Meta) once templates are approved.
@@ -282,14 +310,33 @@ NOT decided yet: it is a service, and CLAUDE.md keeps services out of v1. The 3-
   - The **Safety net** (built, switched off) becomes part of Premium, because WhatsApp alerts cost money. In-app alerts stay free for everyone.
 - Rules: coordination, never medical advice (no medicine changes; the doctor decides). Fraud-safe: the coordinator never asks for money, OTP, Aadhaar
   or bank details, calls only from Chhaon's number, and uses a family code word; background checks for staff.
-  - [ ] Add to the `consent_yes` reply (`api/app/whatsapp/templates.py`): "Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone
+  - [x] Add to the `consent_yes` reply (`api/app/whatsapp/templates.py`): "Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone
         does, it is not us." (free-form reply, no Meta approval needed; Hindi needs a native read).
+        Done 2026-11-06 (Java): 🔒 line at the end of the parent's and the helper's / caregiver's "1" reply, en + hi; Hindi in `docs/hindi-review.md`.
 - Free plan change to consider: cover all of one parent's medicines (today Free allows 2) once one-reminder-per-slot is live, because the cost then
   depends on time slots, not on the number of medicines.
 - Rough maths, to be measured in the test: 300 families x Rs 499 = about Rs 1.5 lakh a month per coordinator, against a salary (about Rs 30,000 is an
   assumption) plus WhatsApp and AI costs.
 - Later: AI voice calls take over the routine weekly calls and coordinators handle only problems (South Korea's Naver CareCall does AI check-in calls);
   partner money (refills when stock runs low, home lab tests when due); employers and group insurers paying for employees' parents; an NRI plan in dollars.
+
+## Upcoming features: voice-call fallback and hospital-discharge mode (decided 2026-11-06, NOT building now)
+Came out of a Product Hunt check (2026-11-06): about 12 near-identical WhatsApp reminder apps launched in 2026 (Hi Mom Hi Dad, TextMyPill,
+Dawa Reminders, Maitri, Kinly...), all with almost no traction, so the gap is distribution and reliability, not more features. Both ideas
+are kept as Chhaon features, not new products. Shown to users as "Coming soon" on the Plans screen (`upcoming` in `plans` of en/hi.json).
+- [ ] **Voice-call fallback (first; meant for the paid plan).** When a WhatsApp reminder gets no reply, the parent's phone rings (any phone,
+      even a landline or feature phone): a short recorded message in their language, "press 1 if taken, 2 to talk to family"; no answer after
+      retries -> caregiver alert. Why: tests the pilot's biggest open question (do 55+ parents reply on WhatsApp?) and reaches parents without
+      WhatsApp; does not depend on Meta. Build as a channel on the existing tick: per-person channel (`whatsapp` / `voice` /
+      `whatsapp_with_voice_fallback`), IVR provider (Exotel / Plivo) behind a dry-run flag, DTMF "1" handled like a Taken reply, separate
+      consent for calls. Cost ~Rs 0.4-1.5 a minute (third-party figures, get a written quote) = ~Rs 15-45/month per parent: a `voice_fallback`
+      flag in plan limits, free for pilot families, paid plan after. TRAI: DND scrub, 8am-9pm window, opt-out. Similar: Athnova Care (call when
+      WhatsApp unanswered), HelpAge India free "care calls" in 11 languages.
+- [ ] **Hospital-discharge mode (after the pilot; acquisition wedge).** Upload the discharge summary -> caregiver reviews extracted medicines
+      and follow-up dates (human review always, no interpretation: CDSCO) -> 30 days of closer check-ins, then normal. Reuses report
+      extraction (switched off), medicines, appointments, check-ins. Pitch: "Just brought Papa home from hospital?"; QR at discharge desks,
+      nearby chemists. Not a hospital B2B product: India has no readmission penalty, and Genity already pilots that with Narayana Health.
+- [ ] Hindi of the "Coming soon" texts needs a native read. Remove a card from the Plans screen once its feature is live or dropped.
 
 ## Growth plan: doctors bring families, vendors pay (decided 2026-11-03)
 Basic reminders will not earn from families. Plan: grow the user base through doctors, keep Chhaon free for families and doctors, and earn
@@ -302,11 +349,28 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
   and printable QR cards (English + Hindi, 6 per A4 sheet, optional clinic name). Linked from the home page footer.
   Each doctor gets their own link `chhaon.site/doctors?ref=D001`; the printed QR then opens `chhaon.site/app/?ref=D001`, so cards printed now
   keep working when counting starts. Keep the list of codes (doctor, clinic, date) in a private sheet.
-- [ ] **Count families per doctor (needs the new backend):** save `ref` from the app URL on sign-up. Not built: sign-up is moving to the Java
-  backend's own login, so agree with whoever owns `api-java/` where the field lives (a `profiles.referred_by` column) before building it.
-  Families who arrive without a code (home page, typed address, a friend's message) are counted as "direct"; nothing about the app changes for
-  them. To see every channel, add one optional sign-up question: "How did you hear about Chhaon? Doctor / Friend or family / WhatsApp / Google /
-  Other", saved next to the code.
+- [x] **Count families per doctor (built 2026-11-06, not deployed yet):** families who arrive without a code are counted as "direct"; nothing
+  is shown to doctors (counting only, Regulation 6.4.1).
+  - **Web** (`web/src/lib/referral.ts`): `?ref=D001` in the app address is read at start-up (letters, digits, `_`, `-`, up to 32, made upper
+    case; anything else ignored), kept on the device for up to 30 days (first code wins) and taken out of the address bar (the `#/screen` part
+    stays). After sign-in it is sent once (`PATCH /api/v1/me {referredBy}`) and removed.
+  - **Question** (`web/src/screens/Referral.tsx`): "How did you hear about Chhaon?" Doctor / Friend or family / WhatsApp / Google / Other
+    (Hindi too), optional, one tap, on the first "Add your parent" form only (not on login, not when adding a 2nd person or "Me"); saved
+    with the form.
+  - **Database** (migration `20261106000058_referral.sql`, test `supabase/tests/referral.test.sql`): `profiles.referred_by` and
+    `profiles.heard_from` (fixed list), first value wins (trigger, also for the backend). Signed-in users can no longer read these two
+    columns through Supabase, not even their own (column privileges: a brother in the same family must not see which doctor his sister saw).
+    **Note for later migrations:** a NEW `profiles` column is not readable by signed-in users through Supabase until granted
+    (`grant select (<column>) on public.profiles to authenticated;`, or run this file again). The backend is not affected.
+  - **Backend**: `PATCH /api/v1/me` takes `referredBy` and `heardFrom` (bad values: 400). A code only counts for an account made in the last
+    7 days (an existing family that scans a card later was not brought by that doctor); the answer is accepted any time, once.
+    `GET /api/v1/admin/referrals` (admins only) gives counts per code (sign-ups, person added, agreed on WhatsApp) and per answer; no names
+    or phones. Shown in Pilot stats under "Where families come from". Test: `ReferralApiTest`.
+  - **Deploy order:** (1) paste `supabase/migrations/20261106000058_referral.sql` into the Sydney SQL Editor (needs 0055 canary first; safe
+    to run twice), (2) deploy the backend (it checks the new columns at start-up), (3) deploy the web.
+  - [ ] Open: add one line to the privacy policy ("how you heard about us, and the doctor code if you came from a doctor's card; used only
+        to count, never shared"). Keep the list of codes (doctor, clinic, date) in the private sheet; the app only knows the code.
+  - [ ] Open: Hindi wording of the question (`referral` in `hi.json`) needs a native read.
 - [ ] **Start with 10 doctors met in person,** not a mass mailing. Measure: patients per doctor, families still active after 4 weeks.
 - [ ] **Vendor income, easiest first:** (1) BP machine / glucometer affiliate links in the child's app (supports Health Control);
   (2) refill orders through one partner pharmacy (commission); (3) home lab tests when due (referral fee); (4) insurance later, through an
@@ -420,6 +484,24 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
 (reviews, moderation, upkeep); (3) a wrong or outdated recommendation becomes Chhaon's liability; (4) Google Maps and Practo already do this better and free.
 - [ ] **Instead, if wanted:** (a) a plain link on the appointments screen that opens a Google Maps or Practo search for the specialty in the parent's city (no ranking,
       no recommendation); (b) a **"Your doctors"** list the family fills in (name, clinic, phone, address): one tap to call or get directions, shown on the emergency card.
+  - [x] (b) **"Your doctors" built 2026-11-06.** Family > Your doctors (`web/src/screens/Doctors.tsx`, `web/src/lib/doctors.ts`): up to 5 doctors per
+        person with name (required), speciality, clinic or hospital, phone, address; add, edit, remove. Each doctor: one-tap Call (`tel:`) and Directions
+        (a Google Maps search of the typed clinic + address in a new tab; Chhaon never asks for anyone's location). No ranking, no suggestions.
+        Stored in the existing `care_recipients.doctor_contacts` jsonb (no column change). Backend: `PUT /api/v1/recipients/{id}/doctors` (any family
+        member; checks name, lengths, phone with the app's phone rules; never echoes the phone), `recipient/Doctors.java`; the profile form no longer
+        sends the list, and an older app that sends back what it read changes nothing. Emergency card in the app: each doctor (name, speciality, phone)
+        with a Call button and in the shared text; "Add doctors" button when none. Public card: new function `public_emergency_doctors(token)`
+        (migration `20261106000059_your_doctors.sql`): name, speciality, phone only (no clinic or address), at most 5; `public_emergency_card` is NOT
+        changed (the page falls back to its single doctor name if the new function is missing). Doctor summary: the first doctor's name and now also
+        clinic are the starting "Prepared for" values.
+        **Deploy order:** (1) Sydney SQL: paste `20261106000059_your_doctors.sql` (safe to run twice; it revokes and re-grants the new function to anon +
+        authenticated); (2) push the backend (Java), (3) then the web. Web before backend would make "Save doctor" fail (no endpoint yet).
+        Tests: `DoctorsApiTest` (4), `supabase/tests/your_doctors.test.sql` (16). `restore_function_permissions.sql` lists the new function.
+  - [x] **Decided 2026-11-06 (owner): doctors may have landlines.** A doctor's number is only called, never sent WhatsApp, so
+        `PhoneNormalizer.normalizeCallable` / web `normalizeCallablePhone` accept any 10-digit Indian number with its area code
+        (011 9999 0001 -> +911199990001). Parents, helpers and family stay mobile-only. Test: `DoctorsApiTest`.
+  - [ ] Open: two family members editing the list at the same moment: the last save wins (no merge). Fine for the pilot.
+  - [ ] Open: native Hindi read of the `doctors` texts in `hi.json`. Browser check at phone width not done by the build agent (no local backend run).
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.
 
 ## Permissions on the Sydney database differed from the migrations (found 2026-11-03): functions AND tables FIXED and verified
@@ -455,7 +537,9 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
 - **Phone still shows the previous view.** Reproduced: a browser that visited the old site shows the OLD app on the first visit after a deploy and the NEW app on the next visit (the offline copy in the
   service worker is replaced in the background). Nothing is broken; open the app twice. One real problem found: an icon added to the home screen while the app lived at `/` opens `/`, which is now the
   website. **Fixed in `web/public/home.html`:** opened as an installed app (Android standalone, iPhone home screen), `/` goes straight to `/app/`. 5 browser checks.
-  - [ ] Optional: a "new version, tap to refresh" banner when the service worker updates (not an automatic reload: it could lose typed text).
+  - [x] **Built 2026-11-06:** "A new version of Chhaon is ready. [Later] [Refresh]" bar (`web/src/screens/UpdateBanner.tsx`), shown when a new
+        service worker takes over an open page; never reloads by itself. Also checks for a new version each time the app comes back to the
+        screen. Tested with a production build: no bar on a normal visit, bar after a new deploy, gone after Refresh. Hindi needs a native read.
 - **Report upload fails and medicine photos are missing in production.** The files live in Supabase Storage (three private buckets: medicine-photos, reports, feedback), which a database copy does not bring
   over. Unverified until checked on Sydney.
   - [x] **Storage check run on Sydney 2026-11-04: it returned NO ROWS = the project has no storage buckets and no storage access rules at all.** That is why report uploads fail (the bucket does not exist) and old photos do not show.
@@ -577,8 +661,26 @@ Saving a medicine stores its schedule; the day's dose entries (`dose_events`) ar
 which runs every 5 minutes. So a medicine added now shows on the Today screen within about 5 minutes, not at once.
 Also by design: a reminder time that has already passed today gets no dose today (`scheduled_at >= created_at`); the first dose is the
 next one in the future (for example an 08:00 medicine added at 14:30 starts tomorrow). Nothing is sent late.
-- [ ] Possible improvement (not decided): create today's future doses at once when a medicine is saved, and/or show a short note after saving
-      ("It will appear on Today within 5 minutes" / "First reminder: tomorrow 8:00").
+- [x] **Built 2026-11-06 (branch `worktree-agent-aa4dd0fce138db443`, NOT pushed):**
+  - Backend (already in commit 9adbfd0, hardened now): after a medicine is created, edited, paused or resumed, `MedicineService` calls
+    `SchedulerService.generateNow(recipient)` once the save is committed. It runs the SAME `generate_dose_events` as the tick, scoped to
+    that one parent (the function already takes `p_recipients uuid[]`, server-only grants), so the parent's time zone, start/end dates, days,
+    plan pauses, paused medicines and the "no dose for a time already passed" rule are identical, and `on conflict do nothing` keeps it
+    idempotent with the next tick. Consent is not checked at generation (same as the tick; it is checked when sending). It does nothing when
+    the scheduler is off or scoped to another parent, so a dose never sits on Today that no tick will send. Best effort: any failure is
+    logged (exception class only, no health data or phone numbers) and the save still answers success; the next tick catches up.
+    **No new migration was needed.**
+  - Web: after saving, a 7-second note: "First reminder: today 9:00 PM" / "tomorrow 8:00 AM" (parent's clock; "Next reminder" when editing;
+    "First dose: ... (WhatsApp reminders start after the yes on WhatsApp)" when the parent has not agreed or said STOP; nothing for a paused
+    medicine). When the caregiver's phone is in another time zone their own time is added: "(10:30 AM your time)" / "(आपके यहाँ ...)".
+    Today shows the new dose as soon as it is opened (it reloads on every visit). Helper `web/src/lib/firstReminder.ts`.
+  - Tests: `SchedulerGenerateNowTest` (+1: a database failure is swallowed), `MedicineDosesNowFailureTest` (new: a failing generateNow never
+    fails create or edit), `supabase/tests/generate_doses_now.test.sql` (9: scoped call, past time skipped, other parent untouched,
+    idempotent, next tick adds no duplicate, family members cannot call it).
+  - **Deploy order:** no SQL; backend (Java) first, then web. (The web note works without the backend change, it just computes the time.)
+- [ ] Open: the note does not know about plan limits (a medicine above the Free plan's limit is paused by the plan but the note still names
+      a first reminder); the note uses the phone's clock, not the server's.
+- [ ] Open: no browser check of the note was run (needs a local backend + login); the time rule was checked with a small script.
 
 ## Tablet colour and shape ("neeli gol goli") (built 2026-11-05 on branch `pill-look-v2`, NOT pushed, NOT on Sydney)
 Idea from Dr. Deepak Birla (2026-11-05): parents and home helpers who cannot read the strip pick the tablet by colour and shape.
@@ -638,6 +740,7 @@ entries whose files are all gone.
 - WhatsApp: pregnancy dose reminder and daily check-in with a time-of-day greeting and "Week 24 today 💛"; same *1* / *2* replies.
   Older parents get exactly the old texts.
 - Database: migration `20261105000043_care_type.sql` (`care_type` older|pregnant|child default older, `due_date` pregnant only).
+- (Update 2026-11-06: Child is built and accepted since then: vaccines, guardian check, reminders to the adult who gives the medicine.)
 - API (`/api/v1/recipients`): `careType` ("older" | "pregnant"; "child" refused until step 3) and `dueDate` ("YYYY-MM-DD"). Left out =
   keep (new profile: older), dueDate "" = clear. Due date window: at most 300 days ahead, 60 days past, checked only when it changes.
   Switching away from pregnant clears the due date. The caregiver's own profile ("Me") stays older.
@@ -669,6 +772,13 @@ else is shrunk). Only files in the person's own folder `medicine-photos/<recipie
       the text below it, and that a swipe-reply "1" to the picture marks the dose taken.
 - [ ] Possible duplicate: if the gateway sends the picture but its answer is lost (connection dropped after sending), the plain
       text follows too. Rare; acceptable (better twice than never).
+
+## Security fix: login code now burns after 5 wrong guesses (2026-11-06)
+`OtpService.verify` saved the higher wrong-guess count and then answered 401, but the 401 rolled the whole transaction back, so the
+count never stuck and a code could be guessed without limit. Fixed with `@Transactional(noRollbackFor = ResponseStatusException.class)`;
+`OtpServiceTest.aWrongCodeIsRejectedAndBurnsAfterTooManyAttempts` (failing since it was written) now passes. Also fixed
+`DataApiTest.activityReturnsWhatWasSent` (used check-in status "ok", which does not exist; now "replied"). Full Java suite: 732/732.
+- [ ] Deploy the backend before outside families join.
 
 ## Supabase legacy API keys retire in early 2027
 `SUPABASE_SERVICE_ROLE_KEY` (GitHub secret, set 2026-11-05) holds the LEGACY service_role JWT. The backend sends it as both `apikey` and

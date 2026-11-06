@@ -42,7 +42,7 @@ public class Fixtures {
     // ---------------------------------------------------------------- creation
 
     public static String randomPhone() {
-        return "+9198" + String.format("%08d", ThreadLocalRandom.current().nextInt(100_000_000));
+        return "+919999" + String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));   // fake numbers only (+91 9999x)
     }
 
     public static String messageId() {

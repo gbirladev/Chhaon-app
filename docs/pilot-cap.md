@@ -40,13 +40,13 @@ The gap between sends is a backend setting (`chhaon.whatsapp.pace-min-ms` / `pac
 
 ## Switching it on (Sydney)
 
-1. SQL first: paste `supabase/migrations/20261106000056_pilot_cap.sql` into the SQL Editor (after 0055 canary). Safe to run twice.
+1. SQL first: paste `supabase/migrations/20261107000060_pilot_cap.sql` into the SQL Editor (after 0059 your doctors). Safe to run twice.
 2. Then push the backend. A backend deployed before the SQL keeps working as before (no cap) because it checks that the
    functions exist.
 3. Local Java tests: the test database is a schema-only copy of the local `postgres` database, so apply the migration locally
    and re-run `api-java/scripts/make-test-db.sh`. A fresh test database has no settings row, which means "cap off"; the pilot
    tests create and remove their own row.
 
-Code: `pilot_admit` / `pilot_position` / `pilot_summary` / `pilot_move_up` (migration 0056), `PilotService`,
+Code: `pilot_admit` / `pilot_position` / `pilot_summary` / `pilot_move_up` (migration 0060), `PilotService`,
 `PilotAdmissionService`, `SendPacer`, the gate in `ConsentService.requestConsent`, the consent notice in `web/src/App.tsx`
 and the Monitor's `PilotCapCard`. Tests: `supabase/tests/pilot_cap.test.sql`, `PilotCapTest`, `SendPacerTest`.

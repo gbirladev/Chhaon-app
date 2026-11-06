@@ -21,5 +21,10 @@ update public.profiles set is_admin = true where email = 'you@example.com';
 ## How "active" is measured
 The later of the caregiver's last login and the last time their phone refreshed its session (`auth.sessions.refreshed_at`), so people who stay logged in still count. It is a proxy: opening the app is what refreshes the session, but a refresh can lag.
 
+## Where families come from (migration 0058, 2026-11-06)
+Sign-ups per doctor code from the QR cards (`?ref=D001`), with how many added a person and how many of those agreed on WhatsApp, and the
+answers to the optional "How did you hear about Chhaon?" question. Counts only; nothing is shown to doctors. Data: `GET /api/v1/admin/referrals`
+(SQL `admin_referral_stats()`, admins only). Which doctor has which code lives only in the owner's private sheet.
+
 ## Not measured
 "Willing to pay" (ask the families), page-by-page usage, delivery failures. Tests: `supabase/tests/admin_stats.test.sql`.

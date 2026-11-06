@@ -1,0 +1,6 @@
+/* "How did you hear about Chhaon?" on the first Add-your-parent form, and the admin's counts in Pilot stats. */
+.heard-from { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
+.heard-from legend { padding: 0; }   /* the look comes from .field-label, like every other label on the form */
+.heard-from .choice-chips button { min-height: 44px; font-size: max(0.875rem, 12px); }
+.heard-from .hint { margin: 6px 0 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
+.referral-stats td:first-child { overflow-wrap: anywhere; }

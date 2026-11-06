@@ -419,7 +419,12 @@
     "summaryPausedHint": "Resume one to restart reminders.",
     "paused": "Paused",
     "pausedByPlan": "Paused: plan limit",
-    "critical": "Critical"
+    "critical": "Critical",
+    "archived": "Stopped medicines ({count})",
+    "archivedHint": "No reminders for these. Their history is kept for the doctor summary.",
+    "stoppedOn": "Stopped on {date}",
+    "restore": "Taking again",
+    "restoreName": "Taking {name} again"
   },
   "add": {
     "title": "Add medicine",
@@ -480,7 +485,13 @@
     "usualTimes": "Times {call} already uses (tap to add)",
     "timeN": "Time {n}",
     "removeTime": "Remove time {n}",
-    "addTime": "Add another time"
+    "addTime": "Add another time",
+    "firstReminder": "First reminder: {when}",
+    "nextReminder": "Next reminder: {when}",
+    "firstDose": "First dose: {when} (WhatsApp reminders start after the yes on WhatsApp)",
+    "whenToday": "today {time}",
+    "whenTomorrow": "tomorrow {time}",
+    "whenBoth": "{when} ({mine} your time)"
   },
   "reports": {
     "title": "Health reports",
@@ -684,7 +695,10 @@
     "linkSoon": "A secure link you can switch off is coming soon. For now, share the card as text.",
     "unknown": "Not recorded (unknown)",
     "timezoneLabel": "Time zone",
-    "updated": "Last updated"
+    "updated": "Last updated",
+    "doctor": "DOCTOR",
+    "callDoctor": "Call {name}",
+    "addDoctors": "Add {call}'s doctors"
   },
   "facts": {
     "pregnantWeek": "PREGNANT · {week} weeks (due {date})",
@@ -765,7 +779,9 @@
     "errorTitle": "Could not load",
     "errorBody": "Please check your internet and try again.",
     "retry": "Try again",
-    "disclaimer": "Details were entered by the family and may be out of date. This is not medical advice."
+    "disclaimer": "Details were entered by the family and may be out of date. This is not medical advice.",
+    "doctors": "DOCTORS",
+    "callDoctor": "Call"
   },
   "whatsapp": {
     "title": "WhatsApp reminders",
@@ -879,14 +895,24 @@
     "resume": "Resume reminders",
     "pausedNote": "Paused. No reminders are sent for this medicine.",
     "delete": "Delete medicine",
-    "confirmTitle": "Delete {name}?",
-    "confirmBody": "Its reminders will stop and its history will be removed. This cannot be undone.",
-    "confirmYes": "Yes, delete",
+    "confirmTitle": "Delete {name} for good?",
+    "confirmBody": "Only if it was added by mistake. Its whole history is deleted too, so the doctor summary will not show it. If the medicine was stopped, choose \"Stopped taking it\" instead. This cannot be undone.",
+    "confirmYes": "Yes, delete for good",
     "cancel": "Cancel",
     "errSave": "Could not save. Please try again.",
     "lowAlertSent": "Running low. We've told your family.",
     "outAlertSent": "Out of stock. We've told your family.",
-    "edit": "Edit details"
+    "edit": "Edit details",
+    "archive": "Stopped taking it",
+    "archiveHint": "Reminders stop. Its history stays for the doctor.",
+    "archiveTitle": "Stopped taking {name}?",
+    "archiveBody": "Reminders stop and it moves to \"Stopped medicines\" at the bottom of the list. What was taken so far stays in the history. You can bring it back any time.",
+    "archiveYes": "Yes, stopped",
+    "archived": "{name} moved to stopped medicines",
+    "archivedNote": "Stopped on {date}. No reminders are sent. Its history is kept.",
+    "restore": "Taking it again",
+    "restored": "{name} is back on the list. Reminders start again.",
+    "deleteMistake": "Added by mistake? Delete it"
   },
   "parents": {
     "title": "Whose care are you looking at?",
@@ -1088,7 +1114,17 @@
     "usageUnlimited": "You have added {used} {used, plural, one {parent} other {parents}}.",
     "trialBodyPause": "You have the Plus plan, free, until {date}. If you do not upgrade by then, reminders for {items} will pause. Nothing is deleted.",
     "pausedNow": "Paused right now: {items}. No reminders are sent for them.",
-    "documents": "Reports you can keep per parent"
+    "documents": "Reports you can keep per parent",
+    "upcoming": {
+      "title": "What's next",
+      "intro": "We are working on these. Some may be part of a paid plan later; nothing is charged today.",
+      "tag": "Coming soon",
+      "voiceTitle": "A phone call when WhatsApp gets no reply",
+      "voiceBody": "If your parent does not answer a reminder on WhatsApp, their phone rings with a short message in their language. They press 1 when the medicine is taken. Works on any phone, even one without WhatsApp.",
+      "dischargeTitle": "Help after a hospital stay",
+      "dischargeBody": "Coming home from hospital brings new medicines and follow-up visits. Add the discharge papers, check the medicines and dates, and get closer check-ins for the first 30 days.",
+      "feedback": "Would these help your family? Write to us"
+    }
   },
   "stats": {
     "title": "Pilot stats",
@@ -1437,6 +1473,49 @@
     "preparedForClinic": "Prepared for: {clinic}",
     "note": "Based on {name}'s replies to WhatsApp reminders. \"Not confirmed\" means no reply was received; the dose may still have been taken. Doses that were paused or are still waiting are not counted. This is not medical advice."
   },
+  "doctors": {
+    "title": "Your doctors",
+    "subtitle": "{call}'s own doctors",
+    "linkTitle": "Your doctors",
+    "linkSub": "Add {call}'s doctors: call or get directions in one tap",
+    "linkCount": "{count, plural, one {# doctor saved} other {# doctors saved}}",
+    "emptyTitle": "No doctors added yet",
+    "emptyBody": "Add {call}'s doctors so the family can call them or find the clinic in one tap. Their name and phone also show on the emergency card.",
+    "add": "Add a doctor",
+    "addTitle": "Add a doctor",
+    "editTitle": "Edit doctor",
+    "name": "Doctor's name",
+    "namePlaceholder": "Dr Anil Mehta",
+    "speciality": "Speciality (optional)",
+    "specialityPlaceholder": "Heart, sugar, eyes…",
+    "specialityHint": "In your own words",
+    "clinic": "Clinic or hospital (optional)",
+    "clinicPlaceholder": "City Clinic",
+    "phone": "Phone (optional)",
+    "phoneHint": "Mobile or clinic landline with its area code. Outside India: add the country code.",
+    "address": "Address (optional)",
+    "addressPlaceholder": "Street, area, city",
+    "addressHint": "Only used for Directions (opens Google Maps)",
+    "save": "Save doctor",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "remove": "Remove doctor",
+    "removeTitle": "Remove {name}?",
+    "removeBody": "They will be taken off this list and off the emergency card.",
+    "editLabel": "Edit {name}",
+    "call": "Call",
+    "callLabel": "Call {name}",
+    "directions": "Directions",
+    "directionsLabel": "Directions to {name} (opens Google Maps)",
+    "full": "You can add up to {count} doctors.",
+    "note": "Only your family sees this list. Name, speciality and phone also show on the emergency card. Chhaon does not suggest or rank doctors.",
+    "errName": "Please enter the doctor's name",
+    "errPhone": "Please check the number. A landline needs its area code, like 0731 for Indore.",
+    "errSave": "Could not save. Please try again.",
+    "added": "Doctor added",
+    "updated": "Doctor updated",
+    "removed": "Doctor removed"
+  },
   "pregnancy": {
     "cardTitle": "Pregnancy",
     "week": "Week {week}",
@@ -1724,6 +1803,7 @@
     },
     "medicineAdded": "New medicine for {call}: {medicine}",
     "medicinePaused": "{call}'s {medicine} was paused",
+    "medicineStopped": "{call} stopped taking {medicine}",
     "consentGiven": {
       "person": "{call} agreed to get WhatsApp reminders",
       "by": "{by} agreed to get {call}'s WhatsApp reminders",
@@ -2108,5 +2188,31 @@
       "desc": "The weeks at the top and everything for this week in tiles."
     },
     "weeksLeft": "{count, plural, one {# week} other {# weeks}} to go"
+  },
+  "update": {
+    "ready": "A new version of Chhaon is ready.",
+    "refresh": "Refresh",
+    "later": "Later"
+  },
+  "referral": {
+    "question": "How did you hear about Chhaon?",
+    "hint": "Optional. One tap is enough, or skip it.",
+    "answers": {
+      "doctor": "Doctor",
+      "friend_family": "Friend or family",
+      "whatsapp": "WhatsApp",
+      "google": "Google",
+      "other": "Other"
+    },
+    "statsTitle": "Where families come from",
+    "statsSub": "{withCode} came with a doctor's QR code, {direct} came directly. Counts only; nothing is shared with doctors.",
+    "statsNoCodes": "No doctor codes yet.",
+    "colCode": "Doctor code",
+    "colSignups": "Sign-ups",
+    "colWithPerson": "Person added",
+    "colAgreed": "Agreed on WhatsApp",
+    "heardTitle": "\"How did you hear about Chhaon?\"",
+    "colAnswer": "Answer",
+    "notAnswered": "Not answered"
   }
 }

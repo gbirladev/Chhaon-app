@@ -17,7 +17,7 @@
 --   pilot_move_up(recipient)       the owner's "Move to front".
 -- All are for the backend (service role / database owner) only: no grants to anon / authenticated.
 --
--- Sydney: paste into the SQL Editor AFTER migration 0055 (canary) and BEFORE deploying the backend that calls pilot_admit.
+-- Sydney: paste into the SQL Editor AFTER migration 0059 (your doctors) and BEFORE deploying the backend that calls pilot_admit.
 -- Safe to run twice.
 
 -- ---------------------------------------------------------------- tables

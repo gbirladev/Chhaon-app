@@ -107,6 +107,8 @@ times and every test dose. The card goes grey ("not set up"). Then delete the Ca
 * The canary's replies are counted in "Replies coming in": they really do prove the webhook works.
 * WhatsApp sometimes reports a sender only by a "LID" instead of the phone number; such a reply cannot be matched to anyone
   (docs/java-whatsapp-replies.md). If that happens to the canary, it goes red: a real signal that parents' replies may be lost too.
+* The Monitor shows the spare SIM's number masked like every other number (`+91 ••••• •1234`, docs/admin-monitor.md); the full
+  number is only in the database and in `canary_setup.sql` when you run it.
 * The canary is never paused by a plan (its dummy caregiver is on the Family plan) and never gets a check-in or a low-stock alert.
 
 Code: migration `supabase/migrations/20261106000055_canary.sql` (flags, `canary_setup` / `canary_remove`, notification filter,

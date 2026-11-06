@@ -1,4 +1,4 @@
--- Pilot cap (migration 20261106000056, docs/pilot-cap.md). Run with: npx supabase test db  (not alongside pytest)
+-- Pilot cap (migration 20261107000060, docs/pilot-cap.md). Run with: npx supabase test db  (not alongside pytest)
 -- Works on a database that already holds families: the line is emptied inside this transaction and the limits are set relative
 -- to the seats already in use, so only the families made here decide the answers. Fake numbers only (+91 99999 ...).
 begin;

@@ -24,14 +24,18 @@ export type CardResult = { kind: "ok"; card: PublicCard } | { kind: "off" } | { 
  * with the public anon key. A plain request, not the Supabase library: this page must stay tiny for slow phones and
  * must never start a login session.
  */
+function callCard(fn: "public_emergency_card" | "public_emergency_doctors", token: string, signal?: AbortSignal) {
+  const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY);
+  const headers: Record<string, string> = { apikey: key, "Content-Type": "application/json" };
+  if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;  // the older anon key is a JWT; newer publishable keys are sent as apikey only
+  return fetch(`${resolveLocalUrl(import.meta.env.VITE_SUPABASE_URL)}/rest/v1/rpc/${fn}`, {
+    method: "POST", signal, cache: "no-store", referrerPolicy: "no-referrer", headers, body: JSON.stringify({ p_token: token }),
+  });
+}
+
 export async function fetchPublicCard(token: string, signal?: AbortSignal): Promise<CardResult> {
   try {
-    const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY);
-    const headers: Record<string, string> = { apikey: key, "Content-Type": "application/json" };
-    if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;  // the older anon key is a JWT; newer publishable keys are sent as apikey only
-    const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_SUPABASE_URL)}/rest/v1/rpc/public_emergency_card`, {
-      method: "POST", signal, cache: "no-store", referrerPolicy: "no-referrer", headers, body: JSON.stringify({ p_token: token }),
-    });
+    const response = await callCard("public_emergency_card", token, signal);
     if (response.status === 429) return { kind: "busy" };
     if (!response.ok) return { kind: "error" };
     const data: unknown = await response.json();
@@ -40,6 +44,32 @@ export async function fetchPublicCard(token: string, signal?: AbortSignal): Prom
     return { kind: "ok", card: data as PublicCard };
   } catch {
     return { kind: "error" };
+  }
+}
+
+export type PublicDoctor = { name: string; speciality: string | null; phone: string | null };
+
+/**
+ * "Your doctors" for the same link (migration 0059, a separate function so the card itself is unchanged): name, speciality
+ * and phone, at most 5. Never throws; null when it cannot be read (an older database, a network error), and the page then
+ * shows the card's single doctor name as before.
+ */
+export async function fetchPublicDoctors(token: string, signal?: AbortSignal): Promise<PublicDoctor[] | null> {
+  try {
+    const response = await callCard("public_emergency_doctors", token, signal);
+    if (!response.ok) return null;
+    const data: unknown = await response.json();
+    if (!Array.isArray(data)) return null;
+    return data.flatMap((d): PublicDoctor[] => {
+      if (!d || typeof d !== "object") return [];
+      const o = d as Record<string, unknown>;
+      const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+      const name = text(o.name);
+      const phone = text(o.phone);
+      return name ? [{ name, speciality: text(o.speciality), phone: phone && /^\+[1-9]\d{7,14}$/.test(phone) ? phone : null }] : [];
+    });
+  } catch {
+    return null;
   }
 }
 

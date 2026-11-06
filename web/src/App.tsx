@@ -6,12 +6,13 @@ import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
   isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent, pilotPositionOf,
-  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi,
+  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi, archiveMedicineApi, restoreMedicineApi, currentMedicines,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockParts, describeTimes, formatClock, formatDate, formatDateTime, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { clockParts, describeTimes, deviceZone, formatClock, formatDate, formatDateTime, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { firstDoseAt } from "./lib/firstReminder";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -25,6 +26,8 @@ import { ChildDetailsFields, NextVaccine, VaccinesLink, VaccinesScreen } from ".
 import { childDetailsErrors, isChild, loadChild, saveChildDetails, vaccineDueText, type ChildDetails } from "./lib/vaccines";
 import { ChildHome } from "./screens/ChildHome";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
+import { DoctorsLink, DoctorsScreen } from "./screens/Doctors";
+import { doctorLine, doctorsOf } from "./lib/doctors";
 import { PlansScreen } from "./screens/Plans";
 import { StockField, StockStart, parseStock } from "./screens/StockField";
 import { ChildWeightEditor, KeyFactLines } from "./screens/KeyFacts";
@@ -58,12 +61,15 @@ import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
+import { saveHeardFrom, sendPendingReferral, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
+import { HeardFromQuestion } from "./screens/Referral";
 import { hasCheckin, initialReceiverMode, receiverName, receiverOf, receiverValues, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
 import { SlimNotice } from "./screens/SlimNotice";
+import { UpdateBanner } from "./screens/UpdateBanner";
 import { CardIcon } from "./screens/TodayCard";
 import { Logo } from "./screens/Logo";
 
@@ -97,10 +103,11 @@ type Screen =
   | "feedback"
   | "love"
   | "doctor"
+  | "doctors"
   | "addSelf"
   | "vaccines";
 
-const ToastContext = createContext<(message: string) => void>(() => {});
+const ToastContext = createContext<(message: string, bottom?: boolean, ms?: number) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
 const SessionContext = createContext<() => void>(() => {});
 /** Call when the backend says our login no longer works: signs out and explains. */
@@ -310,7 +317,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "activity"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "activity"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -545,6 +552,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   // Round 2 (migration 0050): the daily check-in switch and the language of a helper / family member who gets the reminders.
   const storedSettings = settingsOf(recipient);
   const [checkinOn, setCheckinOn] = useState(recipient ? storedSettings.checkin_enabled : true);
+  // "How did you hear about Chhaon?": optional, asked once, on the very first Add-your-parent form only.
+  const firstRun = !recipient && !adding && !isSelf;
+  const [heardFrom, setHeardFrom] = useState<HeardFrom | null>(null);
   const [checkinTouched, setCheckinTouched] = useState(false);
   const [reminderLang, setReminderLang] = useState<"en" | "hi">(storedSettings.reminder_language ?? (recipient?.language === "en" ? "en" : "hi"));
   const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
@@ -627,7 +637,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       callName: isSelf ? null : (data.callName ?? "").trim() || null,
       age: careType === "older" || isSelf ? age : recipient?.age ?? null,   // no age box for a pregnancy or a child: keep what is stored
       dob: recipient?.dob ?? null,                                 // the form does not edit these: pass them through
-      doctorContacts: recipient?.doctor_contacts ?? null,
+      // Doctors are edited on "Your doctors" (PUT .../doctors); left out here, the backend keeps them.
       emergencyContacts: recipient?.emergency_contacts ?? null,
       city: data.city?.trim() || null,
       whatsappPhone: whatsapp,
@@ -674,6 +684,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp || (!isSelf && storedReceiver.reminder_to !== reminderTo))) {
       await Promise.race([requestConsent(recipientId), new Promise((resolve) => window.setTimeout(resolve, 3000))]);
     }
+    if (firstRun && heardFrom) void saveHeardFrom(heardFrom);
     await onSaved(recipientId);
     setBusy(false);
   };
@@ -711,6 +722,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
           <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
         </div>
         <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
+        {firstRun && <HeardFromQuestion value={heardFrom} onChange={setHeardFrom} />}
         {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : pk("note"))}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
@@ -1346,11 +1358,30 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   );
 }
 
-function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void }) {
+function Medicines({ go, medicines: all, loading, error, onOpen, onChanged }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void; onChanged: () => Promise<void> }) {
   const t = useTranslations();
   const pausedByPlan = new Set((usePlanPauses()?.medicines ?? []).map((m) => m.id));
   const lookText = usePillLookText();
   const language = useLocale() as Language;
+  const toast = useToast();
+  const expireSession = useSessionExpired();
+  const medicines = currentMedicines(all);
+  const archived = all.filter((m) => m.archivedAt);
+  const [showArchived, setShowArchived] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
+  const restore = async (medicine: Medicine) => {
+    if (restoring) return;
+    setRestoring(medicine.id);
+    try {
+      await restoreMedicineApi(medicine.id);
+      toast(t("medicine.restored", { name: medicine.name }));
+    } catch (e) {
+      if (await sessionIsGone(e as ApiError)) { setRestoring(null); return expireSession(); }
+      toast(friendlyError(e as ApiError, t));
+    }
+    await onChanged();
+    setRestoring(null);
+  };
   const active = medicines.filter((medicine) => medicine.active);
   const outCount = active.filter((m) => m.stock === 0).length;
   const lowCount = active.filter((m) => isLowStock(m) && m.stock !== 0).length;
@@ -1375,6 +1406,30 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           </article>
         )})}
       </section>
+      {archived.length > 0 && (
+        <section className="archived-medicines" aria-labelledby="archived-toggle">
+          <button type="button" id="archived-toggle" className="archived-toggle" aria-expanded={showArchived} onClick={() => setShowArchived(!showArchived)}>
+            <span>{t("medicines.archived", { count: archived.length })}</span>
+            <span className={`archived-chevron${showArchived ? " open" : ""}`} aria-hidden="true"><Icon name="chevron" size={18} /></span>
+          </button>
+          {showArchived && <>
+            <p className="form-note">{t("medicines.archivedHint")}</p>
+            <div className="medicine-list">
+              {archived.map((medicine) => (
+                <article className="med-card archived-card" key={medicine.id}>
+                  <div className="med-copy" {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
+                    <h3>{medicine.name}</h3>
+                    <p>{[medicine.dose && localizeDose(medicine.dose, t), medicine.archivedAt && t("medicines.stoppedOn", { date: formatDate(new Date(medicine.archivedAt), language, { day: "numeric", month: "long", year: "numeric" }) })].filter(Boolean).join(" • ")}</p>
+                  </div>
+                  <button type="button" className="restore-button" disabled={restoring !== null} onClick={() => void restore(medicine)} aria-label={t("medicines.restoreName", { name: medicine.name })}>
+                    {restoring === medicine.id ? t("common.loading") : t("medicines.restore")}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </>}
+        </section>
+      )}
       <button className="fab" onClick={() => go("addMedicine")}><Icon name="plus" /><span>{t("medicines.add")}</span></button>
     </main>
   );
@@ -1447,6 +1502,7 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
     document.getElementById("f-dose")?.focus();
   };
   const expireSession = useSessionExpired();
+  const toast = useToast();
   const [photoError, setPhotoError] = useState(false);
   /** Only a readable, non-empty image is accepted; anything else shows the photo error right away. */
   const pickPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1541,8 +1597,25 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
       return setError(friendlyError(err, tAll));
     }
     if (photoPath && medicine?.photoUrl) await supabase.storage.from("medicine-photos").remove([medicine.photoUrl]);
+    const note = firstReminderNote(chosen);
+    if (note) toast(note, true, 7000);
     await onSaved();
     setBusy(false);
+  };
+  /** "First reminder: today 9:00 PM" (parent's clock), plus the caregiver's own time when they live in another time zone. */
+  const firstReminderNote = (chosen: string[]) => {
+    const zone = recipient.timezone || "Asia/Kolkata";
+    const first = medicine && !medicine.active ? null : firstDoseAt(chosen, zone);   // a paused medicine gets no reminder
+    if (!first) return "";
+    const time = formatClock(first.at, zone, language);
+    let when = t(first.tomorrow ? "whenTomorrow" : "whenToday", { time });
+    const mine = deviceZone();
+    if (formatDateTime(first.at, language, mine) !== formatDateTime(first.at, language, zone)) {
+      const sameDay = localDate(first.at, mine) === localDate(first.at, zone);
+      when = t("whenBoth", { when, mine: sameDay ? formatClock(first.at, mine, language) : formatDateTime(first.at, language, mine) });
+    }
+    const reminders = !!recipient.consent_at && !recipient.opted_out_at;
+    return t(!reminders ? "firstDose" : editing ? "nextReminder" : "firstReminder", { when });
   };
   const clock = (time: string) => formatClock(new Date(`2000-01-01T${time}:00`), Intl.DateTimeFormat().resolvedOptions().timeZone, language);
   const removedTimes = initialTimes.some((time) => !times.includes(time));
@@ -1612,6 +1685,24 @@ function DeleteSheet({ name, busy, onConfirm, onCancel }: { name: string; busy: 
   );
 }
 
+/** "Stopped taking it": the normal way to take a medicine off the list. History stays; it can be restored. */
+function ArchiveSheet({ name, busy, onConfirm, onCancel }: { name: string; busy: boolean; onConfirm: () => void; onCancel: () => void }) {
+  const t = useTranslations("medicine");
+  const dialog = useDialog(onCancel);
+  return (
+    <div className="sheet-backdrop" onClick={onCancel}>
+      <section className="sheet" ref={dialog} tabIndex={-1} role="alertdialog" aria-modal="true" aria-label={t("archiveTitle", { name })} onClick={(event) => event.stopPropagation()}>
+        <h3>{t("archiveTitle", { name })}</h3>
+        <p className="sheet-empty">{t("archiveBody")}</p>
+        <div className="stack">
+          <button className="primary-button" onClick={onConfirm} disabled={busy}>{t("archiveYes")}</button>
+          <button className="secondary-button" onClick={onCancel}>{t("cancel")}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, options?: { replace?: boolean }) => void; medicine: Medicine | undefined; onChanged: () => Promise<void> }) {
   const t = useTranslations();
   const language = useLocale() as Language;
@@ -1621,6 +1712,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   const [active, setActive] = useState(medicine?.active ?? true);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const lookText = usePillLookText();
 
@@ -1632,6 +1724,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   }, [medicine?.photoUrl]);
   if (!medicine) return null;
 
+  const archived = !!medicine.archivedAt;   // "stopped taking it": only Restore (and delete-by-mistake) here
   const low = stock !== null && medicine.threshold !== null && stock <= medicine.threshold;
   const instructionKey = { after_food: "afterFood", before_food: "beforeFood", with_food: "withFood" }[medicine.instructions ?? ""];
 
@@ -1676,6 +1769,32 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     setActive(!active);
     void onChanged();
   };
+  const archive = async () => {
+    setBusy(true);
+    try {
+      await archiveMedicineApi(medicine.id);
+    } catch (e) {
+      setBusy(false); setArchiving(false); return failed(e as ApiError);
+    }
+    toast(t("medicine.archived", { name: medicine.name }));
+    await onChanged();
+    setBusy(false);
+    go("medicines", { replace: true });
+  };
+  const restore = async () => {
+    setBusy(true);
+    try {
+      await restoreMedicineApi(medicine.id);
+    } catch (e) {
+      setBusy(false);
+      if (await sessionIsGone(e as ApiError)) return expireSession();
+      if (isNotFound(e as ApiError) || (e as ApiError).status === 404) return failed(e as ApiError);
+      return toast(friendlyError(e as ApiError, t));   // e.g. the plan's medicine limit is reached
+    }
+    setBusy(false);
+    toast(t("medicine.restored", { name: medicine.name }));
+    void onChanged();
+  };
   const remove = async () => {
     setBusy(true);
     try {
@@ -1693,14 +1812,16 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     <main className="scroll-page no-nav">
       <AppHeader title={medicine.name} subtitle={t("medicine.title")} back={() => go("medicines")} />
       {photoUrl && <img className="photo-thumb" src={photoUrl} alt={medicine.name} />}
-      {!active && <p className="consent-card stopped" role="status">{t("medicine.pausedNote")}</p>}
+      {archived
+        ? <p className="consent-card stopped" role="status">{t("medicine.archivedNote", { date: formatDate(new Date(medicine.archivedAt as string), language, { day: "numeric", month: "long", year: "numeric" }) })}</p>
+        : !active && <p className="consent-card stopped" role="status">{t("medicine.pausedNote")}</p>}
       <section className="form-card">
         <div className="meta-row"><span>{t("medicine.dose")}</span><strong>{localizeDose(medicine.dose, t) || "-"}</strong></div>
         <div className="meta-row"><span>{t("medicine.look")}</span><strong>{medicine.pillColour || medicine.pillShape ? <span className="pill-look-line"><PillGlyph colour={medicine.pillColour} shape={medicine.pillShape} />{lookText(medicine.pillColour, medicine.pillShape)}</span> : t("medicine.noLook")}</strong></div>
         <div className="meta-row"><span>{t("medicine.times")}</span><strong>{describeTimes(medicine.times, t, language)}</strong></div>
         <div className="meta-row"><span>{t("medicine.instructions")}</span><strong>{instructionKey ? t(`add.${instructionKey}`) : t("medicine.noInstructions")}</strong></div>
         <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === null ? <span className="stock-untracked">{t("medicine.notTracked")}</span> : stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>
-        {stock === null ? <StockStart max={MAX_NUMBER} disabled={busy} onStart={(count) => changeStock(0, { count })} /> : (
+        {archived ? null : stock === null ? <StockStart max={MAX_NUMBER} disabled={busy} onStart={(count) => changeStock(0, { count })} /> : (
           <>
             <div className="stepper" role="group" aria-label={t("medicine.stock")}>
               <button type="button" onClick={() => changeStock(-1)} disabled={busy || stock <= 0} aria-label={t("medicine.decrease")}>−</button>
@@ -1712,11 +1833,21 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
           </>
         )}
       </section>
-      <div className="stack" style={{ marginTop: 18 }}>
-        <button className="primary-button" onClick={() => go("editMedicine")} disabled={busy}><Icon name="edit" size={18} /> {t("medicine.edit")}</button>
-        <button className="secondary-button" onClick={togglePause} disabled={busy}>{active ? t("medicine.pause") : t("medicine.resume")}</button>
-        <button className="danger-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.delete")}</button>
-      </div>
+      {archived ? (
+        <div className="stack" style={{ marginTop: 18 }}>
+          <button className="primary-button" onClick={() => void restore()} disabled={busy}>{t("medicine.restore")}</button>
+          <button className="text-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.deleteMistake")}</button>
+        </div>
+      ) : (
+        <div className="stack" style={{ marginTop: 18 }}>
+          <button className="primary-button" onClick={() => go("editMedicine")} disabled={busy}><Icon name="edit" size={18} /> {t("medicine.edit")}</button>
+          <button className="secondary-button" onClick={togglePause} disabled={busy}>{active ? t("medicine.pause") : t("medicine.resume")}</button>
+          <button className="secondary-button" onClick={() => setArchiving(true)} disabled={busy}>{t("medicine.archive")}</button>
+          <p className="form-note" style={{ textAlign: "center", margin: 0 }}>{t("medicine.archiveHint")}</p>
+          <button className="text-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.deleteMistake")}</button>
+        </div>
+      )}
+      {archiving && <ArchiveSheet name={medicine.name} busy={busy} onConfirm={() => void archive()} onCancel={() => setArchiving(false)} />}
       {confirming && <DeleteSheet name={medicine.name} busy={busy} onConfirm={remove} onCancel={() => setConfirming(false)} />}
     </main>
   );
@@ -2052,6 +2183,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><Icon3D name="heart" /><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <ActivityLink go={go} />
       <VaccinesLink go={go} recipient={recipient} />
+      <DoctorsLink go={() => go("doctors")} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{tWho("familyWhatsappSub", receiverValues(recipient, userId, { call, you: tWho("you"), someone: tWho("someone") }))}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("monitor")}><Icon3D name="chart" /><div><strong>{t("monitorLink")}</strong><p>{t("monitorSub")}</p></div><Icon name="chevron" /></button>}
@@ -2082,6 +2214,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   const unknown = e("unknown");  // "not recorded" must never read as "none": staff may act on it
   const active = medicines.filter((m) => m.active);
   const family = members.filter((m) => m.phone).slice(0, 3);
+  const doctors = doctorsOf(recipient.doctor_contacts);   // "Your doctors": name, speciality, phone (the minimum, like the public card)
   const ageCity = [years !== null ? e("years", { count: years }) : null, recipient.city].filter(Boolean).join(" • ");
   const conditions = recipient.conditions;
   const allergies = recipient.allergies;
@@ -2097,6 +2230,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
     recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" ? `${e("parentPhone")}: ${recipient.whatsapp_phone}` : "",
     recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" ? `${e("helperPhone")}: ${receiverName(receiverOf(recipient))} ${recipient.whatsapp_phone}` : "",
     ...family.map((m) => `${e("family")}: ${m.name || m.email || ""} ${plusPhone(m.phone ?? "")}`.trim()),
+    ...doctors.map((d) => `${e("doctor")}: ${doctorLine(d)} ${d.phone}`.trim()),
     `${e("timezoneLabel")}: ${recipient.timezone}`,
     `${e("updated")}: ${formatDate(new Date(), language, { day: "numeric", month: "short", year: "numeric" })}`,
   ].filter(Boolean).join("\n");
@@ -2130,8 +2264,12 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
         {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" && contactRow(e("parentPhone"), recipient.name, recipient.whatsapp_phone, e("callParent"))}
         {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" && contactRow(e("helperPhone"), receiverName(receiverOf(recipient)), recipient.whatsapp_phone, e("callHelper"))}
         {family.map((m) => contactRow(e("family"), m.name || m.email || "", plusPhone(m.phone ?? ""), e("callFamily")))}
+        {doctors.map((d, i) => d.phone
+          ? contactRow(e("doctor"), doctorLine(d), d.phone, e("callDoctor", { name: d.name }))
+          : <div className="contact-row" key={`doctor-${i}`}><div><span>{e("doctor")}</span><strong>{doctorLine(d)}</strong></div></div>)}
       </section>
       <button className="secondary-button" style={{ marginTop: 14 }} onClick={() => go("profile")}>{e("editDetails")}</button>
+      {doctors.length === 0 && <button className="secondary-button" style={{ marginTop: 10 }} onClick={() => go("doctors")}>{e("addDoctors", { call: parentCall(recipient, language) })}</button>}
       <div className="emergency-actions">
         <button className="primary-button share-button" onClick={() => shareContent(`${recipient.name} — ${e("title")}`, shareText, t)}><Icon name="share" size={19} /> {e("share")}</button>
         <button className="download-button" onClick={download}><Icon name="report" size={19} /> {e("download")}</button>
@@ -2143,9 +2281,9 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   );
 }
 
-const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
+const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "doctors", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2208,12 +2346,12 @@ export default function App() {
   };
   const [toastBottom, setToastBottom] = useState(false);
   /** `bottom`: above the bottom bar instead of the top right, where it would cover the bell (the "Now showing Mummy." toast). */
-  const showToast = (message: string, bottom = false) => {
+  const showToast = (message: string, bottom = false, ms = 3000) => {
     window.clearTimeout(toastTimer.current);
     setToastMessage(message);
     setToastBottom(bottom);
     setToastLeaving(false);
-    toastTimer.current = window.setTimeout(() => hideToast(), 3000);
+    toastTimer.current = window.setTimeout(() => hideToast(), ms);
   };
 
   /** The selected parent, null if there are none, or "error" if the lookup failed. A failure never clears what is on screen.
@@ -2268,6 +2406,8 @@ export default function App() {
     catch { if (!quiet) setMedicinesError(true); }  // a failed background refresh keeps what is on screen
     setMedicinesLoading(false);
   };
+  /** Not archived: what Today, the forms, the emergency card and the safety net see. The Medicines list shows archived ones apart. */
+  const listedMedicines = currentMedicines(medicines);
 
   // First load: decide where the caregiver belongs. If we cannot tell (offline), ask them to retry instead of
   // guessing "no parent yet", which would send them to the add-parent form and risk a duplicate parent.
@@ -2294,6 +2434,7 @@ export default function App() {
       else if (next === "error") setLoadFailed(true);
       else {
         setSignedIn(true);
+        void sendPendingReferral();   // a doctor's QR code kept from before sign-up (lib/referral.ts)
         if (!next) go("profile", { replace: true });
         else if (screen === "welcome" || screen === "otp" || screen === "profile") go("today", { replace: true });
       }
@@ -2416,6 +2557,7 @@ export default function App() {
     if (next === "auth") return rejectLogin();          // token not accepted: don't strand on the code screen
     if (next === "error") return setLoadFailed(true);   // network/server: retryable
     setSignedIn(true);
+    void sendPendingReferral();
     go(next ? "today" : "profile", { replace: true });
   };
   const afterProfileSaved = async (newId?: string) => {
@@ -2493,14 +2635,14 @@ export default function App() {
           {screen === "profile" && <ProfileForm go={go} recipient={recipient} onSaved={afterProfileSaved} onSignOut={() => void signOut()} />}
           {screen === "addParent" && <ProfileForm go={go} recipient={null} adding onSaved={afterProfileSaved} />}
           {screen === "addSelf" && <ProfileForm go={go} recipient={null} adding self onSaved={afterProfileSaved} />}
-          {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={medicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
-          {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} />}
-          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineSaved} />}
+          {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={listedMedicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
+          {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} onChanged={async () => { await refreshMedicines(undefined, true); refreshNotifications(); }} />}
+          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} usualTimes={usualTimesOf(listedMedicines)} onSaved={afterMedicineSaved} />}
           {screen === "editMedicine" && recipient && (() => {
             const editing = medicines.find((m) => m.id === selectedMedicineId);
             const medicineGone = () => { showToast(MESSAGES[language].medicine.gone); void refreshMedicines(); go("medicines", { replace: true }); };
             return editing
-              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineEdited} onMissing={medicineGone} />
+              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} usualTimes={usualTimesOf(listedMedicines)} onSaved={afterMedicineEdited} onMissing={medicineGone} />
               : medicinesLoading ? null : <GoneRedirect onGone={medicineGone} />;
           })()}
           {screen === "medicineDetail" && <MedicineDetail go={go} medicine={medicines.find((m) => m.id === selectedMedicineId)} onChanged={async () => { await refreshMedicines(); refreshNotifications(); }} />}
@@ -2513,13 +2655,14 @@ export default function App() {
           {screen === "reportDetail" && <ReportDetail go={go} recipient={recipient} reportId={selectedReportId} />}
           {screen === "join" && pendingInvite() && <JoinScreen token={pendingInvite() as string} onDone={afterInvite} />}
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}
-          {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
+          {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={listedMedicines} members={members} />}
           {screen === "whatsapp" && <WhatsAppScreen go={go} recipient={recipient} />}
           {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
+          {screen === "doctors" && <DoctorsScreen go={go} recipient={recipient} onChanged={() => refreshRecipient()} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
-          {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
+          {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={listedMedicines}onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
           {screen === "activity" && <ActivityScreen go={go} />}
@@ -2531,6 +2674,7 @@ export default function App() {
         {ready && !loadFailed && hasNav && <BottomNav screen={screen} go={go} unread={notifications.filter((n) => !n.read_at).length} />}
         {PRIVACY_ENABLED && ready && !loadFailed && <ConsentGate signedIn={signedIn} screen={screen} go={go} onSignOut={() => void signOut()} />}
         <OfflineBanner />
+        <UpdateBanner />
         {toastMessage && <div className={`toast${toastBottom ? " bottom" : ""}${toastLeaving ? " leaving" : ""}`} key={toastMessage} role="status" onClick={hideToast}><span className="toast-text">{toastMessage}</span></div>}
       </div>
     </div>

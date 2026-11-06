@@ -5,6 +5,7 @@ import org.smartgurukul.chhaon.profile.Profile;
 import org.smartgurukul.chhaon.profile.ProfileRepository;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.ContactDto;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.CreateRecipientRequest;
+import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.DoctorDto;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.RecipientResponse;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.UpdateRecipientRequest;
 import org.springframework.dao.DataAccessException;
@@ -112,7 +113,7 @@ public class CareRecipientService {
         r.setAllergies(sanitizeList(req.allergies()));
         r.setBloodGroup(validateBloodGroup(req.bloodGroup()));
         r.setWhatsappPhone(resolvePhone(req.whatsappPhone()));
-        r.setDoctorContacts(toContacts(req.doctorContacts()));
+        r.setDoctorContacts(Doctors.clean(req.doctorContacts()));
         r.setEmergencyContacts(toContacts(req.emergencyContacts()));
         if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
         if (Boolean.TRUE.equals(req.caregiverAttested())) r.setCaregiverAttestedAt(now);
@@ -149,7 +150,11 @@ public class CareRecipientService {
         r.setAllergies(sanitizeList(req.allergies()));
         r.setBloodGroup(validateBloodGroup(req.bloodGroup()));
         r.setWhatsappPhone(resolvePhone(req.whatsappPhone()));
-        r.setDoctorContacts(toContacts(req.doctorContacts()));
+        // Doctors are edited on their own screen (PUT .../doctors). The profile form leaves them out (null = keep); an older
+        // app that sends back exactly what it read changes nothing either, so a profile save never loses or re-checks them.
+        if (req.doctorContacts() != null && !req.doctorContacts().equals(Doctors.toDtos(r.getDoctorContacts()))) {
+            r.setDoctorContacts(Doctors.clean(req.doctorContacts()));
+        }
         r.setEmergencyContacts(toContacts(req.emergencyContacts()));
         if (req.checkinTime() != null) r.setCheckinTime(req.checkinTime());
         if (Boolean.TRUE.equals(req.caregiverAttested()) && r.getCaregiverAttestedAt() == null) {
@@ -162,6 +167,20 @@ public class CareRecipientService {
         applyReminderLanguage(r, req.reminderLanguage());
         r.setUpdatedAt(OffsetDateTime.now());
         // DB triggers handle consent reset on phone change and dose clearing on timezone change.
+        try {
+            recipients.saveAndFlush(r);
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        return toResponse(r);
+    }
+
+    /** "Your doctors": replaces the whole list (any member of the family may edit it, like the profile). */
+    @Transactional
+    public RecipientResponse updateDoctors(UUID userId, UUID id, List<DoctorDto> doctors) {
+        CareRecipient r = requireMemberRecipient(userId, id);
+        r.setDoctorContacts(Doctors.clean(doctors));
+        r.setUpdatedAt(OffsetDateTime.now());
         try {
             recipients.saveAndFlush(r);
         } catch (DataAccessException e) {
@@ -443,7 +462,7 @@ public class CareRecipientService {
                 r.getConditions(),
                 r.getAllergies(),
                 r.getBloodGroup(),
-                fromContacts(r.getDoctorContacts()),
+                Doctors.toDtos(r.getDoctorContacts()),
                 fromContacts(r.getEmergencyContacts()),
                 r.getCheckinTime(),
                 r.isSelf(),

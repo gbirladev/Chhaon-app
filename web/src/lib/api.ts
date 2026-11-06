@@ -65,6 +65,8 @@ export type Medicine = {
   critical: boolean;   // an unanswered reminder for this medicine alerts the family on the first miss (escalation ladder)
   pillColour: PillColour | null;   // how the tablet looks, named in the WhatsApp reminder (migration 0042)
   pillShape: PillShape | null;
+  /** When the family archived it ("stopped taking it"); null = on the list. Archived: inactive, no reminders, history kept. */
+  archivedAt: string | null;
 };
 
 export const PRESET_TIMES = { Morning: "08:00", Afternoon: "13:00", Night: "20:00" } as const;
@@ -75,7 +77,12 @@ export type Preset = keyof typeof PRESET_TIMES;
  * "0091 99999 00001", "+1 415 555 0123". Returns E.164, or null when it cannot be right (letters such as "ext 4",
  * a wrong length, or an Indian mobile that does not start with 6-9) so we never message a wrong number.
  */
-export function normalizePhone(input: string): string | null {
+/** Like normalizePhone, but Indian landlines with their area code count too (e.g. 011 9999 0001): for numbers that are only CALLED. */
+export function normalizeCallablePhone(input: string): string | null {
+  return normalizePhone(input, /^\+91[1-9]\d{9}$/);
+}
+
+export function normalizePhone(input: string, india: RegExp = /^\+91[6-9]\d{9}$/): string | null {
   // Devanagari (०-९), Arabic-Indic (٠-٩) and Persian (۰-۹) digits become plain 0-9 first.
   const raw = input.trim().replace(/[०-९٠-٩۰-۹０-９]/g, (c) => {
     const code = c.charCodeAt(0);
@@ -90,7 +97,7 @@ export function normalizePhone(input: string): string | null {
   else if (digits.length === 11 && digits.startsWith("0")) candidate = `+91${digits.slice(1)}`;
   else candidate = `+91${digits}`;
   if (!E164.test(candidate)) return null;
-  if (candidate.startsWith("+91") && !/^\+91[6-9]\d{9}$/.test(candidate)) return null;
+  if (candidate.startsWith("+91") && !india.test(candidate)) return null;
   return candidate;
 }
 
@@ -109,6 +116,11 @@ export async function updateRecipientApi(id: string, body: Record<string, unknow
   return toRecipient(await apiFetch<RecipientDto>(`/api/v1/recipients/${id}`, { method: "PUT", body }));
 }
 
+/** "Your doctors" (lib/doctors.ts): replaces the whole list; the backend checks every field and the phone. */
+export async function saveDoctorsApi(id: string, doctors: { name: string; speciality: string | null; clinic: string | null; phone: string | null; address: string | null }[]): Promise<Recipient> {
+  return toRecipient(await apiFetch<RecipientDto>(`/api/v1/recipients/${id}/doctors`, { method: "PUT", body: { doctors } }));
+}
+
 /** Medicine names by id for every parent (notifications about a parent that is not the one on screen still name the medicine). */
 export async function loadMedicineNames(): Promise<Record<string, string>> {
   try {
@@ -122,6 +134,7 @@ type MedicineDto = {
   threshold: number | null; instructions: string | null; active: boolean; photoUrl: string | null;
   critical: boolean; createdAt: string;
   pillColour?: string | null; pillShape?: string | null;   // absent from a backend older than the pill-look change
+  archivedAt?: string | null;                               // absent from a backend older than migration 0056
 };
 /** The old rows carried times as "HH:MM:SS"; keep that exact shape for the screens. */
 const toMedicine = (m: MedicineDto): Medicine => ({
@@ -130,7 +143,11 @@ const toMedicine = (m: MedicineDto): Medicine => ({
   stock: m.stock ?? null, threshold: m.threshold, instructions: m.instructions,
   active: m.active, photoUrl: m.photoUrl, critical: m.critical,
   pillColour: asPillColour(m.pillColour), pillShape: asPillShape(m.pillShape),
+  archivedAt: m.archivedAt ?? null,
 });
+
+/** Medicines on the list (not archived): what Today, reminders, the emergency card and the forms work with. */
+export const currentMedicines = (list: Medicine[]) => list.filter((m) => !m.archivedAt);
 
 export async function loadMedicines(recipientId: string): Promise<Medicine[]> {
   return (await apiFetch<MedicineDto[]>(`/api/v1/recipients/${recipientId}/medicines`)).map(toMedicine);
@@ -158,6 +175,17 @@ export async function setMedicineFlags(id: string, flags: { active?: boolean; cr
   return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}`, { method: "PATCH", body: flags }));
 }
 
+/** "Stopped taking it": off the list and Today, no reminders, the dose history stays. */
+export async function archiveMedicineApi(id: string): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}/archive`, { method: "POST" }));
+}
+
+/** Back on the list, reminders again. Fails (too_many_medicines) when the plan's medicine limit is reached. */
+export async function restoreMedicineApi(id: string): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}/restore`, { method: "POST" }));
+}
+
+/** Only for a medicine added by mistake: its whole dose history is deleted too. */
 export async function deleteMedicineApi(id: string): Promise<void> {
   await apiFetch<void>(`/api/v1/medicines/${id}`, { method: "DELETE" });
 }
