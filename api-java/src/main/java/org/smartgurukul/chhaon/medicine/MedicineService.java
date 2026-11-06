@@ -9,6 +9,8 @@ import org.smartgurukul.chhaon.medicine.dto.MedicineDtos.UpdateMedicineRequest;
 import org.smartgurukul.chhaon.recipient.CareRecipient;
 import org.smartgurukul.chhaon.recipient.CareRecipientRepository;
 import org.smartgurukul.chhaon.scheduler.SchedulerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public class MedicineService {
 
+    private static final Logger log = LoggerFactory.getLogger(MedicineService.class);
     private static final Set<String> INSTRUCTIONS = Set.of("after_food", "before_food", "with_food");
     /** Fixed lists, the same as the check constraints of migration 0042 and web/src/lib/pillLook.ts. */
     static final Set<String> PILL_COLOURS =
@@ -60,15 +63,24 @@ public class MedicineService {
     /** After the save is committed, make this parent's upcoming doses at once (see SchedulerService.generateNow). */
     private void dosesAfterCommit(UUID recipientId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            scheduler.generateNow(recipientId);
+            dosesNow(recipientId);
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                scheduler.generateNow(recipientId);
+                dosesNow(recipientId);
             }
         });
+    }
+
+    /** Best effort: the medicine is already saved, so nothing here may turn the save into an error; the next tick catches up. */
+    private void dosesNow(UUID recipientId) {
+        try {
+            scheduler.generateNow(recipientId);
+        } catch (RuntimeException e) {
+            log.warn("doses right after a medicine save failed ({}); the next scheduler tick makes them", e.getClass().getSimpleName());
+        }
     }
 
     @Transactional(readOnly = true)

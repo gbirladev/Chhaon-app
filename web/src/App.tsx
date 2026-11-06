@@ -11,7 +11,8 @@ import {
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockParts, describeTimes, formatClock, formatDate, formatDateTime, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { clockParts, describeTimes, deviceZone, formatClock, formatDate, formatDateTime, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { firstDoseAt } from "./lib/firstReminder";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -101,7 +102,7 @@ type Screen =
   | "addSelf"
   | "vaccines";
 
-const ToastContext = createContext<(message: string) => void>(() => {});
+const ToastContext = createContext<(message: string, bottom?: boolean, ms?: number) => void>(() => {});
 export const useToast = () => useContext(ToastContext);
 const SessionContext = createContext<() => void>(() => {});
 /** Call when the backend says our login no longer works: signs out and explains. */
@@ -1425,6 +1426,7 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
     document.getElementById("f-dose")?.focus();
   };
   const expireSession = useSessionExpired();
+  const toast = useToast();
   const [photoError, setPhotoError] = useState(false);
   /** Only a readable, non-empty image is accepted; anything else shows the photo error right away. */
   const pickPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1519,8 +1521,25 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
       return setError(friendlyError(err, tAll));
     }
     if (photoPath && medicine?.photoUrl) await supabase.storage.from("medicine-photos").remove([medicine.photoUrl]);
+    const note = firstReminderNote(chosen);
+    if (note) toast(note, true, 7000);
     await onSaved();
     setBusy(false);
+  };
+  /** "First reminder: today 9:00 PM" (parent's clock), plus the caregiver's own time when they live in another time zone. */
+  const firstReminderNote = (chosen: string[]) => {
+    const zone = recipient.timezone || "Asia/Kolkata";
+    const first = medicine && !medicine.active ? null : firstDoseAt(chosen, zone);   // a paused medicine gets no reminder
+    if (!first) return "";
+    const time = formatClock(first.at, zone, language);
+    let when = t(first.tomorrow ? "whenTomorrow" : "whenToday", { time });
+    const mine = deviceZone();
+    if (formatDateTime(first.at, language, mine) !== formatDateTime(first.at, language, zone)) {
+      const sameDay = localDate(first.at, mine) === localDate(first.at, zone);
+      when = t("whenBoth", { when, mine: sameDay ? formatClock(first.at, mine, language) : formatDateTime(first.at, language, mine) });
+    }
+    const reminders = !!recipient.consent_at && !recipient.opted_out_at;
+    return t(!reminders ? "firstDose" : editing ? "nextReminder" : "firstReminder", { when });
   };
   const clock = (time: string) => formatClock(new Date(`2000-01-01T${time}:00`), Intl.DateTimeFormat().resolvedOptions().timeZone, language);
   const removedTimes = initialTimes.some((time) => !times.includes(time));
@@ -2186,12 +2205,12 @@ export default function App() {
   };
   const [toastBottom, setToastBottom] = useState(false);
   /** `bottom`: above the bottom bar instead of the top right, where it would cover the bell (the "Now showing Mummy." toast). */
-  const showToast = (message: string, bottom = false) => {
+  const showToast = (message: string, bottom = false, ms = 3000) => {
     window.clearTimeout(toastTimer.current);
     setToastMessage(message);
     setToastBottom(bottom);
     setToastLeaving(false);
-    toastTimer.current = window.setTimeout(() => hideToast(), 3000);
+    toastTimer.current = window.setTimeout(() => hideToast(), ms);
   };
 
   /** The selected parent, null if there are none, or "error" if the lookup failed. A failure never clears what is on screen.
