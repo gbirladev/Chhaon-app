@@ -2186,5 +2186,26 @@
     "ready": "A new version of Chhaon is ready.",
     "refresh": "Refresh",
     "later": "Later"
+  },
+  "referral": {
+    "question": "How did you hear about Chhaon?",
+    "hint": "Optional. One tap is enough, or skip it.",
+    "answers": {
+      "doctor": "Doctor",
+      "friend_family": "Friend or family",
+      "whatsapp": "WhatsApp",
+      "google": "Google",
+      "other": "Other"
+    },
+    "statsTitle": "Where families come from",
+    "statsSub": "{withCode} came with a doctor's QR code, {direct} came directly. Counts only; nothing is shared with doctors.",
+    "statsNoCodes": "No doctor codes yet.",
+    "colCode": "Doctor code",
+    "colSignups": "Sign-ups",
+    "colWithPerson": "Person added",
+    "colAgreed": "Agreed on WhatsApp",
+    "heardTitle": "\"How did you hear about Chhaon?\"",
+    "colAnswer": "Answer",
+    "notAnswered": "Not answered"
   }
 }

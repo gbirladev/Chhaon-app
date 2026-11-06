@@ -347,11 +347,28 @@ from vendors (pharmacies, labs, devices) when a family chooses to order somethin
   and printable QR cards (English + Hindi, 6 per A4 sheet, optional clinic name). Linked from the home page footer.
   Each doctor gets their own link `chhaon.site/doctors?ref=D001`; the printed QR then opens `chhaon.site/app/?ref=D001`, so cards printed now
   keep working when counting starts. Keep the list of codes (doctor, clinic, date) in a private sheet.
-- [ ] **Count families per doctor (needs the new backend):** save `ref` from the app URL on sign-up. Not built: sign-up is moving to the Java
-  backend's own login, so agree with whoever owns `api-java/` where the field lives (a `profiles.referred_by` column) before building it.
-  Families who arrive without a code (home page, typed address, a friend's message) are counted as "direct"; nothing about the app changes for
-  them. To see every channel, add one optional sign-up question: "How did you hear about Chhaon? Doctor / Friend or family / WhatsApp / Google /
-  Other", saved next to the code.
+- [x] **Count families per doctor (built 2026-11-06, not deployed yet):** families who arrive without a code are counted as "direct"; nothing
+  is shown to doctors (counting only, Regulation 6.4.1).
+  - **Web** (`web/src/lib/referral.ts`): `?ref=D001` in the app address is read at start-up (letters, digits, `_`, `-`, up to 32, made upper
+    case; anything else ignored), kept on the device for up to 30 days (first code wins) and taken out of the address bar (the `#/screen` part
+    stays). After sign-in it is sent once (`PATCH /api/v1/me {referredBy}`) and removed.
+  - **Question** (`web/src/screens/Referral.tsx`): "How did you hear about Chhaon?" Doctor / Friend or family / WhatsApp / Google / Other
+    (Hindi too), optional, one tap, on the first "Add your parent" form only (not on login, not when adding a 2nd person or "Me"); saved
+    with the form.
+  - **Database** (migration `20261106000058_referral.sql`, test `supabase/tests/referral.test.sql`): `profiles.referred_by` and
+    `profiles.heard_from` (fixed list), first value wins (trigger, also for the backend). Signed-in users can no longer read these two
+    columns through Supabase, not even their own (column privileges: a brother in the same family must not see which doctor his sister saw).
+    **Note for later migrations:** a NEW `profiles` column is not readable by signed-in users through Supabase until granted
+    (`grant select (<column>) on public.profiles to authenticated;`, or run this file again). The backend is not affected.
+  - **Backend**: `PATCH /api/v1/me` takes `referredBy` and `heardFrom` (bad values: 400). A code only counts for an account made in the last
+    7 days (an existing family that scans a card later was not brought by that doctor); the answer is accepted any time, once.
+    `GET /api/v1/admin/referrals` (admins only) gives counts per code (sign-ups, person added, agreed on WhatsApp) and per answer; no names
+    or phones. Shown in Pilot stats under "Where families come from". Test: `ReferralApiTest`.
+  - **Deploy order:** (1) paste `supabase/migrations/20261106000058_referral.sql` into the Sydney SQL Editor (needs 0055 canary first; safe
+    to run twice), (2) deploy the backend (it checks the new columns at start-up), (3) deploy the web.
+  - [ ] Open: add one line to the privacy policy ("how you heard about us, and the doctor code if you came from a doctor's card; used only
+        to count, never shared"). Keep the list of codes (doctor, clinic, date) in the private sheet; the app only knows the code.
+  - [ ] Open: Hindi wording of the question (`referral` in `hi.json`) needs a native read.
 - [ ] **Start with 10 doctors met in person,** not a mass mailing. Measure: patients per doctor, families still active after 4 weeks.
 - [ ] **Vendor income, easiest first:** (1) BP machine / glucometer affiliate links in the child's app (supports Health Control);
   (2) refill orders through one partner pharmacy (commission); (3) home lab tests when due (referral fee); (4) insurance later, through an

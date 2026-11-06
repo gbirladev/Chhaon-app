@@ -61,6 +61,8 @@ import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
+import { saveHeardFrom, sendPendingReferral, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
+import { HeardFromQuestion } from "./screens/Referral";
 import { hasCheckin, initialReceiverMode, receiverName, receiverOf, receiverValues, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
@@ -550,6 +552,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   // Round 2 (migration 0050): the daily check-in switch and the language of a helper / family member who gets the reminders.
   const storedSettings = settingsOf(recipient);
   const [checkinOn, setCheckinOn] = useState(recipient ? storedSettings.checkin_enabled : true);
+  // "How did you hear about Chhaon?": optional, asked once, on the very first Add-your-parent form only.
+  const firstRun = !recipient && !adding && !isSelf;
+  const [heardFrom, setHeardFrom] = useState<HeardFrom | null>(null);
   const [checkinTouched, setCheckinTouched] = useState(false);
   const [reminderLang, setReminderLang] = useState<"en" | "hi">(storedSettings.reminder_language ?? (recipient?.language === "en" ? "en" : "hi"));
   const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
@@ -675,6 +680,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     // A new parent, or a changed number, needs a fresh WhatsApp opt-in (the database resets consent on a number change).
     // A new receiver (helper / me / the person) is a new agreement too (the database resets consent then).
     if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp || (!isSelf && storedReceiver.reminder_to !== reminderTo))) void requestConsent(recipientId);
+    if (firstRun && heardFrom) void saveHeardFrom(heardFrom);
     await onSaved(recipientId);
     setBusy(false);
   };
@@ -712,6 +718,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
           <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
         </div>
         <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
+        {firstRun && <HeardFromQuestion value={heardFrom} onChange={setHeardFrom} />}
         {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : pk("note"))}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
@@ -2404,6 +2411,7 @@ export default function App() {
       else if (next === "error") setLoadFailed(true);
       else {
         setSignedIn(true);
+        void sendPendingReferral();   // a doctor's QR code kept from before sign-up (lib/referral.ts)
         if (!next) go("profile", { replace: true });
         else if (screen === "welcome" || screen === "otp" || screen === "profile") go("today", { replace: true });
       }
@@ -2526,6 +2534,7 @@ export default function App() {
     if (next === "auth") return rejectLogin();          // token not accepted: don't strand on the code screen
     if (next === "error") return setLoadFailed(true);   // network/server: retryable
     setSignedIn(true);
+    void sendPendingReferral();
     go(next ? "today" : "profile", { replace: true });
   };
   const afterProfileSaved = async (newId?: string) => {
