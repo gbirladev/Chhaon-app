@@ -1,6 +1,7 @@
 package org.smartgurukul.chhaon.whatsapp;
 
 import org.junit.jupiter.api.Test;
+import org.smartgurukul.chhaon.whatsapp.reply.ReplyTexts;
 import org.smartgurukul.chhaon.whatsapp.reply.Intent;
 import org.smartgurukul.chhaon.whatsapp.reply.ReplyClassifier;
 
@@ -19,7 +20,9 @@ class ReceiverTextsTest {
     private static void clean(String text) {
         assertThat(text).doesNotContain("{", "}", "%s", "null", "undefined", "\n\n\n").isNotBlank();
         assertThat(text.length()).as("short enough for a chat: " + text).isLessThan(330);
-        assertThat(FORBIDDEN.matcher(text).find()).as(text).isFalse();
+        // The anti-fraud line names "OTP" on purpose ("we will never ask for it"); everything else must not.
+        String rest = text.replace(ReplyTexts.neverAsks("en"), "").replace(ReplyTexts.neverAsks("hi"), "");
+        assertThat(FORBIDDEN.matcher(rest).find()).as(text).isFalse();
     }
 
     @Test
