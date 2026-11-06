@@ -105,7 +105,7 @@ class DataApiTest extends DbTest {
         Fixtures.Family f = fx.family("en", true);
         Fixtures.Med med = fx.medicine(f, "Amlodipine", "5 mg", 10, LocalTime.of(8, 0));
         fx.dose(med.scheduleId(), Instant.now().minusSeconds(3600), "taken", Instant.now().minusSeconds(3600), Fixtures.messageId());
-        fx.checkin(f.recipientId(), LocalDate.now(f.zone()), "ok", Instant.now().minusSeconds(1800));
+        fx.checkin(f.recipientId(), LocalDate.now(f.zone()), "replied", Instant.now().minusSeconds(1800));
 
         mvc.perform(get("/api/v1/recipients/{id}/activity?days=3", f.recipientId()).header("Authorization", bearer(f.userId())))
                 .andExpect(status().isOk())

@@ -107,8 +107,11 @@ public class OtpService {
         }
     }
 
-    /** Verify a code; on success resolve or create the profile and mint a session token. */
-    @Transactional
+    /**
+     * Verify a code; on success resolve or create the profile and mint a session token. A wrong guess saves the higher failed count
+     * (and burns the code at the limit) and THEN answers 401, so the 401 must not roll that save back.
+     */
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public OtpLoginResponse verify(String rawPhone, String rawCode) {
         String phone = normalizeOr400(rawPhone);
         String code = rawCode == null ? "" : rawCode.trim();

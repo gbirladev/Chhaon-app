@@ -770,6 +770,13 @@ else is shrunk). Only files in the person's own folder `medicine-photos/<recipie
 - [ ] Possible duplicate: if the gateway sends the picture but its answer is lost (connection dropped after sending), the plain
       text follows too. Rare; acceptable (better twice than never).
 
+## Security fix: login code now burns after 5 wrong guesses (2026-11-06)
+`OtpService.verify` saved the higher wrong-guess count and then answered 401, but the 401 rolled the whole transaction back, so the
+count never stuck and a code could be guessed without limit. Fixed with `@Transactional(noRollbackFor = ResponseStatusException.class)`;
+`OtpServiceTest.aWrongCodeIsRejectedAndBurnsAfterTooManyAttempts` (failing since it was written) now passes. Also fixed
+`DataApiTest.activityReturnsWhatWasSent` (used check-in status "ok", which does not exist; now "replied"). Full Java suite: 732/732.
+- [ ] Deploy the backend before outside families join.
+
 ## Supabase legacy API keys retire in early 2027
 `SUPABASE_SERVICE_ROLE_KEY` (GitHub secret, set 2026-11-05) holds the LEGACY service_role JWT. The backend sends it as both `apikey` and
 `Authorization: Bearer` (MedicinePhotoStore, WalletStorage), which the new `sb_secret_...` keys do not support in the Bearer header.
