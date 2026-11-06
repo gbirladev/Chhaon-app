@@ -476,7 +476,13 @@
     "usualTimes": "{call} के जो समय पहले से हैं (जोड़ने के लिए दबाएँ)",
     "timeN": "समय {n}",
     "removeTime": "समय {n} हटाएँ",
-    "addTime": "एक और समय जोड़ें"
+    "addTime": "एक और समय जोड़ें",
+    "firstReminder": "पहला रिमाइंडर: {when}",
+    "nextReminder": "अगला रिमाइंडर: {when}",
+    "firstDose": "पहली खुराक: {when} (WhatsApp पर हाँ कहने के बाद रिमाइंडर शुरू होंगे)",
+    "whenToday": "आज {time}",
+    "whenTomorrow": "कल {time}",
+    "whenBoth": "{when} (आपके यहाँ {mine})"
   },
   "reports": {
     "title": "स्वास्थ्य रिपोर्ट",

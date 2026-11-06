@@ -575,8 +575,26 @@ Saving a medicine stores its schedule; the day's dose entries (`dose_events`) ar
 which runs every 5 minutes. So a medicine added now shows on the Today screen within about 5 minutes, not at once.
 Also by design: a reminder time that has already passed today gets no dose today (`scheduled_at >= created_at`); the first dose is the
 next one in the future (for example an 08:00 medicine added at 14:30 starts tomorrow). Nothing is sent late.
-- [ ] Possible improvement (not decided): create today's future doses at once when a medicine is saved, and/or show a short note after saving
-      ("It will appear on Today within 5 minutes" / "First reminder: tomorrow 8:00").
+- [x] **Built 2026-11-06 (branch `worktree-agent-aa4dd0fce138db443`, NOT pushed):**
+  - Backend (already in commit 9adbfd0, hardened now): after a medicine is created, edited, paused or resumed, `MedicineService` calls
+    `SchedulerService.generateNow(recipient)` once the save is committed. It runs the SAME `generate_dose_events` as the tick, scoped to
+    that one parent (the function already takes `p_recipients uuid[]`, server-only grants), so the parent's time zone, start/end dates, days,
+    plan pauses, paused medicines and the "no dose for a time already passed" rule are identical, and `on conflict do nothing` keeps it
+    idempotent with the next tick. Consent is not checked at generation (same as the tick; it is checked when sending). It does nothing when
+    the scheduler is off or scoped to another parent, so a dose never sits on Today that no tick will send. Best effort: any failure is
+    logged (exception class only, no health data or phone numbers) and the save still answers success; the next tick catches up.
+    **No new migration was needed.**
+  - Web: after saving, a 7-second note: "First reminder: today 9:00 PM" / "tomorrow 8:00 AM" (parent's clock; "Next reminder" when editing;
+    "First dose: ... (WhatsApp reminders start after the yes on WhatsApp)" when the parent has not agreed or said STOP; nothing for a paused
+    medicine). When the caregiver's phone is in another time zone their own time is added: "(10:30 AM your time)" / "(आपके यहाँ ...)".
+    Today shows the new dose as soon as it is opened (it reloads on every visit). Helper `web/src/lib/firstReminder.ts`.
+  - Tests: `SchedulerGenerateNowTest` (+1: a database failure is swallowed), `MedicineDosesNowFailureTest` (new: a failing generateNow never
+    fails create or edit), `supabase/tests/generate_doses_now.test.sql` (9: scoped call, past time skipped, other parent untouched,
+    idempotent, next tick adds no duplicate, family members cannot call it).
+  - **Deploy order:** no SQL; backend (Java) first, then web. (The web note works without the backend change, it just computes the time.)
+- [ ] Open: the note does not know about plan limits (a medicine above the Free plan's limit is paused by the plan but the note still names
+      a first reminder); the note uses the phone's clock, not the server's.
+- [ ] Open: no browser check of the note was run (needs a local backend + login); the time rule was checked with a small script.
 
 ## Tablet colour and shape ("neeli gol goli") (built 2026-11-05 on branch `pill-look-v2`, NOT pushed, NOT on Sydney)
 Idea from Dr. Deepak Birla (2026-11-05): parents and home helpers who cannot read the strip pick the tablet by colour and shape.

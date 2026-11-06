@@ -476,7 +476,13 @@
     "usualTimes": "Times {call} already uses (tap to add)",
     "timeN": "Time {n}",
     "removeTime": "Remove time {n}",
-    "addTime": "Add another time"
+    "addTime": "Add another time",
+    "firstReminder": "First reminder: {when}",
+    "nextReminder": "Next reminder: {when}",
+    "firstDose": "First dose: {when} (WhatsApp reminders start after the yes on WhatsApp)",
+    "whenToday": "today {time}",
+    "whenTomorrow": "tomorrow {time}",
+    "whenBoth": "{when} ({mine} your time)"
   },
   "reports": {
     "title": "Health reports",
