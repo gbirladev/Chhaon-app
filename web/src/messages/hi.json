@@ -2101,5 +2101,26 @@
       "desc": "ऊपर हफ़्ते, और इस हफ़्ते की हर बात टाइल्स में।"
     },
     "weeksLeft": "{count} हफ़्ते बाक़ी"
+  },
+  "referral": {
+    "question": "आपको Chhaon के बारे में कहाँ से पता चला?",
+    "hint": "ज़रूरी नहीं। एक बार छूना काफ़ी है, या छोड़ दें।",
+    "answers": {
+      "doctor": "डॉक्टर",
+      "friend_family": "दोस्त या परिवार",
+      "whatsapp": "WhatsApp",
+      "google": "Google",
+      "other": "कहीं और"
+    },
+    "statsTitle": "परिवार कहाँ से आए",
+    "statsSub": "{withCode} डॉक्टर के QR कोड से आए, {direct} सीधे आए। सिर्फ़ गिनती; डॉक्टरों को कुछ नहीं भेजा जाता।",
+    "statsNoCodes": "अभी कोई डॉक्टर कोड नहीं।",
+    "colCode": "डॉक्टर कोड",
+    "colSignups": "साइन-अप",
+    "colWithPerson": "व्यक्ति जोड़ा",
+    "colAgreed": "WhatsApp पर सहमति",
+    "heardTitle": "\"आपको Chhaon के बारे में कहाँ से पता चला?\"",
+    "colAnswer": "जवाब",
+    "notAnswered": "जवाब नहीं दिया"
   }
 }
