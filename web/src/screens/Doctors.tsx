@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Field, Icon, parentCall, useDialog, useToast } from "../App";
 import { ConfirmSheet } from "./Invites";
 import { Icon3D } from "./Icon3D";
-import { normalizePhone, saveDoctorsApi, type Recipient } from "../lib/api";
+import { normalizeCallablePhone, saveDoctorsApi, type Recipient } from "../lib/api";
 import { cleanTyped } from "../lib/doctorAddress";
 import { ADDRESS_MAX, CLINIC_MAX, DOCTORS_MAX, NAME_MAX, SPECIALITY_MAX, directionsUrl, doctorsOf, toPayload, type Doctor } from "../lib/doctors";
 import type { Language } from "../lib/format";
@@ -42,7 +42,7 @@ function DoctorSheet({ existing, onClose, onSave, onRemove }: { existing: Doctor
     const read = (key: string, max: number) => cleanTyped(String(data.get(key) ?? ""), max).replace(/\s+/g, " ").trim();
     const name = read("name", NAME_MAX);
     const phoneTyped = read("phone", 30);
-    const phone = phoneTyped ? normalizePhone(phoneTyped) : "";
+    const phone = phoneTyped ? normalizeCallablePhone(phoneTyped) : "";
     const found: Record<string, string> = {};
     if (!name) found["d-name"] = t("errName");
     if (phone === null) found["d-phone"] = t("errPhone");

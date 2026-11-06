@@ -495,8 +495,9 @@ Reasons: (1) it contradicts the promise on the doctors page ("we do not ... prom
         **Deploy order:** (1) Sydney SQL: paste `20261106000059_your_doctors.sql` (safe to run twice; it revokes and re-grants the new function to anon +
         authenticated); (2) push the backend (Java), (3) then the web. Web before backend would make "Save doctor" fail (no endpoint yet).
         Tests: `DoctorsApiTest` (4), `supabase/tests/your_doctors.test.sql` (16). `restore_function_permissions.sql` lists the new function.
-  - [ ] Open: Indian **landline** numbers are refused (the app's phone rules accept mobiles only), but many clinics have landlines. Decide whether
-        doctors may have landlines (they never get WhatsApp messages, only `tel:` links).
+  - [x] **Decided 2026-11-06 (owner): doctors may have landlines.** A doctor's number is only called, never sent WhatsApp, so
+        `PhoneNormalizer.normalizeCallable` / web `normalizeCallablePhone` accept any 10-digit Indian number with its area code
+        (011 9999 0001 -> +911199990001). Parents, helpers and family stay mobile-only. Test: `DoctorsApiTest`.
   - [ ] Open: two family members editing the list at the same moment: the last save wins (no merge). Fine for the pilot.
   - [ ] Open: native Hindi read of the `doctors` texts in `hi.json`. Browser check at phone width not done by the build agent (no local backend run).
 - [ ] Revisit a real directory only after the pilot, through a partnership with an established directory, and with a lawyer's view first.

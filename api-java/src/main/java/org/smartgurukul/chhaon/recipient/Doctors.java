@@ -71,7 +71,7 @@ public final class Doctors {
 
     private static String phone(String raw) {
         if (raw == null || raw.isBlank()) return null;
-        String normalized = PhoneNormalizer.normalize(raw);
+        String normalized = PhoneNormalizer.normalizeCallable(raw);   // landlines too: a doctor is only called
         if (normalized == null) {
             throw new ResponseStatusException(BAD_REQUEST, "Please check the doctor's phone number");
         }

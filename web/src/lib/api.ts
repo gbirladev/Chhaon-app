@@ -69,7 +69,12 @@ export type Preset = keyof typeof PRESET_TIMES;
  * "0091 99999 00001", "+1 415 555 0123". Returns E.164, or null when it cannot be right (letters such as "ext 4",
  * a wrong length, or an Indian mobile that does not start with 6-9) so we never message a wrong number.
  */
-export function normalizePhone(input: string): string | null {
+/** Like normalizePhone, but Indian landlines with their area code count too (e.g. 011 9999 0001): for numbers that are only CALLED. */
+export function normalizeCallablePhone(input: string): string | null {
+  return normalizePhone(input, /^\+91[1-9]\d{9}$/);
+}
+
+export function normalizePhone(input: string, india: RegExp = /^\+91[6-9]\d{9}$/): string | null {
   // Devanagari (०-९), Arabic-Indic (٠-٩) and Persian (۰-۹) digits become plain 0-9 first.
   const raw = input.trim().replace(/[०-९٠-٩۰-۹０-９]/g, (c) => {
     const code = c.charCodeAt(0);
@@ -84,7 +89,7 @@ export function normalizePhone(input: string): string | null {
   else if (digits.length === 11 && digits.startsWith("0")) candidate = `+91${digits.slice(1)}`;
   else candidate = `+91${digits}`;
   if (!E164.test(candidate)) return null;
-  if (candidate.startsWith("+91") && !/^\+91[6-9]\d{9}$/.test(candidate)) return null;
+  if (candidate.startsWith("+91") && !india.test(candidate)) return null;
   return candidate;
 }
 

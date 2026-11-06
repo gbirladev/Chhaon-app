@@ -104,6 +104,25 @@ class DoctorsApiTest extends DbTest {
     }
 
     @Test
+    void aClinicLandlineWithItsAreaCodeIsAcceptedForADoctorOnly() throws Exception {
+        UUID user = owner();
+        UUID id = create(user);
+        mvc.perform(put("/api/v1/recipients/{id}/doctors", id).header("Authorization", bearer(user)).contentType("application/json")
+                        .content("{\"doctors\":[{\"name\":\"Dr Mehta\",\"phone\":\"011 9999 0001\"}]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.doctorContacts[0].phone", is("+911199990001")));
+        // A landline without its area code is still refused.
+        mvc.perform(put("/api/v1/recipients/{id}/doctors", id).header("Authorization", bearer(user)).contentType("application/json")
+                        .content("{\"doctors\":[{\"name\":\"Dr Mehta\",\"phone\":\"9990001\"}]}"))
+                .andExpect(status().isBadRequest());
+        // Numbers that get WhatsApp stay mobile-only.
+        assertThat(PhoneNormalizer.normalize("011 9999 0001")).isNull();
+        assertThat(PhoneNormalizer.normalizeCallable("011 9999 0001")).isEqualTo("+911199990001");
+        assertThat(PhoneNormalizer.normalizeCallable("99999 00001")).isEqualTo("+919999900001");
+        assertThat(PhoneNormalizer.normalizeCallable("+44 20 9999 0001")).isEqualTo("+442099990001");
+    }
+
+    @Test
     void someoneOutsideTheFamilyCannotEditTheList() throws Exception {
         UUID id = create(owner());
         UUID stranger = owner();

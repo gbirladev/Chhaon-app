@@ -11,6 +11,8 @@ public final class PhoneNormalizer {
 
     private static final Pattern E164 = Pattern.compile("^\\+[1-9]\\d{7,14}$");
     private static final Pattern INDIA = Pattern.compile("^\\+91[6-9]\\d{9}$");
+    /** Any 10-digit Indian number: mobiles (6-9) and landlines with their area code (e.g. 011 9999 0001 -> +911199990001). */
+    private static final Pattern INDIA_CALLABLE = Pattern.compile("^\\+91[1-9]\\d{9}$");
 
     private PhoneNormalizer() {}
 
@@ -28,8 +30,20 @@ public final class PhoneNormalizer {
         return out.toString();
     }
 
-    /** @return normalised E.164 string, or null if the input is not a valid number. */
+    /** @return normalised E.164 string, or null if the input is not a valid number. India: mobiles only (WhatsApp). */
     public static String normalize(String raw) {
+        return normalize(raw, INDIA);
+    }
+
+    /**
+     * For numbers that are only ever CALLED, never sent WhatsApp (a doctor's clinic): Indian landlines are accepted too.
+     * @return normalised E.164 string, or null if the input is not a valid number.
+     */
+    public static String normalizeCallable(String raw) {
+        return normalize(raw, INDIA_CALLABLE);
+    }
+
+    private static String normalize(String raw, Pattern india) {
         if (raw == null) return null;
         String s = asciiDigits(raw).trim();
         if (s.isEmpty()) return null;
@@ -56,7 +70,7 @@ public final class PhoneNormalizer {
         }
 
         if (!E164.matcher(candidate).matches()) return null;
-        if (candidate.startsWith("+91") && !INDIA.matcher(candidate).matches()) return null;
+        if (candidate.startsWith("+91") && !india.matcher(candidate).matches()) return null;
         return candidate;
     }
 }
