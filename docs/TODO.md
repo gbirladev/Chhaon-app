@@ -280,8 +280,9 @@ NOT decided yet: it is a service, and CLAUDE.md keeps services out of v1. The 3-
   - The **Safety net** (built, switched off) becomes part of Premium, because WhatsApp alerts cost money. In-app alerts stay free for everyone.
 - Rules: coordination, never medical advice (no medicine changes; the doctor decides). Fraud-safe: the coordinator never asks for money, OTP, Aadhaar
   or bank details, calls only from Chhaon's number, and uses a family code word; background checks for staff.
-  - [ ] Add to the `consent_yes` reply (`api/app/whatsapp/templates.py`): "Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone
+  - [x] Add to the `consent_yes` reply (`api/app/whatsapp/templates.py`): "Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone
         does, it is not us." (free-form reply, no Meta approval needed; Hindi needs a native read).
+        Done 2026-11-06 (Java): 🔒 line at the end of the parent's and the helper's / caregiver's "1" reply, en + hi; Hindi in `docs/hindi-review.md`.
 - Free plan change to consider: cover all of one parent's medicines (today Free allows 2) once one-reminder-per-slot is live, because the cost then
   depends on time slots, not on the number of medicines.
 - Rough maths, to be measured in the test: 300 families x Rs 499 = about Rs 1.5 lakh a month per coordinator, against a salary (about Rs 30,000 is an

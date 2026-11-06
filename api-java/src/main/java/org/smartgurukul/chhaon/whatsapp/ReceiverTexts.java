@@ -2,6 +2,8 @@ package org.smartgurukul.chhaon.whatsapp;
 
 import java.util.Locale;
 
+import org.smartgurukul.chhaon.whatsapp.reply.ReplyTexts;
+
 /**
  * WhatsApp texts for when the reminders do NOT go to the person themself (care_recipients.reminder_to = caregiver | helper,
  * docs/reminder-receiver.md). They are written in the third person and always NAME the person, because one number may get
@@ -175,9 +177,10 @@ public final class ReceiverTexts {
 
     public static String consentYes(String language, String person) {
         String p = MessageTexts.clean(person, 40);
-        return hi(language)
+        return (hi(language)
                 ? "धन्यवाद 🙏 अब आपको यहाँ " + p + " की दवा के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें।"
-                : "Thank you 🙏 You will now get " + possessive(p) + " medicine reminders here. Reply STOP any time to stop.";
+                : "Thank you 🙏 You will now get " + possessive(p) + " medicine reminders here. Reply STOP any time to stop.")
+                + "\n\n" + ReplyTexts.neverAsks(language);
     }
 
     /** After a dose was recorded: names the person, so a number that serves two people knows whose medicine was noted. */

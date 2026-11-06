@@ -19,9 +19,20 @@ public final class ReplyTexts {
     // ---- ported from the Python REPLIES
 
     public static String consentYes(String lang) {
-        return hi(lang)
+        return (hi(lang)
                 ? "धन्यवाद 🙏 अब आपको यहाँ दवा के रिमाइंडर मिलेंगे। रोकने के लिए कभी भी STOP लिखें।"
-                : "Thank you 🙏 You will now get gentle medicine reminders here. Reply STOP any time to stop.";
+                : "Thank you 🙏 You will now get gentle medicine reminders here. Reply STOP any time to stop.")
+                + "\n\n" + neverAsks(lang);
+    }
+
+    /**
+     * Anti-fraud line at the end of every "yes, send me reminders" reply (parent, helper, self): older parents are a target
+     * for scammers who pretend to be a health service.
+     */
+    public static String neverAsks(String lang) {
+        return hi(lang)
+                ? "🔒 छाँव आपसे कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगेगा। अगर कोई माँगे, तो वह हम नहीं हैं।"
+                : "🔒 Chhaon will never ask you for money, OTP, Aadhaar or bank details. If anyone does, it is not us.";
     }
 
     public static String consentNo(String lang) {
