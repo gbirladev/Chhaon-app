@@ -57,6 +57,7 @@ begin
     ('plan_pauses()', array['authenticated','service_role']::text[]),
     ('preview_family_invite(text)', array['authenticated','service_role']::text[]),
     ('public_emergency_card(text)', array['anon','authenticated','service_role']::text[]),
+    ('public_emergency_doctors(text)', array['anon','authenticated','service_role']::text[]),   -- 0059 "Your doctors"
     ('record_emergency_view(uuid)', array['service_role']::text[]),
     ('remove_circle_member(uuid,uuid)', array['authenticated','service_role']::text[]),
     ('revoke_emergency_link(uuid)', array['authenticated','service_role']::text[]),

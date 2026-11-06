@@ -26,6 +26,8 @@ import { ChildDetailsFields, NextVaccine, VaccinesLink, VaccinesScreen } from ".
 import { childDetailsErrors, isChild, loadChild, saveChildDetails, vaccineDueText, type ChildDetails } from "./lib/vaccines";
 import { ChildHome } from "./screens/ChildHome";
 import { DoctorSummaryScreen } from "./screens/DoctorSummary";
+import { DoctorsLink, DoctorsScreen } from "./screens/Doctors";
+import { doctorLine, doctorsOf } from "./lib/doctors";
 import { PlansScreen } from "./screens/Plans";
 import { StockField, StockStart, parseStock } from "./screens/StockField";
 import { ChildWeightEditor, KeyFactLines } from "./screens/KeyFacts";
@@ -99,6 +101,7 @@ type Screen =
   | "feedback"
   | "love"
   | "doctor"
+  | "doctors"
   | "addSelf"
   | "vaccines";
 
@@ -312,7 +315,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "activity"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "activity"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -629,7 +632,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       callName: isSelf ? null : (data.callName ?? "").trim() || null,
       age: careType === "older" || isSelf ? age : recipient?.age ?? null,   // no age box for a pregnancy or a child: keep what is stored
       dob: recipient?.dob ?? null,                                 // the form does not edit these: pass them through
-      doctorContacts: recipient?.doctor_contacts ?? null,
+      // Doctors are edited on "Your doctors" (PUT .../doctors); left out here, the backend keeps them.
       emergencyContacts: recipient?.emergency_contacts ?? null,
       city: data.city?.trim() || null,
       whatsappPhone: whatsapp,
@@ -2150,6 +2153,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
       <button className="feature-link emergency-link" onClick={() => go("emergency")}><Icon3D name="heart" /><div><strong>{t("emergencyTitle")}</strong><p>{t("emergencySub")}</p></div><Icon name="chevron" /></button>
       <ActivityLink go={go} />
       <VaccinesLink go={go} recipient={recipient} />
+      <DoctorsLink go={() => go("doctors")} recipient={recipient} />
       <button className="feature-link" onClick={() => go("doctor")}><Icon3D name="doctor" /><div><strong>{td("linkTitle")}</strong><p>{td("linkSub")}</p></div><Icon name="chevron" /></button>
       <button className="feature-link whatsapp-link" onClick={() => go("whatsapp")}><Icon3D name="whatsapp" /><div><strong>{t("whatsappTitle", { call })}</strong><p>{tWho("familyWhatsappSub", receiverValues(recipient, userId, { call, you: tWho("you"), someone: tWho("someone") }))}</p></div><Icon name="chevron" /></button>
       {isAdmin && <button className="feature-link" onClick={() => go("monitor")}><Icon3D name="chart" /><div><strong>{t("monitorLink")}</strong><p>{t("monitorSub")}</p></div><Icon name="chevron" /></button>}
@@ -2180,6 +2184,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   const unknown = e("unknown");  // "not recorded" must never read as "none": staff may act on it
   const active = medicines.filter((m) => m.active);
   const family = members.filter((m) => m.phone).slice(0, 3);
+  const doctors = doctorsOf(recipient.doctor_contacts);   // "Your doctors": name, speciality, phone (the minimum, like the public card)
   const ageCity = [years !== null ? e("years", { count: years }) : null, recipient.city].filter(Boolean).join(" • ");
   const conditions = recipient.conditions;
   const allergies = recipient.allergies;
@@ -2195,6 +2200,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
     recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" ? `${e("parentPhone")}: ${recipient.whatsapp_phone}` : "",
     recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" ? `${e("helperPhone")}: ${receiverName(receiverOf(recipient))} ${recipient.whatsapp_phone}` : "",
     ...family.map((m) => `${e("family")}: ${m.name || m.email || ""} ${plusPhone(m.phone ?? "")}`.trim()),
+    ...doctors.map((d) => `${e("doctor")}: ${doctorLine(d)} ${d.phone}`.trim()),
     `${e("timezoneLabel")}: ${recipient.timezone}`,
     `${e("updated")}: ${formatDate(new Date(), language, { day: "numeric", month: "short", year: "numeric" })}`,
   ].filter(Boolean).join("\n");
@@ -2228,8 +2234,12 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
         {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "person" && contactRow(e("parentPhone"), recipient.name, recipient.whatsapp_phone, e("callParent"))}
         {recipient.whatsapp_phone && receiverOf(recipient).reminder_to === "helper" && contactRow(e("helperPhone"), receiverName(receiverOf(recipient)), recipient.whatsapp_phone, e("callHelper"))}
         {family.map((m) => contactRow(e("family"), m.name || m.email || "", plusPhone(m.phone ?? ""), e("callFamily")))}
+        {doctors.map((d, i) => d.phone
+          ? contactRow(e("doctor"), doctorLine(d), d.phone, e("callDoctor", { name: d.name }))
+          : <div className="contact-row" key={`doctor-${i}`}><div><span>{e("doctor")}</span><strong>{doctorLine(d)}</strong></div></div>)}
       </section>
       <button className="secondary-button" style={{ marginTop: 14 }} onClick={() => go("profile")}>{e("editDetails")}</button>
+      {doctors.length === 0 && <button className="secondary-button" style={{ marginTop: 10 }} onClick={() => go("doctors")}>{e("addDoctors", { call: parentCall(recipient, language) })}</button>}
       <div className="emergency-actions">
         <button className="primary-button share-button" onClick={() => shareContent(`${recipient.name} — ${e("title")}`, shareText, t)}><Icon name="share" size={19} /> {e("share")}</button>
         <button className="download-button" onClick={download}><Icon name="report" size={19} /> {e("download")}</button>
@@ -2241,9 +2251,9 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
   );
 }
 
-const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "vaccines"];
+const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "doctors", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2616,6 +2626,7 @@ export default function App() {
           {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={listedMedicines} members={members} />}
           {screen === "whatsapp" && <WhatsAppScreen go={go} recipient={recipient} />}
           {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
+          {screen === "doctors" && <DoctorsScreen go={go} recipient={recipient} onChanged={() => refreshRecipient()} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
