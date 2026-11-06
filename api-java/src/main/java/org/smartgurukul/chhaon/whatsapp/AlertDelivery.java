@@ -189,8 +189,10 @@ public class AlertDelivery {
         String type = (String) n.get("type");
         if (!"refill_needed".equals(type) && !"out_of_stock".equals(type)) return false;
         if (n.get("mid") == null) return false;
-        List<Map<String, Object>> rows = jdbc.queryForList("select stock_count from medicines where id = ?::uuid", n.get("mid"));
-        return !rows.isEmpty() && rows.get(0).get("stock_count") == null;
+        // archived after the alert was made ("stopped taking it", migration 0056): no refill message either
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "select stock_count, archived_at from medicines where id = ?::uuid", n.get("mid"));
+        return !rows.isEmpty() && (rows.get(0).get("stock_count") == null || rows.get(0).get("archived_at") != null);
     }
 
     private boolean phoneOptedOut(String phone) {

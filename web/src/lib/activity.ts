@@ -8,7 +8,7 @@ import { apiFetch } from "./http";
 
 export type FeedKind =
   | "dose_taken" | "dose_missed" | "checkin_answered" | "checkin_missed" | "vaccine_given"
-  | "appointment_added" | "medicine_added" | "medicine_paused" | "consent_given" | "consent_stopped";
+  | "appointment_added" | "medicine_added" | "medicine_paused" | "medicine_stopped" | "consent_given" | "consent_stopped";
 
 /** Who did it: me | member (a family member who marked it) | person | helper | caregiver (another family member gets the reminders) | app. */
 export type FeedActor = { kind: "me" | "member" | "person" | "helper" | "caregiver" | "app"; name: string | null };

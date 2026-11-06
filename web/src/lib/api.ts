@@ -57,6 +57,8 @@ export type Medicine = {
   critical: boolean;   // an unanswered reminder for this medicine alerts the family on the first miss (escalation ladder)
   pillColour: PillColour | null;   // how the tablet looks, named in the WhatsApp reminder (migration 0042)
   pillShape: PillShape | null;
+  /** When the family archived it ("stopped taking it"); null = on the list. Archived: inactive, no reminders, history kept. */
+  archivedAt: string | null;
 };
 
 export const PRESET_TIMES = { Morning: "08:00", Afternoon: "13:00", Night: "20:00" } as const;
@@ -114,6 +116,7 @@ type MedicineDto = {
   threshold: number | null; instructions: string | null; active: boolean; photoUrl: string | null;
   critical: boolean; createdAt: string;
   pillColour?: string | null; pillShape?: string | null;   // absent from a backend older than the pill-look change
+  archivedAt?: string | null;                               // absent from a backend older than migration 0056
 };
 /** The old rows carried times as "HH:MM:SS"; keep that exact shape for the screens. */
 const toMedicine = (m: MedicineDto): Medicine => ({
@@ -122,7 +125,11 @@ const toMedicine = (m: MedicineDto): Medicine => ({
   stock: m.stock ?? null, threshold: m.threshold, instructions: m.instructions,
   active: m.active, photoUrl: m.photoUrl, critical: m.critical,
   pillColour: asPillColour(m.pillColour), pillShape: asPillShape(m.pillShape),
+  archivedAt: m.archivedAt ?? null,
 });
+
+/** Medicines on the list (not archived): what Today, reminders, the emergency card and the forms work with. */
+export const currentMedicines = (list: Medicine[]) => list.filter((m) => !m.archivedAt);
 
 export async function loadMedicines(recipientId: string): Promise<Medicine[]> {
   return (await apiFetch<MedicineDto[]>(`/api/v1/recipients/${recipientId}/medicines`)).map(toMedicine);
@@ -150,6 +157,17 @@ export async function setMedicineFlags(id: string, flags: { active?: boolean; cr
   return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}`, { method: "PATCH", body: flags }));
 }
 
+/** "Stopped taking it": off the list and Today, no reminders, the dose history stays. */
+export async function archiveMedicineApi(id: string): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}/archive`, { method: "POST" }));
+}
+
+/** Back on the list, reminders again. Fails (too_many_medicines) when the plan's medicine limit is reached. */
+export async function restoreMedicineApi(id: string): Promise<Medicine> {
+  return toMedicine(await apiFetch<MedicineDto>(`/api/v1/medicines/${id}/restore`, { method: "POST" }));
+}
+
+/** Only for a medicine added by mistake: its whole dose history is deleted too. */
 export async function deleteMedicineApi(id: string): Promise<void> {
   await apiFetch<void>(`/api/v1/medicines/${id}`, { method: "DELETE" });
 }

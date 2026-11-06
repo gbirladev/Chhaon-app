@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -102,7 +103,7 @@ public class MedicineService {
         String pillShape = validLook(req.pillShape(), PILL_SHAPES, "pill shape");
         Integer stock = validStock(req.stock());
 
-        if (medicines.countByRecipientId(recipientId) >= MAX_MEDICINES) {
+        if (medicines.countByRecipientIdAndArchivedAtIsNull(recipientId) >= MAX_MEDICINES) {   // archived ones do not count
             throw new ResponseStatusException(BAD_REQUEST, "This parent already has the maximum number of medicines.");
         }
 
@@ -217,6 +218,9 @@ public class MedicineService {
     @Transactional
     public MedicineResponse setFlags(UUID userId, UUID medicineId, MedicineFlagsRequest req) {
         Medicine m = requireMedicine(userId, medicineId);
+        if (Boolean.TRUE.equals(req.active()) && m.getArchivedAt() != null) {
+            throw new ResponseStatusException(CONFLICT, "This medicine is archived. Restore it first.");
+        }
         if (req.active() != null) m.setActive(req.active());
         if (req.critical() != null) m.setCritical(req.critical());
         m.setUpdatedAt(OffsetDateTime.now());
@@ -225,6 +229,46 @@ public class MedicineService {
         return toResponse(m);
     }
 
+    /**
+     * "Stopped taking it": hidden from the active list and Today, no reminders, no new doses, no stock alerts, but the dose
+     * history stays (doctor summary, activity). The database removes its waiting doses at once (trigger, migration 0056).
+     * Archiving an archived medicine again changes nothing.
+     */
+    @Transactional
+    public MedicineResponse archive(UUID userId, UUID medicineId) {
+        Medicine m = requireMedicine(userId, medicineId);
+        if (m.getArchivedAt() != null) return toResponse(m);
+        OffsetDateTime now = OffsetDateTime.now();
+        m.setArchivedAt(now);
+        m.setActive(false);
+        m.setUpdatedAt(now);
+        try {
+            medicines.saveAndFlush(m);
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        dosesAfterCommit(m.getRecipientId());
+        return toResponse(m);
+    }
+
+    /** Back on the list and active again (reminders resume). Refused (400) when the plan's medicine limit is already reached. */
+    @Transactional
+    public MedicineResponse restore(UUID userId, UUID medicineId) {
+        Medicine m = requireMedicine(userId, medicineId);
+        if (m.getArchivedAt() == null) return toResponse(m);
+        m.setArchivedAt(null);
+        m.setActive(true);
+        m.setUpdatedAt(OffsetDateTime.now());
+        try {
+            medicines.saveAndFlush(m);   // trigger medicines_restore_limit checks the plan limit
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        dosesAfterCommit(m.getRecipientId());
+        return toResponse(m);
+    }
+
+    /** Only for a medicine added by mistake: the dose history goes too (cascade). Archive keeps it. */
     @Transactional
     public void delete(UUID userId, UUID medicineId) {
         Medicine m = requireMedicine(userId, medicineId);
@@ -386,6 +430,7 @@ public class MedicineService {
                 m.isCritical(),
                 m.getCreatedAt(),
                 m.getPillColour(),
-                m.getPillShape());
+                m.getPillShape(),
+                m.getArchivedAt());
     }
 }

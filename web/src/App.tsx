@@ -6,7 +6,7 @@ import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
   isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
-  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi,
+  createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi, archiveMedicineApi, restoreMedicineApi, currentMedicines,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
@@ -1325,11 +1325,30 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
   );
 }
 
-function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void }) {
+function Medicines({ go, medicines: all, loading, error, onOpen, onChanged }: { go: (screen: Screen) => void; medicines: Medicine[]; loading: boolean; error: boolean; onOpen: (id: string) => void; onChanged: () => Promise<void> }) {
   const t = useTranslations();
   const pausedByPlan = new Set((usePlanPauses()?.medicines ?? []).map((m) => m.id));
   const lookText = usePillLookText();
   const language = useLocale() as Language;
+  const toast = useToast();
+  const expireSession = useSessionExpired();
+  const medicines = currentMedicines(all);
+  const archived = all.filter((m) => m.archivedAt);
+  const [showArchived, setShowArchived] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
+  const restore = async (medicine: Medicine) => {
+    if (restoring) return;
+    setRestoring(medicine.id);
+    try {
+      await restoreMedicineApi(medicine.id);
+      toast(t("medicine.restored", { name: medicine.name }));
+    } catch (e) {
+      if (await sessionIsGone(e as ApiError)) { setRestoring(null); return expireSession(); }
+      toast(friendlyError(e as ApiError, t));
+    }
+    await onChanged();
+    setRestoring(null);
+  };
   const active = medicines.filter((medicine) => medicine.active);
   const outCount = active.filter((m) => m.stock === 0).length;
   const lowCount = active.filter((m) => isLowStock(m) && m.stock !== 0).length;
@@ -1354,6 +1373,30 @@ function Medicines({ go, medicines, loading, error, onOpen }: { go: (screen: Scr
           </article>
         )})}
       </section>
+      {archived.length > 0 && (
+        <section className="archived-medicines" aria-labelledby="archived-toggle">
+          <button type="button" id="archived-toggle" className="archived-toggle" aria-expanded={showArchived} onClick={() => setShowArchived(!showArchived)}>
+            <span>{t("medicines.archived", { count: archived.length })}</span>
+            <span className={`archived-chevron${showArchived ? " open" : ""}`} aria-hidden="true"><Icon name="chevron" size={18} /></span>
+          </button>
+          {showArchived && <>
+            <p className="form-note">{t("medicines.archivedHint")}</p>
+            <div className="medicine-list">
+              {archived.map((medicine) => (
+                <article className="med-card archived-card" key={medicine.id}>
+                  <div className="med-copy" {...tappable(() => onOpen(medicine.id))} aria-label={t("medicines.open", { name: medicine.name })}>
+                    <h3>{medicine.name}</h3>
+                    <p>{[medicine.dose && localizeDose(medicine.dose, t), medicine.archivedAt && t("medicines.stoppedOn", { date: formatDate(new Date(medicine.archivedAt), language, { day: "numeric", month: "long", year: "numeric" }) })].filter(Boolean).join(" • ")}</p>
+                  </div>
+                  <button type="button" className="restore-button" disabled={restoring !== null} onClick={() => void restore(medicine)} aria-label={t("medicines.restoreName", { name: medicine.name })}>
+                    {restoring === medicine.id ? t("common.loading") : t("medicines.restore")}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </>}
+        </section>
+      )}
       <button className="fab" onClick={() => go("addMedicine")}><Icon name="plus" /><span>{t("medicines.add")}</span></button>
     </main>
   );
@@ -1609,6 +1652,24 @@ function DeleteSheet({ name, busy, onConfirm, onCancel }: { name: string; busy: 
   );
 }
 
+/** "Stopped taking it": the normal way to take a medicine off the list. History stays; it can be restored. */
+function ArchiveSheet({ name, busy, onConfirm, onCancel }: { name: string; busy: boolean; onConfirm: () => void; onCancel: () => void }) {
+  const t = useTranslations("medicine");
+  const dialog = useDialog(onCancel);
+  return (
+    <div className="sheet-backdrop" onClick={onCancel}>
+      <section className="sheet" ref={dialog} tabIndex={-1} role="alertdialog" aria-modal="true" aria-label={t("archiveTitle", { name })} onClick={(event) => event.stopPropagation()}>
+        <h3>{t("archiveTitle", { name })}</h3>
+        <p className="sheet-empty">{t("archiveBody")}</p>
+        <div className="stack">
+          <button className="primary-button" onClick={onConfirm} disabled={busy}>{t("archiveYes")}</button>
+          <button className="secondary-button" onClick={onCancel}>{t("cancel")}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, options?: { replace?: boolean }) => void; medicine: Medicine | undefined; onChanged: () => Promise<void> }) {
   const t = useTranslations();
   const language = useLocale() as Language;
@@ -1618,6 +1679,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   const [active, setActive] = useState(medicine?.active ?? true);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const lookText = usePillLookText();
 
@@ -1629,6 +1691,7 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
   }, [medicine?.photoUrl]);
   if (!medicine) return null;
 
+  const archived = !!medicine.archivedAt;   // "stopped taking it": only Restore (and delete-by-mistake) here
   const low = stock !== null && medicine.threshold !== null && stock <= medicine.threshold;
   const instructionKey = { after_food: "afterFood", before_food: "beforeFood", with_food: "withFood" }[medicine.instructions ?? ""];
 
@@ -1673,6 +1736,32 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     setActive(!active);
     void onChanged();
   };
+  const archive = async () => {
+    setBusy(true);
+    try {
+      await archiveMedicineApi(medicine.id);
+    } catch (e) {
+      setBusy(false); setArchiving(false); return failed(e as ApiError);
+    }
+    toast(t("medicine.archived", { name: medicine.name }));
+    await onChanged();
+    setBusy(false);
+    go("medicines", { replace: true });
+  };
+  const restore = async () => {
+    setBusy(true);
+    try {
+      await restoreMedicineApi(medicine.id);
+    } catch (e) {
+      setBusy(false);
+      if (await sessionIsGone(e as ApiError)) return expireSession();
+      if (isNotFound(e as ApiError) || (e as ApiError).status === 404) return failed(e as ApiError);
+      return toast(friendlyError(e as ApiError, t));   // e.g. the plan's medicine limit is reached
+    }
+    setBusy(false);
+    toast(t("medicine.restored", { name: medicine.name }));
+    void onChanged();
+  };
   const remove = async () => {
     setBusy(true);
     try {
@@ -1690,14 +1779,16 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
     <main className="scroll-page no-nav">
       <AppHeader title={medicine.name} subtitle={t("medicine.title")} back={() => go("medicines")} />
       {photoUrl && <img className="photo-thumb" src={photoUrl} alt={medicine.name} />}
-      {!active && <p className="consent-card stopped" role="status">{t("medicine.pausedNote")}</p>}
+      {archived
+        ? <p className="consent-card stopped" role="status">{t("medicine.archivedNote", { date: formatDate(new Date(medicine.archivedAt as string), language, { day: "numeric", month: "long", year: "numeric" }) })}</p>
+        : !active && <p className="consent-card stopped" role="status">{t("medicine.pausedNote")}</p>}
       <section className="form-card">
         <div className="meta-row"><span>{t("medicine.dose")}</span><strong>{localizeDose(medicine.dose, t) || "-"}</strong></div>
         <div className="meta-row"><span>{t("medicine.look")}</span><strong>{medicine.pillColour || medicine.pillShape ? <span className="pill-look-line"><PillGlyph colour={medicine.pillColour} shape={medicine.pillShape} />{lookText(medicine.pillColour, medicine.pillShape)}</span> : t("medicine.noLook")}</strong></div>
         <div className="meta-row"><span>{t("medicine.times")}</span><strong>{describeTimes(medicine.times, t, language)}</strong></div>
         <div className="meta-row"><span>{t("medicine.instructions")}</span><strong>{instructionKey ? t(`add.${instructionKey}`) : t("medicine.noInstructions")}</strong></div>
         <div className="meta-row"><span>{t("medicine.stock")}</span><strong>{stock === null ? <span className="stock-untracked">{t("medicine.notTracked")}</span> : stock === 0 ? <span className="tag-low">{t("medicine.outOfStock")}</span> : low && <span className="tag-low">{t("medicine.lowStock")}</span>}</strong></div>
-        {stock === null ? <StockStart max={MAX_NUMBER} disabled={busy} onStart={(count) => changeStock(0, { count })} /> : (
+        {archived ? null : stock === null ? <StockStart max={MAX_NUMBER} disabled={busy} onStart={(count) => changeStock(0, { count })} /> : (
           <>
             <div className="stepper" role="group" aria-label={t("medicine.stock")}>
               <button type="button" onClick={() => changeStock(-1)} disabled={busy || stock <= 0} aria-label={t("medicine.decrease")}>−</button>
@@ -1709,11 +1800,21 @@ function MedicineDetail({ go, medicine, onChanged }: { go: (screen: Screen, opti
           </>
         )}
       </section>
-      <div className="stack" style={{ marginTop: 18 }}>
-        <button className="primary-button" onClick={() => go("editMedicine")} disabled={busy}><Icon name="edit" size={18} /> {t("medicine.edit")}</button>
-        <button className="secondary-button" onClick={togglePause} disabled={busy}>{active ? t("medicine.pause") : t("medicine.resume")}</button>
-        <button className="danger-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.delete")}</button>
-      </div>
+      {archived ? (
+        <div className="stack" style={{ marginTop: 18 }}>
+          <button className="primary-button" onClick={() => void restore()} disabled={busy}>{t("medicine.restore")}</button>
+          <button className="text-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.deleteMistake")}</button>
+        </div>
+      ) : (
+        <div className="stack" style={{ marginTop: 18 }}>
+          <button className="primary-button" onClick={() => go("editMedicine")} disabled={busy}><Icon name="edit" size={18} /> {t("medicine.edit")}</button>
+          <button className="secondary-button" onClick={togglePause} disabled={busy}>{active ? t("medicine.pause") : t("medicine.resume")}</button>
+          <button className="secondary-button" onClick={() => setArchiving(true)} disabled={busy}>{t("medicine.archive")}</button>
+          <p className="form-note" style={{ textAlign: "center", margin: 0 }}>{t("medicine.archiveHint")}</p>
+          <button className="text-button" onClick={() => setConfirming(true)} disabled={busy}>{t("medicine.deleteMistake")}</button>
+        </div>
+      )}
+      {archiving && <ArchiveSheet name={medicine.name} busy={busy} onConfirm={() => void archive()} onCancel={() => setArchiving(false)} />}
       {confirming && <DeleteSheet name={medicine.name} busy={busy} onConfirm={remove} onCancel={() => setConfirming(false)} />}
     </main>
   );
@@ -2265,6 +2366,8 @@ export default function App() {
     catch { if (!quiet) setMedicinesError(true); }  // a failed background refresh keeps what is on screen
     setMedicinesLoading(false);
   };
+  /** Not archived: what Today, the forms, the emergency card and the safety net see. The Medicines list shows archived ones apart. */
+  const listedMedicines = currentMedicines(medicines);
 
   // First load: decide where the caregiver belongs. If we cannot tell (offline), ask them to retry instead of
   // guessing "no parent yet", which would send them to the add-parent form and risk a duplicate parent.
@@ -2490,14 +2593,14 @@ export default function App() {
           {screen === "profile" && <ProfileForm go={go} recipient={recipient} onSaved={afterProfileSaved} onSignOut={() => void signOut()} />}
           {screen === "addParent" && <ProfileForm go={go} recipient={null} adding onSaved={afterProfileSaved} />}
           {screen === "addSelf" && <ProfileForm go={go} recipient={null} adding self onSaved={afterProfileSaved} />}
-          {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={medicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
-          {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} />}
-          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineSaved} />}
+          {screen === "today" && <Today go={go} language={language} setLanguage={setLanguage} recipient={recipient} recipients={recipients} notifications={notifications} medicineNames={medicineNames} medicines={listedMedicines} onNotificationsSeen={notificationsSeen} onDeleteNotification={deleteNotification} onSelectParent={selectParent} />}
+          {screen === "medicines" && <Medicines go={go} medicines={medicines} loading={medicinesLoading} error={medicinesError} onOpen={(id) => { setSelectedMedicineId(id); go("medicineDetail"); }} onChanged={async () => { await refreshMedicines(undefined, true); refreshNotifications(); }} />}
+          {screen === "addMedicine" && recipient && <AddMedicine go={go} recipient={recipient} usualTimes={usualTimesOf(listedMedicines)} onSaved={afterMedicineSaved} />}
           {screen === "editMedicine" && recipient && (() => {
             const editing = medicines.find((m) => m.id === selectedMedicineId);
             const medicineGone = () => { showToast(MESSAGES[language].medicine.gone); void refreshMedicines(); go("medicines", { replace: true }); };
             return editing
-              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} usualTimes={usualTimesOf(medicines)} onSaved={afterMedicineEdited} onMissing={medicineGone} />
+              ? <AddMedicine key={selectedMedicineId} go={go} recipient={recipient} medicine={editing} usualTimes={usualTimesOf(listedMedicines)} onSaved={afterMedicineEdited} onMissing={medicineGone} />
               : medicinesLoading ? null : <GoneRedirect onGone={medicineGone} />;
           })()}
           {screen === "medicineDetail" && <MedicineDetail go={go} medicine={medicines.find((m) => m.id === selectedMedicineId)} onChanged={async () => { await refreshMedicines(); refreshNotifications(); }} />}
@@ -2510,13 +2613,13 @@ export default function App() {
           {screen === "reportDetail" && <ReportDetail go={go} recipient={recipient} reportId={selectedReportId} />}
           {screen === "join" && pendingInvite() && <JoinScreen token={pendingInvite() as string} onDone={afterInvite} />}
           {screen === "family" && <Family go={go} members={members} userId={userId} recipient={recipient} onSignOut={signOut} onMembersChanged={reloadMembers} onLeft={afterLeft} />}
-          {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={medicines} members={members} />}
+          {screen === "emergency" && <Emergency go={go} recipient={recipient} medicines={listedMedicines} members={members} />}
           {screen === "whatsapp" && <WhatsAppScreen go={go} recipient={recipient} />}
           {screen === "doctor" && <DoctorSummaryScreen go={go} recipient={recipient} medicines={medicines} />}
           {screen === "plans" && <PlansScreen go={go} />}
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
-          {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={medicines} onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
+          {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={listedMedicines}onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
           {screen === "activity" && <ActivityScreen go={go} />}

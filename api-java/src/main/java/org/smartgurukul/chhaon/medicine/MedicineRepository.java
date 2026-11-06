@@ -14,6 +14,9 @@ public interface MedicineRepository extends JpaRepository<Medicine, UUID> {
 
     long countByRecipientId(UUID recipientId);
 
+    /** Medicines that count towards the limits: archived ones do not (migration 0056). */
+    long countByRecipientIdAndArchivedAtIsNull(UUID recipientId);
+
     /** A medicine, only if the caller is a member of its recipient's circle. */
     @Query("""
             select md from Medicine md

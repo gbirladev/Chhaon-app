@@ -132,7 +132,11 @@ public class FeedController {
               union all
                 select 'med_pause:' || m.id, 'medicine_paused', mine.id, m.updated_at, m.name, m.dosage, null, null, null, null
                 from medicines m join mine on mine.id = m.recipient_id
-                where not m.active and m.updated_at >= cast(:from as timestamptz) and m.updated_at > m.created_at
+                where not m.active and m.archived_at is null and m.updated_at >= cast(:from as timestamptz) and m.updated_at > m.created_at
+              union all
+                select 'med_stop:' || m.id, 'medicine_stopped', mine.id, m.archived_at, m.name, m.dosage, null, null, null, null
+                from medicines m join mine on mine.id = m.recipient_id
+                where m.archived_at >= cast(:from as timestamptz)
               union all
                 select 'consent:' || r.id || ':' || floor(extract(epoch from r.consent_at))::bigint, 'consent_given', mine.id,
                        r.consent_at, null, null, null, null, null, null

@@ -70,6 +70,7 @@ public final class MedicineDtos {
             boolean critical,
             OffsetDateTime createdAt,
             String pillColour,      // null = not set
-            String pillShape) {     // null = not set
+            String pillShape,       // null = not set
+            OffsetDateTime archivedAt) {   // null = not archived; archived = "stopped taking it", history kept
     }
 }
