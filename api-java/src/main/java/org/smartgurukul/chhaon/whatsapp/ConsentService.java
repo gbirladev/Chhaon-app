@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartgurukul.chhaon.pilot.PilotService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,25 +29,35 @@ public class ConsentService {
 
     private static final Logger log = LoggerFactory.getLogger(ConsentService.class);
 
-    public record Result(String status, Integer retryAfter) {}
+    /** position: the place in the pilot line (status pilot_full only, docs/pilot-cap.md). */
+    public record Result(String status, Integer retryAfter, Integer position) {
+        public Result(String status, Integer retryAfter) {
+            this(status, retryAfter, null);
+        }
+    }
 
     private final JdbcTemplate jdbc;
     private final WhatsAppSender wa;
     private final ObjectMapper json;
     private final int resendMinutes;
     private final int requestsPerDay;
+    private final PilotService pilot;
 
-    public ConsentService(JdbcTemplate jdbc, WhatsAppSender wa, ObjectMapper json,
+    public ConsentService(JdbcTemplate jdbc, WhatsAppSender wa, ObjectMapper json, PilotService pilot,
                           @Value("${chhaon.consent.resend-minutes:10}") int resendMinutes,
                           @Value("${chhaon.consent.requests-per-day:10}") int requestsPerDay) {
         this.jdbc = jdbc;
         this.wa = wa;
         this.json = json;
+        this.pilot = pilot;
         this.resendMinutes = resendMinutes;
         this.requestsPerDay = requestsPerDay;
     }
 
-    /** sent | already_consented | opted_out | too_soon | too_many | no_phone. 404 when the caller is not in that parent's circle. */
+    /**
+     * sent | already_consented | opted_out | too_soon | too_many | no_phone | pilot_full (with the place in line).
+     * 404 when the caller is not in that parent's circle.
+     */
     public Result requestConsent(UUID userId, UUID recipientId) {
         Map<String, Object> r = firstOrNull(jdbc.queryForList(
                 "select r.id, r.circle_id, r.name, r.call_name, " + ReceiverTexts.languageSql("r") + " language, r.whatsapp_phone, " +
@@ -60,6 +71,9 @@ public class ConsentService {
         // The parent said STOP: only they can restart (START, or 1 under a consent message).
         if (r.get("opted_out_at") != null || phoneOptedOut(phone)) return new Result("opted_out", null);
         if (r.get("consent_at") != null) return new Result("already_consented", null);
+        // Pilot cap (docs/pilot-cap.md): the first message to a new number waits in line while the pilot is full.
+        PilotService.Admission admission = pilot.admit(recipientId, userId);
+        if (!admission.ok()) return new Result("pilot_full", null, admission.position());
 
         JsonNode claim = claim(phone, userId);
         String status = claim.path("status").asText();

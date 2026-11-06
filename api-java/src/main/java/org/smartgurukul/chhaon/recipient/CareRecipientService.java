@@ -1,5 +1,6 @@
 package org.smartgurukul.chhaon.recipient;
 
+import org.smartgurukul.chhaon.pilot.PilotService;
 import org.smartgurukul.chhaon.profile.Profile;
 import org.smartgurukul.chhaon.profile.ProfileRepository;
 import org.smartgurukul.chhaon.recipient.dto.RecipientDtos.ContactDto;
@@ -45,15 +46,19 @@ public class CareRecipientService {
     private final CareCircleMemberRepository members;
     /** The caller's own number and name, for "send the reminders to me" (reminder_to = caregiver). */
     private final ProfileRepository profiles;
+    /** "You're #N in line" while the pilot is full (docs/pilot-cap.md). */
+    private final PilotService pilot;
 
     public CareRecipientService(CareRecipientRepository recipients,
                                 CareCircleRepository circles,
                                 CareCircleMemberRepository members,
-                                ProfileRepository profiles) {
+                                ProfileRepository profiles,
+                                PilotService pilot) {
         this.recipients = recipients;
         this.circles = circles;
         this.members = members;
         this.profiles = profiles;
+        this.pilot = pilot;
     }
 
     @Transactional(readOnly = true)
@@ -455,6 +460,9 @@ public class CareRecipientService {
                 r.getReminderRelation(),
                 r.getReminderUserId() == null ? null : r.getReminderUserId().toString(),
                 r.isCheckinEnabled(),
-                r.getReminderLanguage());
+                r.getReminderLanguage(),
+                // only someone who could be waiting is looked up (no number / agreed / stopped = never in line)
+                r.getWhatsappPhone() != null && r.getConsentAt() == null && r.getOptedOutAt() == null
+                        ? pilot.position(r.getId()) : null);
     }
 }

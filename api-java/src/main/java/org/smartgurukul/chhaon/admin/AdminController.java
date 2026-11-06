@@ -3,10 +3,12 @@ package org.smartgurukul.chhaon.admin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.smartgurukul.chhaon.db.UserScopedSql;
+import org.smartgurukul.chhaon.pilot.PilotService;
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,11 +23,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * The owner's Monitor (docs/admin-monitor.md). Every endpoint: signed in AND profiles.is_admin, else 401 / 403 ({@link AdminGuard}).
  * Plain JSON (snake_case keys, UTC ISO times) so a separate admin website can reuse it later. Read-only, except that opening one
- * family records an admin_audit row.
+ * family records an admin_audit row, and "Move to front" in the pilot line changes that line (docs/pilot-cap.md).
  */
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -39,9 +42,10 @@ public class AdminController {
     private final ServerInfo server;
     private final UserScopedSql userSql;
     private final ObjectMapper json;
+    private final PilotService pilot;
 
     public AdminController(AdminGuard guard, AdminHealthService health, AdminHealthChecker checker, AdminMonitorService monitor,
-                           GatewayProbe gateway, ServerInfo server, UserScopedSql userSql, ObjectMapper json) {
+                           GatewayProbe gateway, ServerInfo server, UserScopedSql userSql, ObjectMapper json, PilotService pilot) {
         this.guard = guard;
         this.health = health;
         this.checker = checker;
@@ -50,6 +54,7 @@ public class AdminController {
         this.server = server;
         this.userSql = userSql;
         this.json = json;
+        this.pilot = pilot;
     }
 
     /** Every check with green / amber / red, plus the server build and the WhatsApp gateway / webhook / volume details. */
@@ -139,5 +144,20 @@ public class AdminController {
         guard.require(user);
         if (fresh) gateway.forget();
         return gateway.status();
+    }
+
+    /** The pilot cap (docs/pilot-cap.md): seats used / allowed, new today / allowed, and who waits (names only). null = not installed. */
+    @GetMapping("/pilot")
+    public JsonNode pilot(@AuthenticationPrincipal AuthenticatedUser user) {
+        guard.require(user);
+        return pilot.summary();
+    }
+
+    /** Puts one waiting family at the front of the pilot line. 404 when they are not waiting. */
+    @PostMapping("/pilot/{recipientId}/move-up")
+    public Map<String, Object> pilotMoveUp(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID recipientId) {
+        guard.require(user);
+        if (!pilot.moveUp(recipientId)) throw new ResponseStatusException(NOT_FOUND, "Not waiting");
+        return Map.of("moved", true);
     }
 }

@@ -116,6 +116,8 @@ public final class RecipientDtos {
             String reminderRelation,
             String reminderUserId,
             boolean checkinEnabled,
-            String reminderLanguage) {
+            String reminderLanguage,
+            // place in the pilot line (docs/pilot-cap.md); null when not waiting
+            Integer pilotPosition) {
     }
 }

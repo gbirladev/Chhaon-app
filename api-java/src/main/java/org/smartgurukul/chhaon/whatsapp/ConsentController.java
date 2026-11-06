@@ -39,7 +39,7 @@ public class ConsentController {
         return m;
     }
 
-    /** Asks the parent, on WhatsApp, to agree to receive Chhaon messages: {status[, retry_after]}. */
+    /** Asks the parent, on WhatsApp, to agree to receive Chhaon messages: {status[, retry_after][, position]}. */
     @PostMapping("/recipients/{recipientId}/consent-request")
     public Map<String, Object> requestConsent(@AuthenticationPrincipal AuthenticatedUser user,
                                               @PathVariable UUID recipientId) {
@@ -67,6 +67,7 @@ public class ConsentController {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("status", r.status());
         if (r.retryAfter() != null) m.put("retry_after", r.retryAfter());
+        if (r.position() != null) m.put("position", r.position());
         return m;
     }
 }

@@ -28,6 +28,8 @@ Feature freeze after polls + admin Monitor; no new screens, themes or website wo
 - [ ] Gateway runbook: number change / phone unlinked / ban (webhook URL, secret, session name, test). Later: backend registers its own webhook.
 - [ ] Burn-in: 7 days, owner's family + 5-10 friendly families, zero silent failures, then start marketing.
 - [ ] Meanwhile: "Join the first 50 families" waitlist on the website.
+- [ ] Pilot cap BUILT on branch `pilot-cap` (docs/pilot-cap.md): 50 WhatsApp numbers, 5 new a day, a waiting line with "#N in line",
+      3-8 s between scheduler sends. To switch on: SQL `20261106000056_pilot_cap.sql` on Sydney first, then push.
 - [ ] Long term: plan the move to Meta's WhatsApp API once families pay.
 - [ ] Admin Monitor, later additions (after a few days of use): (canary card done, see above); poll stats once polls are on (poll vs typed answers, delivered/read ticks); database size vs the Supabase Free 500 MB limit
       (amber at 70%); which migrations have run on Sydney (from the migration tracking table).

@@ -98,3 +98,10 @@ export const loadGateway = (fresh = false) => apiFetch<GatewayStatus>(`/api/v1/a
 
 /** Badge codes the backend sends, in the order the filter shows them. */
 export const BADGES = ["no_reply_2d", "consent_pending", "checkin_missed", "low_stock", "send_failed", "paused_by_plan", "opted_out", "canary"] as const;
+
+/** The pilot cap (docs/pilot-cap.md): seats in use, new numbers today, and who waits (names only). null = not set up yet. */
+export type PilotWaiting = { recipient_id: string; position: number; queued_at: string; priority: boolean; name: string; caregiver: string | null };
+export type PilotCap = { enabled: boolean; max_active: number; seats_used: number; max_new_per_day: number; new_24h: number; waiting: PilotWaiting[] };
+export const loadPilotCap = () => apiFetch<PilotCap | null>("/api/v1/admin/pilot");
+export const movePilotUp = (recipientId: string) =>
+  apiFetch<{ moved: boolean }>(`/api/v1/admin/pilot/${encodeURIComponent(recipientId)}/move-up`, { method: "POST" });

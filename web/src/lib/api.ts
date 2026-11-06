@@ -20,6 +20,7 @@ type RecipientDto = {
   checkinTime: string | null; isSelf: boolean; caregiverAttestedAt: string | null; consentAt: string | null;
   optedOutAt: string | null; consentRequestedAt: string | null; createdAt: string; updatedAt: string;
   careType?: string | null; dueDate?: string | null;   // absent from a backend older than the care-type change (migration 0043)
+  pilotPosition?: number | null;   // place in the pilot line (docs/pilot-cap.md); absent from an older backend
 };
 const toRecipient = (d: RecipientDto): Recipient => ({
   id: d.id, circle_id: d.circleId, name: d.name, relation: d.relation ?? "other", call_name: d.callName,
@@ -31,7 +32,14 @@ const toRecipient = (d: RecipientDto): Recipient => ({
   created_at: d.createdAt, updated_at: d.updatedAt,
   care_type: d.careType === "pregnant" || d.careType === "child" ? d.careType : "older", due_date: d.dueDate ?? null,
   ...receiverRow(d),   // who gets the WhatsApp reminders (lib/reminderReceiver.ts)
+  pilot_position: typeof d.pilotPosition === "number" ? d.pilotPosition : null,
 } as unknown as Recipient);
+
+/** Place in the pilot line while the pilot is full (docs/pilot-cap.md), or null when not waiting. */
+export const pilotPositionOf = (r: Recipient): number | null => {
+  const p = (r as unknown as { pilot_position?: unknown }).pilot_position;
+  return typeof p === "number" ? p : null;
+};
 
 /** The caregiver's own profile from the Java API; shared by alerts/layout/privacy/admin reads. */
 export type MeDto = {
@@ -156,10 +164,10 @@ export async function deleteMedicineApi(id: string): Promise<void> {
 
 export const isLowStock = (m: Medicine) => m.stock !== null && m.threshold !== null && m.stock <= m.threshold;
 
-export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_soon" | "no_phone" | "error";
+export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_soon" | "too_many" | "no_phone" | "pilot_full" | "error";
 
 /** Asks the backend to send the parent a WhatsApp message requesting their agreement. Never throws. */
-export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number }> {
+export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number; position?: number }> {
   try {
     const token = authToken();
     if (!token) return { result: "error" };
@@ -168,8 +176,8 @@ export async function requestConsent(recipientId: string): Promise<{ result: Con
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return { result: "error" };
-    const body = (await response.json()) as { status: ConsentResult; retry_after?: number };
-    return { result: body.status, retryAfter: body.retry_after };
+    const body = (await response.json()) as { status: ConsentResult; retry_after?: number; position?: number };
+    return { result: body.status, retryAfter: body.retry_after, position: body.position };
   } catch {
     return { result: "error" };
   }

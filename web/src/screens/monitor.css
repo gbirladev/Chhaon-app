@@ -170,3 +170,7 @@
 .s-taken_late, .s-sent, .s-pending { color: var(--m-amber); }
 .s-missed { color: var(--m-red); }
 .s-skipped { color: var(--text-muted); }
+
+/* Pilot cap card (docs/pilot-cap.md): name on the left, "Move to front" on the right */
+.pilot-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pilot-row button { flex: 0 0 auto; min-height: 44px; }

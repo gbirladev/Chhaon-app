@@ -5,7 +5,7 @@ import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired }
 import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
-  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent,
+  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent, pilotPositionOf,
   createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
@@ -669,7 +669,11 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     }
     // A new parent, or a changed number, needs a fresh WhatsApp opt-in (the database resets consent on a number change).
     // A new receiver (helper / me / the person) is a new agreement too (the database resets consent then).
-    if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp || (!isSelf && storedReceiver.reminder_to !== reminderTo))) void requestConsent(recipientId);
+    // Waited for briefly (at most 3 s, the WhatsApp send can be slow): a full pilot answers at once without sending, and the
+    // reload below then shows "You're #N in line" instead of "We sent a message" (docs/pilot-cap.md).
+    if (recipientId && (!recipient || recipient.whatsapp_phone !== whatsapp || (!isSelf && storedReceiver.reminder_to !== reminderTo))) {
+      await Promise.race([requestConsent(recipientId), new Promise((resolve) => window.setTimeout(resolve, 3000))]);
+    }
     await onSaved(recipientId);
     setBusy(false);
   };
@@ -982,6 +986,12 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   // When the server says to wait, the button counts down to the moment it may be pressed again.
   const [waitUntil, setWaitUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Pilot cap (docs/pilot-cap.md): while the pilot is full the first WhatsApp message waits; the family sees its place in line.
+  // A "pilot_full" answer to Send again counts until the list itself says something new (then the list wins).
+  const listed = pilotPositionOf(recipient);
+  const listKey = `${recipient.id}|${listed}`;
+  const [answered, setAnswered] = useState<{ key: string; position: number | null } | null>(null);
+  const line = answered && answered.key === listKey ? answered : listed !== null ? { position: listed } : null;
   useEffect(() => {
     if (waitUntil === null) return;
     const id = window.setInterval(() => {
@@ -1005,8 +1015,13 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const resend = async () => {
     setBusy(true);
-    const { result, retryAfter } = await requestConsent(recipient.id);
+    const { result, retryAfter, position } = await requestConsent(recipient.id);
     setBusy(false);
+    if (result === "pilot_full") {
+      setAnswered({ key: listKey, position: typeof position === "number" ? position : null });
+      setNote("");
+      return;
+    }
     if (result === "too_soon" && retryAfter) {
       setNow(Date.now());
       setWaitUntil(Date.now() + retryAfter * 1000);
@@ -1020,6 +1035,14 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
     }
     setNote(t(result === "too_soon" ? "consentTooSoon" : "consentFailed", { call }));
   };
+  if (!stopped && line) {
+    const name = call;   // whose reminders wait: the person cared for, whoever receives them
+    return (
+      <SlimNotice tone="info" title={line.position !== null ? t("pilotWaitTitle", { position: line.position }) : t("pilotWaitTitleNoNumber")}>
+        <p>{line.position !== null ? t("pilotWait", { position: line.position, call: name }) : t("pilotWaitNoNumber", { call: name })}</p>
+      </SlimNotice>
+    );
+  }
   return (
     <SlimNotice tone={stopped ? "warn" : "info"} title={stopped ? t("consentStoppedTitle") : title}>
       <p>{body}</p>

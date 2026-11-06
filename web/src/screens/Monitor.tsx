@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Icon } from "../App";
 import {
-  BADGES, loadActivity, loadAlerts, loadFamilies, loadFamily, loadFeedbackInbox, loadHealth, loadOverview, loadUpcoming,
+  BADGES, loadActivity, loadAlerts, loadFamilies, loadFamily, loadFeedbackInbox, loadHealth, loadOverview, loadPilotCap, loadUpcoming,
+  movePilotUp, type PilotCap,
   type ActivityItem, type Alerts, type FamilyDetail, type FamilyRow, type FeedbackItem, type Health, type HealthCheck, type Level,
   type Overview, type UpcomingItem,
 } from "../lib/admin";
@@ -262,6 +263,7 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
         </section>
       )}
 
+      {tab === "pilot" && <PilotCapCard time={time} />}
       {tab === "pilot" && (
         <section className="monitor-card" aria-label={t("pilotTitle")}>
           <h2>{t("pilotTitle")}</h2>
@@ -333,6 +335,55 @@ function GatewayCard({ health, time }: { health: Health; time: (iso: string | nu
         <dt>{t("g.version")}</dt><dd><code>{s.git_sha === "unknown" ? t("g.unknown") : s.git_sha.slice(0, 7)}</code></dd>
         <dt>{t("g.uptime")}</dt><dd>{t("g.uptimeValue", { hours: uptimeH, minutes: Math.floor((s.uptime_seconds % 3600) / 60) })} · {time(s.started_at)}</dd>
       </dl>
+    </section>
+  );
+}
+
+/** The pilot cap (docs/pilot-cap.md): how many WhatsApp numbers get messages, new ones today, and the waiting line. */
+function PilotCapCard({ time }: { time: (iso: string | null | undefined, withDate?: boolean) => string }) {
+  const t = useTranslations("monitor");
+  const [cap, setCap] = useState<PilotCap | null | undefined>(undefined);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const load = useCallback(async () => {
+    try { setCap(await loadPilotCap()); } catch { setCap((prev) => prev ?? undefined); }
+  }, []);
+  useEffect(() => {
+    const first = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(first);
+  }, [load]);
+  const moveUp = async (id: string) => {
+    setBusy(id); setError(false);
+    try { await movePilotUp(id); await load(); } catch { setError(true); }
+    setBusy(null);
+  };
+  return (
+    <section className="monitor-card" aria-label={t("pilotCapTitle")}>
+      <h2>{t("pilotCapTitle")}</h2>
+      {cap === undefined ? <p className="muted">{t("loading")}</p> : cap === null ? <p className="muted">{t("pc.notInstalled")}</p> : (
+        <>
+          {!cap.enabled && <p className="muted">{t("pc.off")}</p>}
+          <div className="tile-grid">
+            <Tile label={t("pc.seats")} value={`${cap.seats_used}`} sub={t("pc.seatsSub", { max: cap.max_active })} tone={cap.enabled && cap.seats_used >= cap.max_active ? "amber" : undefined} />
+            <Tile label={t("pc.new")} value={`${cap.new_24h}`} sub={t("pc.newSub", { max: cap.max_new_per_day })} />
+            <Tile label={t("pc.waiting")} value={`${cap.waiting.length}`} />
+          </div>
+          {cap.waiting.length === 0 ? <p className="muted">{t("pc.none")}</p> : (
+            <ul className="plain-list">
+              {cap.waiting.map((w) => (
+                <li key={w.recipient_id} className="pilot-row">
+                  <span><strong>#{w.position} {w.name}</strong>{w.caregiver ? ` · ${t("pc.by", { name: w.caregiver })}` : ""}<br />
+                    <small>{t("pc.since", { time: time(w.queued_at, true) })}</small></span>
+                  {w.position > 1 && (
+                    <button type="button" className="slim-action" onClick={() => void moveUp(w.recipient_id)} disabled={busy !== null}>{t("pc.moveUp")}</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {error && <p className="note monitor-error" role="alert">{t("pc.moveFailed")}</p>}
+        </>
+      )}
     </section>
   );
 }

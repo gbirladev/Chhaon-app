@@ -58,6 +58,18 @@ public class SchedulerService {
     /** Outside watcher ping after each tick (Better Stack); null = none (tests that build the service by hand). */
     private ExternalHeartbeat externalHeartbeat;
 
+    /** Spaces out the bulk sends (docs/pilot-cap.md). Null (tests that build the scheduler by hand) = no pause. */
+    private org.smartgurukul.chhaon.whatsapp.SendPacer pacer;
+
+    @Autowired(required = false)
+    public void setPacer(org.smartgurukul.chhaon.whatsapp.SendPacer pacer) {
+        this.pacer = pacer;
+    }
+
+    private void pace() {
+        if (pacer != null) pacer.beforeSend();
+    }
+
     @Autowired(required = false)
     public void setExternalHeartbeat(ExternalHeartbeat externalHeartbeat) {
         this.externalHeartbeat = externalHeartbeat;
@@ -272,6 +284,7 @@ public class SchedulerService {
             if (claimed.isEmpty()) continue; // another tick took them
             List<Map<String, Object>> mine = slot.stream().filter(r -> claimed.contains((UUID) r.get("dose_id"))).toList();
             try {
+                pace();
                 String msgId = sendSlot(mine, claimed);
                 jdbc.update("update dose_events set whatsapp_message_id=? where id = any(cast(? as uuid[]))", msgId, uuidArray(claimed));
                 sent += claimed.size();
@@ -414,6 +427,7 @@ public class SchedulerService {
                     recipientId, today);
             if (claimed != 1) continue;
             try {
+                pace();
                 String phone = (String) row.get("whatsapp_phone");
                 // A poll when polls are on (one tap: 😊 / 📞); the text when off or when the poll could not be sent.
                 String msgId = wa.trySendPoll(phone, checkinPoll(row));
