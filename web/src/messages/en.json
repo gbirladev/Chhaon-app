@@ -1083,7 +1083,17 @@
     "usageUnlimited": "You have added {used} {used, plural, one {parent} other {parents}}.",
     "trialBodyPause": "You have the Plus plan, free, until {date}. If you do not upgrade by then, reminders for {items} will pause. Nothing is deleted.",
     "pausedNow": "Paused right now: {items}. No reminders are sent for them.",
-    "documents": "Reports you can keep per parent"
+    "documents": "Reports you can keep per parent",
+    "upcoming": {
+      "title": "What's next",
+      "intro": "We are working on these. Some may be part of a paid plan later; nothing is charged today.",
+      "tag": "Coming soon",
+      "voiceTitle": "A phone call when WhatsApp gets no reply",
+      "voiceBody": "If your parent does not answer a reminder on WhatsApp, their phone rings with a short message in their language. They press 1 when the medicine is taken. Works on any phone, even one without WhatsApp.",
+      "dischargeTitle": "Help after a hospital stay",
+      "dischargeBody": "Coming home from hospital brings new medicines and follow-up visits. Add the discharge papers, check the medicines and dates, and get closer check-ins for the first 30 days.",
+      "feedback": "Would these help your family? Write to us"
+    }
   },
   "stats": {
     "title": "Pilot stats",
@@ -2101,5 +2111,10 @@
       "desc": "The weeks at the top and everything for this week in tiles."
     },
     "weeksLeft": "{count, plural, one {# week} other {# weeks}} to go"
+  },
+  "update": {
+    "ready": "A new version of Chhaon is ready.",
+    "refresh": "Refresh",
+    "later": "Later"
   }
 }

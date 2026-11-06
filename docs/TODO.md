@@ -289,6 +289,24 @@ NOT decided yet: it is a service, and CLAUDE.md keeps services out of v1. The 3-
 - Later: AI voice calls take over the routine weekly calls and coordinators handle only problems (South Korea's Naver CareCall does AI check-in calls);
   partner money (refills when stock runs low, home lab tests when due); employers and group insurers paying for employees' parents; an NRI plan in dollars.
 
+## Upcoming features: voice-call fallback and hospital-discharge mode (decided 2026-11-06, NOT building now)
+Came out of a Product Hunt check (2026-11-06): about 12 near-identical WhatsApp reminder apps launched in 2026 (Hi Mom Hi Dad, TextMyPill,
+Dawa Reminders, Maitri, Kinly...), all with almost no traction, so the gap is distribution and reliability, not more features. Both ideas
+are kept as Chhaon features, not new products. Shown to users as "Coming soon" on the Plans screen (`upcoming` in `plans` of en/hi.json).
+- [ ] **Voice-call fallback (first; meant for the paid plan).** When a WhatsApp reminder gets no reply, the parent's phone rings (any phone,
+      even a landline or feature phone): a short recorded message in their language, "press 1 if taken, 2 to talk to family"; no answer after
+      retries -> caregiver alert. Why: tests the pilot's biggest open question (do 55+ parents reply on WhatsApp?) and reaches parents without
+      WhatsApp; does not depend on Meta. Build as a channel on the existing tick: per-person channel (`whatsapp` / `voice` /
+      `whatsapp_with_voice_fallback`), IVR provider (Exotel / Plivo) behind a dry-run flag, DTMF "1" handled like a Taken reply, separate
+      consent for calls. Cost ~Rs 0.4-1.5 a minute (third-party figures, get a written quote) = ~Rs 15-45/month per parent: a `voice_fallback`
+      flag in plan limits, free for pilot families, paid plan after. TRAI: DND scrub, 8am-9pm window, opt-out. Similar: Athnova Care (call when
+      WhatsApp unanswered), HelpAge India free "care calls" in 11 languages.
+- [ ] **Hospital-discharge mode (after the pilot; acquisition wedge).** Upload the discharge summary -> caregiver reviews extracted medicines
+      and follow-up dates (human review always, no interpretation: CDSCO) -> 30 days of closer check-ins, then normal. Reuses report
+      extraction (switched off), medicines, appointments, check-ins. Pitch: "Just brought Papa home from hospital?"; QR at discharge desks,
+      nearby chemists. Not a hospital B2B product: India has no readmission penalty, and Genity already pilots that with Narayana Health.
+- [ ] Hindi of the "Coming soon" texts needs a native read. Remove a card from the Plans screen once its feature is live or dropped.
+
 ## Growth plan: doctors bring families, vendors pay (decided 2026-11-03)
 Basic reminders will not earn from families. Plan: grow the user base through doctors, keep Chhaon free for families and doctors, and earn
 from vendors (pharmacies, labs, devices) when a family chooses to order something.
@@ -453,7 +471,9 @@ The GRANT / REVOKE statements were lost when the database was copied to Sydney.
 - **Phone still shows the previous view.** Reproduced: a browser that visited the old site shows the OLD app on the first visit after a deploy and the NEW app on the next visit (the offline copy in the
   service worker is replaced in the background). Nothing is broken; open the app twice. One real problem found: an icon added to the home screen while the app lived at `/` opens `/`, which is now the
   website. **Fixed in `web/public/home.html`:** opened as an installed app (Android standalone, iPhone home screen), `/` goes straight to `/app/`. 5 browser checks.
-  - [ ] Optional: a "new version, tap to refresh" banner when the service worker updates (not an automatic reload: it could lose typed text).
+  - [x] **Built 2026-11-06:** "A new version of Chhaon is ready. [Later] [Refresh]" bar (`web/src/screens/UpdateBanner.tsx`), shown when a new
+        service worker takes over an open page; never reloads by itself. Also checks for a new version each time the app comes back to the
+        screen. Tested with a production build: no bar on a normal visit, bar after a new deploy, gone after Refresh. Hindi needs a native read.
 - **Report upload fails and medicine photos are missing in production.** The files live in Supabase Storage (three private buckets: medicine-photos, reports, feedback), which a database copy does not bring
   over. Unverified until checked on Sydney.
   - [x] **Storage check run on Sydney 2026-11-04: it returned NO ROWS = the project has no storage buckets and no storage access rules at all.** That is why report uploads fail (the bucket does not exist) and old photos do not show.
@@ -636,6 +656,7 @@ entries whose files are all gone.
 - WhatsApp: pregnancy dose reminder and daily check-in with a time-of-day greeting and "Week 24 today 💛"; same *1* / *2* replies.
   Older parents get exactly the old texts.
 - Database: migration `20261105000043_care_type.sql` (`care_type` older|pregnant|child default older, `due_date` pregnant only).
+- (Update 2026-11-06: Child is built and accepted since then: vaccines, guardian check, reminders to the adult who gives the medicine.)
 - API (`/api/v1/recipients`): `careType` ("older" | "pregnant"; "child" refused until step 3) and `dueDate` ("YYYY-MM-DD"). Left out =
   keep (new profile: older), dueDate "" = clear. Due date window: at most 300 days ahead, 60 days past, checked only when it changes.
   Switching away from pregnant clears the due date. The caregiver's own profile ("Me") stays older.

@@ -80,6 +80,17 @@ export function PlansScreen({ go }: { go: (screen: "family") => void }) {
           })()}
         </>
       )}
+      <section className="plan-upcoming" aria-labelledby="plan-upcoming-title">
+        <h2 id="plan-upcoming-title">{t("upcoming.title")}</h2>
+        <p className="plan-upcoming-intro">{t("upcoming.intro")}</p>
+        {(["voice", "discharge"] as const).map((key) => (
+          <div key={key} className="plan-upcoming-item">
+            <div className="plan-head"><h3>{t(`upcoming.${key}Title`)}</h3><span className="plan-tag soon">{t("upcoming.tag")}</span></div>
+            <p>{t(`upcoming.${key}Body`)}</p>
+          </div>
+        ))}
+        <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t("upcoming.title"))}`}>{t("upcoming.feedback")}</a>
+      </section>
     </main>
   );
 }

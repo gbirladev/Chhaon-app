@@ -64,6 +64,7 @@ import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
 import { SlimNotice } from "./screens/SlimNotice";
+import { UpdateBanner } from "./screens/UpdateBanner";
 import { CardIcon } from "./screens/TodayCard";
 import { Logo } from "./screens/Logo";
 
@@ -2508,6 +2509,7 @@ export default function App() {
         {ready && !loadFailed && hasNav && <BottomNav screen={screen} go={go} unread={notifications.filter((n) => !n.read_at).length} />}
         {PRIVACY_ENABLED && ready && !loadFailed && <ConsentGate signedIn={signedIn} screen={screen} go={go} onSignOut={() => void signOut()} />}
         <OfflineBanner />
+        <UpdateBanner />
         {toastMessage && <div className={`toast${toastBottom ? " bottom" : ""}${toastLeaving ? " leaving" : ""}`} key={toastMessage} role="status" onClick={hideToast}><span className="toast-text">{toastMessage}</span></div>}
       </div>
     </div>
