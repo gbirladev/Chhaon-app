@@ -21,6 +21,7 @@ import java.time.Instant;
  *       replies cannot reach us: the 2026-11-05 incident (a number change left the new session without a webhook).</li>
  * </ol>
  * Webhook secrets returned by the gateway are never kept or passed on: only counts and the target address (no query string).
+ * The logged-in number is kept masked ({@link PhoneMask}: country code + last 4 digits).
  */
 @Component
 public class GatewayProbe {
@@ -115,7 +116,7 @@ public class GatewayProbe {
         if (d != null && d.isObject()) {
             String live = text(d, "status");
             if (live != null) status = live;
-            number = numberFromJid(text(d.path("me"), "id"));
+            number = PhoneMask.mask(numberFromJid(text(d.path("me"), "id")));   // the sending SIM: masked like every Monitor number
         }
         Integer count = null;
         java.util.List<String> targets = new java.util.ArrayList<>();

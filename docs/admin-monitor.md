@@ -9,8 +9,14 @@ nobody noticed. The same day two 14:00 / 14:15 doses went out at 14:31 (a schedu
 
 - Every `/api/v1/admin/*` Monitor endpoint needs a signed-in account whose **database** flag `profiles.is_admin` is true
   (401 without login, 403 otherwise). The token's `admin` claim alone is not enough.
-- For now everything is shown (names, phone numbers, medicines, consent): the only accounts are the owner's own family.
-  **Before real families join, switch to masked phone numbers** (docs/TODO.md).
+- **Phone numbers are masked on the server** (since 2026-11-06, `PhoneMask`): only the country code and the last 4 digits leave
+  the backend, e.g. `+91 ••••• •0001`. This covers every field whose name ends in `phone` at any depth (parent WhatsApp number,
+  caregiver and alert numbers, the reminder receiver's number, emergency and doctor contacts) in `/families`, `/families/{id}`,
+  `/upcoming` and `/feedback-inbox`, and the gateway's logged-in number (also the canary SIM's, shown as `Test Papa`) in `/gateway`
+  and the `gateway` health check. The full number never reaches the browser. Searching the families list by the last 4 digits
+  still works. There are no call / WhatsApp links in the Monitor.
+- Names, e-mail addresses and medicines (names, doses, schedules, conditions and allergies on the family page) are still shown:
+  the owner needs them to help a family. Every family view is audited.
 - Opening one family (`GET /api/v1/admin/families/{id}`) writes a row to `admin_audit` (admin id, recipient, circle, time).
 - Nothing about families is written to the server log. The refused-webhook counter stores only a reason and a time.
 
