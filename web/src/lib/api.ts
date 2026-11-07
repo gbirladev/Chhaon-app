@@ -48,6 +48,7 @@ export type MeDto = {
   privacyAcceptedAt: string | null; policyVersion: string | null;
   alertPhone: string | null; alertRequestedAt: string | null; alertConfirmedAt: string | null;
   alertConsentAt: string | null;
+  referredBy?: string | null;   // the code this account joined with (doctor / creator / friend), set once
 };
 export const loadMe = () => apiFetch<MeDto>("/api/v1/me");
 export const patchMe = (body: Record<string, unknown>) => apiFetch<MeDto>("/api/v1/me", { method: "PATCH", body });

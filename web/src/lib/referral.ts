@@ -55,6 +55,51 @@ export async function sendPendingReferral(): Promise<void> {
   }
 }
 
+/** The code kept from a ?ref= link and not sent yet (for pre-filling the sign-up field), or null. */
+export function pendingReferralCode(): string | null {
+  return read()?.code ?? null;
+}
+
+// ---------------------------------------------------------------- the person's own code ("Invite friends", migration 0061)
+export type MyReferral = { installed: boolean; code: string | null; link: string | null; families: number; changesLeft: number };
+export type CodeStatus = "available" | "yours" | "taken" | "reserved" | "format" | "too_many";
+export type CodeCheck = { code: string; status: CodeStatus; suggestions: string[] };
+
+export async function loadMyReferral(): Promise<MyReferral> {
+  return apiFetch<MyReferral>("/api/v1/me/referral");
+}
+
+export async function checkReferralCode(code: string): Promise<CodeCheck> {
+  return apiFetch<CodeCheck>(`/api/v1/me/referral/check?code=${encodeURIComponent(code)}`);
+}
+
+/** Change to another code: the new state, or why not (taken / reserved / format / too_many, with suggestions). */
+export async function changeReferralCode(code: string): Promise<{ ok: true; mine: MyReferral } | { ok: false; check: CodeCheck }> {
+  try {
+    return { ok: true, mine: await apiFetch<MyReferral>("/api/v1/me/referral", { method: "PUT", body: { code } }) };
+  } catch (e) {
+    const err = e as ApiError & { body?: unknown };
+    const body = (err.body ?? null) as CodeCheck | null;
+    if ((err.status === 409 || err.status === 429) && body && typeof body.status === "string") {
+      return { ok: false, check: { code: body.code ?? code, status: body.status, suggestions: body.suggestions ?? [] } };
+    }
+    throw e;
+  }
+}
+
+/** The sign-up field: "ok" | "unknown" | "own". A network failure counts as "ok" (the field is optional; the server checks again). */
+export async function validateReferralCode(code: string): Promise<"ok" | "unknown" | "own"> {
+  try {
+    const r = await apiFetch<{ status: "ok" | "unknown" | "own" }>(`/api/v1/referral/validate?code=${encodeURIComponent(code)}`);
+    return r.status;
+  } catch { return "ok"; }
+}
+
+/** Saves a code typed at sign-up (first code wins on the server). A failure is ignored: the field is optional. */
+export async function saveReferredBy(code: string): Promise<void> {
+  try { await patchMe({ referredBy: code }); localStorage.removeItem(KEY); } catch { /* optional */ }
+}
+
 /** The fixed answers to "How did you hear about Chhaon?" (same list as the database check). */
 export const HEARD_FROM = ["doctor", "friend_family", "whatsapp", "google", "other"] as const;
 export type HeardFrom = (typeof HEARD_FROM)[number];
@@ -68,13 +113,13 @@ export async function saveHeardFrom(answer: HeardFrom): Promise<void> {
 export type ReferralStats = {
   total: number;
   withCode: number;
-  byCode: { code: string; signups: number; withPerson: number; agreed: number }[];
+  byCode: { code: string; signups: number; withPerson: number; agreed: number; owner?: string | null }[];
   byHeardFrom: { answer: HeardFrom | "not_answered"; signups: number }[];
 };
 
 type Raw = {
   total: number; with_code: number;
-  by_code: { code: string; signups: number; with_person: number; agreed: number }[];
+  by_code: { code: string; signups: number; with_person: number; agreed: number; owner?: string }[];
   by_heard_from: { answer: HeardFrom | "not_answered"; signups: number }[];
 };
 
@@ -84,7 +129,7 @@ export async function loadReferralStats(): Promise<ReferralStats> {
   return {
     total: r.total,
     withCode: r.with_code,
-    byCode: r.by_code.map((c) => ({ code: c.code, signups: c.signups, withPerson: c.with_person, agreed: c.agreed })),
+    byCode: r.by_code.map((c) => ({ code: c.code, signups: c.signups, withPerson: c.with_person, agreed: c.agreed, owner: c.owner ?? null })),
     byHeardFrom: r.by_heard_from,
   };
 }

@@ -4,3 +4,7 @@
 .heard-from .choice-chips button { min-height: 44px; font-size: max(0.875rem, 12px); }
 .heard-from .hint { margin: 6px 0 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
 .referral-stats td:first-child { overflow-wrap: anywhere; }
+/* The sign-up field (first Add-your-parent form). */
+.referral-code-field input { text-transform: uppercase; letter-spacing: .05em; }
+.referral-code-done { margin: 0 0 16px; color: var(--text-soft); font-size: max(0.875rem, 12px); }
+.referral-stats .code-owner { color: var(--text-muted); font-weight: 500; }

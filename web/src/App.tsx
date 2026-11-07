@@ -61,8 +61,9 @@ import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
-import { saveHeardFrom, sendPendingReferral, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
-import { HeardFromQuestion } from "./screens/Referral";
+import { pendingReferralCode, saveHeardFrom, saveReferredBy, sendPendingReferral, validateReferralCode, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
+import { HeardFromQuestion, ReferralCodeField } from "./screens/Referral";
+import { InviteFriendsScreen } from "./screens/InviteFriends";
 import { hasCheckin, initialReceiverMode, receiverName, receiverOf, settingsOf, type ReceiverMode } from "./lib/reminderReceiver";
 import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
@@ -102,6 +103,7 @@ type Screen =
   | "monitor"
   | "safety"
   | "feedback"
+  | "invite"
   | "love"
   | "doctor"
   | "doctors"
@@ -319,7 +321,7 @@ function BottomNav({ screen, go, unread }: { screen: Screen; go: (screen: Screen
   return (
     <nav className="bottom-nav" aria-label={tc("mainNav")}>
       {tabs.map(([target, icon]) => {
-        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "activity"].includes(screen) && target === "family");
+        const active = screen === target || (screen === "appointments" && target === "today") || ((screen === "addMedicine" || screen === "editMedicine" || screen === "medicineDetail") && target === "medicines") || ((screen === "reportDetail" || screen === "documentDetail") && target === "reports") || (["emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "invite", "love", "doctor", "doctors", "activity"].includes(screen) && target === "family");
         return (
           <button key={target} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(target)}>
             <Icon name={icon} size={21} />
@@ -557,6 +559,15 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
   // "How did you hear about Chhaon?": optional, asked once, on the very first Add-your-parent form only.
   const firstRun = !recipient && !adding && !isSelf;
   const [heardFrom, setHeardFrom] = useState<HeardFrom | null>(null);
+  // The optional referral code (migration 0061): pre-filled from a ?ref= link; shown as done when the account already has one.
+  const [refCode, setRefCode] = useState(() => (firstRun ? pendingReferralCode() ?? "" : ""));
+  const [refLocked, setRefLocked] = useState<string | null>(null);
+  useEffect(() => {
+    if (!firstRun) return;
+    let cancelled = false;
+    loadMe().then((me) => { if (!cancelled && me.referredBy) setRefLocked(me.referredBy); }).catch(() => { /* optional */ });
+    return () => { cancelled = true; };
+  }, [firstRun]);
   const [checkinTouched, setCheckinTouched] = useState(false);
   const [reminderLang, setReminderLang] = useState<"en" | "hi">(storedSettings.reminder_language ?? (recipient?.language === "en" ? "en" : "hi"));
   const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
@@ -630,6 +641,12 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     if (pregnant && dueDate && dateMode === "lmp" && (lmpFromDue(dueDate) > todayIn(timezone) || !dueDateOk(dueDate, todayIn(timezone)))) found["f-dueDate"] = t("errLmp");
     else if (pregnant && dueDate && !dueDateOk(dueDate, todayIn(timezone))) found["f-dueDate"] = t("errDueDate");
     if (child) Object.assign(found, childDetailsErrors(childDetails, todayIn(timezone), guardianDone, { errDob: tAll("vaccines.errDob"), errGuardian: tAll("vaccines.errGuardian") }));
+    const typedRef = firstRun && !refLocked ? refCode.trim().toUpperCase() : "";
+    if (typedRef) {
+      const verdict = await validateReferralCode(typedRef);
+      if (verdict === "unknown") found["f-refCode"] = tAll("referral.codeUnknown");
+      else if (verdict === "own") found["f-refCode"] = tAll("referral.codeOwn");
+    }
     setErrors(found);
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
 
@@ -687,6 +704,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       await Promise.race([requestConsent(recipientId), new Promise((resolve) => window.setTimeout(resolve, 3000))]);
     }
     if (firstRun && heardFrom) void saveHeardFrom(heardFrom);
+    if (typedRef) void saveReferredBy(typedRef);
     await onSaved(recipientId);
     setBusy(false);
   };
@@ -725,6 +743,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
         </div>
         <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
         {firstRun && <HeardFromQuestion value={heardFrom} onChange={setHeardFrom} />}
+        {firstRun && <ReferralCodeField value={refCode} onChange={setRefCode} locked={refLocked} error={errors["f-refCode"]} />}
         {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : pk("note"))}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
@@ -2207,6 +2226,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         <InstallLink look="row" />
         <FeatureEntry look="row" icon="feedback" title={t("feedbackLink")} onClick={() => go("feedback")} />
         {isAdmin && <FeatureEntry look="row" icon="chart" title={t("monitorLink")} onClick={() => go("monitor")} />}
+        <FeatureEntry look="row" icon="people" title={t("inviteLink")} onClick={() => go("invite")} />
         <button type="button" className="more-row sign-out-row" onClick={onSignOut}><Icon name="logout" size={20} /><span>{t("signOut")}</span></button>
       </div>
     </main>
@@ -2298,7 +2318,7 @@ function Emergency({ go, recipient, medicines, members }: { go: (screen: Screen)
 
 const NEEDS_PARENT: Screen[] = ["today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "doctor", "doctors", "vaccines"];
 const TAB_SCREENS: Screen[] = ["today", "medicines", "reports", "family"];
-const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "love", "doctor", "doctors", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
+const ALL_SCREENS: Screen[] = ["welcome", "otp", "profile", "addParent", "today", "appointments", "medicines", "addMedicine", "editMedicine", "medicineDetail", "reports", "reportDetail", "documentDetail", "family", "emergency", "whatsapp", "plans", "stats", "monitor", "safety", "feedback", "invite", "love", "doctor", "doctors", "addSelf", "privacyData", "policy", "terms", "goodbye", "vaccines", "activity"];
 
 function screenFromHash(): Screen {
   const name = window.location.hash.replace(/^#\/?/, "").split(/[?#]/)[0] as Screen;  // "#/medicines?x=1" is still Medicines
@@ -2679,6 +2699,7 @@ export default function App() {
           {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={listedMedicines}onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
           {screen === "feedback" && <FeedbackScreen go={go} />}
+          {screen === "invite" && <InviteFriendsScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
           {screen === "activity" && <ActivityScreen go={go} />}
           {screen === "privacyData" && <PrivacyData go={go} recipient={recipient} members={members} userId={userId} onParentDeleted={() => afterProfileSaved()} onAccountDeleted={async () => { await signOut(); go("goodbye", { replace: true }); }} />}

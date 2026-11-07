@@ -88,7 +88,7 @@ class ReferralApiTest extends DbTest {
     @Test
     void onlyAnAdminSeesTheCountsAndThereAreNoNames() throws Exception {
         UUID family = fx.user("Secret Caregiver");
-        patchMe(family, "{\"referredBy\":\"ZTEST1\",\"heardFrom\":\"doctor\"}").andExpect(status().isOk());
+        patchMe(family, "{\"referredBy\":\"ZT0091\",\"heardFrom\":\"doctor\"}").andExpect(status().isOk());
 
         mvc.perform(get("/api/v1/admin/referrals")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v1/admin/referrals").header("Authorization", bearer(family))).andExpect(status().isForbidden());
@@ -99,7 +99,7 @@ class ReferralApiTest extends DbTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode stats = json.readTree(body);
         JsonNode row = null;
-        for (JsonNode r : stats.get("by_code")) if ("ZTEST1".equals(r.get("code").asText())) row = r;
+        for (JsonNode r : stats.get("by_code")) if ("ZT0091".equals(r.get("code").asText())) row = r;
         assertThat(row).isNotNull();
         assertThat(row.get("signups").asInt()).isEqualTo(1);
         assertThat(row.get("with_person").asInt()).isZero();

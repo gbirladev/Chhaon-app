@@ -1,0 +1,19 @@
+/* "Invite friends" (Family > More): the person's referral code, sharing, and choosing another code. */
+.invite-card { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0 12px; padding: 18px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); text-align: center; }
+.invite-label { color: var(--text-muted); font-size: max(0.8125rem, 12px); font-weight: 600; }
+.invite-code { font-size: 1.9rem; letter-spacing: .06em; color: var(--primary-text); overflow-wrap: anywhere; }
+.invite-link { color: var(--text-soft); font-size: max(0.875rem, 12px); overflow-wrap: anywhere; }
+.invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 10px; }
+.invite-actions > * { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+.invite-count { margin: 10px 0 0; font-weight: 700; color: var(--text); }
+.invite-change { margin-bottom: 8px; }
+.invite-edit { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); margin-bottom: 12px; }
+.invite-edit input { width: 100%; text-transform: uppercase; letter-spacing: .05em; font-size: 1.1rem; }
+.invite-edit .hint { margin: 6px 0 10px; color: var(--text-muted); font-size: max(0.8125rem, 12px); }
+.invite-check { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; font-size: max(0.875rem, 12px); }
+.invite-check p { margin: 0; }
+.invite-check.ok { background: var(--s-e9f6f0, #e9f6f0); color: var(--ok-text, #1f6b4c); }
+.invite-check.bad { background: var(--s-fff1ec, #fff1ec); color: var(--text); }
+.invite-suggest-title { margin-top: 8px !important; font-weight: 700; }
+.invite-check .choice-chips button { min-height: 40px; letter-spacing: .04em; }
+.invite-note { color: var(--text-muted); font-size: max(0.8125rem, 12px); }

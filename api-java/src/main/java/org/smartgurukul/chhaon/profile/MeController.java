@@ -53,9 +53,11 @@ public class MeController {
     static final Duration REFERRAL_WINDOW = Duration.ofDays(7);
 
     private final ProfileRepository profiles;
+    private final ReferralCodeService referralCodes;
 
-    public MeController(ProfileRepository profiles) {
+    public MeController(ProfileRepository profiles, ReferralCodeService referralCodes) {
         this.profiles = profiles;
+        this.referralCodes = referralCodes;
     }
 
     private Profile require(AuthenticatedUser user) {
@@ -88,6 +90,13 @@ public class MeController {
         if (req.referredBy() != null) {
             String code = req.referredBy().trim().toUpperCase(Locale.ROOT);
             if (!REFERRAL_CODE.matcher(code).matches()) throw new ResponseStatusException(BAD_REQUEST, "Unknown referral code");
+            // A code shaped like a person's own code (migration 0061) must exist and not be the person's own;
+            // campaign codes (doctor D001, creator CRE022, anything with symbols) are taken as they are, as before.
+            switch (referralCodes.forSignup(p.getId(), code)) {
+                case UNKNOWN -> throw new ResponseStatusException(BAD_REQUEST, "Unknown referral code");
+                case OWN -> throw new ResponseStatusException(BAD_REQUEST, "Own referral code");
+                case OK -> { }
+            }
             boolean newAccount = p.getCreatedAt() == null || p.getCreatedAt().isAfter(OffsetDateTime.now().minus(REFERRAL_WINDOW));
             if (p.getReferredBy() == null && newAccount) p.setReferredBy(code);   // otherwise quietly ignored: first value wins
         }
