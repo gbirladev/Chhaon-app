@@ -22,6 +22,11 @@
 .more-row > span { flex: 1; min-width: 0; }
 .more-row > svg { display: none; }
 .more-row > .icon-3d { width: 22px; height: 22px; flex-shrink: 0; }
+/* An odd number of buttons: the last one takes the whole row, so nothing sits alone on the left. */
+.more-list > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* Sign out is the last button of "More" (2026-11-07), not a loose link far above the tab bar. */
+.more-row.sign-out-row { color: var(--text-muted); }
+.more-row.sign-out-row > svg { display: block; flex-shrink: 0; width: 20px; height: 20px; }
 
 .family-hero-compact { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
 .family-hero-compact .hero-members { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; }

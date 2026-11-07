@@ -251,6 +251,7 @@ export function Icon({
     edit: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13 7 4 4" /></>,
     sliders: <><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>,
     home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v11h14V9M9 20v-6h6v6" /></>,
+    logout: <><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16l-4-4 4-4M6 12h10" /></>,
     pill: <><path d="M10.5 4.5 4.7 10.3a5 5 0 0 0 7 7l5.8-5.8a5 5 0 0 0-7-7Z" /><path d="m8 7 9 9" /></>,
     report: <><path d="M6 3h9l3 3v15H6z" /><path d="M14 3v4h4M9 12h6M9 16h6" /></>,
     users: <><path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 20v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
@@ -2206,8 +2207,8 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         <InstallLink look="row" />
         <FeatureEntry look="row" icon="feedback" title={t("feedbackLink")} onClick={() => go("feedback")} />
         {isAdmin && <FeatureEntry look="row" icon="chart" title={t("monitorLink")} onClick={() => go("monitor")} />}
+        <button type="button" className="more-row sign-out-row" onClick={onSignOut}><Icon name="logout" size={20} /><span>{t("signOut")}</span></button>
       </div>
-      <button className="account-link" onClick={onSignOut}>{t("signOut")}</button>
     </main>
   );
 }
