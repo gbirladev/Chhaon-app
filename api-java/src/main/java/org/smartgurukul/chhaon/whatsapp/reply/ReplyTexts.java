@@ -101,6 +101,13 @@ public final class ReplyTexts {
                 : "Okay 🙏 Please reply 1 once you have taken it.";
     }
 
+    /** "Not yet" TYPED under a reminder while reminders go out as polls: point to the ✅ in the poll, typing 1 still works. */
+    public static String doseNotYetPoll(String lang) {
+        return hi(lang)
+                ? "ठीक है 🙏 दवा लेने के बाद ऊपर वाले संदेश में ✅ चुन लीजिए (या 1 लिखें)।"
+                : "Okay 🙏 Tap ✅ Taken in the message above once you have taken it (or reply 1).";
+    }
+
     /** A "⏰ Later" vote on a reminder poll: nothing is recorded; tap ✅ once taken. */
     public static String dosePollLater(String lang) {
         return hi(lang)
@@ -132,6 +139,13 @@ public final class ReplyTexts {
         return hi(lang)
                 ? "ठीक है 🙏 हमने आपके परिवार को बता दिया है।"
                 : "Okay 🙏 We have let your family know.";
+    }
+
+    /** {@link #help} while reminders and check-ins go out as polls: tap the answer first, numbers as the fallback. */
+    public static String helpPoll(String lang) {
+        return hi(lang)
+                ? "नमस्ते 🙏 ऊपर वाले संदेश में अपना जवाब चुन लीजिए। या नंबर लिखें:\n1 = हाँ / दवा ले ली / मैं ठीक हूँ\n2 = नहीं / बात करनी है\nसंदेश रोकने के लिए STOP लिखें।"
+                : "Namaste 🙏 Please tap your answer in the message above. You can also type 1 for yes / taken / I am okay, 2 for no / call me. Type STOP to stop messages.";
     }
 
     /** A reply we could not understand (sent at most once every few hours per number). */

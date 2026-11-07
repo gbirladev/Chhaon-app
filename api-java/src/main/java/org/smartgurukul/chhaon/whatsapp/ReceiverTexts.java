@@ -204,6 +204,19 @@ public final class ReceiverTexts {
                 : "Okay 🙏 Please reply 1 once you have given " + p + " the medicine.";
     }
 
+    /** {@link #doseNotYet} while reminders go out as polls: point to the ✅ in the poll, typing 1 still works. */
+    public static String doseNotYetPoll(String language, String reminderTo, String person) {
+        String p = MessageTexts.clean(person, 40);
+        if (CAREGIVER.equals(reminderTo)) {
+            return hi(language)
+                    ? "ठीक है 🙏 जब " + p + " दवा ले लें, तो ऊपर वाले संदेश में ✅ चुन लीजिए (या 1 लिखें)।"
+                    : "Okay 🙏 Tap ✅ in the message above once " + p + " has taken the medicine (or reply 1).";
+        }
+        return hi(language)
+                ? "ठीक है 🙏 " + p + " को दवा देने के बाद ऊपर वाले संदेश में ✅ चुन लीजिए (या 1 लिखें)।"
+                : "Okay 🙏 Tap ✅ in the message above once you have given " + p + " the medicine (or reply 1).";
+    }
+
     /** A "⏰ Later" vote on a helper's / caregiver's reminder poll: tap ✅ once Papa has had the medicine. */
     public static String dosePollLater(String language, String reminderTo, String person) {
         String p = MessageTexts.clean(person, 40);

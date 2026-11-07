@@ -196,6 +196,37 @@ class SlotPollTest extends DbTest {
     }
 
     @Test
+    void withPollsOnATypedNotYetPointsToTheTap() throws Exception {
+        wa.setPollsEnabled(true);
+        Slot s = threeAtOnce("en");
+        scheduler(s.f()).tick(s.f().recipientId());
+        wa.reset();
+        wa.setPollsEnabled(true);
+
+        gateway.post(gateway.received(Fixtures.messageId(), GatewayClient.jid(s.f().phone()), "2", null));
+
+        for (UUID d : s.doses()) assertThat(fx.doseStatus(d)).isEqualTo("sent");
+        assertThat(wa.sentTo(s.f().phone())).hasSize(1);
+        assertThat(wa.sentTo(s.f().phone()).get(0).text())
+                .isEqualTo("Okay 🙏 Tap ✅ Taken in the message above once you have taken it (or reply 1).");
+    }
+
+    @Test
+    void withPollsOnTheHelpTextPointsToTheTapFirst() throws Exception {
+        wa.setPollsEnabled(true);
+        Slot s = threeAtOnce("en");
+        scheduler(s.f()).tick(s.f().recipientId());
+        wa.reset();
+        wa.setPollsEnabled(true);
+
+        gateway.post(gateway.received(Fixtures.messageId(), GatewayClient.jid(s.f().phone()), "xyz qwerty", null));
+
+        assertThat(wa.sentTo(s.f().phone())).hasSize(1);
+        assertThat(wa.sentTo(s.f().phone()).get(0).text()).startsWith("Namaste 🙏 Please tap your answer in the message above.")
+                .contains("type 1").contains("STOP");
+    }
+
+    @Test
     void laterChangesNothingAndGetsAFriendlyAck_thenTakenConfirms() throws Exception {
         wa.setPollsEnabled(true);
         Slot s = threeAtOnce("hi");

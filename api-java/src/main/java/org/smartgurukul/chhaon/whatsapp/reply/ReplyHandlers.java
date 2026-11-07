@@ -47,6 +47,18 @@ public class ReplyHandlers {
         this.notifier = notifier;
     }
 
+    /** Whether reminders go out as polls (null in hand-built tests = no): the "not yet" and help texts then point to the tap. */
+    private WhatsAppSender sender;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setSender(WhatsAppSender sender) {
+        this.sender = sender;
+    }
+
+    private boolean pollsOn() {
+        return sender != null && sender.pollsOn();
+    }
+
     public List<OutboundReply> handle(Route route, InboundMessage m) {
         List<OutboundReply> out = new ArrayList<>();
         switch (route) {
@@ -291,10 +303,12 @@ public class ReplyHandlers {
                             "join medicine_schedules s on s.id = de.schedule_id join medicines m on m.id = s.medicine_id " +
                             "join care_recipients r on r.id = m.recipient_id where de.id = ?", n.doseId()));
             if (r != null && ReceiverTexts.notThePerson((String) r.get("reminder_to"))) {
-                return ReceiverTexts.doseNotYet((String) r.get("language"), (String) r.get("reminder_to"), personOf(r));
+                return pollsOn()
+                        ? ReceiverTexts.doseNotYetPoll((String) r.get("language"), (String) r.get("reminder_to"), personOf(r))
+                        : ReceiverTexts.doseNotYet((String) r.get("language"), (String) r.get("reminder_to"), personOf(r));
             }
         }
-        return ReplyTexts.doseNotYet(n.language());
+        return pollsOn() ? ReplyTexts.doseNotYetPoll(n.language()) : ReplyTexts.doseNotYet(n.language());
     }
 
     private static String personOf(Map<String, Object> recipientRow) {
@@ -380,7 +394,8 @@ public class ReplyHandlers {
                 key, HELP_RATE_LIMIT_HOURS);
         if (claimed == 0) return;
         out.add(new OutboundReply(m.phone(),
-                h.consentPending() ? ReplyTexts.consentHelp(h.language()) : ReplyTexts.help(h.language())));
+                h.consentPending() ? ReplyTexts.consentHelp(h.language())
+                        : pollsOn() ? ReplyTexts.helpPoll(h.language()) : ReplyTexts.help(h.language())));
     }
 
     private static String hash(String value) {
