@@ -27,3 +27,15 @@
     items.forEach(function (el) { io.observe(el); });
   } else { items.forEach(function (el) { el.classList.add("in"); }); }
 })();
+
+/* Hero video (7 Nov 2026): a still image when motion is reduced; paused while off screen (battery on low-end phones). */
+(function () {
+  var v = document.querySelector(".hero-video");
+  if (!v) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } else v.pause(); });
+    }, { threshold: .2 }).observe(v);
+  }
+})();

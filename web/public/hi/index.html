@@ -247,6 +247,11 @@
   .art-card.wa b { color: var(--pt); } .art-card.wa .tap { margin-top: 10px; text-align: center; color: var(--wa-green); font-weight: 700; border-top: 1px solid var(--line); padding-top: 9px; }
   .art-card.note { right: 5%; bottom: 6%; display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink); max-width: 64%; font-size: .93rem; line-height: 1.35; animation: bob 5.5s ease-in-out infinite 1s; }
   .art-card.note i { font-style: normal; font-size: 1.3rem; }
+  /* Hero video (7 Nov 2026): the real WhatsApp + app flow in a phone, replacing the three static cards. */
+  .hero-video-art { display: grid; place-items: center; aspect-ratio: auto; padding: 18px 0 8px; }
+  .hero-video { position: relative; z-index: 1; display: block; width: min(300px, 74vw); height: auto; aspect-ratio: 380 / 690; border-radius: 12.1% / 6.67%; box-shadow: 0 28px 60px rgba(var(--shadow-c), .30); background: #15121c; }
+  .hero-video-more { position: relative; z-index: 1; margin-top: 14px; font-weight: 700; color: var(--pt); text-decoration: none; }
+  .hero-video-more:hover { text-decoration: underline; }
 
   /* who it is for */
   .who { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
@@ -432,11 +437,12 @@
       </div>
     </div>
     <div class="phone-stage">
-      <div class="art" aria-hidden="true">
-        <div class="art-sun"></div>
-        <div class="art-card main"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg></span><div><b><span class="en">Papa took his medicine</span><span class="hi">पापा ने दवा ले ली</span></b><small><span class="en">Tapped ✅ Taken at 8:04 AM</span><span class="hi">सुबह 8:04 बजे ✅ ले ली दबाया</span></small></div><i>✓</i></div>
-        <div class="art-card wa"><span class="en"><b>Namaste Papa 🙏</b><br>It’s time for your medicine 💊 <b>Metformin</b><br>Dose: 500 mg<br>🔵 Blue round tablet<div class="tap">✅ Taken</div></span><span class="hi"><b>नमस्ते पापा 🙏</b><br>दवा लेने का समय हो गया है 💊 <b>Metformin</b><br>मात्रा: 500 mg<br>🔵 नीली गोल गोली<div class="tap">✅ ले ली</div></span></div>
-        <div class="art-card note"><i>🔔</i><span class="en">The family is told if a dose is not confirmed</span><span class="hi">पुष्टि न हो तो परिवार को पता चलता है</span></div>
+      <div class="art hero-video-art">
+        <div class="art-sun" aria-hidden="true"></div>
+        <!-- The real flow, muted and looping (rendered from docs/drafts/outreach/demo-video/demo.html). Still image when motion is reduced. -->
+        <video class="hero-video" src="/videos/chhaon-hero.mp4" poster="/videos/chhaon-hero.jpg" autoplay muted loop playsinline preload="metadata" width="380" height="690"
+          aria-label="दवा के समय पापा को WhatsApp पर पोल आता है और वे ले ली दबाते हैं; परिवार के फ़ोन पर ले ली दिखता है; दवा छूटे तो सूचना आती है"></video>
+        <a class="hero-video-more" href="/demo"><span class="en">▶ Watch the 26-second demo</span><span class="hi">▶ 26 सेकंड का डेमो देखें</span></a>
       </div>
     </div>
   </div>

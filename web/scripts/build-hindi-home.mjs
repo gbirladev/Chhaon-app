@@ -32,6 +32,8 @@ const ARIA_HI = {
   "Footer": "फ़ुटर",
   "Who it is for": "किसके लिए",
   "Example WhatsApp chat": "WhatsApp चैट का उदाहरण",
+  "Papa gets a WhatsApp poll at medicine time and taps Taken; the family's phone shows Taken; a missed dose sends an alert":
+    "दवा के समय पापा को WhatsApp पर पोल आता है और वे ले ली दबाते हैं; परिवार के फ़ोन पर ले ली दिखता है; दवा छूटे तो सूचना आती है",
 };
 for (const [en, hi] of Object.entries(ARIA_HI)) swap(`aria-label="${en}"`, `aria-label="${hi}"`);
 const leftover = [...s.matchAll(/aria-label="([^"]*[A-Za-z][^"]*)"/g)].map((m) => m[1]).filter((v) => v !== "Chhaon" && !/[ऀ-ॿ]/.test(v));
