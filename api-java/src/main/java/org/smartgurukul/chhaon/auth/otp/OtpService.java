@@ -49,6 +49,8 @@ public class OtpService {
     private final long cooldownSeconds;
     private final int maxPerHour;
     private final int maxFailedAttempts;
+    private final String reviewPhone;
+    private final String reviewCode;
 
     public OtpService(OtpCodeRepository codes,
                       ProfileRepository profiles,
@@ -59,7 +61,9 @@ public class OtpService {
                       @Value("${app.otp.expiry-minutes:5}") long expiryMinutes,
                       @Value("${app.otp.request-cooldown-seconds:30}") long cooldownSeconds,
                       @Value("${app.otp.max-requests-per-hour:5}") int maxPerHour,
-                      @Value("${app.otp.max-failed-attempts:5}") int maxFailedAttempts) {
+                      @Value("${app.otp.max-failed-attempts:5}") int maxFailedAttempts,
+                      @Value("${app.otp.review-phone:}") String reviewPhone,
+                      @Value("${app.otp.review-code:}") String reviewCode) {
         this.codes = codes;
         this.profiles = profiles;
         this.passwordEncoder = passwordEncoder;
@@ -70,12 +74,26 @@ public class OtpService {
         this.cooldownSeconds = cooldownSeconds;
         this.maxPerHour = maxPerHour;
         this.maxFailedAttempts = maxFailedAttempts;
+        String normalizedReviewPhone = PhoneNormalizer.normalize(reviewPhone);
+        // The review login exists only when BOTH are set and the code is at least 8 characters: fails closed.
+        boolean reviewOn = normalizedReviewPhone != null && reviewCode != null && reviewCode.trim().length() >= 8;
+        this.reviewPhone = reviewOn ? normalizedReviewPhone : null;
+        this.reviewCode = reviewOn ? reviewCode.trim() : null;
+    }
+
+    /**
+     * The Play/App Store review account: ONE configured phone whose fixed code is checked against config instead of
+     * a sent OTP. No WhatsApp message is ever sent to it, and no code row is written for it.
+     */
+    private boolean isReviewAccount(String normalizedPhone) {
+        return reviewPhone != null && reviewPhone.equals(normalizedPhone);
     }
 
     /** Generate, store (hashed) and send a code. Rate-limited per phone. */
     @Transactional
     public void requestCode(String rawPhone) {
         String phone = normalizeOr400(rawPhone);
+        if (isReviewAccount(phone)) return; // fixed code, nothing to send or store
         OffsetDateTime now = OffsetDateTime.now();
 
         // Cooldown between sends.
@@ -117,6 +135,15 @@ public class OtpService {
         String code = rawCode == null ? "" : rawCode.trim();
         OffsetDateTime now = OffsetDateTime.now();
 
+        if (isReviewAccount(phone)) {
+            if (!java.security.MessageDigest.isEqual(
+                    code.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    reviewCode.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                throw new ResponseStatusException(UNAUTHORIZED, "This code is wrong or has expired");
+            }
+            return loginFor(phone, now);
+        }
+
         OtpCode row = codes
                 .findFirstByPhoneAndConsumedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(phone, now)
                 .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "This code is wrong or has expired"));
@@ -139,7 +166,11 @@ public class OtpService {
         // Correct: consume the code and log the user in.
         row.setConsumedAt(now);
         codes.save(row);
+        return loginFor(phone, now);
+    }
 
+    /** Resolve or create the profile for a verified phone and mint its session token. */
+    private OtpLoginResponse loginFor(String phone, OffsetDateTime now) {
         Optional<Profile> existing = profiles.findByPhone(phone);
         Profile profile = existing.orElseGet(() -> createProfile(phone, now));
         // Our own JWT (APP_JWT_SECRET) for this API; plus a Supabase-compatible one for the app's direct Supabase calls.

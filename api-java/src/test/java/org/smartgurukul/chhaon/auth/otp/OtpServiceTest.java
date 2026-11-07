@@ -11,6 +11,7 @@ import org.smartgurukul.chhaon.support.DbTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
@@ -33,6 +34,7 @@ class OtpServiceTest extends DbTest {
     @Autowired ProfileRepository profiles;
     @Autowired JwtService jwtService;
     @Autowired JdbcTemplate jdbc;
+    @Autowired PasswordEncoder passwordEncoder;
 
     private final List<String> usedPhones = new ArrayList<>();
 
@@ -162,5 +164,46 @@ class OtpServiceTest extends DbTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    /** OtpService wired like production but with the Play-review account configured. */
+    private OtpService withReviewAccount(String phone, String fixedCode) {
+        return new OtpService(codes, profiles, passwordEncoder, wa, jwtService, 6, 5, 30, 5, 5, phone, fixedCode);
+    }
+
+    @Test
+    void reviewAccountLogsInWithTheFixedCodeAndNeverGetsAWhatsAppMessage() {
+        String phone = freshPhone();
+        OtpService review = withReviewAccount(phone, "review-code-1234");
+
+        review.requestCode(phone);
+        assertThat(wa.sentTo(phone)).isEmpty();            // nothing sent, nothing stored
+        assertThat(codes.findFirstByPhoneOrderByCreatedAtDesc(phone)).isEmpty();
+
+        assertThatThrownBy(() -> review.verify(phone, "wrong-code-00000"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        OtpLoginResponse resp = review.verify(phone, "review-code-1234");
+        assertThat(resp.token()).isNotBlank();
+        assertThat(profiles.findByPhone(phone)).isPresent();
+    }
+
+    @Test
+    void reviewAccountIsOffWhenTheFixedCodeIsTooShortOrThePhoneMissing() {
+        String phone = freshPhone();
+        // Code under 8 characters: fails closed, the phone behaves like any other (a real code is sent).
+        OtpService shortCode = withReviewAccount(phone, "1234567");
+        shortCode.requestCode(phone);
+        assertThat(wa.sentTo(phone)).isNotEmpty();
+        assertThatThrownBy(() -> shortCode.verify(phone, "1234567"))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // No review phone configured: the fixed code opens nothing.
+        String other = freshPhone();
+        OtpService off = withReviewAccount("", "review-code-1234");
+        assertThatThrownBy(() -> off.verify(other, "review-code-1234"))
+                .isInstanceOf(ResponseStatusException.class);
     }
 }

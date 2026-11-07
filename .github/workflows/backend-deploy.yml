@@ -86,6 +86,9 @@ jobs:
           CHHAON_SCHEDULER_ONLY_RECIPIENT: ${{ secrets.CHHAON_SCHEDULER_ONLY_RECIPIENT }}
           # Reminders and the check-in as a WhatsApp poll: "true" on, "false" off. Blank keeps the value on the box (off when never set).
           WHATSAPP_POLLS_ENABLED: ${{ secrets.WHATSAPP_POLLS_ENABLED }}
+          # Play/App Store review account: fixed-code login for this one phone, no WhatsApp sent. Blank keeps the value on the box.
+          OTP_REVIEW_PHONE: ${{ secrets.OTP_REVIEW_PHONE }}
+          OTP_REVIEW_CODE: ${{ secrets.OTP_REVIEW_CODE }}
           # Better Stack heartbeat URL, pinged after every scheduler tick (a secret). Blank keeps the value on the box.
           BETTERSTACK_HEARTBEAT_URL: ${{ secrets.BETTERSTACK_HEARTBEAT_URL }}
         run: bash deploy/aws/send-ssm-deploy.sh
