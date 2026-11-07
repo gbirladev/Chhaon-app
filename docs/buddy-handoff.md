@@ -1,6 +1,6 @@
 # Handoff for the backend owner (AWS and WhatsApp gateway)
 
-Updated 2026-11-05 late evening (first written 2026-11-04). What is done, what is open for you, and what is coming. Nothing secret is
+Updated 2026-11-07 (first written 2026-11-04). What is done, what is open for you, and what is coming. Nothing secret is
 in this file: secrets are exchanged privately, never in the repository or a chat group.
 
 ## Open tasks for you (in this order)
@@ -87,6 +87,15 @@ the text reminder by itself. After switching on, watch the first real poll remin
 the app, and the parent gets "Thank you 🙏 Noted: ...". If polls misbehave, set the secret to `false` and run Backend Deploy again:
 reminders go back to text.
 
+**Is it done? YES, polls work (2026-11-07).** Gateway updated by the buddy; a test dose for the test parent Papa at 09:35 IST came
+as a poll, and 3 poll answers reached the backend (last 09:39 IST). Still open: the same tap test on the other phone type
+(Android / iPhone), the ⏰ Later and changed-vote cases, and the 👍 reaction (check 4). On Sydney, every poll answer is saved with an
+id starting `gw:poll:`:
+```sql
+select count(*) as poll_answers, max(received_at) as last_poll_answer from public.whatsapp_events where id like 'gw:poll:%';
+```
+0 means polls were never answered: the gateway update is not deployed, or `WHATSAPP_POLLS_ENABLED` is not `true`.
+
 **Report to the owner:** did each tap give a `poll.vote` with the right option (Android / iPhone)? If not, the gateway log lines with
 `[Poll]` (for example "Could not decrypt a vote on our poll ..."), with phone numbers masked.
 
@@ -115,17 +124,33 @@ the same value set as the GitHub secret `WHATSAPP_WEBHOOK_SECRET`, then a backen
 - Login codes also go out over this number: a ban stops logins as well as reminders. Keep a spare number ready.
 - Lower the ban risk: messages only to parents who agreed, low volume at first, no bursts, no links.
 
-### 5. Two Java tests fail on `main`
-- `DataApiTest.activityReturnsWhatWasSent` (line 108): it inserts a check-in with status `"ok"`, which the `checkin_status` type does not
-  allow (pending / sent / replied / missed). Probably `"replied"` was meant.
-- `OtpServiceTest`: `aWrongCodeIsRejectedAndBurnsAfterTooManyAttempts` and sometimes `requestThenVerifyLogsInAndCreatesAProfileForANewPhone`.
+### 5. ~~Two Java tests fail on `main`~~ DONE (owner, 2026-11-06, commit `84a205c`)
+The login code now really burns after 5 wrong guesses (the 401 no longer rolled back the failed count) and `DataApiTest` uses a real
+check-in status. The full suite passes (742 tests, 0 failures, 2026-11-07).
 
-### 6. Phone login finds accounts only by the exact number `+91…` (low priority)
+### 6. Phone login finds accounts only by the exact number `+91…` (still open 2026-11-07; needed before real families join)
 `OtpService.verify` looks a profile up by `phone` exactly. Profiles saved as `91…` (without `+`) or with no phone (old email sign-ups)
 get a NEW empty account at the first phone login. Please handle it before real families join (match the old formats, or let an email
 account link a phone).
 
+## New since your last look: the pilot cap is LIVE (2026-11-07)
+
+To protect the one WhatsApp number, at most **50 numbers** get messages and at most **5 new numbers a day** are let in; families over
+the cap set everything up and wait in a line ("In line for the pilot: #N"). Details: `docs/pilot-cap.md`.
+- **Database:** migration `20261107000060_pilot_cap.sql` is already applied on Sydney (`pilot_summary()` showed 9 of 50 in use).
+- **Code:** pushed to `main` (commit `6061091`). `ConsentService` calls `pilot_admit` before the first message to a new number; the
+  answer is `{"status":"pilot_full","position":N}` when full. If the functions are missing the backend behaves as before.
+- **Line mover:** `PilotAdmissionService` runs every 10 min when the scheduler is on (`chhaon.pilot.admission-enabled`, default = the
+  scheduler setting): it sends the next family's consent request and creates a `pilot_admitted` notification.
+- **Sends are spaced:** the scheduler waits a random **3-8 s** between reminder and check-in sends (`chhaon.whatsapp.pace-min-ms` /
+  `pace-max-ms`, default 3000 / 8000, `0` = off). With 50 parents at one time slot a tick now takes about 4-5 minutes. Keep this in
+  mind for task 2 (late doses): a long tick is expected now, a 30-minute gap is not.
+- **Owner's controls (SQL Editor):** `update public.pilot_settings set max_active = 60, updated_at = now();` (or `enabled = false`).
+  The admin Monitor has a Pilot card with "Move to front".
+
 ## Done (thank you)
+
+- **Google Play review account** (Yash, 2026-11-07, commit `1cae5f6`): one configured phone logs in with a fixed code, no WhatsApp sent.
 
 - Backend Deploy is green (smoke test `HEALTH_CHECK_URL` = `https://api.chhaon.site/actuator/health`).
 - Phone-OTP login, Java data API, theme picker, tablet colour and shape (migration 0042 and the 0043-0053 bundle applied on Sydney) are live.
