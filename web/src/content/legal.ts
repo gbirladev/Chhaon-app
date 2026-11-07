@@ -12,7 +12,7 @@ type Both = { en: LegalDoc; hi: LegalDoc };
 const privacy: Both = {
   en: {
     title: "Privacy policy",
-    updated: "Version: 2026-10",
+    updated: "Version: 2026-11",
     draft: "",
     sections: [
       { h: "What Chhaon does", p: ["Chhaon helps you look after a parent who lives far away. You use this app. Your parent only gets WhatsApp messages: medicine reminders, a daily \"are you okay?\" and appointment reminders. They never need to install anything."] },
@@ -34,13 +34,14 @@ const privacy: Both = {
         "Delete your account from Privacy & data. If you are the only person looking after a parent, that parent's data is deleted too.",
         "Turn off WhatsApp alerts to you, or reply STOP to our message.",
       ] },
+      { h: "Website visits", p: ["On our website (chhaon.site) we count page visits: which page was opened, from which website, and on what kind of screen. This uses no cookies and keeps no names, numbers or health details. It only helps us see which pages people find useful."] },
       { h: "Safety", p: ["Files are kept in private storage and every account can only see its own family's data. No system is perfectly safe, but we protect your data with care."] },
       { h: "Changes", p: ["If this policy changes in a way that matters, we will ask you to agree again in the app."] },
     ],
   },
   hi: {
     title: "गोपनीयता नीति",
-    updated: "संस्करण: 2026-10",
+    updated: "संस्करण: 2026-11",
     draft: "",
     sections: [
       { h: "छाँव क्या करता है", p: ["छाँव दूर रहने वाले माता-पिता का ध्यान रखने में आपकी मदद करता है। आप यह ऐप इस्तेमाल करते हैं। आपके माता-पिता को सिर्फ़ WhatsApp संदेश मिलते हैं: दवा के रिमाइंडर, रोज़ का \"क्या आप ठीक हैं?\" और डॉक्टर से मुलाक़ात के रिमाइंडर। उन्हें कुछ भी इंस्टॉल नहीं करना पड़ता।"] },
@@ -62,6 +63,7 @@ const privacy: Both = {
         "“गोपनीयता और डेटा” से अपना खाता हटाएँ। अगर किसी माता-पिता का ध्यान सिर्फ़ आप रखते हैं, तो उनका डेटा भी हट जाता है।",
         "आपको मिलने वाले WhatsApp अलर्ट बंद करें, या हमारे संदेश पर STOP लिखें।",
       ] },
+      { h: "वेबसाइट विज़िट", p: ["हमारी वेबसाइट (chhaon.site) पर हम पेज विज़िट गिनते हैं: कौन-सा पेज खोला गया, किस वेबसाइट से आए, और किस तरह की स्क्रीन पर। इसमें कोई कुकी नहीं है और कोई नाम, नंबर या स्वास्थ्य की जानकारी नहीं रखी जाती। इससे हमें बस यह पता चलता है कि लोगों को कौन-से पेज काम के लगते हैं।"] },
       { h: "सुरक्षा", p: ["फ़ाइलें निजी स्टोरेज में रखी जाती हैं और हर खाता सिर्फ़ अपने परिवार का डेटा देख सकता है। कोई भी सिस्टम पूरी तरह सुरक्षित नहीं होता, पर हम आपके डेटा की पूरी देखभाल करते हैं।"] },
       { h: "बदलाव", p: ["अगर इस नीति में कोई ज़रूरी बदलाव होगा, तो हम ऐप में आपसे दोबारा सहमति माँगेंगे।"] },
     ],
