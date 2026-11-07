@@ -84,7 +84,7 @@ class ReferralCodeApiTest extends DbTest {
     @Test
     void aTakenOrReservedCodeGetsThreeFreeSuggestions() throws Exception {
         UUID vishakha = fx.user("Vishakha Malik");
-        String wanted = unique("VISH");
+        String wanted = unique("FITV");
         change(vishakha, wanted).andExpect(status().isOk());
 
         UUID other = fx.user("Vishal Kumar");
@@ -94,6 +94,7 @@ class ReferralCodeApiTest extends DbTest {
         taken.get("suggestions").forEach(s -> seen.add(s.asText()));
         assertThat(seen).hasSize(3).doesNotContain(wanted);
         assertThat(seen).allMatch(s -> s.matches("[A-Z0-9]{4,15}") && !s.matches("[A-Z]{1,4}[0-9]{3,4}"));
+        assertThat(seen).noneMatch(s -> s.startsWith("FITFIT") || s.startsWith("MYMY") || s.startsWith("TEAMTEAM"));
         for (String s : seen) assertThat(body(check(other, s)).get("status").asText()).isEqualTo("available");
 
         assertThat(body(check(other, "CHHAONFAN")).get("status").asText()).isEqualTo("reserved");

@@ -183,6 +183,7 @@ public class ReferralCodeService {
         String surname = surnameInitial(name);
         if (surname != null) groups.add(w14 + surname);
         for (String prefix : List.of("FIT", "MY", "TEAM")) {
+            if (w.startsWith(prefix)) { groups.add(w14 + (char) ('A' + rnd.nextInt(26))); continue; }   // no FITFIT...
             String s = prefix + w;
             groups.add(s.length() > 15 ? s.substring(0, 15) : s);
         }
