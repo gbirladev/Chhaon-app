@@ -81,7 +81,7 @@ export function InviteFriendsScreen({ go }: { go: (screen: "family") => void }) 
           <section className="invite-card">
             <span className="invite-label">{t("yourCode")}</span>
             <strong className="invite-code">{ready.code}</strong>
-            <span className="invite-link">{(ready.link as string).replace(/^https:\/\//, "")}</span>
+            <span className="ref-link">{(ready.link as string).replace(/^https:\/\//, "")}</span>
             <div className="invite-actions">
               <a className="primary-button invite-wa" href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer">
                 <Icon name="send" size={18} /> {t("shareWhatsapp")}

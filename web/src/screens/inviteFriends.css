@@ -2,9 +2,11 @@
 .invite-card { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0 12px; padding: 18px 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); text-align: center; }
 .invite-label { color: var(--text-muted); font-size: max(0.8125rem, 12px); font-weight: 600; }
 .invite-code { font-size: 1.9rem; letter-spacing: .06em; color: var(--primary-text); overflow-wrap: anywhere; }
-.invite-link { color: var(--text-soft); font-size: max(0.875rem, 12px); overflow-wrap: anywhere; }
-.invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 10px; }
-.invite-actions > * { min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+/* "ref-link", not "invite-link": that name belongs to the family-invite sheet (invites.css) and leaked its tall box here. */
+.ref-link { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: 12px; background: var(--s-f6faf8, #f6faf8); color: var(--text-soft); font-size: max(0.875rem, 12px); line-height: 1.35; overflow-wrap: anywhere; }
+/* Stacked, full width (7 Nov): side by side, "Share on WhatsApp" wrapped onto two lines and looked crowded. */
+.invite-actions { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; margin-top: 14px; }
+.invite-actions > * { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; white-space: nowrap; }
 .invite-count { margin: 10px 0 0; font-weight: 700; color: var(--text); }
 .invite-change { margin-bottom: 8px; }
 .invite-edit { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); margin-bottom: 12px; }
