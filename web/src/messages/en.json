@@ -48,7 +48,7 @@
     "locationPlaceholder": "e.g. City Hospital, Lucknow",
     "notes": "Notes (optional)",
     "remind": "Remind {call} on WhatsApp",
-    "remindHint": "A message the evening before and the morning of the visit.",
+    "remindHint": "Coming soon: a WhatsApp message the evening before and the morning of the visit. Your choice is saved; for now no message is sent.",
     "remindNoConsent": "{call} has not agreed to WhatsApp messages yet, so no reminder will be sent for now.",
     "reminderOn": "Reminder is on",
     "save": "Save visit",
