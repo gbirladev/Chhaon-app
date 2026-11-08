@@ -5,7 +5,7 @@ import { requestOtp, verifyOtp, clearToken, authToken, authUserId, authExpired }
 import { ApiError } from "./lib/http";
 import { compressImage } from "./lib/image";
 import {
-  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent, pilotPositionOf,
+  isLowStock, loadCheckin, loadMyAlerts, requestAlerts, turnOffAlerts, loadMedicineNames, loadMedicines, loadMembers, loadNotifications, loadRecipients, loadTodayDoses, markNotificationsRead, deleteNotificationRow, sessionIsGone, isAuthError, isNotFound, normalizePhone, requestConsent, pilotPositionOf, pilotDaysOf,
   createRecipientApi, updateRecipientApi, createMedicineApi, updateMedicineApi, adjustStockApi, setStockCountApi, setMedicineFlags, deleteMedicineApi, archiveMedicineApi, restoreMedicineApi, currentMedicines,
   loadReports, loadReport, loadTrend, uploadReport, analyzeReport, deleteReport, correctReportValue, signedReportUrl,
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
@@ -1038,8 +1038,8 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   // A "pilot_full" answer to Send again counts until the list itself says something new (then the list wins).
   const listed = pilotPositionOf(recipient);
   const listKey = `${recipient.id}|${listed}`;
-  const [answered, setAnswered] = useState<{ key: string; position: number | null } | null>(null);
-  const line = answered && answered.key === listKey ? answered : listed !== null ? { position: listed } : null;
+  const [answered, setAnswered] = useState<{ key: string; position: number | null; days: number | null } | null>(null);
+  const line = answered && answered.key === listKey ? answered : listed !== null ? { position: listed, days: pilotDaysOf(recipient) } : null;
   useEffect(() => {
     if (waitUntil === null) return;
     const id = window.setInterval(() => {
@@ -1070,10 +1070,10 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const resend = async () => {
     setBusy(true);
-    const { result, retryAfter, position } = await requestConsent(recipient.id);
+    const { result, retryAfter, position, days } = await requestConsent(recipient.id);
     setBusy(false);
     if (result === "pilot_full") {
-      setAnswered({ key: listKey, position: typeof position === "number" ? position : null });
+      setAnswered({ key: listKey, position: typeof position === "number" ? position : null, days: typeof days === "number" ? days : null });
       setNote("");
       return;
     }
@@ -1095,6 +1095,8 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
     return (
       <SlimNotice tone="info" title={line.position !== null ? t("pilotWaitTitle", { position: line.position }) : t("pilotWaitTitleNoNumber")}>
         <p>{line.position !== null ? t("pilotWait", { position: line.position, call: name }) : t("pilotWaitNoNumber", { call: name })}</p>
+        {/* An honest guess from the daily pace (PilotService.waitDays): today, about N days, or no date while every seat is taken */}
+        {line.position !== null && <p>{line.days === 0 ? t("pilotEtaToday") : line.days !== null ? t("pilotEtaDays", { days: line.days }) : t("pilotEtaFull")}</p>}
       </SlimNotice>
     );
   }

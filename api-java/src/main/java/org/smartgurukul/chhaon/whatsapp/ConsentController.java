@@ -78,6 +78,7 @@ public class ConsentController {
         m.put("status", r.status());
         if (r.retryAfter() != null) m.put("retry_after", r.retryAfter());
         if (r.position() != null) m.put("position", r.position());
+        if (r.days() != null) m.put("days", r.days());
         return m;
     }
 }

@@ -19,7 +19,7 @@ public final class AlertTexts {
     /** Notification types that also go to a caregiver on WhatsApp (the ones the Java backend creates today). */
     public static final Set<String> TYPES = Set.of(
             "dose_missed", "checkin_missed", "checkin_call_requested", "refill_needed", "out_of_stock",
-            "reminder_not_sent", "parent_stopped", "parent_declined");
+            "reminder_not_sent", "parent_stopped", "parent_declined", "pilot_admitted");
 
     private AlertTexts() {}
 
@@ -78,6 +78,7 @@ public final class AlertTexts {
             case "parent_declined" -> h
                     ? p + " ने WhatsApp पर छाँव के रिमाइंडर लेने से मना किया है, इसलिए कोई रिमाइंडर नहीं भेजा जाएगा।"
                     : p + " said no to Chhaon reminders on WhatsApp, so no reminders will be sent.";
+            case "pilot_admitted" -> pilotAdmitted(h, p, null);
             default -> null;
         };
         if (body == null) return null;
@@ -124,10 +125,43 @@ public final class AlertTexts {
             case "parent_declined" -> h
                     ? (you ? "आपने" : receiver + " ने") + " WhatsApp पर " + p + " की दवा के रिमाइंडर लेने से मना किया है, इसलिए कोई रिमाइंडर नहीं भेजा जाएगा।"
                     : (you ? "you" : receiver) + " said no to getting " + p + "'s medicine reminders on WhatsApp, so no reminders will be sent.";
+            case "pilot_admitted" -> pilotAdmitted(h, p, receiver);
             default -> null;
         };
         if (body == null) return alert(type, language, parent, medicine, count, when); // refills, check-ins: as before
         if (!h) body = Character.toUpperCase(body.charAt(0)) + body.substring(1);
+        return (h ? "छाँव अलर्ट 🔔\n" : "Chhaon alert 🔔\n") + body
+                + (h ? "\n\nये अलर्ट बंद करने के लिए STOP लिखें।" : "\n\nReply STOP to turn off these alerts.");
+    }
+
+    /**
+     * "It's your turn" after the pilot line (docs/pilot-cap.md). At that moment the backend has just sent the WhatsApp consent
+     * request to whoever gets the reminders (PilotAdmissionService -> ConsentService.requestConsent), so the text says exactly
+     * that: the reminders start once that number replies. {@code receiver} null = the person themself.
+     */
+    private static String pilotAdmitted(boolean h, String p, String receiver) {
+        boolean you = "you".equals(receiver) || "आप".equals(receiver);
+        String news = h ? "अच्छी ख़बर 🎉 अब छाँव पर " + p + " के रिमाइंडर शुरू हो सकते हैं।\n"
+                : "Good news 🎉 " + p + "'s reminders on Chhaon can start now.\n";
+        if (receiver == null || receiver.isBlank()) {
+            return news + (h ? "हमने " + p + " को WhatsApp पर सहमति का संदेश भेज दिया है। " + p + " के जवाब देते ही रिमाइंडर शुरू हो जाएँगे।"
+                    : "We've sent " + p + " a WhatsApp message asking them to agree. The reminders start once " + p + " replies.");
+        }
+        if (you) {
+            return news + (h ? "हमने आपको WhatsApp पर सहमति का संदेश भेजा है। रिमाइंडर शुरू करने के लिए उसके जवाब में 1 लिखें।"
+                    : "We've sent you a WhatsApp message asking you to agree. Reply 1 to it and the reminders start.");
+        }
+        return news + (h ? "हमने " + receiver + " को, जिन्हें रिमाइंडर जाएँगे, WhatsApp पर सहमति का संदेश भेज दिया है। उनके जवाब देते ही रिमाइंडर शुरू हो जाएँगे।"
+                : "We've sent " + receiver + ", who will get the reminders, a WhatsApp message asking them to agree. The reminders start once they reply.");
+    }
+
+    /**
+     * The same news for the caregiver's own profile ("Me", is_self): the request went to their own number.
+     */
+    public static String pilotAdmittedSelf(String language) {
+        boolean h = hi(language);
+        String body = h ? "अच्छी ख़बर 🎉 अब छाँव पर आपके रिमाइंडर शुरू हो सकते हैं।\nहमने आपको WhatsApp पर सहमति का संदेश भेजा है। रिमाइंडर शुरू करने के लिए उसके जवाब में 1 लिखें।"
+                : "Good news 🎉 your reminders on Chhaon can start now.\nWe've sent you a WhatsApp message asking you to agree. Reply 1 to it and the reminders start.";
         return (h ? "छाँव अलर्ट 🔔\n" : "Chhaon alert 🔔\n") + body
                 + (h ? "\n\nये अलर्ट बंद करने के लिए STOP लिखें।" : "\n\nReply STOP to turn off these alerts.");
     }

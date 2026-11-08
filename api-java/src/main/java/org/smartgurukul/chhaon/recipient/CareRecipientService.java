@@ -447,6 +447,9 @@ public class CareRecipientService {
     }
 
     private RecipientResponse toResponse(CareRecipient r) {
+        // only someone who could be waiting is looked up (no number / agreed / stopped = never in line)
+        Integer pilotPosition = r.getWhatsappPhone() != null && r.getConsentAt() == null && r.getOptedOutAt() == null
+                ? pilot.position(r.getId()) : null;
         return new RecipientResponse(
                 r.getId().toString(),
                 r.getCircleId().toString(),
@@ -480,8 +483,7 @@ public class CareRecipientService {
                 r.getReminderUserId() == null ? null : r.getReminderUserId().toString(),
                 r.isCheckinEnabled(),
                 r.getReminderLanguage(),
-                // only someone who could be waiting is looked up (no number / agreed / stopped = never in line)
-                r.getWhatsappPhone() != null && r.getConsentAt() == null && r.getOptedOutAt() == null
-                        ? pilot.position(r.getId()) : null);
+                pilotPosition,
+                pilot.waitDays(pilotPosition));
     }
 }

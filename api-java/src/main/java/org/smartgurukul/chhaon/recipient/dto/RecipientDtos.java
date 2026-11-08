@@ -124,6 +124,8 @@ public final class RecipientDtos {
             boolean checkinEnabled,
             String reminderLanguage,
             // place in the pilot line (docs/pilot-cap.md); null when not waiting
-            Integer pilotPosition) {
+            Integer pilotPosition,
+            // about how many days until their turn: 0 = today, null = no estimate (PilotService.waitDays)
+            Integer pilotDays) {
     }
 }
