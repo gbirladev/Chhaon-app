@@ -98,7 +98,7 @@ export default defineConfig({
         navigateFallbackAllowlist: [/^\/app\//],
         // Only the app is precached. The marketing site ("index.html" here is the home page) and the doctors page
         // with its QR library are plain web pages that families never need offline.
-        globIgnores: ["**/node_modules/**/*", "index.html", "home.html", "about.html", "privacy.html", "doctors.html", "demo.html", "videos/**", "legal/**", "vendor/**", "og-image.jpg", "robots.txt", "sitemap.xml", "hi/**", "site-theme.css", "site-theme.js", "site-home.js", "doctors-page.js", "ref-carry.js", "count.js"],
+        globIgnores: ["**/node_modules/**/*", "index.html", "home.html", "about.html", "privacy.html", "doctors.html", "demo.html", "videos/**", "legal/**", "vendor/**", "og-image.jpg", "robots.txt", "sitemap.xml", "hi/**", "site-theme.css", "site-theme.js", "site-home.js", "doctors-page.js", "ref-carry.js", "count.js", "tools/**"],
       },
     }),
   ],

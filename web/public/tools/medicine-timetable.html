@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Free printable medicine timetable for parents | Chhaon</title>
+<meta name="x-title-en" content="Free printable medicine timetable for parents | Chhaon" />
+<meta name="x-title-hi" content="माता-पिता के लिए दवा की समय-सारणी, मुफ़्त प्रिंट करें | छाँव" />
+<meta name="description" content="Make a big-print medicine timetable in English or Hindi, with tick boxes for every day. Print it on A4 for the fridge. Free, and nothing you type leaves your phone." />
+<meta name="theme-color" content="#faf8fc" />
+<link rel="icon" href="/favicon.ico" sizes="48x48" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+<link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="canonical" href="https://chhaon.site/tools/medicine-timetable" />
+<meta property="og:site_name" content="Chhaon" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://chhaon.site/tools/medicine-timetable" />
+<meta property="og:title" content="Free printable medicine timetable (English / हिंदी)" />
+<meta property="og:description" content="Big print, tick boxes for each day, A4. Made for Papa and Mummy's eyes. Free, nothing you type leaves your phone." />
+<meta property="og:image" content="https://chhaon.site/og-image.jpg" />
+<link rel="stylesheet" href="/site-theme.css" />
+<link rel="stylesheet" href="/tools/tools.css" />
+<script src="/site-theme.js"></script>
+<style>
+  /* The timetable sheet. Screen: a white page preview. Print: A4 portrait, big print for older eyes. */
+  .sheet { background: #fff; color: #111; width: 100%; min-width: 320px; max-width: 760px; margin: 0 auto; padding: 18px 14px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, .12); font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+  .sheet h2 { font-size: 1.5rem; margin: 0; line-height: 1.2; }
+  .sheet .who { font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; }
+  .sheet .meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; font-size: .95rem; margin: 6px 0 10px; }
+  .sheet .meta .blank { display: inline-block; min-width: 9em; border-bottom: 1.5px solid #333; }
+  .sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .sheet th, .sheet td { border: 1.5px solid #333; padding: 6px 5px; vertical-align: middle; }
+  .sheet thead th { background: #eee; font-size: .9rem; text-align: center; }
+  .sheet thead th.med { text-align: left; }
+  .sheet col.days { width: 9.5%; }
+  .sheet .grp th { background: #f3f0e6; text-align: left; font-size: 1.15rem; padding: 6px 8px; }
+  .sheet .m-name { font-size: 1.2rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+  .sheet .m-time { display: inline-block; font-weight: 800; background: #111; color: #fff; border-radius: 4px; padding: 0 6px; margin-right: 6px; }
+  .sheet .m-dose { font-size: 1.05rem; font-weight: 600; }
+  .sheet .m-food { display: inline-block; margin-top: 3px; font-size: .95rem; font-weight: 700; border: 1.5px solid #333; border-radius: 4px; padding: 0 6px; }
+  .sheet .m-note { display: block; font-size: .92rem; margin-top: 3px; overflow-wrap: anywhere; }
+  .sheet td.box { text-align: center; }
+  .sheet td.box span { display: inline-block; width: 1.5em; height: 1.5em; border: 2px solid #333; border-radius: 4px; }
+  .sheet .how { font-size: .95rem; margin: 10px 0 4px; }
+  .sheet .disc { font-size: .9rem; font-weight: 700; margin: 4px 0; }
+  .sheet .foot { font-size: .85rem; color: #333; border-top: 1px solid #999; padding-top: 6px; margin-top: 8px; }
+  .sheet .empty { text-align: center; color: #555; padding: 18px 8px; font-size: 1rem; }
+  .med-card .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .med-card .head b { font-size: 1.1rem; }
+  .times { display: grid; gap: 8px; margin: 0 0 12px; }
+  .time-row { display: flex; gap: 8px; align-items: center; }
+  .time-row input { flex: 1; }
+
+  @media print {
+    @page { size: A4 portrait; margin: 12mm; }
+    .sheet { box-shadow: none; border-radius: 0; max-width: none; min-width: 0; padding: 0; font-size: 15pt; }
+    .sheet h2 { font-size: 22pt; }
+    .sheet .who { font-size: 20pt; }
+    .sheet .meta { font-size: 13pt; }
+    .sheet thead th { font-size: 13pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet .grp th { font-size: 16pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet .m-name { font-size: 17pt; }
+    .sheet .m-time { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet .m-dose { font-size: 14pt; }
+    .sheet .m-food, .sheet .m-note, .sheet .how { font-size: 12.5pt; }
+    .sheet .disc { font-size: 12pt; }
+    .sheet .foot { font-size: 11pt; }
+    .sheet td.box span { width: 9mm; height: 9mm; }
+    .sheet tr { break-inside: avoid; }
+    .sheet thead { display: table-header-group; }
+  }
+</style>
+</head>
+<body>
+<header class="t-bar no-print">
+  <div class="in">
+    <a class="t-brand" href="/" aria-label="Chhaon home"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg><span>Chhaon</span></a>
+    <button class="t-lang" id="t-lang" type="button"><span class="en" lang="hi">हिंदी</span><span class="hi" lang="en">English</span><span class="sr"><span class="en"> (switch page language)</span><span class="hi"> (पेज की भाषा बदलें)</span></span></button>
+  </div>
+</header>
+
+<main class="tool">
+  <h1><span class="en">Free medicine timetable to print</span><span class="hi">दवा की समय-सारणी, मुफ़्त प्रिंट करें</span></h1>
+  <p class="lead"><span class="en">Big print, tick boxes for every day of the week, on one A4 sheet. Stick it on the fridge for Papa or Mummy.</span><span class="hi">बड़े अक्षर, हफ़्ते के हर दिन के लिए टिक बॉक्स, एक A4 पन्ने पर। पापा या मम्मी के लिए फ़्रिज पर लगा दें।</span></p>
+  <div class="privacy"><span class="ic" aria-hidden="true">🔒</span><p><b><span class="en">Nothing you type leaves your phone.</span><span class="hi">आप जो भी लिखते हैं, वह आपके फ़ोन से बाहर नहीं जाता।</span></b><span class="en">The timetable is made right here in your browser. It is not sent, not saved and gone when you close the page.</span><span class="hi">समय-सारणी यहीं आपके ब्राउज़र में बनती है। न कहीं भेजी जाती है, न सेव होती है; पेज बंद करते ही मिट जाती है।</span></p></div>
+  <p class="disclaimer" role="note"><span class="en">This is not medical advice. Please follow your doctor's prescription.</span><span class="hi">यह चिकित्सा सलाह नहीं है। कृपया अपने डॉक्टर के पर्चे के अनुसार ही दवा लें।</span><br /><span class="en" style="font-weight:400">Type the medicines exactly as the doctor wrote them.</span><span class="hi" style="font-weight:400">दवाएँ वैसे ही लिखें जैसे डॉक्टर ने पर्चे पर लिखी हैं।</span></p>
+
+  <form id="tt-form" novalidate autocomplete="off">
+    <section class="card-f" aria-labelledby="h-who">
+      <h2 id="h-who"><span class="en">Who is it for?</span><span class="hi">किसके लिए?</span></h2>
+      <label class="field"><span><span class="en">Name</span><span class="hi">नाम</span></span>
+        <input type="text" id="tt-name" maxlength="60" data-ph-en="e.g. Ramesh Kumar" data-ph-hi="जैसे: रमेश कुमार" /></label>
+      <fieldset class="chips" id="tt-lang">
+        <legend><span class="en">Print the timetable in</span><span class="hi">समय-सारणी किस भाषा में छपे</span></legend>
+        <label class="chip"><input type="radio" name="out-lang" value="en" /><span>English</span></label>
+        <label class="chip"><input type="radio" name="out-lang" value="hi" /><span lang="hi">हिंदी</span></label>
+      </fieldset>
+    </section>
+
+    <div id="med-list"></div>
+    <button type="button" class="btn ghost wide" id="add-med">＋ <span class="en">Add another medicine</span><span class="hi">एक और दवा जोड़ें</span></button>
+  </form>
+</main>
+
+<section class="print-area preview-wrap" aria-labelledby="h-prev">
+  <h2 id="h-prev" class="no-print"><span class="en">Your timetable</span><span class="hi">आपकी समय-सारणी</span></h2>
+  <div class="actions no-print">
+    <button type="button" class="btn primary" id="do-print">🖨 <span class="en">Print</span><span class="hi">प्रिंट करें</span></button>
+    <button type="button" class="btn ghost" id="do-image">🖼 <span class="en">Save as image</span><span class="hi">फ़ोटो के रूप में सेव करें</span></button>
+  </div>
+  <p class="status no-print" id="tt-status" role="status" aria-live="polite"></p>
+  <div class="preview"><div class="sheet" id="sheet" aria-label="Timetable preview"></div></div>
+  <p class="note no-print"><span class="en">Tip: print on A4 at 100%. To keep it as a PDF, choose "Save as PDF" in the print window. The image is for sending on WhatsApp or keeping on the phone.</span><span class="hi">सुझाव: A4 पर 100% साइज़ में प्रिंट करें। PDF रखने के लिए प्रिंट विंडो में "Save as PDF" चुनें। फ़ोटो WhatsApp पर भेजने या फ़ोन में रखने के लिए है।</span></p>
+</section>
+
+<section class="soft-cta no-print">
+  <a class="btn primary" href="/app"><span class="en">Get these as WhatsApp reminders for Papa — free</span><span class="hi">पापा को यही दवाएँ WhatsApp पर याद दिलाएँ, मुफ़्त</span></a>
+  <p><span class="en">Papa taps ✅ Taken on WhatsApp at medicine time, and you see it at once. Nothing for him to install.</span><span class="hi">दवा के समय पापा WhatsApp पर ✅ दबाते हैं, और आपको तुरंत पता चल जाता है। उन्हें कुछ इंस्टॉल नहीं करना।</span></p>
+</section>
+
+<footer class="t-foot no-print">
+  <span>© 2026 Chhaon</span>
+  <a href="/tools/"><span class="en">More free tools</span><span class="hi">और मुफ़्त टूल</span></a>
+  <a href="/tools/emergency-card"><span class="en">Emergency card</span><span class="hi">इमरजेंसी कार्ड</span></a>
+  <a href="/legal/privacy.html"><span class="en">Privacy</span><span class="hi">गोपनीयता</span></a>
+  <a href="/"><span class="en">Home</span><span class="hi">होम</span></a>
+</footer>
+
+<script src="/tools/tools-common.js"></script>
+<script src="/tools/medicine-timetable.js"></script>
+<script src="/ref-carry.js"></script>
+<script src="/count.js"></script>
+</body>
+</html>
