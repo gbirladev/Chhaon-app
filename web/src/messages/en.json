@@ -366,6 +366,19 @@
     "consentStoppedReceiver": "{name} stopped WhatsApp messages, so {call}'s reminders are paused. Ask {name} to reply START on WhatsApp.",
     "consentYourWhatsApp": "your WhatsApp"
   },
+  "sample": {
+    "title": "See what {name} will get",
+    "titleMe": "See what you will get",
+    "body": "The first real reminder comes at the next medicine time. Send one sample now to check that it reaches WhatsApp.",
+    "button": "Send a sample reminder to {name} now",
+    "buttonMe": "Send yourself a sample reminder now",
+    "sending": "Sending…",
+    "sent": "Sample sent ✓ Ask {name} to check WhatsApp. Tapping it does not mark any medicine as taken.",
+    "sentMe": "Sample sent ✓ Check your WhatsApp. Tapping it does not mark any medicine as taken.",
+    "limited": "A sample was already sent today. You can send another one tomorrow.",
+    "busy": "Many samples are going out right now. Please try again in a few minutes.",
+    "error": "The sample could not be sent. Please try again."
+  },
   "doseGiven": {
     "title": "Not confirmed yet? Mark it given",
     "mark": "Mark as given",

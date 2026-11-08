@@ -69,6 +69,7 @@ import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
+import { SampleReminderCard } from "./screens/SampleReminder";
 import { SlimNotice } from "./screens/SlimNotice";
 import { UpdateBanner } from "./screens/UpdateBanner";
 import { FeatureEntry } from "./screens/FeatureEntry";
@@ -1333,6 +1334,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       )}
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
+      {recipient && <SampleReminderCard recipient={recipient} call={call} medicineCount={medicines.filter((m) => m.active && !m.archivedAt).length} />}
       <TrialBanner go={go} />
       <InstallBanner />
       {!isChild(recipient) && <ReceiverNote recipient={recipient} userId={authUserId()} call={call} />}

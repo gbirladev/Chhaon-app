@@ -1,0 +1,8 @@
+/* "Send a sample reminder now" on Today (screens/SampleReminder.tsx). */
+.sample-reminder { margin: 0 0 12px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--b-cfe0dc); display: grid; gap: 8px; }
+.sample-reminder strong { color: var(--text); font-size: max(1rem, 16px); }
+.sample-reminder p { margin: 0; color: var(--text-muted); font-size: max(0.875rem, 14px); line-height: 1.4; }
+.sample-reminder .sr-note.ok { color: var(--t-1c7167); font-weight: 600; }
+.sample-reminder .sr-note.warn { color: var(--text); font-weight: 600; }
+.sample-reminder .sr-send { min-height: 48px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--primary); color: var(--on-fill); font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+.sample-reminder .sr-send:disabled { opacity: .6; }
