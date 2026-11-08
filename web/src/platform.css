@@ -441,3 +441,13 @@ button.next-visit .next-visit-text em { font-size: 12.5px; }
 button.next-visit .next-visit-icon { width: 28px; height: 28px; }
 
 .section-actions { display: flex; align-items: center; gap: 4px; }
+
+/* Add-your-parent: optional fields behind "More details (optional)" */
+.more-details { margin: 18px 0 4px; border-top: 1px solid var(--b-dfe8e4); padding-top: 6px; }
+.more-details > summary { cursor: pointer; min-height: 48px; padding: 10px 0; font-weight: 700; color: var(--primary-text); }
+.more-details > summary small { display: block; margin-top: 2px; font-weight: 400; color: var(--text-muted); font-size: max(0.75rem, 12px); }
+.more-details[open] > summary { margin-bottom: 8px; }
+
+/* OTP screen: the code comes on WhatsApp */
+.otp-screen > p.otp-channel { margin: 8px 0 14px; color: var(--primary-text); font-weight: 600; }
+a.otp-open-wa { display: flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 12px; }
