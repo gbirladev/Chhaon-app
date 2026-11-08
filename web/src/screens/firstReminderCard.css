@@ -1,0 +1,11 @@
+/* The first-reminder card on Today (FirstReminderCard.tsx): the time and the exact WhatsApp bubble. Theme tokens only, so every
+   colour theme, dark mode and Today style follow; it sits in .today-notices, outside the dose styles (DoseLayouts). */
+.first-reminder-card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 6px 12px 4px; }
+.frc-head { display: flex; align-items: flex-start; gap: 8px; }
+.frc-title { flex: 1; min-width: 0; padding-top: 11px; font-size: 15px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.frc-close { flex: 0 0 44px; width: 44px; height: 44px; margin-right: -8px; border: 0; border-radius: 12px; background: transparent; color: var(--text-muted); font: inherit; font-size: 26px; line-height: 1; cursor: pointer; }
+.frc-close:focus-visible, .frc-link:focus-visible { outline: 2px solid var(--primary-text); outline-offset: 1px; }
+.frc-note { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+.frc-chat { border-radius: 12px; padding: 10px 10px 2px; background-color: var(--wa-bg); background-image: radial-gradient(var(--wa-dots) 1px, transparent 1px); background-size: 20px 20px; }
+.frc-chat .wa-message { max-width: 100%; margin-bottom: 8px; font-size: 13px; }
+.frc-link { display: block; width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--primary-text); font: inherit; font-size: 14px; font-weight: 700; text-align: start; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

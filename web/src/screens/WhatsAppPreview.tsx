@@ -8,7 +8,7 @@ import { loadWhatsAppPreview, waLines, type PreviewMessage, type WhatsAppPreview
 import "./whatsappPreview.css";
 
 /** A chat bubble with the exact WhatsApp text: one paragraph per line, *bold* as bold, no buttons (the receiver types 1 or 👍). */
-function Bubble({ text, time, note }: { text: string; time?: string; note?: string }) {
+export function Bubble({ text, time, note }: { text: string; time?: string; note?: string }) {
   return (
     <div className="wa-message wa-text">
       {note && <em className="wa-note">{note}</em>}

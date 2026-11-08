@@ -11,8 +11,8 @@ import {
   type ReportSummary, type ReportDetailData, type ReportValue, type ReportFlag, type TrendPoint,
   type AlertsState, type AppNotification, type CircleMember, type Medicine, type Recipient, type TodayCheckin, type TodayDose,
 } from "./lib/api";
-import { clockParts, describeTimes, deviceZone, formatClock, formatDate, formatDateTime, localDate, localizeDose, localMinutes, type Language, type T } from "./lib/format";
-import { firstDoseAt } from "./lib/firstReminder";
+import { clockParts, describeTimes, formatClock, formatDate, formatDateTime, localizeDose, localMinutes, type Language, type T } from "./lib/format";
+import { firstDoseAt, markFirstReminderPending, reminderWhen } from "./lib/firstReminder";
 import { TIMEZONES } from "./lib/timezones";
 import { CITIES } from "./lib/cities";
 import { AppIntl, MESSAGES } from "./i18n";
@@ -70,6 +70,7 @@ import { loadMe, type MeDto } from "./lib/api";
 import { ActivityLink, ActivityScreen, SeeAllActivity } from "./screens/Activity";
 import { Icon3D } from "./screens/Icon3D";
 import { WhatsAppScreen } from "./screens/WhatsAppPreview";
+import { FirstReminderCard } from "./screens/FirstReminderCard";
 import { SampleReminderCard } from "./screens/SampleReminder";
 import { SlimNotice } from "./screens/SlimNotice";
 import { UpdateBanner } from "./screens/UpdateBanner";
@@ -1350,6 +1351,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
       )}
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
       {recipient && <ConsentBanner recipient={recipient} call={call} />}
+      {recipient && <FirstReminderCard key={recipient.id} recipient={recipient} call={call} go={go} />}
       {recipient && <SampleReminderCard recipient={recipient} call={call} medicineCount={medicines.filter((m) => m.active && !m.archivedAt).length} />}
       <TrialBanner go={go} />
       <InstallBanner />
@@ -1636,7 +1638,8 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
       return setError(friendlyError(err, tAll));
     }
     if (photoPath && medicine?.photoUrl) await supabase.storage.from("medicine-photos").remove([medicine.photoUrl]);
-    const note = firstReminderNote(chosen);
+    // A new medicine lands on Today, where the first-reminder card shows the time and the exact message; an edit gets a short note.
+    const note = editing ? firstReminderNote(chosen) : "";
     if (note) toast(note, true, 7000);
     await onSaved();
     setBusy(false);
@@ -1646,13 +1649,8 @@ function AddMedicine({ go, recipient, medicine, usualTimes = [], onSaved, onMiss
     const zone = recipient.timezone || "Asia/Kolkata";
     const first = medicine && !medicine.active ? null : firstDoseAt(chosen, zone);   // a paused medicine gets no reminder
     if (!first) return "";
-    const time = formatClock(first.at, zone, language);
-    let when = t(first.tomorrow ? "whenTomorrow" : "whenToday", { time });
-    const mine = deviceZone();
-    if (formatDateTime(first.at, language, mine) !== formatDateTime(first.at, language, zone)) {
-      const sameDay = localDate(first.at, mine) === localDate(first.at, zone);
-      when = t("whenBoth", { when, mine: sameDay ? formatClock(first.at, mine, language) : formatDateTime(first.at, language, mine) });
-    }
+    // The first dose is always today or tomorrow, so "date" never comes up here.
+    const when = reminderWhen(first.at, zone, language, (key, values) => t(key === "both" ? "whenBoth" : key === "today" ? "whenToday" : "whenTomorrow", values));
     const reminders = !!recipient.consent_at && !recipient.opted_out_at;
     return t(!reminders ? "firstDose" : editing ? "nextReminder" : "firstReminder", { when });
   };
@@ -2622,7 +2620,8 @@ export default function App() {
   const afterMedicineSaved = async () => {
     await refreshMedicines();
     refreshNotifications();  // a medicine added while already low raises a refill alert straight away
-    go("medicines");
+    if (recipientRef.current) markFirstReminderPending(recipientRef.current.id);
+    go("today");
   };
   const afterMedicineEdited = async () => {
     await refreshMedicines();

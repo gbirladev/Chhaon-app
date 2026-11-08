@@ -277,6 +277,24 @@
     "receiverLanguageThem": "Language for their messages",
     "receiverLanguageHint": "The WhatsApp reminders are sent in this language."
   },
+  "firstReminderCard": {
+    "title": "{call}'s first reminder: {when}",
+    "titleNoTime": "{call}'s first reminder is coming",
+    "titleSelf": "Your first reminder: {when}",
+    "titleSelfNoTime": "Your first reminder is coming",
+    "when": {
+      "today": "today {time}",
+      "tomorrow": "tomorrow {time}",
+      "date": "{date}, {time}",
+      "both": "{when} ({mine} your time)"
+    },
+    "preview": "This is the WhatsApp message {name} will get:",
+    "previewYou": "This is the WhatsApp message you will get:",
+    "waiting": "Reminders start after {name} replies on WhatsApp. This is the message {name} will get:",
+    "waitingYou": "Reminders start after you reply on WhatsApp. This is the message you will get:",
+    "seeAll": "See all WhatsApp messages",
+    "close": "Close"
+  },
   "slimNotice": {
     "more": "More",
     "less": "Less"
