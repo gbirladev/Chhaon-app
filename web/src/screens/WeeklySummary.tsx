@@ -6,6 +6,10 @@ import type { Recipient } from "../lib/api";
 import { formatClock, formatDate, type Language } from "../lib/format";
 import { doseText, plainDate } from "../lib/vaccines";
 import { loadWeekSummary, showGivers, weekIsQuiet, type WeekGiver, type WeekSummary } from "../lib/weeklySummary";
+import { loadMyReferral } from "../lib/referral";
+
+/** The person's own referral link (chhaon.site/?ref=CODE) when they have one, else plain chhaon.site. */
+const PLAIN_LINK = "https://chhaon.site";
 
 /*
  * "This week" on the Family tab (feature F3, docs/weekly-summary.md). Read-only, the same numbers as the Sunday WhatsApp summary.
@@ -19,6 +23,7 @@ const day = (iso: string, language: Language, withWeekday = false) =>
 export function WeeklyCard({ recipient, compact = false }: { recipient: Recipient | null; compact?: boolean }) {
   const t = useTranslations("weekly");
   const tv = useTranslations("vaccines");
+  const ts = useTranslations("shareLoops");
   const language = useLocale() as Language;
   const recipientId = recipient?.id;
   const self = !!recipient?.is_self;
@@ -30,6 +35,15 @@ export function WeeklyCard({ recipient, compact = false }: { recipient: Recipien
     loadWeekSummary(recipientId).then((w) => { if (!cancelled) setWeek(w); }).catch(() => {});
     return () => { cancelled = true; };
   }, [recipientId, self]);
+  // Only once the full card is on screen and there is something to share (the share button needs the link before the tap).
+  const [shareLink, setShareLink] = useState(PLAIN_LINK);
+  const canShare = !!week && week.confirmed > 0 && week.total > 0 && (!compact || open);
+  useEffect(() => {
+    if (!canShare) return;
+    let cancelled = false;
+    loadMyReferral().then((m) => { if (!cancelled && m.installed && m.link) setShareLink(m.link); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [canShare]);
   if (!recipient || self || !week || week.recipientId !== recipient.id) return null;
   const call = parentCall(recipient, language);
   const giverName = (g: WeekGiver) => g.kind === "you" ? t("you") : g.kind === "person" ? call : g.kind === "family" || !g.name ? t("family") : g.name;
@@ -73,6 +87,13 @@ export function WeeklyCard({ recipient, compact = false }: { recipient: Recipien
         {week.nextVaccine && <><dt>{t("nextVaccine")}</dt><dd>{language === "hi" && week.nextVaccine.hi ? week.nextVaccine.hi : week.nextVaccine.en}{week.nextVaccine.dose ? ` · ${doseText(tv, week.nextVaccine.dose)}` : ""}, {day(week.nextVaccine.due, language, true)}</dd></>}
       </dl>
       <p className="weekly-note">{t("note")}</p>
+      {canShare && (
+        // Only the count and what the caregiver calls them: never medicine names, conditions or missed times.
+        <a className="secondary-button weekly-share" target="_blank" rel="noopener noreferrer"
+          href={`https://wa.me/?text=${encodeURIComponent(ts("weekShareText", { call, confirmed: week.confirmed, total: week.total, link: shareLink }))}`}>
+          <Icon name="send" size={18} /> {ts("weekShare")}
+        </a>
+      )}
     </section>
     </>
   );

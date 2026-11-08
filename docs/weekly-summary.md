@@ -16,7 +16,7 @@ Given by: Sunita 24 · you 2
 Refill soon: Metformin (6 left)
 Next visit: Dr Mehta, Tue 10 Nov, 11:00 AM
 
-Full details in the Chhaon app.
+Full details: chhaon.site/app
 Reply STOP to turn off these alerts.
 ```
 
@@ -35,7 +35,7 @@ Lines, each only when there is something to say:
 * **Check-ins answered** (replied out of replied + missed), **Refill soon** (active, stock ≤ refill level, at most 3), **Next visit**
   (next appointment within 60 days, with "(their time)" when the zones differ), **Week N** for a pregnancy, **Next vaccine** for a
   child (`child_vaccines`, earliest not given, due today or later).
-* English or Hindi by the CAREGIVER's language. No links, phone numbers or payments.
+* English or Hindi by the CAREGIVER's language. No phone numbers or payments; the only link is the short `chhaon.site/app` in the footer.
 
 ## When and to whom
 

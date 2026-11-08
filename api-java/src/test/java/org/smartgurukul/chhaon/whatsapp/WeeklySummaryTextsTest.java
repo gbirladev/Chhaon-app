@@ -42,7 +42,7 @@ class WeeklySummaryTextsTest {
                 Refill soon: Metformin (6 left)
                 Next visit: Dr Mehta, Tue 10 Nov, 11:00 AM
 
-                Full details in the Chhaon app.
+                Full details: chhaon.site/app
                 Reply STOP to turn off these alerts.""");
     }
 
@@ -57,7 +57,7 @@ class WeeklySummaryTextsTest {
                 जल्द मँगाएँ: Metformin (6 बची)
                 अगली मुलाक़ात: Dr Mehta, मंगल 10 नवंबर, सुबह 11:00
 
-                पूरी जानकारी छाँव ऐप में।
+                पूरी जानकारी: chhaon.site/app
                 ये अलर्ट बंद करने के लिए STOP लिखें।""");
     }
 

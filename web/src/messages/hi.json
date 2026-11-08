@@ -2278,5 +2278,14 @@
       "format": "4 से 15 अक्षर या अंक लिखें (CRE022 जैसा कोड नहीं)।",
       "too_many": "कोड पहले ही 3 बार बदला जा चुका है।"
     }
+  },
+  "shareLoops": {
+    "cardFooter": "यह इमरजेंसी कार्ड छाँव से बना है · माता-पिता के लिए मुफ़्त WhatsApp दवा रिमाइंडर · chhaon.site",
+    "weekShare": "इस हफ़्ते की खबर WhatsApp पर भेजें",
+    "weekShareText": "इस हफ़्ते {call} ने {total} में से {confirmed} दवाएँ लीं 💚 रिमाइंडर के लिए हम छाँव इस्तेमाल करते हैं: {link}",
+    "consentTitle": "{call} ने WhatsApp पर हाँ कह दिया 🎉",
+    "consentBody": "अपने भाई या बहन को भी जोड़ें, ताकि उन्हें भी {call} का ✅ दिखे।",
+    "consentInvite": "भाई या बहन को जोड़ें",
+    "consentNotNow": "अभी नहीं"
   }
 }
