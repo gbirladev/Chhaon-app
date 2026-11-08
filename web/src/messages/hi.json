@@ -277,6 +277,24 @@
     "receiverLanguageThem": "उनके संदेशों की भाषा",
     "receiverLanguageHint": "WhatsApp रिमाइंडर इसी भाषा में भेजे जाएँगे।"
   },
+  "firstReminderCard": {
+    "title": "{call} का पहला रिमाइंडर: {when}",
+    "titleNoTime": "{call} का पहला रिमाइंडर जल्द आएगा",
+    "titleSelf": "आपका पहला रिमाइंडर: {when}",
+    "titleSelfNoTime": "आपका पहला रिमाइंडर जल्द आएगा",
+    "when": {
+      "today": "आज {time}",
+      "tomorrow": "कल {time}",
+      "date": "{date}, {time}",
+      "both": "{when} (आपके यहाँ {mine})"
+    },
+    "preview": "{name} को WhatsApp पर यह संदेश मिलेगा:",
+    "previewYou": "आपको WhatsApp पर यह संदेश मिलेगा:",
+    "waiting": "{name} के WhatsApp पर जवाब देने के बाद रिमाइंडर शुरू होंगे। {name} को यह संदेश मिलेगा:",
+    "waitingYou": "आपके WhatsApp पर जवाब देने के बाद रिमाइंडर शुरू होंगे। आपको यह संदेश मिलेगा:",
+    "seeAll": "सभी WhatsApp संदेश देखें",
+    "close": "बंद करें"
+  },
   "slimNotice": {
     "more": "और देखें",
     "less": "कम देखें"
