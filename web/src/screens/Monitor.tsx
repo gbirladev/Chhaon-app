@@ -3,7 +3,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { AppHeader, Icon } from "../App";
 import {
   BADGES, loadActivity, loadAlerts, loadFamilies, loadFamily, loadFeedbackInbox, loadHealth, loadOverview, loadPilotCap, loadUpcoming,
-  movePilotUp, type PilotCap,
+  movePilotUp, setFeedbackStatus, type FeedbackStatus, type PilotCap,
   type ActivityItem, type Alerts, type FamilyDetail, type FamilyRow, type FeedbackItem, type Health, type HealthCheck, type Level,
   type Overview, type UpcomingItem,
 } from "../lib/admin";
@@ -74,6 +74,9 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
   const [busy, setBusy] = useState(false);
   const [openCheck, setOpenCheck] = useState<string | null>(null);
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState(false);
+  const tp = useTranslations("reportProblem");
   const loading = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -118,6 +121,18 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
   }
 
   const h = data.health;
+  // "Report a problem": open problems (new / looking) first, newest first within each group; then everything else as before.
+  const isOpenProblem = (f: FeedbackItem) => f.kind === "problem" && (f.status ?? "new") !== "fixed";
+  const feedback = data.feedback ? [...data.feedback.filter(isOpenProblem), ...data.feedback.filter((f) => !isOpenProblem(f))] : undefined;
+  const openProblems = data.feedback?.filter(isOpenProblem).length ?? 0;
+  const changeStatus = async (id: string, status: FeedbackStatus) => {
+    setStatusBusy(id); setStatusError(false);
+    try {
+      await setFeedbackStatus(id, status);
+      setData((prev) => ({ ...prev, feedback: prev.feedback?.map((f) => (f.id === id ? { ...f, status, fixed_at: status === "fixed" ? f.fixed_at ?? new Date().toISOString() : null } : f)) }));
+    } catch { setStatusError(true); }
+    setStatusBusy(null);
+  };
   return (
     <main className="scroll-page no-nav monitor-page">
       <AppHeader title={t("title")} subtitle={undefined} back={() => go("family")} action={action} />
@@ -131,6 +146,7 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
             {t(`tab.${x}`)}
             {x === "overview" && h && h.overall !== "green" && <span className={`tab-dot ${h.overall}`} aria-hidden="true" />}
             {x === "families" && data.families && <span className="tab-count">{data.families.filter((f) => !f.is_canary).length}</span>}
+            {x === "feedback" && openProblems > 0 && <span className="tab-count problem-count" aria-label={tp("admin.openCount", { count: openProblems })}>{openProblems}</span>}
           </button>
         ))}
       </nav>
@@ -252,14 +268,33 @@ export function MonitorScreen({ go }: { go: (screen: "family" | "stats") => void
       {tab === "feedback" && (
         <section className="monitor-card" aria-label={t("feedbackTitle")}>
           <h2>{t("feedbackTitle")}</h2>
-          {data.feedback && data.feedback.length === 0 && <p className="muted">{t("nothingYet")}</p>}
-          {data.feedback?.map((f) => (
-            <article key={f.id} className="feedback-item">
-              <p className="muted">{t.has(`fbKind.${f.kind}`) ? t(`fbKind.${f.kind}`) : f.kind}{f.rating ? ` · ${"★".repeat(f.rating)}` : ""} · {time(f.created_at)}</p>
-              <p className="message">{f.message}</p>
-              <p className="muted">{[f.name, f.email, f.phone].filter(Boolean).join(" · ") || t("unknownSender")}{f.screen ? ` · ${f.screen}` : ""}{f.images > 0 ? ` · ${t("pictures", { count: f.images })}` : ""}</p>
-            </article>
-          ))}
+          {feedback && feedback.length === 0 && <p className="muted">{t("nothingYet")}</p>}
+          {statusError && <p className="note monitor-error" role="alert">{tp("admin.failed")}</p>}
+          {feedback?.map((f) => {
+            const problem = f.kind === "problem";
+            const status = f.status ?? "new";
+            return (
+              <article key={f.id} className={`feedback-item${problem && status !== "fixed" ? " open-problem" : ""}`}>
+                <p className="muted">
+                  {t.has(`fbKind.${f.kind}`) ? t(`fbKind.${f.kind}`) : f.kind}{f.rating ? ` · ${"★".repeat(f.rating)}` : ""} · {time(f.created_at)}
+                  {problem && <> · <span className={`problem-status ${status}`}>{tp(`admin.status_${status}`)}</span></>}
+                </p>
+                {problem && f.topic && <p className="muted">{tp.has(`admin.topic_${f.topic}`) ? tp(`admin.topic_${f.topic}`) : f.topic}</p>}
+                <p className="message">{f.message}</p>
+                <p className="muted">{[f.name, f.email, f.phone].filter(Boolean).join(" · ") || t("unknownSender")}{f.screen ? ` · ${f.screen}` : ""}{f.images > 0 ? ` · ${t("pictures", { count: f.images })}` : ""}</p>
+                {f.context && Object.keys(f.context).length > 0 && (
+                  <p className="muted problem-context">{Object.entries(f.context).map(([k, v]) => `${k}: ${v === null ? "–" : String(v)}`).join(" · ")}</p>
+                )}
+                {problem && (
+                  <div className="problem-actions">
+                    {status === "new" && <button type="button" className="slim-action" disabled={statusBusy !== null} onClick={() => void changeStatus(f.id, "looking")}>{tp("admin.markLooking")}</button>}
+                    {status !== "fixed" && <button type="button" className="slim-action" disabled={statusBusy !== null} onClick={() => void changeStatus(f.id, "fixed")}>{tp("admin.markFixed")}</button>}
+                    {status === "fixed" && <span className="muted">{tp("admin.fixedAt", { time: time(f.fixed_at ?? null) })}</span>}
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </section>
       )}
 

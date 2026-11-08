@@ -157,6 +157,14 @@
 .feedback-item:first-of-type { border-top: 0; }
 .feedback-item p { margin: 2px 0; font-size: max(0.8125rem, 12px); }
 .feedback-item .message { color: var(--text); font-size: max(0.9375rem, 12px); line-height: 1.45; white-space: pre-wrap; }
+/* "Report a problem": open problems on top, with their status and the New -> Looking -> Fixed buttons */
+.problem-count { opacity: 1; color: var(--t-9a2f27); font-weight: 700; }
+.problem-status { font-weight: 700; }
+.problem-status.new { color: var(--t-9a2f27); }
+.problem-status.looking { color: var(--t-8a5410); }
+.problem-status.fixed { color: var(--primary-text); }
+.feedback-item .problem-context { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 12px; }
+.problem-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
 .monitor-stats-link { background: var(--field); margin-top: 14px; }
 
 /* family detail: dose table */

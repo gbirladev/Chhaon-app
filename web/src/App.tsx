@@ -37,6 +37,7 @@ import { StatsScreen } from "./screens/Stats";
 // The owner-only Monitor loads on its own, so nobody else downloads it.
 const MonitorScreen = lazy(() => import("./screens/Monitor").then((m) => ({ default: m.MonitorScreen })));
 import { FeedbackScreen } from "./screens/Feedback";
+import { setFeedbackPreset, type FeedbackPreset, type ProblemTopic } from "./lib/feedback";
 import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
 import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/SafetyNet";
@@ -209,6 +210,12 @@ export function parentCall(recipient: Recipient | null, language: Language) {
   if (chosen) return chosen;  // what the caregiver calls them: "Mom", "Appa", "Dadi"
   if (recipient) return recipient.name;  // older records: the name that was typed, never a word we picked for them
   return MESSAGES[language].call.father;  // no parent loaded yet (login screens)
+}
+
+/** "Report a problem" from anywhere: opens the Feedback screen on kind "problem" with this topic (null: no chip chosen yet). */
+function reportProblem(go: (screen: Screen) => void, topic: ProblemTopic | null, from: string, lastReminder?: FeedbackPreset["lastReminder"]) {
+  setFeedbackPreset({ kind: "problem", topic, from, lastReminder: lastReminder ?? null });
+  go("feedback");
 }
 
 /** Relations offered in the form, and a friendly default for "What do you call them?" (the caregiver can change it). */
@@ -430,6 +437,7 @@ const readPendingLogin = (): PendingLogin => {
 
 function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replace?: boolean }) => void; onVerified: () => Promise<void> }) {
   const t = useTranslations("otp");
+  const tp = useTranslations("reportProblem");
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -479,6 +487,8 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
       {/* wa.me with no number just opens WhatsApp on a phone, and WhatsApp Web / the desktop app on a computer. */}
       {byWhatsapp && <a className="secondary-button otp-open-wa" href="https://wa.me/" target="_blank" rel="noopener noreferrer">{t("openWhatsapp")}</a>}
       <button className="text-button" onClick={resend}>{t("resend")}</button>
+      {/* Not signed in, so the in-app form cannot be used: an email with only a subject (no number unless they type it). */}
+      <a className="problem-link" href={`mailto:chhaon.app.mail@gmail.com?subject=${encodeURIComponent(tp("loginMailSubject"))}`}>{tp("loginLink")}</a>
     </main>
   );
 }
@@ -849,6 +859,7 @@ function groupNotifications(list: AppNotification[]): NotifEntry[] {
 function NotificationSheet({ notifications, recipients, currentId, medicineNames, callFor, onDelete, onMarkAllRead, onClose }: { notifications: AppNotification[]; recipients: Recipient[]; currentId: string | null; medicineNames: Record<string, string>; callFor: (recipientId?: string) => string; onDelete: (ids: string[]) => void; onMarkAllRead: () => void; onClose: () => void }) {
   const t = useTranslations("notif");
   const tv = useTranslations("vaccines");
+  const tp = useTranslations("reportProblem");
   const language = useLocale() as Language;
   const dialog = useDialog(onClose);
   const [onlyCurrent, setOnlyCurrent] = useState(false);
@@ -866,6 +877,7 @@ function NotificationSheet({ notifications, recipients, currentId, medicineNames
     if (n.type === "love_not_delivered") return t(`love_not_delivered_${payload.reason === "expired" || payload.reason === "parent_opted_out" || payload.reason === "whatsapp_failed" ? payload.reason : "other"}`, { call });
     if (n.type === "dose_missed") return name ? t("dose_missed_named", { call, name }) : t("dose_missed", { call });
     if (n.type === "reminder_not_sent") return name ? t("reminder_not_sent_named", { call, name }) : t("reminder_not_sent", { call });
+    if (n.type === "feedback_fixed") return tp("fixedNotice");
     return t.has(n.type) ? t(n.type, { call }) : t("unknown");
   };
   const when = (n: AppNotification) => formatDateTime(new Date(n.created_at), language);
@@ -1024,8 +1036,9 @@ function TrialBanner({ go }: { go: (screen: Screen) => void }) {
   );
 }
 
-function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string }) {
+function ConsentBanner({ recipient, call, go }: { recipient: Recipient; call: string; go: (screen: Screen) => void }) {
   const t = useTranslations("today");
+  const tp = useTranslations("reportProblem");
   const toast = useToast();
   // The number our WhatsApp comes from (GET /features), so the family can tell the parent which message to trust.
   const { sender } = useFeatures();
@@ -1111,6 +1124,7 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
       )}
       {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
       {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
+      {!stopped && <button type="button" className="problem-link" onClick={() => reportProblem(go, "no_message", "today")}>{recipient.is_self || toMe ? tp("consentLinkMe") : tp("consentLink", { call: who })}</button>}
     </SlimNotice>
   );
 }
@@ -1333,6 +1347,13 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
           </div>
         )}
         {doses !== null && recipient && <DoseGivenList doses={visibleDoses} recipient={recipient} call={call} tz={tz} language={language} userId={authUserId()} onChanged={() => setReloadKey((k) => k + 1)} />}
+        {doses !== null && visibleDoses.length > 0 && (
+          <button type="button" className="problem-link" onClick={() => {
+            // the latest dose whose time has come (its time + status go with the report; never the medicine's name)
+            const last = [...visibleDoses].reverse().find((d) => d.status !== "pending" && new Date(d.scheduledAt).getTime() <= Date.now());
+            reportProblem(go, "reminder", "today", last ? { at: new Date(last.scheduledAt).toISOString(), status: last.status } : null);
+          }}>{t("reportProblem.reminderLink")}</button>
+        )}
         {doses !== null && visibleDoses.length === 0 && (
           <div className="empty-note">
             <Icon3D name="pill" size={64} className="empty-3d" />
@@ -1361,7 +1382,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         </SlimNotice>
       )}
       {recipient && <EscalationProgress recipient={recipient} call={call} />}
-      {recipient && <ConsentBanner recipient={recipient} call={call} />}
+      {recipient && <ConsentBanner recipient={recipient} call={call} go={go} />}
       {recipient && <FirstReminderCard key={recipient.id} recipient={recipient} call={call} go={go} />}
       {recipient && <SampleReminderCard recipient={recipient} call={call} medicineCount={medicines.filter((m) => m.active && !m.archivedAt).length} />}
       <TrialBanner go={go} />
@@ -2175,6 +2196,7 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
   const t = useTranslations("family");
   const td = useTranslations("doctorSummary");
   const ti = useTranslations("invites");
+  const tp = useTranslations("reportProblem");
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { let cancelled = false; loadIsAdmin().then((v) => { if (!cancelled) setIsAdmin(v); }).catch(() => {}); return () => { cancelled = true; }; }, []);
   const language = useLocale() as Language;
@@ -2252,7 +2274,8 @@ function Family({ go, members, userId, recipient, onSignOut, onMembersChanged, o
         <FeatureEntry look="row" icon="plan" title={t(PLANS_ENABLED ? "plansLink" : "planPilotLink")} onClick={() => go("plans")} />
         {PRIVACY_ENABLED && <FeatureEntry look="row" icon="lock" title={t("privacyLink")} onClick={() => go("privacyData")} />}
         <InstallLink look="row" />
-        <FeatureEntry look="row" icon="feedback" title={t("feedbackLink")} onClick={() => go("feedback")} />
+        <FeatureEntry look="row" icon="feedback" title={t("feedbackLink")} onClick={() => { setFeedbackPreset(null); go("feedback"); }} />
+        <FeatureEntry look="row" icon="shield" title={tp("familyLink")} onClick={() => reportProblem(go, null, "family")} />
         {isAdmin && <FeatureEntry look="row" icon="chart" title={t("monitorLink")} onClick={() => go("monitor")} />}
         <FeatureEntry look="row" icon="people" title={t("inviteLink")} onClick={() => go("invite")} />
         <button type="button" className="more-row sign-out-row" onClick={onSignOut}><Icon name="logout" size={20} /><span>{t("signOut")}</span></button>
@@ -2741,7 +2764,7 @@ export default function App() {
           {screen === "stats" && <StatsScreen go={go} />}
           {screen === "monitor" && <Suspense fallback={null}><MonitorScreen go={go} /></Suspense>}
           {screen === "safety" && <SafetyNetScreen go={go} recipient={recipient} medicines={listedMedicines}onMedicinesChanged={() => void refreshMedicines(undefined, true)} />}
-          {screen === "feedback" && <FeedbackScreen go={go} />}
+          {screen === "feedback" && <FeedbackScreen go={go} recipient={recipient} />}
           {screen === "invite" && <InviteFriendsScreen go={go} />}
           {screen === "love" && <LoveScreen go={go} recipient={recipient} />}
           {screen === "activity" && <ActivityScreen go={go} />}

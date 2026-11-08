@@ -40,14 +40,53 @@ export async function uploadFeedbackImage(image: PreparedImage): Promise<string 
   return error ? null : path;
 }
 
+// ---------------------------------------------------------------- "Report a problem" (migration 20261108000062)
+/** What a problem report is about. The chips on the form are every topic except "reminder" (the dose-row link's own topic). */
+export const PROBLEM_TOPICS = ["no_message", "reminder", "wrong_time", "not_updated", "login", "other"] as const;
+export type ProblemTopic = (typeof PROBLEM_TOPICS)[number];
+export const PROBLEM_CHIPS: ProblemTopic[] = ["no_message", "wrong_time", "not_updated", "login", "other"];
+
+/**
+ * The small diagnostic note sent with a problem report (shown to the caregiver first). Only these keys; the server keeps only
+ * short codes and adds whether WhatsApp polls are on. Never names, phone numbers, medicine names or conditions.
+ */
+export type ProblemContext = {
+  app_build?: string; browser?: string; os?: string; screen?: string; language?: string;
+  agreed?: "yes" | "no" | "stopped"; reminders_to?: "person" | "me" | "family" | "helper";
+  last_reminder_at?: string; last_reminder_status?: string; recipient_id?: string;
+};
+
+/** How the Feedback screen should open: kind, topic, which screen it came from, and anything only that screen knew. */
+export type FeedbackPreset = { kind: FeedbackKind; topic: ProblemTopic | null; from: string; lastReminder?: { at: string; status: string } | null };
+let preset: FeedbackPreset | null = null;
+/** Set before go("feedback"); null opens the plain form (an idea). Kept until replaced, so pull-to-refresh keeps it. */
+export function setFeedbackPreset(next: FeedbackPreset | null) { preset = next; }
+export function feedbackPreset(): FeedbackPreset | null { return preset; }
+
+/** This build of the app: the commit and the build day (set in vite.config.ts). */
+export const APP_BUILD: string = typeof __APP_BUILD__ === "string" ? __APP_BUILD__ : "dev";
+
+/** Browser and system family only (never the full user agent string). */
+export function browserFamily(ua: string = navigator.userAgent): { browser: string; os: string } {
+  const browser = /SamsungBrowser/i.test(ua) ? "Samsung" : /Edg\//.test(ua) ? "Edge" : /OPR\/|Opera/.test(ua) ? "Opera"
+    : /Firefox\/|FxiOS/.test(ua) ? "Firefox" : /Chrome\/|CriOS/.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Other";
+  const os = /Android/i.test(ua) ? "Android" : /iPhone|iPad|iPod/i.test(ua) ? "iOS" : /Windows/i.test(ua) ? "Windows"
+    : /Mac OS X|Macintosh/i.test(ua) ? "macOS" : /CrOS/.test(ua) ? "ChromeOS" : /Linux/i.test(ua) ? "Linux" : "Other";
+  return { browser, os };
+}
+
 /** Sends one feedback message as the logged-in caregiver. The database allows 10 a day ("limit" if that is used up). */
-export async function sendFeedback(input: { kind: FeedbackKind; message: string; rating: number | null; screen: string; language: string; images?: string[] }): Promise<FeedbackResult> {
+export async function sendFeedback(input: { kind: FeedbackKind; message: string; rating: number | null; screen: string; language: string; images?: string[]; topic?: ProblemTopic | null; context?: ProblemContext | null }): Promise<FeedbackResult> {
   if (!authUserId()) return "error";
+  const problem = input.kind === "problem";
   try {
+    // An older backend ignores topic / context (unknown JSON fields), and the new one stores them only once the migration is in.
     await apiFetch("/api/v1/feedback", { method: "POST", body: {
       kind: input.kind, message: input.message.trim(), rating: input.rating,
       screen: input.screen.slice(0, 40), appLanguage: input.language === "hi" ? "hi" : "en",
       images: input.images ?? [],
+      ...(problem && input.topic ? { topic: input.topic } : {}),
+      ...(problem && input.context ? { context: input.context } : {}),
     } });
     return "ok";
   } catch (e) {

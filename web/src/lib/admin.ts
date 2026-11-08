@@ -82,7 +82,13 @@ export type FamilyDetail = {
 
 export type ActivityItem = { kind: string; at_time: string; recipient_id: string | null; recipient_name: string | null; detail: string | null };
 export type UpcomingItem = { kind: "dose" | "checkin"; due_at: string; recipient_id: string; recipient_name: string; timezone: string; reminder_to: string; reminder_name: string | null; whatsapp_phone: string | null; will_send: boolean; medicines: string[] };
-export type FeedbackItem = { id: string; created_at: string; kind: string; message: string; rating: number | null; screen: string | null; app_language: string; images: number; user_id: string | null; name: string | null; email: string | null; phone: string | null };
+export type FeedbackItem = { id: string; created_at: string; kind: string; message: string; rating: number | null; screen: string | null; app_language: string; images: number; user_id: string | null; name: string | null; email: string | null; phone: string | null;
+  /** "Report a problem" (migration 20261108000062); absent / "new" before it is applied. */
+  topic?: string | null; context?: Record<string, string | number | boolean | null> | null; status?: FeedbackStatus; fixed_at?: string | null };
+export type FeedbackStatus = "new" | "looking" | "fixed";
+/** New -> Looking -> Fixed. Audited; Fixed tells the sender in the app (once). */
+export const setFeedbackStatus = (id: string, status: FeedbackStatus) =>
+  apiFetch<{ status: FeedbackStatus; notified: boolean }>(`/api/v1/admin/feedback/${encodeURIComponent(id)}/status`, { method: "POST", body: { status } });
 export type GatewayStatus = { configured: boolean; reachable: boolean; session_name: string; session_status: string | null; number: string | null; webhooks: number | null; webhook_targets: string[]; error: string | null; checked_at: string };
 
 export const loadHealth = () => apiFetch<Health>("/api/v1/admin/health");

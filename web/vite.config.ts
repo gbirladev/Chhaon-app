@@ -23,6 +23,7 @@
  * No CSP is set on the dev server because it would break Vite HMR (inline scripts + websocket).
  * Fonts are self-hosted via @fontsource, so no third-party font origins are needed.
  */
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
@@ -58,7 +59,17 @@ const securityHeaders = {
   "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
 };
 
+/** This build, for "Report a problem": the commit (GitHub Actions' GITHUB_SHA, else the local git HEAD) and the build day. */
+function appBuild(): string {
+  let sha = (process.env.GITHUB_SHA ?? "").slice(0, 7);
+  if (!sha) {
+    try { sha = execSync("git rev-parse --short=7 HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch { sha = "dev"; }
+  }
+  return `${sha}-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}`;
+}
+
 export default defineConfig({
+  define: { __APP_BUILD__: JSON.stringify(appBuild()) },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   server: { port: 5173, headers: securityHeaders },
   preview: { headers: securityHeaders },

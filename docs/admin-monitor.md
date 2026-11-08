@@ -31,7 +31,8 @@ nobody noticed. The same day two 14:00 / 14:15 doses went out at 14:31 (a schedu
 | `GET /api/v1/admin/families/{recipientId}` | Everything about one person (profile, members, medicines + schedules, 7 days of doses and check-ins, alerts, consent requests, escalations). Audited |
 | `GET /api/v1/admin/activity?limit=50` | Latest events across families, newest first |
 | `GET /api/v1/admin/upcoming?hours=2` | Doses and check-ins due in the next hours, with receiver and whether they will really be sent |
-| `GET /api/v1/admin/feedback-inbox?limit=50` | Caregiver feedback with who sent it |
+| `GET /api/v1/admin/feedback-inbox?limit=50` | Caregiver feedback with who sent it; problem reports also carry `topic`, `context` (the diagnostic note the caregiver saw before sending) and `status` |
+| `POST /api/v1/admin/feedback/{id}/status` `{"status":"new"\|"looking"\|"fixed"}` | "Report a problem" (migration 20261108000062): New -> Looking -> Fixed. Audited (`admin_audit.action` = `feedback_<status>`, `feedback_id`). The first Fixed puts "We fixed the problem you reported" in the sender's bell (in-app only, never WhatsApp). 409 before the migration |
 | `GET /api/v1/admin/gateway?fresh=true` | The gateway probe (skips the 60 s cache) |
 
 Code: `api-java/src/main/java/org/smartgurukul/chhaon/admin/`. Web: `web/src/screens/Monitor.tsx`, `web/src/lib/admin.ts`.

@@ -314,7 +314,37 @@ public class AdminMonitorService {
         int n = Math.max(1, Math.min(limit, 200));
         return PhoneMask.maskRows(Rows.clean(jdbc.queryForList(
                 "select f.id, f.created_at, f.kind, f.message, f.rating, f.screen, f.app_language, cardinality(f.images) images, " +
+                // "Report a problem" (migration 20261108000062), read through to_jsonb so the inbox works before it is applied
+                "to_jsonb(f) ->> 'topic' topic, to_jsonb(f) -> 'context' context, coalesce(to_jsonb(f) ->> 'status', 'new') status, " +
+                "to_jsonb(f) ->> 'fixed_at' fixed_at, " +
                 "p.id user_id, p.name, p.email, p.phone from feedback f left join profiles p on p.id = f.user_id " +
                 "order by f.created_at desc limit ?", n)));
+    }
+
+    public static final List<String> FEEDBACK_STATUSES = List.of("new", "looking", "fixed");
+
+    /**
+     * Moves one feedback along New -> Looking -> Fixed (any order is allowed, e.g. back to Looking). Records the change in admin_audit.
+     * The first time it becomes fixed, the sender gets an in-app notification (feedback_fixed); it is never sent on WhatsApp
+     * (whatsapp_skipped_at is set, and the type is not an alert type). 404 for an unknown id.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public Map<String, Object> setFeedbackStatus(UUID adminId, UUID feedbackId, String status) {
+        List<Map<String, Object>> before = jdbc.queryForList("select user_id, status from feedback where id = ? for update", feedbackId);
+        if (before.isEmpty()) throw new ResponseStatusException(NOT_FOUND, "Not found");
+        boolean wasFixed = "fixed".equals(before.get(0).get("status"));
+        jdbc.update("update feedback set status = ?, fixed_at = case when ? = 'fixed' then coalesce(fixed_at, now()) end where id = ?",
+                status, status, feedbackId);
+        jdbc.update("insert into admin_audit (admin_id, action, feedback_id) values (?, ?, ?)", adminId, "feedback_" + status, feedbackId);
+        Object sender = before.get(0).get("user_id");
+        boolean notified = false;
+        if ("fixed".equals(status) && !wasFixed && sender != null) {
+            notified = jdbc.update("insert into notifications (user_id, type, payload, whatsapp_skipped_at) " +
+                    "values (?, 'feedback_fixed', jsonb_build_object('feedback_id', ?::text), now())", sender, feedbackId.toString()) > 0;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("status", status);
+        out.put("notified", notified);
+        return out;
     }
 }

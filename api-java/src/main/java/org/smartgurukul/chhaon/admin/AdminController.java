@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,12 +24,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * The owner's Monitor (docs/admin-monitor.md). Every endpoint: signed in AND profiles.is_admin, else 401 / 403 ({@link AdminGuard}).
  * Plain JSON (snake_case keys, UTC ISO times) so a separate admin website can reuse it later. Read-only, except that opening one
- * family records an admin_audit row, and "Move to front" in the pilot line changes that line (docs/pilot-cap.md).
+ * family records an admin_audit row, and "Move to front" in the pilot line changes that line (docs/pilot-cap.md), and a feedback's status (New / Looking / Fixed) can be set (audited).
  */
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -135,6 +137,24 @@ public class AdminController {
     public List<Map<String, Object>> feedback(@AuthenticationPrincipal AuthenticatedUser user, @RequestParam(defaultValue = "50") int limit) {
         guard.require(user);
         return monitor.feedback(limit);
+    }
+
+    public record FeedbackStatus(String status) {}
+
+    /**
+     * "Report a problem": New -> Looking -> Fixed. Audited (admin_audit, action feedback_&lt;status&gt;); Fixed tells the sender in the
+     * app. 400 for an unknown status, 404 for an unknown feedback, 409 before migration 20261108000062 is applied.
+     */
+    @PostMapping("/feedback/{feedbackId}/status")
+    public Map<String, Object> feedbackStatus(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID feedbackId,
+                                              @RequestBody FeedbackStatus in) {
+        UUID adminId = guard.require(user);
+        if (in == null || !AdminMonitorService.FEEDBACK_STATUSES.contains(in.status())) throw new ResponseStatusException(BAD_REQUEST, "Unknown status");
+        try {
+            return monitor.setFeedbackStatus(adminId, feedbackId, in.status());
+        } catch (org.springframework.jdbc.BadSqlGrammarException e) {
+            throw new ResponseStatusException(CONFLICT, "Not installed yet");
+        }
     }
 
     /** Ask the gateway again now instead of using the 60-second cache. */

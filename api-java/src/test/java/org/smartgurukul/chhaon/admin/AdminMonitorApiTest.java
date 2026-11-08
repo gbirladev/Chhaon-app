@@ -324,6 +324,49 @@ class AdminMonitorApiTest extends DbTest {
         assertThat(getJson("/api/v1/admin/feedback-inbox").get(0).path("phone").asText()).isEqualTo("+91 ••••• •0012");
     }
 
+    // ---------------------------------------------------------------- "Report a problem": New -> Looking -> Fixed
+
+    @Test
+    void markingAProblemFixedIsAuditedAndTellsTheSenderOnce() throws Exception {
+        Family f = family("+919999900021");
+        UUID id = fx.jdbc().queryForObject("insert into feedback (user_id, kind, message, topic, context) values " +
+                "(?, 'problem', 'Papa got nothing', 'no_message', '{\"agreed\":\"no\"}'::jsonb) returning id", UUID.class, f.userId());
+        try {
+            JsonNode inbox = getJson("/api/v1/admin/feedback-inbox");
+            JsonNode item = null;
+            for (JsonNode x : inbox) if (x.path("id").asText().equals(id.toString())) item = x;
+            assertThat(item.path("status").asText()).isEqualTo("new");
+            assertThat(item.path("topic").asText()).isEqualTo("no_message");
+            assertThat(item.path("context").path("agreed").asText()).isEqualTo("no");
+
+            String url = "/api/v1/admin/feedback/" + id + "/status";
+            UUID stranger = fx.user("Stranger");
+            mvc.perform(post(url).header("Authorization", bearer(stranger, true)).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"status\":\"fixed\"}")).andExpect(status().isForbidden());
+            mvc.perform(post(url).header("Authorization", bearer(admin, true)).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"status\":\"done\"}")).andExpect(status().isBadRequest());
+            mvc.perform(post("/api/v1/admin/feedback/" + UUID.randomUUID() + "/status").header("Authorization", bearer(admin, true))
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"looking\"}")).andExpect(status().isNotFound());
+
+            for (String s : List.of("looking", "fixed", "fixed")) {
+                mvc.perform(post(url).header("Authorization", bearer(admin, true)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"" + s + "\"}")).andExpect(status().isOk());
+            }
+            Map<String, Object> row = fx.jdbc().queryForMap("select status, fixed_at from feedback where id = ?", id);
+            assertThat(row.get("status")).isEqualTo("fixed");
+            assertThat(row.get("fixed_at")).isNotNull();
+            // told once (the second "fixed" does not repeat it), in the app only: never queued for WhatsApp
+            Map<String, Object> n = fx.jdbc().queryForMap("select count(*) c, bool_and(whatsapp_skipped_at is not null) skipped " +
+                    "from notifications where user_id = ? and type = 'feedback_fixed'", f.userId());
+            assertThat(((Number) n.get("c")).intValue()).isEqualTo(1);
+            assertThat(n.get("skipped")).isEqualTo(true);
+            assertThat(fx.jdbc().queryForList("select action from admin_audit where feedback_id = ? order by id", String.class, id))
+                    .containsExactly("feedback_looking", "feedback_fixed", "feedback_fixed");
+        } finally {
+            fx.jdbc().update("delete from feedback where id = ?", id);
+        }
+    }
+
     @Test
     void timestampsComeBackAsUtcIsoText() {
         assertThat(Rows.value(Timestamp.from(Instant.parse("2026-11-05T08:30:00Z")))).isEqualTo("2026-11-05T08:30:00Z");

@@ -176,4 +176,43 @@ class FeatureApiTest extends DbTest {
         assertThat(n).isEqualTo(1);
         fx.jdbc().update("delete from feedback where user_id = ?", f.userId());
     }
+
+    /** "Report a problem": the topic is stored, the context keeps only allowed short codes and the caller's own person, polls added. */
+    @Test
+    void problemReportKeepsOnlyTheAllowedContext() throws Exception {
+        Fixtures.Family f = fx.family("en", true);
+        Fixtures.Family other = fx.family("en", true);
+        String body = "{\"kind\":\"problem\",\"message\":\"No message came\",\"screen\":\"today\",\"appLanguage\":\"hi\",\"images\":[]," +
+                "\"topic\":\"no_message\",\"context\":{\"app_build\":\"abc1234\",\"browser\":\"Chrome\",\"os\":\"Android\",\"agreed\":\"no\"," +
+                "\"reminders_to\":\"person\",\"last_reminder_at\":\"2026-11-08T02:30:00Z\",\"last_reminder_status\":\"sent\"," +
+                "\"recipient_id\":\"" + f.recipientId() + "\",\"phone\":\"+919999900001\",\"medicine\":\"Metformin\"," +
+                "\"screen\":\"Rajesh Kumar\",\"language\":\"9999900001\",\"polls\":\"maybe\"}}";
+        mvc.perform(post("/api/v1/feedback").header("Authorization", bearer(f.userId())).contentType("application/json").content(body))
+                .andExpect(status().isOk());
+        var row = fx.jdbc().queryForMap("select topic, context::text ctx, status from feedback where user_id = ?", f.userId());
+        assertThat(row.get("topic")).isEqualTo("no_message");
+        assertThat(row.get("status")).isEqualTo("new");
+        String ctx = (String) row.get("ctx");
+        assertThat(ctx).contains("\"browser\": \"Chrome\"", "\"agreed\": \"no\"", "\"polls\": false", f.recipientId().toString());
+        assertThat(ctx).doesNotContain("phone", "Metformin", "Rajesh", "9999900001", "medicine", "maybe");
+
+        // someone else's person is dropped from the context; an unknown topic is refused
+        String foreign = "{\"kind\":\"problem\",\"message\":\"x\",\"topic\":\"reminder\",\"context\":{\"recipient_id\":\"" + other.recipientId() + "\"}}";
+        mvc.perform(post("/api/v1/feedback").header("Authorization", bearer(f.userId())).contentType("application/json").content(foreign))
+                .andExpect(status().isOk());
+        String second = fx.jdbc().queryForObject("select context::text from feedback where user_id = ? and topic = 'reminder'", String.class, f.userId());
+        assertThat(second).doesNotContain(other.recipientId().toString());
+        mvc.perform(post("/api/v1/feedback").header("Authorization", bearer(f.userId())).contentType("application/json")
+                        .content("{\"kind\":\"problem\",\"message\":\"x\",\"topic\":\"printer_on_fire\"}"))
+                .andExpect(status().isBadRequest());
+
+        // an idea never carries a topic or context
+        mvc.perform(post("/api/v1/feedback").header("Authorization", bearer(f.userId())).contentType("application/json")
+                        .content("{\"kind\":\"idea\",\"message\":\"Nice\",\"topic\":\"login\",\"context\":{\"os\":\"iOS\"}}"))
+                .andExpect(status().isOk());
+        var idea = fx.jdbc().queryForMap("select topic, context from feedback where user_id = ? and kind = 'idea'", f.userId());
+        assertThat(idea.get("topic")).isNull();
+        assertThat(idea.get("context")).isNull();
+        fx.jdbc().update("delete from feedback where user_id in (?, ?)", f.userId(), other.userId());
+    }
 }

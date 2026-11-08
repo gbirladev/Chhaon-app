@@ -1,9 +1,11 @@
 package org.smartgurukul.chhaon.features;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.smartgurukul.chhaon.db.UserScopedSql;
 import org.smartgurukul.chhaon.recipient.CareRecipient;
 import org.smartgurukul.chhaon.recipient.CareRecipientRepository;
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,9 +25,12 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -52,16 +57,23 @@ public class FeatureDataController {
                              OffsetDateTime decidedAt, OffsetDateTime alertedAt, OffsetDateTime resolvedAt) {}
     public record Appointment(String id, String doctor, OffsetDateTime at, String location, String notes, boolean remind) {}
     public record AppointmentInput(String doctor, OffsetDateTime at, String location, String notes, Boolean remind) {}
-    public record FeedbackInput(String kind, String message, Integer rating, String screen, String appLanguage, List<String> images) {}
+    /** topic + context: "Report a problem" (migration 20261108000062); both optional, older clients leave them out. */
+    public record FeedbackInput(String kind, String message, Integer rating, String screen, String appLanguage, List<String> images,
+                                String topic, Map<String, Object> context) {}
     public record AdherenceDose(String status, String medicineId, String name, String dosage, boolean active) {}
     public record AdherenceResponse(List<AdherenceDose> doses, List<String> checkins) {}
 
     private final UserScopedSql db;
     private final CareRecipientRepository recipients;
+    private final ObjectMapper json;
+    private final boolean pollsEnabled;
 
-    public FeatureDataController(UserScopedSql db, CareRecipientRepository recipients) {
+    public FeatureDataController(UserScopedSql db, CareRecipientRepository recipients, ObjectMapper json,
+                                 @Value("${app.whatsapp.polls-enabled:false}") boolean pollsEnabled) {
         this.db = db;
         this.recipients = recipients;
+        this.json = json;
+        this.pollsEnabled = pollsEnabled;
     }
 
     private CareRecipient requireMember(AuthenticatedUser user, UUID recipientId) {
@@ -251,34 +263,95 @@ public class FeatureDataController {
 
     // ---------------------------------------------------------------- feedback
 
+    /** The common problems a report can be about (same list as the feedback_topic_check constraint). */
+    static final Set<String> FEEDBACK_TOPICS = Set.of("no_message", "reminder", "wrong_time", "not_updated", "login", "other");
+    /** The only diagnostic keys a problem report may carry (same list as feedback_context_ok()): never names, phones or health data. */
+    static final Set<String> CONTEXT_KEYS = Set.of("app_build", "browser", "os", "screen", "language", "agreed", "reminders_to",
+            "last_reminder_at", "last_reminder_status", "polls", "recipient_id");
+    /** Short codes only (no free text, so no names slip in): letters, digits and a few signs, at most 40 characters. */
+    private static final Pattern SAFE_TEXT = Pattern.compile("[A-Za-z0-9._:+-]{1,40}");
+    /** Where a long run of digits is expected (a time, an id, a build); anywhere else it could be a phone number and is dropped. */
+    private static final Set<String> DIGITS_OK = Set.of("recipient_id", "last_reminder_at", "app_build");
+
     @PostMapping("/feedback")
     public Map<String, Object> sendFeedback(@AuthenticationPrincipal AuthenticatedUser user, @RequestBody FeedbackInput in) {
         if (in.kind() == null || in.message() == null || in.message().isBlank() || in.message().length() > 1000) {
             throw new ResponseStatusException(BAD_REQUEST, "A short message is required");
         }
+        boolean problem = "problem".equals(in.kind());
+        String topic = problem && in.topic() != null && !in.topic().isBlank() ? in.topic() : null;
+        if (topic != null && !FEEDBACK_TOPICS.contains(topic)) throw new ResponseStatusException(BAD_REQUEST, "Unknown topic");
+        String context = problem ? contextJson(user, in.context()) : null;
         try {
-            db.asUser(user.id(), jdbc -> {
-                jdbc.update("""
-                                insert into feedback (user_id, kind, message, rating, screen, app_language, images)
-                                values (?, ?, ?, ?, ?, ?, ?)
-                                """,
-                        ps -> {
-                            ps.setObject(1, user.id());
-                            ps.setString(2, in.kind());
-                            ps.setString(3, in.message().trim());
-                            if (in.rating() == null) ps.setNull(4, java.sql.Types.INTEGER); else ps.setInt(4, in.rating());
-                            ps.setString(5, in.screen() == null ? null : in.screen().substring(0, Math.min(40, in.screen().length())));
-                            ps.setString(6, "hi".equals(in.appLanguage()) ? "hi" : "en");
-                            String[] images = in.images() == null ? new String[0] : in.images().toArray(new String[0]);
-                            ps.setArray(7, ps.getConnection().createArrayOf("text", images));
-                        });
-                return null;
-            });
+            try {
+                insertFeedback(user, in, topic, context);
+            } catch (DataAccessException e) {
+                // 42703 = undefined column: this database does not have migration 20261108000062 yet. Send it the old way.
+                if (!"42703".equals(PgErrors.sqlState(e)) || (topic == null && context == null)) throw e;
+                insertFeedback(user, in, null, null);
+            }
         } catch (DataAccessException e) {
             if ("53400".equals(PgErrors.sqlState(e))) throw new ResponseStatusException(TOO_MANY_REQUESTS, "limit");
             throw new ResponseStatusException(BAD_REQUEST, "Could not send this");
         }
         return Map.of("ok", Boolean.TRUE);
+    }
+
+    private void insertFeedback(AuthenticatedUser user, FeedbackInput in, String topic, String context) {
+        boolean extra = topic != null || context != null;
+        db.asUser(user.id(), jdbc -> {
+            jdbc.update(extra
+                            ? "insert into feedback (user_id, kind, message, rating, screen, app_language, images, topic, context) " +
+                              "values (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb)"
+                            : "insert into feedback (user_id, kind, message, rating, screen, app_language, images) values (?, ?, ?, ?, ?, ?, ?)",
+                    ps -> {
+                        ps.setObject(1, user.id());
+                        ps.setString(2, in.kind());
+                        ps.setString(3, in.message().trim());
+                        if (in.rating() == null) ps.setNull(4, java.sql.Types.INTEGER); else ps.setInt(4, in.rating());
+                        ps.setString(5, in.screen() == null ? null : in.screen().substring(0, Math.min(40, in.screen().length())));
+                        ps.setString(6, "hi".equals(in.appLanguage()) ? "hi" : "en");
+                        String[] images = in.images() == null ? new String[0] : in.images().toArray(new String[0]);
+                        ps.setArray(7, ps.getConnection().createArrayOf("text", images));
+                        if (extra) {
+                            ps.setString(8, topic);
+                            ps.setString(9, context);
+                        }
+                    });
+            return null;
+        });
+    }
+
+    /**
+     * The diagnostic context of a problem report, cleaned: only {@link #CONTEXT_KEYS}, only short codes or true / false, a
+     * recipient id only when the caregiver belongs to that person's circle. The server adds whether WhatsApp polls are on.
+     */
+    String contextJson(AuthenticatedUser user, Map<String, Object> raw) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (raw != null) {
+            for (Map.Entry<String, Object> e : raw.entrySet()) {
+                String k = e.getKey();
+                Object v = e.getValue();
+                if (!CONTEXT_KEYS.contains(k) || "polls".equals(k)) continue;
+                if (v instanceof Boolean) { out.put(k, v); continue; }
+                if (!(v instanceof String text) || !SAFE_TEXT.matcher(text).matches()) continue;
+                if (!DIGITS_OK.contains(k) && text.replaceAll("\\D", "").length() >= 6) continue;
+                if ("recipient_id".equals(k)) {
+                    try {
+                        if (recipients.findForUser(UUID.fromString(text), user.id()).isEmpty()) continue;
+                    } catch (IllegalArgumentException notAnId) {
+                        continue;
+                    }
+                }
+                out.put(k, text);
+            }
+        }
+        out.put("polls", pollsEnabled);
+        try {
+            return json.writeValueAsString(out);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ---------------------------------------------------------------- adherence history (doctor summary)
