@@ -34,6 +34,9 @@ button { cursor: pointer; }
 .welcome-copy > p:last-child { color: var(--text-muted); font-size: max(0.875rem, 12px); line-height: 1.55; margin: 12px 0 20px; }
 .login-card label, .field label { display: block; color: var(--text-label); font-size: max(0.75rem, 12px); font-weight: 700; margin-bottom: 7px; }
 .phone-input { height: 52px; display: flex; align-items: center; background: var(--surface); border: 1px solid var(--b-d8e3e0); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+.welcome-copy p strong { color: var(--text); font-weight: 700; }
+.phone-input:has(+ .login-note) { margin-bottom: 8px; }
+.login-note { margin: 0 2px 14px; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.4; }
 .phone-input span { padding: 0 13px; border-right: 1px solid var(--b-d8e3e0); font-weight: 600; }
 .phone-input input { border: 0; outline: 0; padding: 0 14px; min-width: 0; flex: 1; color: var(--text); }
 .primary-button { border: 0; width: 100%; min-height: 52px; border-radius: 14px; background: var(--primary); color: var(--on-fill); font-weight: 700; box-shadow: 0 8px 20px var(--sh-247c72-a22); display: flex; gap: 8px; align-items: center; justify-content: center; }

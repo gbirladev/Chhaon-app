@@ -405,7 +405,7 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
           <Icon name="heart" size={64} strokeWidth={1.6} />
           {/* Optional photo: drop web/public/welcome-parent.jpg in. Without the file the heart above stays. */}
           <img className="welcome-photo" src="/welcome-parent.jpg" alt={t("photoAlt")} onError={(event) => { event.currentTarget.style.display = "none"; }} />
-          {/* Three examples in turn (an older parent first, then a pregnancy, then a baby); still for reduced motion. */}
+          {/* Three parent examples in turn; still for reduced motion. Pregnancy and baby stay off this screen (ads and the site talk only about parents). */}
           <span className="floating-chip chip-one" key={`a${example}`} aria-hidden="true">{t(example === 0 ? "chipTaken" : example === 1 ? "chipTaken2" : "chipTaken3")}</span>
           <span className="floating-chip chip-two" key={`b${example}`} aria-hidden="true">{t(example === 0 ? "chipOkay" : example === 1 ? "chipOkay2" : "chipOkay3")}</span>
         </div>
@@ -413,15 +413,16 @@ function Welcome({ go }: { go: (screen: Screen) => void }) {
       <div className="welcome-copy">
         <p className="eyebrow">{t("eyebrow")}</p>
         <h1>{t("headline")}</h1>
-        <p>{t("body")}</p>
+        <p>{t.rich("body", { b: (chunks) => <strong>{chunks}</strong> })}</p>
         {pendingInvite() && <p className="invite-banner" role="status">{t("inviteBanner")}</p>}
       </div>
       <div className="login-card">
         <label htmlFor="login-input">{t("phoneLabel")}</label>
         <div className="phone-input">
           {!/^\s*(\+|00)/.test(value) && <span>+91</span>}
-          <input id="login-input" aria-invalid={error ? true : undefined} value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("phonePlaceholder")} inputMode="tel" />
+          <input id="login-input" aria-invalid={error ? true : undefined} value={value} onChange={(event) => setValue(event.target.value)} placeholder={t("phonePlaceholder")} inputMode="tel" aria-describedby="login-note" />
         </div>
+        <p id="login-note" className="login-note">{t("phoneNote")}</p>
         {error && <p role="alert" className="form-error">{error}</p>}
         <button className="primary-button" onClick={continueLogin} disabled={busy}>{busy ? t("sending") : t("continue")}</button>
         {PRIVACY_ENABLED && <LegalLinks go={go} />}
