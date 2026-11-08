@@ -5,18 +5,27 @@
  *   - the referring site (origin + path only);
  *   - "ref/CODE" as an event when the page was opened with ?ref=CODE (which creator / doctor link brought the visit).
  * No cookies, no storage, no names, numbers or health data. Skipped on localhost and when "Do Not Track" is on.
+ * Also window.chhaonEvent(path, title): one anonymous event for other site scripts (/ad-hero.js "why/<reason>").
  * Stats: https://chhaon.goatcounter.com (owner login). If a CSP is ever added, it needs img-src https://chhaon.goatcounter.com.
  * A file, not inline: the production CSP is script-src 'self'. */
 (function () {
-  if (location.hostname !== "chhaon.site" && location.hostname !== "www.chhaon.site") return;
-  if (navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.webdriver) return;
   var END = "https://chhaon.goatcounter.com/count";
+  var allowed = (location.hostname === "chhaon.site" || location.hostname === "www.chhaon.site") &&
+    !(navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.webdriver);
   function hit(params) {
     var q = [];
     for (var k in params) if (params[k]) q.push(k + "=" + encodeURIComponent(params[k]));
     q.push("rnd=" + Math.random().toString(36).slice(2));
     new Image().src = END + "?" + q.join("&");
   }
+  // One anonymous event (e.g. "why/privacy" from /ad-hero.js). Defined everywhere so callers need no checks, but it sends
+  // nothing where this file sends nothing (not chhaon.site, Do Not Track, automated browsers). Returns true when sent.
+  window.chhaonEvent = function (path, title) {
+    if (!allowed || !/^[A-Za-z0-9/_-]{1,64}$/.test(path)) return false;
+    hit({ p: path, t: title || path, e: "true" });
+    return true;
+  };
+  if (!allowed) return;
   var ref = "";
   try {
     var r = document.referrer ? new URL(document.referrer) : null;
