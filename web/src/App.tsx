@@ -1101,7 +1101,7 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
     );
   }
   return (
-    <SlimNotice tone={stopped ? "warn" : "info"} title={stopped ? t("consentStoppedTitle") : title}>
+    <SlimNotice tone={stopped ? "warn" : "info"} title={stopped ? t("consentStoppedTitle") : title} defaultOpen={!stopped && !recipient.is_self && !toMe}>
       <p>{body}</p>
       {!stopped && (
         <div className="sn-actions">
