@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Chhaon: WhatsApp medicine reminders for elderly parents</title>
-<meta name="description" content="WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
+<meta name="description" content="WhatsApp medicine reminders for elderly parents, or for whoever gives them their medicine. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
 <meta name="theme-color" content="#faf8fc" />
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
@@ -17,7 +17,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://chhaon.site/" />
 <meta property="og:title" content="Chhaon: WhatsApp medicine reminders for elderly parents" />
-<meta property="og:description" content="WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
+<meta property="og:description" content="WhatsApp medicine reminders for elderly parents, or for whoever gives them their medicine. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
 <meta property="og:image" content="https://chhaon.site/og-image.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
@@ -26,7 +26,7 @@
 <meta property="og:locale:alternate" content="hi_IN" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Chhaon: WhatsApp medicine reminders for elderly parents" />
-<meta name="twitter:description" content="WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
+<meta name="twitter:description" content="WhatsApp medicine reminders for elderly parents, or for whoever gives them their medicine. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install." />
 <meta name="twitter:image" content="https://chhaon.site/og-image.jpg" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <script type="application/ld+json">
@@ -66,13 +66,13 @@
     "en-IN",
     "hi-IN"
    ],
-   "description": "WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install.",
+   "description": "WhatsApp medicine reminders for elderly parents, or for whoever gives them their medicine. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install.",
    "publisher": {
     "@id": "https://chhaon.site/#org"
    },
    "audience": {
     "@type": "Audience",
-    "audienceType": "Families caring for an elderly parent, a pregnancy or a young child, in India and abroad"
+    "audienceType": "Families in India caring for an elderly parent"
    }
   },
   {
@@ -112,18 +112,10 @@
     },
     {
      "@type": "Question",
-     "name": "Can I use it for a pregnancy or a baby?",
+     "name": "Is it also for a pregnancy or a baby?",
      "acceptedAnswer": {
       "@type": "Answer",
-      "text": "Yes. For a pregnancy you see the week and trimester, the baby’s approximate size, and the usual checks as suggestions to confirm with your doctor, with reminders for the iron and calcium she has been prescribed. For a child you get a suggested vaccination plan from the date of birth, and the reminders go to whoever gives the medicine."
-     }
-    },
-    {
-     "@type": "Question",
-     "name": "Is the vaccination plan medical advice?",
-     "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "No. It is a suggested plan, based on the Indian Academy of Pediatrics timetable, to help you remember the dates. Every date can be changed. Always give vaccines as advised by your child’s doctor."
+      "text": "The app also has a baby’s vaccine dates and a pregnancy timeline. They are being reviewed by doctors, so for now Chhaon is mainly for older parents. Every date in them is a suggestion to confirm with your doctor."
      }
     },
     {
@@ -147,7 +139,7 @@
      "name": "What does it cost?",
      "acceptedAnswer": {
       "@type": "Answer",
-      "text": "We are starting with a small pilot with families, and there is no cost during the pilot. Pricing will be shared before anyone is asked to pay. We add a few families each day; if the pilot is full when you sign up, you join a short line and we tell you when it’s your turn."
+      "text": "We are starting with a small pilot with families, and there is no cost during the pilot. Later there will be a small yearly plan for families; the price will be shared before anyone is asked to pay. We never sell data or show ads. We add a few families each day; if the pilot is full when you sign up, you join a short line and we tell you when it’s your turn."
      }
     },
     {
@@ -295,6 +287,7 @@
   .ticks li { display: flex; gap: 11px; align-items: flex-start; font-weight: 600; }
   .ticks li:before { content: "✓"; flex: 0 0 24px; height: 24px; border-radius: 50%; background: var(--tick-bg); color: var(--pt); display: grid; place-items: center; font-size: .78rem; font-weight: 800; margin-top: 2px; }
   .small-print { text-align: center; color: var(--muted); font-size: .96rem; max-width: 760px; margin: 26px auto 0; }
+  .trust-links a { color: var(--pt); font-weight: 700; text-underline-offset: 3px; overflow-wrap: anywhere; }
 
   /* whatsapp / helper section */
   .wa-sec { background: var(--band); color: #fff; overflow: hidden; border-block: 1px solid var(--line); }
@@ -331,13 +324,6 @@
   html[lang="hi"] .msg .lbl { letter-spacing: 0; font-size: .85rem; }
   .msg .fake { display: block; margin-top: 8px; color: var(--muted); font-size: .8rem; }
 
-  .abroad { background: linear-gradient(135deg, var(--band), var(--band-2)); color: #fff; border: 1px solid var(--line); border-radius: 34px; padding: 56px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; box-shadow: var(--shadow); }
-  .abroad h2 { font-size: clamp(1.7rem, 3.2vw, 2.5rem); font-weight: 800; }
-  .abroad p { color: var(--band-muted); margin-top: 14px; font-size: 1.08rem; }
-  .clocks { display: grid; gap: 14px; }
-  .clock { background: rgba(255, 255, 255, .09); border: 1px solid rgba(255, 255, 255, .14); border-radius: 20px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; }
-  .clock small { color: var(--band-muted); display: block; } .clock b { font-size: 1.7rem; letter-spacing: -.02em; }
-  .clock .tag { font-size: .78rem; font-weight: 800; letter-spacing: .08em; background: #c4561f; color: #fff; padding: 4px 10px; border-radius: 999px; }
 
   .safe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
   .safe > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 22px; }
@@ -372,13 +358,12 @@
   @media (max-width: 1100px) { nav .link.opt { display: none; } }
   @media (max-width: 960px) {
     nav .link { display: none; }
-    .hero .wrap, .wa-grid, .fam, .abroad { grid-template-columns: 1fr; }
+    .hero .wrap, .wa-grid, .fam { grid-template-columns: 1fr; }
     .hero .wrap { padding: 40px 0 64px; gap: 40px; text-align: left; }
     .cards, .grid3 { grid-template-columns: 1fr 1fr; }
     .steps { grid-template-columns: 1fr; gap: 34px; }
     .who { grid-template-columns: 1fr; }
     .safe { grid-template-columns: 1fr 1fr; }
-    .abroad { padding: 38px 26px; }
     section { padding: 68px 0; }
   }
   @media (max-width: 640px) {
@@ -409,6 +394,7 @@
       <a class="link opt" href="#features"><span class="en">Features</span><span class="hi">सुविधाएँ</span></a>
       <a class="link" href="#faq"><span class="en">Questions</span><span class="hi">सवाल</span></a>
       <a class="link" href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a>
+      <a class="link" href="/about"><span class="en">About us</span><span class="hi">हमारे बारे में</span></a>
     </nav>
     <div class="actions">
       <div class="ap">
@@ -443,13 +429,12 @@
 <div class="hero">
   <div class="wrap">
     <div>
-      <span class="eyebrow"><span class="en">FOR FAMILIES IN INDIA AND ABROAD</span><span class="hi">भारत और विदेश में बसे परिवारों के लिए</span></span>
+      <span class="eyebrow"><span class="en">FOR FAMILIES ACROSS INDIA</span><span class="hi">पूरे भारत के परिवारों के लिए</span></span>
       <h1><span class="en">Medicine reminders on WhatsApp for <em>the people you care for</em></span><span class="hi">जिनकी आप देखभाल करते हैं, उनके लिए <em>WhatsApp पर दवा के रिमाइंडर</em></span></h1>
-      <p class="lead"><span class="en"><strong>Parents, a pregnancy, a baby. Nothing to install.</strong> The reminder goes to them, or to whoever gives the medicine. They tap ✅ Taken, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>माता-पिता, गर्भावस्था, नन्हा बच्चा। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर उन्हें जाता है, या उसे जो दवा देता है। वे ✅ ले ली दबाते हैं, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
+      <p class="lead"><span class="en"><strong>For your parents. Nothing to install.</strong> The reminder goes to Papa, or to whoever gives him the medicine. One tap on ✅ confirms it, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>आपके माता-पिता के लिए। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर पापा को जाता है, या उसे जो उन्हें दवा देता है। ✅ पर एक टैप से पुष्टि हो जाती है, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
       <ul class="care-links" aria-label="Who it is for">
         <li><a href="#who-older"><span aria-hidden="true">👴</span><span class="en">Older parents</span><span class="hi">बुज़ुर्ग माता-पिता</span></a></li>
-        <li><a href="#who-pregnancy"><span aria-hidden="true">🤰</span><span class="en">Pregnancy</span><span class="hi">गर्भावस्था</span></a></li>
-        <li><a href="#who-child"><span aria-hidden="true">👶</span><span class="en">Babies and children</span><span class="hi">शिशु और बच्चे</span></a></li>
+        <li><a href="#helper"><span aria-hidden="true">🤝</span><span class="en">A helper at home</span><span class="hi">घर पर मदद करने वाले</span></a></li>
       </ul>
       <div class="cta">
         <a class="btn primary" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
@@ -459,7 +444,7 @@
       <div class="proof">
         <span><i>✓</i><span class="en">Only WhatsApp needed</span><span class="hi">सिर्फ़ WhatsApp चाहिए</span></span>
         <span><i>✓</i><span class="en">English and Hindi</span><span class="hi">हिंदी और अंग्रेज़ी</span></span>
-        <span><i>✓</i><span class="en">Works from any country</span><span class="hi">किसी भी देश से</span></span>
+        <span><i>✓</i><span class="en">Free during the pilot</span><span class="hi">पायलट के दौरान मुफ़्त</span></span>
       </div>
     </div>
     <div class="phone-stage">
@@ -477,8 +462,8 @@
 <!-- NAME -->
 <div class="why reveal">
   <div class="wrap">
-    <p class="big"><span class="en"><b>छाँव</b> (Chhaon) is the shade of a tree: the shelter our parents gave us. Now it is our turn to give it, to them and to the little ones in our family.</span><span class="hi"><b>छाँव</b> यानी पेड़ की छाया, वही सुकून जो माता-पिता ने हमें दिया। अब हमारी बारी है: उनकी छाँव बनने की, और परिवार के नन्हे-मुन्नों की भी।</span></p>
-    <p class="sub"><span class="en">Built for families spread across cities and countries.</span><span class="hi">शहरों और देशों में बिखरे परिवारों के लिए बना।</span></p>
+    <p class="big"><span class="en"><b>छाँव</b> (Chhaon) is the shade of a tree: the shelter our parents gave us. Now it is our turn to give it back to them.</span><span class="hi"><b>छाँव</b> यानी पेड़ की छाया, वही सुकून जो माता-पिता ने हमें दिया। अब हमारी बारी है उनकी छाँव बनने की।</span></p>
+    <p class="sub"><span class="en">Built for families spread across cities.</span><span class="hi">अलग-अलग शहरों में बसे परिवारों के लिए बना।</span></p>
   </div>
 </div>
 
@@ -503,7 +488,7 @@
       <h2><span class="en">Three steps. Two minutes.</span><span class="hi">तीन कदम। दो मिनट।</span></h2>
       <p><span class="en">You use the app. The people you care for, or their helper, only use WhatsApp, which they already know.</span><span class="hi">ऐप आप चलाते हैं। जिनकी देखभाल हो रही है, या उनके सहायक, सिर्फ़ WhatsApp इस्तेमाल करते हैं, जो उन्हें पहले से आता है।</span></p></div>
     <div class="steps">
-      <div class="step reveal"><h3><span class="en">Add who you care for</span><span class="hi">जिनकी देखभाल करते हैं, उन्हें जोड़ें</span></h3><p><span class="en">A parent, a pregnancy or a child. Add the medicines with the dose and how each tablet looks, and choose who gets the reminders.</span><span class="hi">माता-पिता, गर्भावस्था या बच्चा। दवाइयाँ मात्रा के साथ जोड़ें, और यह भी कि हर गोली कैसी दिखती है। फिर चुनें कि रिमाइंडर किसे मिलें।</span></p></div>
+      <div class="step reveal"><h3><span class="en">Add who you care for</span><span class="hi">जिनकी देखभाल करते हैं, उन्हें जोड़ें</span></h3><p><span class="en">Papa, Mummy, or both. Add the medicines with the dose and how each tablet looks, and choose who gets the reminders.</span><span class="hi">पापा, मम्मी, या दोनों। दवाइयाँ मात्रा के साथ जोड़ें, और यह भी कि हर गोली कैसी दिखती है। फिर चुनें कि रिमाइंडर किसे मिलें।</span></p></div>
       <div class="step reveal"><h3><span class="en">They agree, then reminders start</span><span class="hi">पहले हाँ, फिर रिमाइंडर</span></h3><p><span class="en">Whoever gets the reminders is asked on WhatsApp first. Then, at each dose time, they get a short message and tap ✅ Taken.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनसे पहले WhatsApp पर पूछा जाता है। फिर हर खुराक के समय उन्हें एक छोटा संदेश मिलता है और वे ✅ ले ली दबाते हैं।</span></p></div>
       <div class="step reveal"><h3><span class="en">The family sees it all</span><span class="hi">परिवार सब देखता है</span></h3><p><span class="en">Taken, missed and next doses on the Today screen. An alert when something is not confirmed, and a short summary every Sunday.</span><span class="hi">“आज” स्क्रीन पर ली गई, छूटी और अगली खुराक। पुष्टि न हो तो सूचना, और हर रविवार एक छोटा सार।</span></p></div>
     </div>
@@ -514,50 +499,30 @@
 <section id="who">
   <div class="wrap">
     <div class="head reveal"><span class="kicker"><span class="en">Who it is for</span><span class="hi">किसके लिए</span></span>
-      <h2><span class="en">One app for everyone you look after</span><span class="hi">जिनकी भी आप देखभाल करते हैं, सबके लिए एक ऐप</span></h2>
-      <p><span class="en">Chhaon began with parents who live far from their children. It now also helps during a pregnancy and with a baby or young child.</span><span class="hi">छाँव की शुरुआत उन माता-पिता के लिए हुई जिनके बच्चे दूर रहते हैं। अब यह गर्भावस्था में और शिशु या छोटे बच्चे की देखभाल में भी मदद करता है।</span></p></div>
+      <h2><span class="en">Made for sons and daughters who live away</span><span class="hi">उन बेटे-बेटियों के लिए जो माता-पिता से दूर रहते हैं</span></h2>
+      <p><span class="en">Chhaon began with parents who live far from their children: in another city, or just too far to drop by every day.</span><span class="hi">छाँव की शुरुआत उन माता-पिता के लिए हुई जिनके बच्चे दूर रहते हैं: दूसरे शहर में, या इतनी दूर कि रोज़ मिलने न आ सकें।</span></p></div>
     <div class="who">
       <article class="card main reveal" id="who-older">
         <div class="top"><img class="i3d" src="/icons/3d/old-man.webp" alt="" width="64" height="64" loading="lazy" decoding="async" /><div><span class="tag"><span class="en">Where Chhaon began</span><span class="hi">यहीं से शुरुआत</span></span><h3><span class="en">An older parent</span><span class="hi">बुज़ुर्ग माता-पिता</span></h3></div></div>
-        <p class="for"><span class="en">For sons and daughters in another city or another country.</span><span class="hi">दूसरे शहर या दूसरे देश में रहने वाले बेटे-बेटियों के लिए।</span></p>
+        <p class="for"><span class="en">For sons and daughters in another city.</span><span class="hi">दूसरे शहर में रहने वाले बेटे-बेटियों के लिए।</span></p>
         <ul class="ticks">
           <li><span class="en">Medicine reminders on Papa’s own WhatsApp, in Hindi or English</span><span class="hi">पापा के अपने WhatsApp पर हिंदी या अंग्रेज़ी में दवा के रिमाइंडर</span></li>
           <li><span class="en">A daily “How are you today?”: 1 for fine, 2 for a call</span><span class="hi">रोज़ का “आज आप कैसे हैं?”: ठीक हैं तो 1, फ़ोन चाहिए तो 2</span></li>
-          <li><span class="en">Reminders on Papa’s clock, wherever you live</span><span class="hi">आप कहीं भी रहें, रिमाइंडर पापा की घड़ी के हिसाब से</span></li>
+          <li><span class="en">Reminders on Papa’s clock, at the times you set from his prescription</span><span class="hi">रिमाइंडर पापा की घड़ी के हिसाब से, पर्ची देखकर आपके रखे समय पर</span></li>
           <li><span class="en">Or to the person who helps at home, like Sunita who gives his medicines</span><span class="hi">या घर पर मदद करने वाले को, जैसे सुनीता जो उन्हें दवा देती हैं</span></li>
         </ul>
       </article>
-      <article class="card reveal" id="who-pregnancy">
-        <div class="top"><img class="i3d" src="/icons/3d/pregnant-woman.webp" alt="" width="64" height="64" loading="lazy" decoding="async" /><h3><span class="en">A pregnancy</span><span class="hi">गर्भावस्था</span></h3></div>
-        <p class="for"><span class="en">For her, her husband and both families.</span><span class="hi">उनके लिए, उनके पति के लिए और दोनों परिवारों के लिए।</span></p>
-        <ul class="ticks">
-          <li><span class="en">The week and trimester, and the baby’s approximate size</span><span class="hi">कौन-सा हफ़्ता और कौन-सी तिमाही, और बच्चे का अनुमानित आकार</span></li>
-          <li><span class="en">The usual checks as suggestions, to confirm with your doctor</span><span class="hi">आम तौर पर होने वाली जाँचें, सुझाव के रूप में; अपने डॉक्टर से पक्का करें</span></li>
-          <li><span class="en">Iron and calcium reminders, with the dose from her prescription</span><span class="hi">आयरन और कैल्शियम के रिमाइंडर, पर्ची में लिखी मात्रा के साथ</span></li>
-          <li><span class="en">A gentle “How are you feeling?” each morning, only if she wants it</span><span class="hi">सुबह हल्का-सा “कैसा महसूस कर रही हैं?”, सिर्फ़ अगर वे चाहें</span></li>
-        </ul>
-      </article>
-      <article class="card reveal" id="who-child">
-        <div class="top"><img class="i3d" src="/icons/3d/baby.webp" alt="" width="64" height="64" loading="lazy" decoding="async" /><h3><span class="en">A baby or child</span><span class="hi">शिशु या बच्चा</span></h3></div>
-        <p class="for"><span class="en">For parents, grandparents and whoever helps at home.</span><span class="hi">माता-पिता, दादा-दादी, नाना-नानी और घर पर मदद करने वालों के लिए।</span></p>
-        <ul class="ticks">
-          <li><span class="en">A suggested vaccination plan from the date of birth, based on the Indian Academy of Pediatrics timetable</span><span class="hi">जन्म की तारीख़ से टीकों की सुझाई गई योजना, इंडियन एकेडमी ऑफ़ पीडियाट्रिक्स की सूची के आधार पर</span></li>
-          <li><span class="en">“Already given?”: tick what is on the vaccination card</span><span class="hi">“पहले लग चुका?”: टीकाकरण कार्ड देखकर निशान लगाइए</span></li>
-          <li><span class="en">Vaccine and medicine reminders to the adult who gives them: you, Nani or the nanny</span><span class="hi">टीके और दवा के रिमाइंडर उस बड़े को जो उन्हें देता है: आप, नानी या आया</span></li>
-          <li><span class="en">Every date can be changed, as advised by your doctor</span><span class="hi">हर तारीख़ डॉक्टर की सलाह के अनुसार बदली जा सकती है</span></li>
-        </ul>
-      </article>
     </div>
-    <p class="small-print reveal"><span class="en">Pregnancy checks, the baby’s size and vaccine dates are suggestions to help you remember. They are not medical advice. Always follow your doctor.</span><span class="hi">गर्भावस्था की जाँचें, बच्चे का आकार और टीकों की तारीख़ें सिर्फ़ याद रखने में मदद के लिए सुझाव हैं। ये चिकित्सा सलाह नहीं हैं। हमेशा अपने डॉक्टर की सलाह मानें।</span></p>
+    <p class="small-print reveal"><span class="en">Also in the app: a baby’s vaccine dates and a pregnancy timeline (being reviewed by doctors).</span><span class="hi">ऐप में यह भी है: शिशु के टीकों की तारीख़ें और गर्भावस्था की समय-रेखा (डॉक्टर अभी इनकी समीक्षा कर रहे हैं)।</span></p>
   </div>
 </section>
 
 <!-- WHO GETS THE REMINDER -->
 <section class="wa-sec" id="helper">
   <div class="wrap">
-    <div class="head reveal"><span class="kicker"><span class="en">Who gets the reminder</span><span class="hi">रिमाइंडर किसे मिले</span></span>
-      <h2><span class="en">The reminder can go to whoever gives the medicine</span><span class="hi">रिमाइंडर उसे भी जा सकता है जो दवा देता है</span></h2>
-      <p><span class="en">Papa himself, Sunita who looks after him at home, Nani who gives the baby’s syrup, or you. No app, no password. Just WhatsApp.</span><span class="hi">ख़ुद पापा, घर पर उनकी देखभाल करने वाली सुनीता, बच्चे को सिरप देने वाली नानी, या आप। न ऐप, न पासवर्ड। बस WhatsApp।</span></p></div>
+    <div class="head reveal"><span class="kicker"><span class="en">A helper at home</span><span class="hi">घर पर मदद करने वाले</span></span>
+      <h2><span class="en">Someone at home gives Papa’s medicine? She gets the reminder.</span><span class="hi">घर पर कोई और पापा को दवा देती हैं? रिमाइंडर उन्हें मिलेगा।</span></h2>
+      <p><span class="en">The reminder goes to whoever gives the medicine: Papa himself, a helper or attendant like Sunita, Nani, or you. She gets it on her own WhatsApp, in Hindi or English, taps ✅ when it’s given, and you see it in the app. She installs nothing and needs no password.</span><span class="hi">रिमाइंडर उसे जाता है जो दवा देता है: ख़ुद पापा, सुनीता जैसी सहायिका या अटेंडेंट, नानी, या आप। उन्हें यह अपने WhatsApp पर, हिंदी या अंग्रेज़ी में मिलता है; दवा देकर वे ✅ दबाती हैं, और आपको ऐप में दिख जाता है। उन्हें कुछ इंस्टॉल नहीं करना, कोई पासवर्ड नहीं।</span></p></div>
     <div class="wa-grid">
       <div class="chat reveal" role="group" aria-label="Example WhatsApp chat">
         <div class="chat-top"><span class="logo" aria-hidden="true"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg></span><div><strong>Chhaon</strong><small><span class="en">WhatsApp reminders</span><span class="hi">WhatsApp रिमाइंडर</span></small></div></div>
@@ -566,7 +531,8 @@
         <div class="bub"><span class="en">Thank you 🙏 Noted for Papa: Metformin ✅</span><span class="hi">धन्यवाद 🙏 पापा की दवा Metformin नोट कर ली ✅</span><time><span class="en">8:06 AM</span><span class="hi">सुबह 8:06</span></time></div>
       </div>
       <div class="wa-points">
-        <div class="reveal"><span class="n" aria-hidden="true">🙋</span><div><h3><span class="en">Choose for each person</span><span class="hi">हर व्यक्ति के लिए चुनें</span></h3><p><span class="en">The person themself, a maid or attendant, Nani, a nanny, or you. A child’s reminders always go to an adult.</span><span class="hi">वे ख़ुद, घर की सहायिका या अटेंडेंट, नानी, आया, या आप। बच्चे के रिमाइंडर हमेशा किसी बड़े को जाते हैं।</span></p></div></div>
+        <div class="reveal"><span class="n" aria-hidden="true">🙋</span><div><h3><span class="en">Choose for each person</span><span class="hi">हर व्यक्ति के लिए चुनें</span></h3><p><span class="en">Papa himself, a helper or attendant, Nani, or you. You can change it any time; the new person is asked first.</span><span class="hi">ख़ुद पापा, सहायिका या अटेंडेंट, नानी, या आप। इसे कभी भी बदल सकते हैं; नए व्यक्ति से पहले पूछा जाता है।</span></p></div></div>
+        <div class="reveal"><span class="n" aria-hidden="true">🤝</span><div><h3><span class="en">Help for her, not checking on her</span><span class="hi">उनकी मदद, उन पर निगरानी नहीं</span></h3><p><span class="en">The message greets her by name, shows the dose and how the tablet looks, so the right medicine is easy to give, and thanks her for each reply. If a dose is not confirmed, the family simply gets a note to call.</span><span class="hi">संदेश में उनका नाम लेकर नमस्ते, दवा की मात्रा और गोली कैसी दिखती है, ताकि सही दवा देना आसान रहे, और हर जवाब पर धन्यवाद। पुष्टि न हो, तो परिवार को बस फ़ोन करने की सूचना जाती है।</span></p></div></div>
         <div class="reveal"><span class="n" aria-hidden="true">👆</span><div><h3><span class="en">Just one tap</span><span class="hi">बस एक टैप</span></h3><p><span class="en">They tap the button under the message. Nothing to type, nothing to install, nothing to learn.</span><span class="hi">संदेश के नीचे दिया बटन दबाना है। न कुछ लिखना, न कुछ इंस्टॉल करना, न कुछ सीखना।</span></p></div></div>
         <div class="reveal"><span class="n" aria-hidden="true">🙏</span><div><h3><span class="en">They agree first</span><span class="hi">पहले उनकी हाँ</span></h3><p><span class="en">Whoever gets the reminders is asked on WhatsApp before anything is sent, and can reply STOP at any time.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनसे कुछ भी भेजने से पहले WhatsApp पर पूछा जाता है, और वे कभी भी STOP लिख सकते हैं।</span></p></div></div>
       </div>
@@ -583,11 +549,11 @@
       <div class="mini reveal"><img class="i3d" src="/icons/3d/pill.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Reminders that show the tablet</span><span class="hi">गोली की पहचान के साथ रिमाइंडर</span></h3><p><span class="en">The medicine name, the dose and how it looks, with a photo of the strip if you add one. A warning before the stock runs out.</span><span class="hi">दवा का नाम, मात्रा और गोली कैसी दिखती है, और चाहें तो पत्ते की फ़ोटो भी। स्टॉक ख़त्म होने से पहले चेतावनी।</span></p></div>
       <div class="mini reveal"><img class="i3d" src="/icons/3d/sun.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">A daily “How are you?”</span><span class="hi">रोज़ का “कैसे हैं?”</span></h3><p><span class="en">A short morning check-in: 1 for fine, 2 for a call. Switch it on or off for each person.</span><span class="hi">सुबह एक छोटा संदेश: ठीक हैं तो 1, फ़ोन चाहिए तो 2। हर व्यक्ति के लिए इसे चालू या बंद कर सकते हैं।</span></p></div>
       <div class="mini reveal"><img class="i3d" src="/icons/3d/bell.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Family alerts on WhatsApp</span><span class="hi">परिवार को WhatsApp पर सूचना</span></h3><p><span class="en">When a dose is not confirmed or the check-in gets no reply, the family is told, and knows whom to call.</span><span class="hi">खुराक की पुष्टि न हो या हाल-चाल का जवाब न आए, तो परिवार को बताया जाता है, और पता रहता है कि किसे फ़ोन करना है।</span></p></div>
-      <div class="mini reveal"><img class="i3d" src="/icons/3d/spiral-calendar.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">A summary every Sunday</span><span class="hi">हर रविवार एक सार</span></h3><p><span class="en">One short WhatsApp message: doses confirmed, any missed, refills due and the next doctor visit.</span><span class="hi">WhatsApp पर एक छोटा संदेश: कितनी खुराक की पुष्टि हुई, कौन-सी छूटी, कौन-सी दवा मँगानी है और डॉक्टर से अगली मुलाक़ात।</span></p></div>
+      <div class="mini reveal"><img class="i3d" src="/icons/3d/spiral-calendar.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">A summary every Sunday</span><span class="hi">हर रविवार एक सार</span></h3><p><span class="en">One short WhatsApp message, when you turn on WhatsApp alerts: doses confirmed, any missed, refills due and the next doctor visit.</span><span class="hi">WhatsApp सूचनाएँ चालू करने पर, WhatsApp पर एक छोटा संदेश: कितनी खुराक की पुष्टि हुई, कौन-सी छूटी, कौन-सी दवा मँगानी है और डॉक्टर से अगली मुलाक़ात।</span></p></div>
       <div class="mini reveal"><img class="i3d" src="/icons/3d/people-hugging.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">The whole family together</span><span class="hi">पूरा परिवार साथ</span></h3><p><span class="en">Brothers and sisters share one view, wherever they live. See who gave what, and “Mark as given” when you gave it in person.</span><span class="hi">भाई-बहन कहीं भी रहें, सब एक ही जानकारी देखते हैं। किसने क्या दिया, यह दिखता है, और सामने दवा दी हो तो “दी गई दर्ज करें”।</span></p></div>
-      <div class="mini reveal"><img class="i3d" src="/icons/3d/ambulance.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Emergency card</span><span class="hi">आपातकालीन कार्ड</span></h3><p><span class="en">Blood group, allergies, conditions and medicines on one page (with the pregnancy week or a child’s birth date). Share the link, switch it off any time.</span><span class="hi">ब्लड ग्रुप, एलर्जी, बीमारियाँ और दवाइयाँ एक पन्ने पर (गर्भावस्था का हफ़्ता या बच्चे की जन्मतिथि भी)। लिंक साझा कीजिए, कभी भी बंद कीजिए।</span></p></div>
+      <div class="mini reveal"><img class="i3d" src="/icons/3d/ambulance.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Emergency card</span><span class="hi">आपातकालीन कार्ड</span></h3><p><span class="en">Blood group, allergies, conditions and medicines on one page. Share the link, switch it off any time.</span><span class="hi">ब्लड ग्रुप, एलर्जी, बीमारियाँ और दवाइयाँ एक पन्ने पर। लिंक साझा कीजिए, कभी भी बंद कीजिए।</span></p></div>
       <div class="mini reveal"><img class="i3d" src="/icons/3d/stethoscope.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">One page for the doctor</span><span class="hi">डॉक्टर के लिए एक पन्ना</span></h3><p><span class="en">The medicines and the last 30 days of replies on one page, to show or send at the visit.</span><span class="hi">दवाइयाँ और पिछले 30 दिनों के जवाब एक पन्ने पर, डॉक्टर को दिखाने या भेजने के लिए।</span></p></div>
-      <div class="mini reveal"><img class="i3d" src="/icons/3d/clipboard.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Reports and doctor visits</span><span class="hi">रिपोर्ट और डॉक्टर से मुलाक़ात</span></h3><p><span class="en">Keep prescriptions and reports as photos or PDFs in one private place, with WhatsApp reminders before each visit.</span><span class="hi">पर्चियाँ और रिपोर्ट फ़ोटो या PDF के रूप में एक निजी जगह पर, और हर मुलाक़ात से पहले WhatsApp पर रिमाइंडर।</span></p></div>
+      <div class="mini reveal"><img class="i3d" src="/icons/3d/clipboard.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Reports and doctor visits</span><span class="hi">रिपोर्ट और डॉक्टर से मुलाक़ात</span></h3><p><span class="en">Keep prescriptions and reports as photos or PDFs in one private place, and note each doctor visit so the whole family knows when the next one is.</span><span class="hi">पर्चियाँ और रिपोर्ट फ़ोटो या PDF के रूप में एक निजी जगह पर, और डॉक्टर से हर मुलाक़ात लिख लीजिए, ताकि पूरे परिवार को पता रहे कि अगली कब है।</span></p></div>
       <div class="mini reveal"><img class="i3d" src="/icons/3d/speech-balloon.webp" alt="" width="56" height="56" loading="lazy" decoding="async" /><h3><span class="en">Hindi and English</span><span class="hi">हिंदी और अंग्रेज़ी</span></h3><p><span class="en">In the app and on WhatsApp. Each person’s messages come in the language you choose for them.</span><span class="hi">ऐप में भी और WhatsApp पर भी। हर व्यक्ति को संदेश उस भाषा में मिलते हैं जो आप उनके लिए चुनें।</span></p></div>
     </div>
   </div>
@@ -616,37 +582,24 @@
   </div>
 </section>
 
-<!-- ABROAD -->
-<section>
-  <div class="wrap">
-    <div class="abroad reveal">
-      <div>
-        <h2><span class="en">Living abroad? Time zones are handled.</span><span class="hi">विदेश में हैं? समय क्षेत्र की चिंता नहीं।</span></h2>
-        <p><span class="en">Reminders always go out on your parent’s clock, so Papa gets his 8 AM medicine at 8 AM, wherever you are. You see both times side by side.</span><span class="hi">रिमाइंडर हमेशा आपके माता-पिता की घड़ी के हिसाब से जाते हैं। आप कहीं भी हों, पापा को सुबह 8 बजे की दवा सुबह 8 बजे ही मिलती है। आपको दोनों समय साथ-साथ दिखते हैं।</span></p>
-      </div>
-      <div class="clocks" aria-hidden="true">
-        <div class="clock"><div><small><span class="en">Papa, Indore</span><span class="hi">पापा, इंदौर</span></small><b><span class="en">8:00 AM</span><span class="hi">सुबह 8:00</span></b></div><span class="tag"><span class="en">MEDICINE</span><span class="hi">दवा</span></span></div>
-        <div class="clock"><div><small><span class="en">You, New York</span><span class="hi">आप, न्यूयॉर्क</span></small><b><span class="en">10:30 PM</span><span class="hi">रात 10:30</span></b></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- SAFETY -->
 <section id="safety" class="band">
   <div class="wrap">
-    <div class="head reveal"><span class="kicker"><span class="en">Safety and trust</span><span class="hi">सुरक्षा और भरोसा</span></span>
+    <div class="head reveal"><span class="kicker"><span class="en">Why trust us</span><span class="hi">हम पर भरोसा क्यों</span></span>
       <h2><span class="en">Health information deserves care</span><span class="hi">सेहत की जानकारी को चाहिए पूरी देखभाल</span></h2></div>
     <div class="safe">
-      <div class="reveal"><div class="ico" aria-hidden="true">🤝</div><h3><span class="en">Consent first</span><span class="hi">पहले सहमति</span></h3><p><span class="en">Nothing is sent until the person who gets the reminders says yes. For a child, you confirm you are the parent or guardian.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, उनकी हाँ के बिना कुछ नहीं भेजा जाता। बच्चे के लिए आप पुष्टि करते हैं कि आप माता-पिता या अभिभावक हैं।</span></p></div>
-      <div class="reveal"><div class="ico" aria-hidden="true">✋</div><h3><span class="en">STOP any time</span><span class="hi">कभी भी STOP</span></h3><p><span class="en">Replying STOP on WhatsApp ends the messages to that number.</span><span class="hi">WhatsApp पर STOP लिखने से उस नंबर पर संदेश बंद हो जाते हैं।</span></p></div>
+      <div class="reveal"><div class="ico" aria-hidden="true">📱</div><h3><span class="en">No app for Papa</span><span class="hi">पापा के लिए कोई ऐप नहीं</span></h3><p><span class="en">Papa, or whoever gives his medicine, only uses WhatsApp. No download, no account, no password.</span><span class="hi">पापा, या जो उन्हें दवा देता है, सिर्फ़ WhatsApp इस्तेमाल करते हैं। न डाउनलोड, न खाता, न पासवर्ड।</span></p></div>
+      <div class="reveal"><div class="ico" aria-hidden="true">🤝</div><h3><span class="en">They agree first, STOP any time</span><span class="hi">पहले उनकी हाँ, कभी भी STOP</span></h3><p><span class="en">Nothing is sent until the person who gets the reminders says yes on WhatsApp. Replying STOP ends the messages to that number.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, WhatsApp पर उनकी हाँ के बिना कुछ नहीं भेजा जाता। STOP लिखने से उस नंबर पर संदेश बंद हो जाते हैं।</span></p></div>
       <div class="reveal"><div class="ico" aria-hidden="true">🔒</div><h3><span class="en">Only your family circle</span><span class="hi">सिर्फ़ आपका परिवार</span></h3><p><span class="en">Each family’s information is kept apart. Only the people you invite can see it, and files are stored privately.</span><span class="hi">हर परिवार की जानकारी अलग रखी जाती है। इसे सिर्फ़ वही देख सकते हैं जिन्हें आप जोड़ें, और फ़ाइलें निजी स्टोरेज में रहती हैं।</span></p></div>
       <div class="reveal"><div class="ico" aria-hidden="true">🚫</div><h3><span class="en">No ads</span><span class="hi">कोई विज्ञापन नहीं</span></h3><p><span class="en">We show no advertisements and do not sell your data.</span><span class="hi">हम कोई विज्ञापन नहीं दिखाते और आपका डेटा नहीं बेचते।</span></p></div>
       <div class="reveal"><div class="ico" aria-hidden="true">⚕️</div><h3><span class="en">Not medical advice</span><span class="hi">चिकित्सा सलाह नहीं</span></h3><p><span class="en">Chhaon reminds and keeps track. It never diagnoses and never tells anyone to change a medicine.</span><span class="hi">छाँव याद दिलाता है और हिसाब रखता है। यह न बीमारी बताता है, न कभी दवा बदलने को कहता है।</span></p></div>
-      <div class="reveal"><div class="ico" aria-hidden="true">🛡️</div><h3><span class="en">Never asks for money</span><span class="hi">कभी पैसे नहीं माँगता</span></h3><p><span class="en">Our WhatsApp messages never ask for money, OTPs or bank details.</span><span class="hi">हमारे WhatsApp संदेश कभी पैसे, OTP या बैंक की जानकारी नहीं माँगते।</span></p></div>
+      <div class="reveal"><div class="ico" aria-hidden="true">🛡️</div><h3><span class="en">Never asks for money</span><span class="hi">कभी पैसे नहीं माँगता</span></h3><p><span class="en">Chhaon never asks for money, an OTP, Aadhaar or bank details on WhatsApp. If anyone does, it is not us.</span><span class="hi">छाँव WhatsApp पर कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगता। कोई माँगे, तो वह हम नहीं हैं।</span></p></div>
       <div class="reveal"><div class="ico" aria-hidden="true">📜</div><h3><span class="en">India’s data law in mind</span><span class="hi">भारत के डेटा क़ानून का ध्यान</span></h3><p><span class="en">Built with India’s Digital Personal Data Protection Act, 2023 in mind: clear consent, a clear purpose, and your data rights.</span><span class="hi">भारत के डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023 को ध्यान में रखकर बना: साफ़ सहमति, साफ़ मक़सद, और आपके डेटा पर आपका हक़।</span></p></div>
       <div class="reveal"><div class="ico" aria-hidden="true">🗑️</div><h3><span class="en">Yours to take or delete</span><span class="hi">आपका, ले जाइए या हटाइए</span></h3><p><span class="en">Download all your data, or delete your account, any time.</span><span class="hi">कभी भी अपना सारा डेटा डाउनलोड कीजिए, या अपना खाता हटाइए।</span></p></div>
     </div>
+    <!-- A real quote from a pilot family can go here once they agree to it being shown (their words, their chosen name, no made-up text):
+    <blockquote class="small-print reveal"><span class="en">“…”</span><span class="hi">“…”</span></blockquote> -->
+    <p class="small-print trust-links reveal"><span class="en">Chhaon is run by a small team in India. <a href="/about">Who we are and how Chhaon will pay for itself</a> · <a href="/legal/privacy.html">Privacy policy</a> · <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a></span><span class="hi">छाँव भारत की एक छोटी टीम चलाती है। <a href="/about">हम कौन हैं और छाँव का ख़र्च कैसे चलेगा</a> · <a href="/legal/privacy.html">गोपनीयता नीति</a> · <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a></span></p>
   </div>
 </section>
 
@@ -660,11 +613,10 @@
       <details><summary><span class="en">Who gets the WhatsApp reminder?</span><span class="hi">WhatsApp रिमाइंडर किसे मिलता है?</span></summary><p><span class="en">You choose for each person: the person themself, you, or someone else who gives the medicine, such as a maid, an attendant, Nani or a nanny. A child never gets the reminders; they go to the adult who gives the medicine.</span><span class="hi">हर व्यक्ति के लिए आप चुनते हैं: वे ख़ुद, आप, या कोई और जो दवा देता है, जैसे घर की सहायिका, अटेंडेंट, नानी या आया। बच्चे को कभी रिमाइंडर नहीं जाता; वह दवा देने वाले बड़े को जाता है।</span></p></details>
       <details><summary><span class="en">How do they reply?</span><span class="hi">जवाब कैसे देते हैं?</span></summary><p><span class="en">With one tap on the button under the message: “✅ Taken” for a medicine. In the daily check-in they tap “I’m okay” or “Call me”. Nothing to type.</span><span class="hi">संदेश के नीचे दिए बटन पर एक टैप से: दवा के लिए “✅ ले ली”। रोज़ के हाल-चाल में “मैं ठीक हूँ” या “फ़ोन कीजिए” दबाते हैं। कुछ लिखना नहीं पड़ता।</span></p></details>
       <details><summary><span class="en">What if nobody replies?</span><span class="hi">अगर कोई जवाब न आए तो?</span></summary><p><span class="en">If a dose is not confirmed within about an hour, or the daily check-in gets no reply, the family gets an alert in the app, and on WhatsApp if they switch it on, so someone can call. Every Sunday the family also gets a short summary of the week.</span><span class="hi">अगर लगभग एक घंटे में खुराक की पुष्टि न हो, या रोज़ के हाल-चाल का जवाब न आए, तो परिवार को ऐप में सूचना मिलती है, और चालू करने पर WhatsApp पर भी, ताकि कोई फ़ोन कर सके। हर रविवार परिवार को हफ़्ते का एक छोटा सार भी मिलता है।</span></p></details>
-      <details><summary><span class="en">Can I use it for a pregnancy or a baby?</span><span class="hi">क्या इसे गर्भावस्था या शिशु के लिए इस्तेमाल कर सकते हैं?</span></summary><p><span class="en">Yes. For a pregnancy you see the week and trimester, the baby’s approximate size, and the usual checks as suggestions to confirm with your doctor, with reminders for the iron and calcium she has been prescribed. For a child you get a suggested vaccination plan from the date of birth, and the reminders go to whoever gives the medicine.</span><span class="hi">हाँ। गर्भावस्था में आप हफ़्ता और तिमाही, बच्चे का अनुमानित आकार, और आम जाँचें सुझाव के रूप में देखते हैं, जिन्हें अपने डॉक्टर से पक्का करें; साथ में डॉक्टर के लिखे आयरन और कैल्शियम के रिमाइंडर। बच्चे के लिए जन्म की तारीख़ से टीकों की सुझाई गई योजना मिलती है, और रिमाइंडर उसे जाते हैं जो दवा देता है।</span></p></details>
-      <details><summary><span class="en">Is the vaccination plan medical advice?</span><span class="hi">क्या टीकों की योजना चिकित्सा सलाह है?</span></summary><p><span class="en">No. It is a suggested plan, based on the Indian Academy of Pediatrics timetable, to help you remember the dates. Every date can be changed. Always give vaccines as advised by your child’s doctor.</span><span class="hi">नहीं। यह इंडियन एकेडमी ऑफ़ पीडियाट्रिक्स की सूची पर आधारित एक सुझाई गई योजना है, ताकि तारीख़ें याद रहें। हर तारीख़ बदली जा सकती है। टीके हमेशा बच्चे के डॉक्टर की सलाह के अनुसार ही लगवाएँ।</span></p></details>
+      <details><summary><span class="en">Is it also for a pregnancy or a baby?</span><span class="hi">क्या यह गर्भावस्था या शिशु के लिए भी है?</span></summary><p><span class="en">The app also has a baby’s vaccine dates and a pregnancy timeline. They are being reviewed by doctors, so for now Chhaon is mainly for older parents. Every date in them is a suggestion to confirm with your doctor.</span><span class="hi">ऐप में शिशु के टीकों की तारीख़ें और गर्भावस्था की समय-रेखा भी है। डॉक्टर अभी इनकी समीक्षा कर रहे हैं, इसलिए फ़िलहाल छाँव मुख्य रूप से बुज़ुर्ग माता-पिता के लिए है। इनमें हर तारीख़ एक सुझाव है, जिसे अपने डॉक्टर से पक्का करें।</span></p></details>
       <details><summary><span class="en">Which languages are supported?</span><span class="hi">कौन-सी भाषाएँ चलती हैं?</span></summary><p><span class="en">English and Hindi, in the app and in the WhatsApp messages. Each person’s messages come in the language you choose for them. More Indian languages will follow.</span><span class="hi">ऐप में भी और WhatsApp संदेशों में भी, हिंदी और English। हर व्यक्ति को संदेश उस भाषा में मिलते हैं जो आप उनके लिए चुनें। और भारतीय भाषाएँ आगे जुड़ेंगी।</span></p></details>
       <details><summary><span class="en">Does it replace a doctor?</span><span class="hi">क्या यह डॉक्टर की जगह लेता है?</span></summary><p><span class="en">No. Chhaon helps families remember and keep track. It does not give medical advice and never tells anyone to change a medicine. For any health question, please ask a doctor.</span><span class="hi">नहीं। छाँव परिवारों को याद रखने और हिसाब रखने में मदद करता है। यह चिकित्सा सलाह नहीं देता और कभी दवा बदलने को नहीं कहता। सेहत के किसी भी सवाल पर कृपया डॉक्टर से पूछें।</span></p></details>
-      <details><summary><span class="en">What does it cost?</span><span class="hi">इसकी क़ीमत क्या है?</span></summary><p><span class="en">We are starting with a small pilot with families, and there is no cost during the pilot. Pricing will be shared before anyone is asked to pay. We add a few families each day; if the pilot is full when you sign up, you join a short line and we tell you when it’s your turn.</span><span class="hi">हम परिवारों के साथ एक छोटे पायलट से शुरू कर रहे हैं, और पायलट के दौरान कोई शुल्क नहीं है। किसी से भी पैसे लेने से पहले क़ीमत बताई जाएगी। हम हर दिन कुछ परिवार जोड़ते हैं; साइन अप के समय पायलट भरा हो, तो आप एक छोटी कतार में जुड़ जाते हैं और आपकी बारी आने पर हम आपको बता देते हैं।</span></p></details>
+      <details><summary><span class="en">What does it cost?</span><span class="hi">इसकी क़ीमत क्या है?</span></summary><p><span class="en">We are starting with a small pilot with families, and there is no cost during the pilot. Later there will be a small yearly plan for families; the price will be shared before anyone is asked to pay. We never sell data or show ads. We add a few families each day; if the pilot is full when you sign up, you join a short line and we tell you when it’s your turn.</span><span class="hi">हम परिवारों के साथ एक छोटे पायलट से शुरू कर रहे हैं, और पायलट के दौरान कोई शुल्क नहीं है। आगे चलकर परिवारों के लिए एक छोटा सालाना प्लान होगा; किसी से भी पैसे लेने से पहले क़ीमत बताई जाएगी। हम कभी डेटा नहीं बेचते और विज्ञापन नहीं दिखाते। हम हर दिन कुछ परिवार जोड़ते हैं; साइन अप के समय पायलट भरा हो, तो आप एक छोटी कतार में जुड़ जाते हैं और आपकी बारी आने पर हम आपको बता देते हैं।</span></p></details>
       <details><summary><span class="en">Is my family’s information safe?</span><span class="hi">क्या मेरे परिवार की जानकारी सुरक्षित है?</span></summary><p><span class="en">Each family’s data is kept apart, only the people you invite can see it, and files are stored privately. We show no ads and do not sell data. You can read our <a href="/legal/privacy.html">privacy policy</a> in plain words.</span><span class="hi">हर परिवार का डेटा अलग रखा जाता है, इसे सिर्फ़ वही देख सकते हैं जिन्हें आप जोड़ें, और फ़ाइलें निजी स्टोरेज में रहती हैं। हम कोई विज्ञापन नहीं दिखाते और डेटा नहीं बेचते। हमारी <a href="/legal/privacy.html">गोपनीयता नीति</a> सरल शब्दों में पढ़िए।</span></p></details>
     </div>
   </div>
@@ -685,7 +637,7 @@
 <footer>
   <div class="wrap">
     <span>© <span id="year">2026</span> Chhaon · <span class="en">Care for the people you love, near or far.</span><span class="hi">अपनों की देखभाल, पास हों या दूर।</span></span>
-    <nav aria-label="Footer"><a href="/legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="/legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a><a href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a></nav>
+    <nav aria-label="Footer"><a href="/legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a><a href="/legal/terms.html"><span class="en">Terms of use</span><span class="hi">उपयोग की शर्तें</span></a><a href="/doctors"><span class="en">For doctors</span><span class="hi">डॉक्टरों के लिए</span></a><a href="/about"><span class="en">About us</span><span class="hi">हमारे बारे में</span></a><a href="mailto:chhaon.app.mail@gmail.com"><span class="en">Contact</span><span class="hi">संपर्क</span></a></nav>
   </div>
 </footer>
 

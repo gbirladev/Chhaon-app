@@ -3,16 +3,91 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="robots" content="noindex,follow" />
-<title>Chhaon</title>
-<link rel="canonical" href="https://chhaon.site/" />
-<meta http-equiv="refresh" content="0; url=/" />
+<title>About Chhaon: who we are</title>
+<meta name="description" content="Chhaon is run by a small team in India. Free during the pilot; later a small yearly plan for families. We never sell data or show ads." />
+<meta name="theme-color" content="#faf8fc" />
 <link rel="icon" href="/favicon.ico" sizes="48x48" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
-<script>location.replace("/");</script>
+<link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
+<link rel="canonical" href="https://chhaon.site/about.html" />
+<meta property="og:site_name" content="Chhaon" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://chhaon.site/about.html" />
+<meta property="og:title" content="About Chhaon: who we are" />
+<meta property="og:description" content="Chhaon is run by a small team in India. Free during the pilot; later a small yearly plan for families. We never sell data or show ads." />
+<meta property="og:image" content="https://chhaon.site/og-image.jpg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="stylesheet" href="/site-theme.css" />
+<!-- Appearance shared with the app (its colours and light / dark), before the first paint. A file: the production CSP is script-src 'self'. -->
+<script src="/site-theme.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 17px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif; color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+  .en, .hi { display: contents; }
+  html[lang="hi"] .en { display: none !important; }
+  html[lang="en"] .hi { display: none !important; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 8px; }
+  main { width: min(760px, 100% - 32px); margin: 0 auto; padding: 18px 0 56px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; }
+  .brand { font-weight: 800; font-size: 1.25rem; text-decoration: none; color: var(--ink); }
+  .lang { border: 1.5px solid var(--line); background: var(--surface); color: var(--pt); font: inherit; font-weight: 700; font-size: .95rem; min-height: 44px; padding: 0 16px; border-radius: 999px; cursor: pointer; }
+  .lang:hover { border-color: var(--pt); }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.18; margin: 28px 0 12px; letter-spacing: -.02em; }
+  .lead { color: var(--muted); font-size: 1.12rem; margin: 0 0 8px; }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 24px 22px; margin-top: 18px; }
+  h2 { font-size: 1.25rem; margin: 0 0 8px; }
+  p { margin: 0 0 10px; } p:last-child { margin-bottom: 0; }
+  ul { margin: 0; padding-left: 1.2em; } li { margin: 4px 0; }
+  a { color: var(--pt); font-weight: 700; text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .cta { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; margin-top: 26px; border-radius: 999px; background: var(--primary); color: var(--on-primary); text-decoration: none; }
+  footer { margin-top: 36px; color: var(--muted); font-size: .95rem; }
+  footer a { font-weight: 600; }
+</style>
 </head>
-<body style="font:16px/1.6 system-ui,sans-serif;padding:24px;color:#173d3a">
-<p>This page has moved: <a href="/">Chhaon home page</a>.</p>
+<body>
+<main>
+  <div class="top">
+    <a class="brand" href="/">Chhaon · छाँव</a>
+    <button class="lang" id="lang" type="button"><span class="en">हिंदी</span><span class="hi">English</span></button>
+  </div>
+
+  <h1><span class="en">About Chhaon</span><span class="hi">छाँव के बारे में</span></h1>
+  <p class="lead"><span class="en">Chhaon sends medicine reminders on WhatsApp to an older parent, or to whoever gives them their medicine, and tells the family when a dose is not confirmed.</span><span class="hi">छाँव बुज़ुर्ग माता-पिता को, या उन्हें दवा देने वाले को, WhatsApp पर दवा के रिमाइंडर भेजता है, और खुराक की पुष्टि न हो तो परिवार को बताता है।</span></p>
+
+  <section>
+    <h2><span class="en">Who runs Chhaon</span><span class="hi">छाँव कौन चलाता है</span></h2>
+    <p><span class="en">Chhaon is run by a small team in India (Team Chhaon). We build it for sons and daughters who look after a parent from another city.</span><span class="hi">छाँव भारत की एक छोटी टीम (टीम छाँव) चलाती है। हम इसे उन बेटे-बेटियों के लिए बना रहे हैं जो दूसरे शहर से अपने माता-पिता की देखभाल करते हैं।</span></p>
+    <p><span class="en">Chhaon only reminds of what the doctor prescribed. It never gives medical advice, never diagnoses and never tells anyone to change a medicine.</span><span class="hi">छाँव सिर्फ़ वही याद दिलाता है जो डॉक्टर ने लिखा है। यह कभी चिकित्सा सलाह नहीं देता, न बीमारी बताता है, न कभी दवा बदलने को कहता है।</span></p>
+  </section>
+
+  <section>
+    <h2><span class="en">How Chhaon makes money</span><span class="hi">छाँव का ख़र्च कैसे चलता है</span></h2>
+    <p><span class="en">Chhaon is free during the pilot. Later there will be a small yearly plan for families, and the price will be shown before anyone is asked to pay.</span><span class="hi">पायलट के दौरान छाँव मुफ़्त है। आगे चलकर परिवारों के लिए एक छोटा सालाना प्लान होगा, और किसी से भी पैसे लेने से पहले क़ीमत बताई जाएगी।</span></p>
+    <p><span class="en">We never sell data and never show ads.</span><span class="hi">हम कभी डेटा नहीं बेचते और कभी विज्ञापन नहीं दिखाते।</span></p>
+  </section>
+
+  <section>
+    <h2><span class="en">What we promise</span><span class="hi">हमारा वादा</span></h2>
+    <ul>
+      <li><span class="en">The person who gets the reminders agrees on WhatsApp first, and can reply STOP at any time.</span><span class="hi">जिन्हें रिमाइंडर मिलने हैं, वे पहले WhatsApp पर हाँ कहते हैं, और कभी भी STOP लिख सकते हैं।</span></li>
+      <li><span class="en">Chhaon never asks for money, an OTP, Aadhaar or bank details on WhatsApp. If anyone does, it is not us.</span><span class="hi">छाँव WhatsApp पर कभी पैसे, OTP, आधार या बैंक की जानकारी नहीं माँगता। कोई माँगे, तो वह हम नहीं हैं।</span></li>
+      <li><span class="en">Only the family members you invite can see your family’s information.</span><span class="hi">आपके परिवार की जानकारी सिर्फ़ वही देख सकते हैं जिन्हें आप जोड़ें।</span></li>
+      <li><span class="en">You can download all your data, or delete your account, any time.</span><span class="hi">आप कभी भी अपना सारा डेटा डाउनलोड कर सकते हैं, या अपना खाता हटा सकते हैं।</span></li>
+    </ul>
+    <p style="margin-top:12px"><span class="en">Details are in our <a href="/legal/privacy.html">privacy policy</a> and <a href="/legal/terms.html">terms of use</a>.</span><span class="hi">पूरी जानकारी हमारी <a href="/legal/privacy.html">गोपनीयता नीति</a> और <a href="/legal/terms.html">उपयोग की शर्तों</a> में है।</span></p>
+  </section>
+
+  <section>
+    <h2><span class="en">Contact us</span><span class="hi">हमसे संपर्क करें</span></h2>
+    <p><span class="en">Questions, ideas or a problem? Write to us at</span><span class="hi">कोई सवाल, सुझाव या परेशानी? हमें लिखें:</span> <a href="mailto:chhaon.app.mail@gmail.com">chhaon.app.mail@gmail.com</a></p>
+  </section>
+
+  <a class="cta" id="open-app" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+
+  <footer>© <span id="year">2026</span> Chhaon · <a href="/"><span class="en">Home</span><span class="hi">होम</span></a> · <a href="/legal/privacy.html"><span class="en">Privacy policy</span><span class="hi">गोपनीयता नीति</span></a></footer>
+</main>
+<script src="/about-page.js"></script>
+<script src="/ref-carry.js"></script>
 <script src="/count.js"></script>
 </body>
 </html>

@@ -7,8 +7,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 const SITE = "https://chhaon.site";
 const TITLE_EN = "Chhaon: WhatsApp medicine reminders for elderly parents";
 const TITLE_HI = "छाँव: बुज़ुर्ग माता-पिता के लिए WhatsApp पर दवा के रिमाइंडर";
-const DESC_EN = "WhatsApp medicine reminders for elderly parents, a pregnancy or a child. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install.";
-const DESC_HI = "बुज़ुर्ग माता-पिता, गर्भावस्था या बच्चे के लिए WhatsApp पर दवा के रिमाइंडर। खुराक की पुष्टि न हो तो परिवार को सूचना, और रोज़ का हाल-चाल। कुछ भी इंस्टॉल नहीं करना।"
+const DESC_EN = "WhatsApp medicine reminders for elderly parents, or for whoever gives them their medicine. Family alerts if a dose is not confirmed, and a daily check-in. Nothing to install.";
+const DESC_HI = "बुज़ुर्ग माता-पिता के लिए, या उन्हें दवा देने वाले के लिए, WhatsApp पर दवा के रिमाइंडर। खुराक की पुष्टि न हो तो परिवार को सूचना, और रोज़ का हाल-चाल। कुछ भी इंस्टॉल नहीं करना।"
 
 let s = readFileSync("public/home.html", "utf8");
 const swap = (from, to, min = 1) => {
@@ -38,6 +38,8 @@ const ARIA_HI = {
 for (const [en, hi] of Object.entries(ARIA_HI)) swap(`aria-label="${en}"`, `aria-label="${hi}"`);
 const leftover = [...s.matchAll(/aria-label="([^"]*[A-Za-z][^"]*)"/g)].map((m) => m[1]).filter((v) => v !== "Chhaon" && !/[ऀ-ॿ]/.test(v));
 if (leftover.length) throw new Error(`build-hindi-home: English aria-label(s) without Hindi: ${leftover.join(", ")}`);
+// "Open Chhaon" opens the app in Hindi: the app reads ?lang=hi once on load (languageFromAddress in src/App.tsx).
+swap('href="/app"', 'href="/app/?lang=hi"', 3);
 swap(`<title>${TITLE_EN}</title>`, `<title>${TITLE_HI}</title>`);
 swap(`content="${TITLE_EN}"`, `content="${TITLE_HI}"`, 2);   // og:title, twitter:title
 swap(`content="${DESC_EN}"`, `content="${DESC_HI}"`, 3);     // description, og:description, twitter:description

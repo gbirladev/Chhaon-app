@@ -2377,7 +2377,21 @@ function useScreenHistory() {
   return [screen, go] as const;
 }
 
+/** The Hindi home page (/hi/) opens the app as /app/?lang=hi: saved like the in-app language button, read once on load, then
+ *  dropped from the address so a reload keeps whatever the user picks later. Anything other than en / hi is ignored. */
+function languageFromAddress() {
+  try {
+    const url = new URL(window.location.href);
+    const lang = url.searchParams.get("lang");
+    if (lang === null) return;
+    url.searchParams.delete("lang");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    if (lang === "hi" || lang === "en") localStorage.setItem("carelink-language", JSON.stringify(lang));
+  } catch { /* storage or history blocked: the app keeps its own language */ }
+}
+
 export default function App() {
+  useState(languageFromAddress);  // before the language below is read: useState runs it once, on the first render
   const [screen, go] = useScreenHistory();
   const [storedLanguage, setLanguage] = usePersistentState<Language>("carelink-language", "en");
   const language: Language = storedLanguage === "hi" ? "hi" : "en";
