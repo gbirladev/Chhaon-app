@@ -36,12 +36,14 @@ public class AdminHealthService {
     private final GatewayProbe gateway;
     private final boolean schedulerEnabledHere;
     private final int volumeAmberPerDay;
+    private final DemoFamilies demo;
 
-    public AdminHealthService(JdbcTemplate jdbc, GatewayProbe gateway,
+    public AdminHealthService(JdbcTemplate jdbc, GatewayProbe gateway, DemoFamilies demo,
                               @Value("${chhaon.scheduler.enabled:false}") boolean schedulerEnabledHere,
                               @Value("${chhaon.admin.volume-amber-per-day:200}") int volumeAmberPerDay) {
         this.jdbc = jdbc;
         this.gateway = gateway;
+        this.demo = demo;
         this.schedulerEnabledHere = schedulerEnabledHere;
         this.volumeAmberPerDay = volumeAmberPerDay;
     }
@@ -400,8 +402,9 @@ public class AdminHealthService {
     HealthCheck consentPending() {
         Map<String, Object> r = jdbc.queryForMap(
                 "select count(*) n, count(*) filter (where coalesce(consent_requested_at, created_at) < now() - interval '24 hours') old, " +
-                "min(coalesce(consent_requested_at, created_at)) oldest from care_recipients " +
-                "where consent_at is null and opted_out_at is null and whatsapp_phone is not null");
+                "min(coalesce(consent_requested_at, created_at)) oldest from care_recipients r " +
+                "where consent_at is null and opted_out_at is null and whatsapp_phone is not null " +
+                "and not " + demo.isDemo("r"));   // the store review family and fake test numbers are not waiting customers
         long n = Rows.num(r.get("n"));
         long old = Rows.num(r.get("old"));
         Map<String, Object> f = facts("waiting", n, "waiting_over_24h", old);

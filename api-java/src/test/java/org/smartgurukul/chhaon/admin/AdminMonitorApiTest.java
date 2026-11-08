@@ -324,6 +324,39 @@ class AdminMonitorApiTest extends DbTest {
         assertThat(getJson("/api/v1/admin/feedback-inbox").get(0).path("phone").asText()).isEqualTo("+91 ••••• •0012");
     }
 
+    // ---------------------------------------------------------------- demo families and the consent check
+
+    @Test
+    void theReviewFamilyAndFakeTestNumbersAreNotCountedAsWaitingToSayYes() throws Exception {
+        long before = Rows.num(check("consent_pending").facts().get("waiting_over_24h"));
+        Family real = family("+919999812301");            // outside +91 99999: counted as before
+        Family fake = family("+919999912302");            // the fake test range +91 99999 xxxxx: left out
+        for (Family f : List.of(real, fake)) {
+            fx.jdbc().update("update care_recipients set consent_at = null, consent_requested_at = now() - interval '3 days', " +
+                    "created_at = now() - interval '3 days' where id = ?", f.recipientId());
+        }
+        HealthCheck c = check("consent_pending");
+        assertThat(Rows.num(c.facts().get("waiting_over_24h"))).isEqualTo(before + 1);
+        assertThat(c.status()).isEqualTo(HealthCheck.AMBER);
+
+        JsonNode realRow = null, fakeRow = null;
+        for (JsonNode r : getJson("/api/v1/admin/families")) {
+            if (r.path("recipient_id").asText().equals(real.recipientId().toString())) realRow = r;
+            if (r.path("recipient_id").asText().equals(fake.recipientId().toString())) fakeRow = r;
+        }
+        assertThat(realRow.path("badges").toString()).contains("consent_pending");
+        assertThat(fakeRow.path("badges").toString()).doesNotContain("consent_pending");
+        assertThat(fakeRow.path("is_canary").asBoolean()).isFalse();   // never turned into the canary
+
+        // the store review login: a circle whose owner signs in with OTP_REVIEW_PHONE is a demo family too
+        Family review = family("+919999812303");
+        fx.jdbc().update("update profiles set phone = ? where id = ?", fx.track("+919999812304"), review.userId());
+        String sql = "select count(*) from care_recipients r where r.id = ? and ";
+        assertThat(fx.jdbc().queryForObject(sql + new DemoFamilies("+91 99998 12304").isDemo("r"), Integer.class, review.recipientId())).isEqualTo(1);
+        assertThat(fx.jdbc().queryForObject(sql + new DemoFamilies("").isDemo("r"), Integer.class, review.recipientId())).isZero();
+        assertThat(fx.jdbc().queryForObject(sql + new DemoFamilies("+91 99998 12304").isDemo("r"), Integer.class, real.recipientId())).isZero();
+    }
+
     // ---------------------------------------------------------------- "Report a problem": New -> Looking -> Fixed
 
     @Test

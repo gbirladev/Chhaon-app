@@ -42,10 +42,13 @@ public class AdminMonitorService {
     private final int doseMissedMinutes;
     private final int checkinMissedMinutes;
 
-    public AdminMonitorService(JdbcTemplate jdbc,
+    private final DemoFamilies demo;
+
+    public AdminMonitorService(JdbcTemplate jdbc, DemoFamilies demo,
                                @Value("${chhaon.scheduler.dose-missed-minutes:60}") int doseMissedMinutes,
                                @Value("${chhaon.scheduler.checkin-missed-minutes:180}") int checkinMissedMinutes) {
         this.jdbc = jdbc;
+        this.demo = demo;
         this.doseMissedMinutes = doseMissedMinutes;
         this.checkinMissedMinutes = checkinMissedMinutes;
     }
@@ -105,10 +108,11 @@ public class AdminMonitorService {
 
     public List<Map<String, Object>> families() {
         List<Map<String, Object>> rows;
+        String sql = FAMILIES_SQL.replace("DEMO_FLAG", demo.isDemo("r"));
         try {
-            rows = familyRows(FAMILIES_SQL.replace("AUTH_SEEN", AUTH_SEEN));
+            rows = familyRows(sql.replace("AUTH_SEEN", AUTH_SEEN));
         } catch (org.springframework.dao.DataAccessException e) {
-            rows = familyRows(FAMILIES_SQL.replace("AUTH_SEEN", ""));
+            rows = familyRows(sql.replace("AUTH_SEEN", ""));
         }
         for (Map<String, Object> row : rows) row.put("badges", badges(row));
         return PhoneMask.maskRows(rows);
@@ -122,6 +126,8 @@ public class AdminMonitorService {
                 "select r.id recipient_id, r.circle_id, r.name, r.call_name, r.relation, r.care_type, r.is_self, r.whatsapp_phone, " +
                 "r.timezone, r.language, r.reminder_to, r.reminder_name, r.reminder_relation, ru.name reminder_user_name, " +
                 "ru.phone reminder_user_phone, r.consent_at, r.consent_requested_at, r.opted_out_at, r.checkin_enabled, r.created_at, " + R_CANARY + " is_canary, " +
+                "DEMO_FLAG is_demo, " +   // DemoFamilies: the store review family / fake test numbers
+
                 "exists(select 1 from phone_opt_outs o where o.phone = r.whatsapp_phone) phone_opted_out, " +
                 "(select coalesce(jsonb_agg(jsonb_build_object('user_id', p.id, 'name', p.name, 'email', p.email, 'phone', p.phone, " +
                 "    'role', m.role, 'plan', p.plan) order by m.role, p.name), '[]'::jsonb) " +
@@ -180,7 +186,9 @@ public class AdminMonitorService {
         if (Boolean.TRUE.equals(row.get("is_canary"))) b.add("canary");   // the test family (docs/canary.md), not a client
         boolean optedOut = row.get("opted_out_at") != null || Boolean.TRUE.equals(row.get("phone_opted_out"));
         if (optedOut) b.add("opted_out");
-        if (!optedOut && row.get("consent_at") == null && row.get("whatsapp_phone") != null) b.add("consent_pending");
+        // not for the store review family / fake test numbers (DemoFamilies): nobody real is waiting to say yes there
+        if (!optedOut && row.get("consent_at") == null && row.get("whatsapp_phone") != null && !Boolean.TRUE.equals(row.get("is_demo")))
+            b.add("consent_pending");
         if (Rows.num(row.get("sent_48h")) >= 2 && Rows.num(row.get("replied_48h")) == 0) b.add("no_reply_2d");
         if ("missed".equals(row.get("checkin_today"))) b.add("checkin_missed");
         if (Rows.num(row.get("low_stock")) > 0) b.add("low_stock");
