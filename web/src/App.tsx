@@ -435,13 +435,15 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
   const [notice, setNotice] = useState("");
   const pending = readPendingLogin();
   const destination = pending?.value || t("yourPhone");
+  // Login codes come on WhatsApp (docs/phone-otp-login.md); an email address is only kept for an older pending login.
+  const byWhatsapp = !pending?.value.includes("@");
   const verifying = useRef(false);  // synchronous: rapid taps must send one verify call
   useEffect(() => { if (!pending) go("welcome", { replace: true }); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
   const verify = async () => {
     if (verifying.current) return;
     setError("");
     if (!pending) return go("welcome", { replace: true });
-    if (otp.length < 6 || otp.length > 8) return setError(t("invalidCode"));  // Supabase sends 6 or 8 digits depending on the project setting
+    if (otp.length < 6 || otp.length > 8) return setError(t(byWhatsapp ? "invalidCodeWhatsapp" : "invalidCodeEmail"));  // Supabase sends 6 or 8 digits depending on the project setting
     verifying.current = true;
     setBusy(true);
     try {
@@ -467,11 +469,14 @@ function OtpScreen({ go, onVerified }: { go: (screen: Screen, options?: { replac
       <AppHeader title={t("title")} subtitle={t("subtitle", { destination })} back={() => go("welcome")} />
       <div className="otp-icon"><Icon name="shield" size={30} /></div>
       <h2>{t("heading")}</h2>
+      {byWhatsapp && <p className="otp-channel">{t("codeOnWhatsapp")}</p>}
       {import.meta.env.DEV && <p>{t("devHint")}</p>}
       <input className="otp-input" aria-label={t("heading")} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="one-time-code" placeholder="• • • • • •" autoFocus />
       {error && <p role="alert" className="form-error">{error}</p>}
       {notice && <p role="status" style={{ textAlign: "center", color: "var(--primary-text)" }}>{notice}</p>}
       <button className="primary-button" onClick={verify} disabled={busy}>{busy ? t("checking") : t("verify")}</button>
+      {/* wa.me with no number just opens WhatsApp on a phone, and WhatsApp Web / the desktop app on a computer. */}
+      {byWhatsapp && <a className="secondary-button otp-open-wa" href="https://wa.me/" target="_blank" rel="noopener noreferrer">{t("openWhatsapp")}</a>}
       <button className="text-button" onClick={resend}>{t("resend")}</button>
     </main>
   );
@@ -572,6 +577,9 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     return () => { cancelled = true; };
   }, [firstRun]);
   const [checkinTouched, setCheckinTouched] = useState(false);
+  // "More details (optional)": everything not needed to start reminders. Collapsed for a new person; open when editing a
+  // person who already has any of these filled in. The fields stay in the DOM (and in FormData) while it is closed.
+  const [moreOpen, setMoreOpen] = useState(() => !!recipient && (recipient.age != null || !!recipient.city || recipient.conditions.length > 0 || recipient.allergies.length > 0 || !!recipient.blood_group));
   const [reminderLang, setReminderLang] = useState<"en" | "hi">(storedSettings.reminder_language ?? (recipient?.language === "en" ? "en" : "hi"));
   const [helperName, setHelperName] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_name ?? "" : "");
   const [helperRelation, setHelperRelation] = useState(storedReceiver.reminder_to === "helper" ? storedReceiver.reminder_relation ?? "" : "");
@@ -651,6 +659,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
       else if (verdict === "own") found["f-refCode"] = tAll("referral.codeOwn");
     }
     setErrors(found);
+    if (["f-age", "f-conditions", "f-allergies", "f-refCode"].some((id) => found[id])) setMoreOpen(true);   // an error inside the closed section must be seen
     if (Object.keys(found).length || !whatsapp) return focusFirstError(found);
 
     const body = {
@@ -711,7 +720,7 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
     await onSaved(recipientId);
     setBusy(false);
   };
-  // No age for a pregnancy or a child (the due date / date of birth say more): the relation then stands alone.
+  // Up front on its own line: the relation picks the default "what do you call them" (Papa, Mummy, ...).
   const relationField = <Field id="f-relation" label={t("relation")}><select id="f-relation" name="relation" value={relation} onChange={(event) => { setRelation(event.target.value); setRelationTouched(true); if (!callTouched) setCallName(defaultCallName(event.target.value, language) || (followsName(careType) ? firstName : "")); }}>{relation === "" && <option value="">{t("relationChoose")}</option>}{RELATIONS.map((r) => <option key={r} value={r}>{t(`relations.${r}`)}</option>)}</select></Field>;
   return (
     <main className="scroll-page no-nav">
@@ -725,28 +734,27 @@ function ProfileForm({ go, recipient, adding = false, self = false, onSaved, onS
         {pregnant && dateMode === "lmp" && <Field id="f-dueDate" label={t("lmpDate")} error={errors["f-dueDate"]} hint={dueDate ? t("lmpHintDue", { date: formatDate(new Date(`${dueDate}T00:00:00`), language, { day: "numeric", month: "long", year: "numeric" }), week: pregnancyStatus(dueDate, todayIn(zoneValue))?.week ?? "-" }) : t("lmpHint")}><input {...fieldProps("f-dueDate", errors)} name="lmpDate" type="date" max={todayIn(zoneValue)} value={dueDate ? lmpFromDue(dueDate) : ""} onChange={(event) => setDueDate(event.target.value ? dueFromLmp(event.target.value) : "")} /></Field>}
         {child && <ChildDetailsFields value={childDetails} onChange={setChildDetails} today={todayIn(zoneValue)} errors={errors} guardianLocked={guardianDone} />}
         <Field id="f-name" label={t(isSelf ? "nameSelf" : pk("name"))} error={errors["f-name"]}><input {...fieldProps("f-name", errors)} name="name" autoComplete="off" maxLength={100} value={nameText} onChange={(event) => changeName(event.target.value)} /></Field>
-        {!isSelf && careType === "older" && <div className="two-col">
-          <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>
-          {relationField}
-        </div>}
-        {!isSelf && careType !== "older" && relationField}
+        {!isSelf && relationField}
         {!isSelf && <Field id="f-callName" label={t(pk("callName"))} hint={t(pk("callNameHint"))}><input id="f-callName" name="callName" autoComplete="off" maxLength={40} value={callName} onChange={(event) => { setCallName(event.target.value); setCallTouched(true); }} /></Field>}
         {!isSelf && <ReceiverChoice mode={receiver} onMode={chooseReceiver} call={callName.trim()} chip={t(pregnant ? "receiverPersonFallbackPregnant" : "receiverPersonFallback")} careType={careType} otherName={receiverName(storedReceiver) || t("receiverFamilyMember")}
           helperName={helperName} helperRelation={helperRelation} onHelperName={setHelperName} onHelperRelation={setHelperRelation} nameError={errors["f-helperName"]} />}
         <Field id="f-whatsapp" label={isSelf ? t("whatsappSelf") : receiver === "person" ? t("whatsapp") : receiver === "caregiver" ? t("whatsappMe") : receiver === "helper" ? t("whatsappHelper") : t("whatsappOther", { name: receiverName(storedReceiver) })} error={errors["f-whatsapp"]} hint={isSelf ? t("whatsappHintSelf") : receiver === "person" ? t(pk("whatsappHint")) : receiver === "caregiver" ? t("whatsappHintMe", { call: callName.trim() || t(pregnant ? "personWordPregnant" : child ? "personWordChild" : "receiverPersonFallback") }) : receiver === "helper" ? t("whatsappHintHelper") : t("whatsappHintOther")}><input {...fieldProps("f-whatsapp", errors)} name="whatsapp" inputMode="tel" autoComplete="off" placeholder="+91 99999 00001" value={phoneText} readOnly={receiver === "other"} onChange={(event) => setPhoneText(event.target.value)} /></Field>
         {sharedWith && <p className="form-note" role="status">{receiver === "caregiver" && sharedWith.isSelf ? t("sharedNumberMe") : t(isSelf || sharedWith.isSelf ? "sharedNumberSelf" : "sharedNumber", { name: sharedWith.name })}</p>}
         {!isSelf && receiver !== "person" && <ReceiverLanguageField value={reminderLang} onChange={setReminderLang} mode={receiver} name={receiver === "helper" ? helperName : receiver === "other" ? receiverName(storedReceiver) : ""} />}
-        {!isSelf && !child && receiver === "person" && <CheckinSwitch on={checkinOn} pregnant={pregnant} onChange={(on) => { setCheckinOn(on); setCheckinTouched(true); }} />}
-        <Field id="f-timezone" label={t(pk("timezone"))} hint={t(pk("timezoneHint"))}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
-        {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
-        <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
-        <div className="two-col">
+        <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
+        <details className="more-details" open={moreOpen} onToggle={(event) => setMoreOpen(event.currentTarget.open)}>
+          <summary>{t("moreDetails")}<small>{t("moreDetailsHint")}</small></summary>
+          {!isSelf && careType === "older" && <Field id="f-age" label={t("age")} error={errors["f-age"]}><input {...fieldProps("f-age", errors)} name="age" inputMode="numeric" defaultValue={recipient?.age ?? ""} /></Field>}
+          {!isSelf && !child && receiver === "person" && <CheckinSwitch on={checkinOn} pregnant={pregnant} onChange={(on) => { setCheckinOn(on); setCheckinTouched(true); }} />}
+          <Field id="f-timezone" label={t(pk("timezone"))} hint={t(pk("timezoneHint"))}><select id="f-timezone" name="timezone" value={zoneValue} onChange={(event) => { setZone(event.target.value); setZoneTouched(true); }}>{zoneOptions.map((z) => <option key={z} value={z}>{z.replace("_", " ")}</option>)}</select></Field>
+          {!isSelf && <Field id="f-city" label={t("city")}><input id="f-city" name="city" list="city-options" autoComplete="off" maxLength={100} placeholder={t("cityPlaceholder")} defaultValue={recipient?.city ?? ""} /><datalist id="city-options">{CITIES.map((city) => <option key={city} value={city} />)}</datalist></Field>}
+          <Field id="f-conditions" label={t("conditions")} error={errors["f-conditions"]}><input {...fieldProps("f-conditions", errors)} name="conditions" placeholder={t("conditionsPlaceholder")} defaultValue={recipient?.conditions.join(", ") ?? ""} /></Field>
           <Field id="f-bloodGroup" label={t("bloodGroup")}><select id="f-bloodGroup" name="bloodGroup" defaultValue={recipient?.blood_group ?? ""}><option value="">{t("notSure")}</option>{["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => <option key={group}>{group}</option>)}</select></Field>
-          <Field id="f-language" label={t("language")}><select id="f-language" name="language" defaultValue={recipient ? (recipient.language === "en" ? "en" : "hi") : isSelf ? (language === "en" ? "en" : "hi") : "hi"}><option value="hi">{t("langHindi")}</option><option value="en">{t("langEnglish")}</option></select></Field>
-        </div>
-        <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
-        {firstRun && <HeardFromQuestion value={heardFrom} onChange={setHeardFrom} />}
-        {firstRun && <ReferralCodeField value={refCode} onChange={setRefCode} locked={refLocked} error={errors["f-refCode"]} />}
+          <Field id="f-allergies" label={t("allergies")} error={errors["f-allergies"]}><input {...fieldProps("f-allergies", errors)} name="allergies" placeholder={t("allergiesPlaceholder")} defaultValue={recipient?.allergies.join(", ") ?? ""} /></Field>
+          {firstRun && <HeardFromQuestion value={heardFrom} onChange={setHeardFrom} />}
+          {/* The code from a ?ref= link is in refCode state from the start and saved from there, whether or not this section was opened. */}
+          {firstRun && <ReferralCodeField value={refCode} onChange={setRefCode} locked={refLocked} error={errors["f-refCode"]} />}
+        </details>
         {!recipient && <p className="form-note">{t(isSelf ? "noteSelf" : pk("note"))}</p>}
       </form>
       {error && <p role="alert" className="form-error">{error}</p>}
