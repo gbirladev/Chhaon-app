@@ -12,4 +12,5 @@
 .weekly-card dt { color: var(--text-muted); }
 .weekly-card dd { margin: 0; }
 .weekly-quiet { margin: 0 0 6px; color: var(--text-muted); font-size: max(0.875rem, 12px); }
+.weekly-share { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; text-decoration: none; }
 .weekly-note { margin: 12px 0 0; color: var(--text-muted); font-size: max(0.8125rem, 12px); line-height: 1.45; }

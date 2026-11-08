@@ -62,6 +62,7 @@ import { CareTypePicker, SupplementChips } from "./screens/Pregnancy";
 import { PregnancyHome } from "./screens/PregnancyHome";
 import { CheckinSwitch, ReceiverChoice, ReceiverLanguageField, ReceiverNote } from "./screens/ReminderReceiver";
 import { WeeklyCard } from "./screens/WeeklySummary";
+import { ConsentInviteCard } from "./screens/ConsentInvite";
 import { pendingReferralCode, saveHeardFrom, saveReferredBy, sendPendingReferral, validateReferralCode, type HeardFrom } from "./lib/referral";   // also reads ?ref= from the address at start-up
 import { HeardFromQuestion, ReferralCodeField } from "./screens/Referral";
 import { InviteFriendsScreen } from "./screens/InviteFriends";
@@ -1399,6 +1400,7 @@ function Today({ go, language, setLanguage, recipient, recipients, notifications
         {!isChild(recipient) && <NextVaccine go={go} recipient={recipient} />}
       </>}
 
+      <ConsentInviteCard recipient={recipient} call={call} />
       <AlertsCard compact />
       <SeeAllActivity go={go} />
       {recipient && !isPregnancy(recipient) && <LoveCard recipient={recipient} call={call} />}

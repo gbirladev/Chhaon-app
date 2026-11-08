@@ -120,6 +120,14 @@ export default function PublicEmergency() {
           </main>
         );
       })()}
+      {/* Last on the page, after all emergency information: a quiet plain link (no image, script or font from elsewhere). */}
+      {result !== null && (
+        <footer className="pe-footer">
+          <a href="https://chhaon.site/?ref=card" target="_blank" rel="noopener noreferrer">
+            {createTranslator({ locale: lang, messages: MESSAGES[lang], namespace: "shareLoops" })("cardFooter")}
+          </a>
+        </footer>
+      )}
     </div>
   );
 }

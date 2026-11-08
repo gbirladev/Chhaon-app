@@ -2319,5 +2319,14 @@
       "format": "Use 4 to 15 letters or numbers (not a code like CRE022).",
       "too_many": "You have changed your code 3 times already."
     }
+  },
+  "shareLoops": {
+    "cardFooter": "Emergency card made with Chhaon · free WhatsApp medicine reminders for parents · chhaon.site",
+    "weekShare": "Share this week on WhatsApp",
+    "weekShareText": "{call} took {confirmed} of {total} medicine doses this week 💚 We use Chhaon for the reminders: {link}",
+    "consentTitle": "{call} said yes on WhatsApp 🎉",
+    "consentBody": "Invite your brother or sister so they see {call}'s ✅ too.",
+    "consentInvite": "Invite brother or sister",
+    "consentNotNow": "Not now"
   }
 }

@@ -1,0 +1,6 @@
+/* "Papa said yes, invite your brother or sister" on Today. Shared colour tokens, so every theme and dark mode work. */
+.consent-invite { margin: 0 0 16px; padding: 16px; border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px var(--sh-1e443f-a06); overflow-wrap: anywhere; }
+.consent-invite h3 { margin: 0 0 4px; font-size: 1.0625rem; }
+.consent-invite p { margin: 0 0 12px; color: var(--text-muted); line-height: 1.45; }
+.consent-invite-actions { display: flex; flex-direction: column; gap: 4px; }
+.consent-invite-actions .text-button { min-height: 44px; }
