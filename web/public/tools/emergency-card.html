@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Free emergency medical card for parents, wallet or fridge | Chhaon</title>
+<meta name="x-title-en" content="Free emergency medical card for parents, wallet or fridge | Chhaon" />
+<meta name="x-title-hi" content="माता-पिता के लिए इमरजेंसी कार्ड, बटुए या फ़्रिज के लिए, मुफ़्त | छाँव" />
+<meta name="description" content="Make a wallet-size or fridge (A5) emergency card with blood group, allergies, conditions, medicines and emergency contacts, in English or Hindi. Free, and nothing you type leaves your phone." />
+<meta name="theme-color" content="#faf8fc" />
+<link rel="icon" href="/favicon.ico" sizes="48x48" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+<link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="canonical" href="https://chhaon.site/tools/emergency-card" />
+<meta property="og:site_name" content="Chhaon" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://chhaon.site/tools/emergency-card" />
+<meta property="og:title" content="Free emergency card for Papa and Mummy (English / हिंदी)" />
+<meta property="og:description" content="Blood group, allergies, medicines and who to call, on a wallet card or a fridge sheet. Free, nothing you type leaves your phone." />
+<meta property="og:image" content="https://chhaon.site/og-image.jpg" />
+<link rel="stylesheet" href="/site-theme.css" />
+<link rel="stylesheet" href="/tools/tools.css" />
+<script src="/site-theme.js"></script>
+<style>
+  /* Sizes inside the cards are in cqw (a share of the card's own width), so the screen preview and the printed card
+     (85.6 x 54 mm wallet, or an A5 sheet) keep exactly the same layout. */
+  .ec { color: #111; font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Devanagari", sans-serif; }
+  .pair { display: grid; gap: 12px; max-width: 440px; margin: 0 auto; }
+  .face { container-type: inline-size; background: #fff; aspect-ratio: 85.6 / 54; border-radius: 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); overflow: hidden; display: flex; flex-direction: column; }
+  .face .band { background: #c62828; color: #fff; font-weight: 800; font-size: 5.2cqw; padding: 1.6cqw 4cqw; letter-spacing: .02em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .face .body { flex: 1; padding: 2.4cqw 4cqw 2cqw; font-size: 4cqw; line-height: 1.25; overflow: hidden; display: flex; flex-direction: column; gap: 1.1cqw; }
+  .face .nm { display: flex; justify-content: space-between; align-items: flex-start; gap: 3cqw; }
+  .face .nm b { font-size: 7cqw; line-height: 1.1; overflow-wrap: anywhere; }
+  .face .age { font-size: 4.2cqw; font-weight: 600; }
+  .bg { flex: none; border: .7cqw solid #c62828; color: #c62828; border-radius: 2cqw; text-align: center; padding: .6cqw 2cqw; font-weight: 900; font-size: 8cqw; line-height: 1; min-width: 17cqw; }
+  .bg small { display: block; font-size: 2.6cqw; font-weight: 700; letter-spacing: .02em; }
+  .k { font-weight: 800; }
+  .k.red { color: #c62828; }
+  .face .row { overflow-wrap: anywhere; }
+  .face .fine { margin-top: auto; font-size: 2.9cqw; color: #444; display: flex; justify-content: space-between; gap: 2cqw; }
+  .face .call b { font-size: 4.4cqw; }
+  .face .sos { font-weight: 800; font-size: 3.8cqw; }
+
+  .a5 { container-type: inline-size; background: #fff; max-width: 560px; margin: 0 auto; padding: 5cqw; border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); }
+  .a5 .band { background: #c62828; color: #fff; font-weight: 900; font-size: 6.4cqw; padding: 2.4cqw 4cqw; border-radius: 2cqw; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .a5 .nm { display: flex; justify-content: space-between; align-items: center; gap: 4cqw; margin: 4cqw 0 2cqw; }
+  .a5 .nm b { font-size: 8cqw; line-height: 1.1; overflow-wrap: anywhere; display: block; }
+  .a5 .age { font-size: 4.6cqw; font-weight: 600; }
+  .a5 .bg { font-size: 10cqw; min-width: 22cqw; border-width: .8cqw; }
+  .a5 .bg small { font-size: 3cqw; }
+  .a5 .sec { border-top: .4cqw solid #ccc; padding: 2.2cqw 0; font-size: 4.4cqw; line-height: 1.35; overflow-wrap: anywhere; }
+  .a5 .sec .k { display: block; font-size: 3.6cqw; text-transform: uppercase; letter-spacing: .03em; color: #333; }
+  .a5 .sec .k.red { color: #c62828; }
+  .a5 .sec ul { margin: .5cqw 0 0; padding-left: 5cqw; }
+  .a5 .call { font-size: 5cqw; font-weight: 800; }
+  .a5 .sos { font-size: 4.6cqw; font-weight: 900; text-align: center; border: .5cqw solid #111; border-radius: 2cqw; padding: 1.6cqw; margin: 2cqw 0; }
+  .a5 .disc { font-size: 3.2cqw; font-weight: 700; margin: 2cqw 0 1cqw; }
+  .a5 .fine { font-size: 3cqw; color: #444; border-top: .3cqw solid #999; padding-top: 1.4cqw; }
+  .cut-help { font-size: .95rem; color: #333; text-align: center; margin: 8px auto 0; max-width: 440px; }
+  .cut-help .disc { font-weight: 700; }
+  .ec-hide { display: none !important; }
+
+  @media print {
+    .pair { display: flex; gap: 0; max-width: none; width: 171.2mm; border: .3mm dashed #555; }
+    .face { width: 85.6mm; height: 54mm; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+    .face + .face { border-left: .3mm dotted #888; }
+    .cut-help { max-width: 171.2mm; text-align: left; margin: 4mm 0 0; font-size: 10pt; }
+    .a5 { max-width: none; width: 100%; padding: 0; box-shadow: none; border-radius: 0; }
+    /* A5 is short for its width: a little tighter on paper so a typical card fits one page. */
+    .a5 .band { font-size: 5.6cqw; padding: 1.8cqw 3cqw; }
+    .a5 .nm { margin: 2.6cqw 0 1.4cqw; }
+    .a5 .nm b { font-size: 7cqw; }
+    .a5 .bg { font-size: 8.6cqw; }
+    .a5 .sec { padding: 1.5cqw 0; font-size: 4cqw; line-height: 1.28; }
+    .a5 .sec .k { font-size: 3.2cqw; }
+    .a5 .call { font-size: 4.4cqw; }
+    .a5 .sos { font-size: 4.2cqw; padding: 1.2cqw; margin: 1.4cqw 0; }
+    .a5 .disc { font-size: 3cqw; margin: 1.2cqw 0 .6cqw; }
+  }
+</style>
+<style id="ec-page">@media print { @page { size: A4 portrait; margin: 12mm; } }</style>
+</head>
+<body>
+<header class="t-bar no-print">
+  <div class="in">
+    <a class="t-brand" href="/" aria-label="Chhaon home"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect class="logo-tile" width="64" height="64" rx="14"/><path class="logo-roof" d="M13 30 32 14l19 16"/><path class="logo-heart" d="M32 50 21.5 40a6.6 6.6 0 0 1 9.3-9.4l1.2 1.1 1.2-1.1a6.6 6.6 0 0 1 9.3 9.4Z"/></svg><span>Chhaon</span></a>
+    <button class="t-lang" id="t-lang" type="button"><span class="en" lang="hi">हिंदी</span><span class="hi" lang="en">English</span><span class="sr"><span class="en"> (switch page language)</span><span class="hi"> (पेज की भाषा बदलें)</span></span></button>
+  </div>
+</header>
+
+<main class="tool">
+  <h1><span class="en">Free emergency card for Papa or Mummy</span><span class="hi">पापा या मम्मी के लिए इमरजेंसी कार्ड, मुफ़्त</span></h1>
+  <p class="lead"><span class="en">Blood group, allergies, conditions, medicines and who to call, on a wallet card or a fridge sheet (A5). In English or Hindi.</span><span class="hi">ब्लड ग्रुप, एलर्जी, बीमारियाँ, दवाएँ और किसे फ़ोन करें, बटुए के कार्ड या फ़्रिज वाले पन्ने (A5) पर। अंग्रेज़ी या हिंदी में।</span></p>
+  <div class="privacy"><span class="ic" aria-hidden="true">🔒</span><p><b><span class="en">Nothing you type leaves your phone.</span><span class="hi">आप जो भी लिखते हैं, वह आपके फ़ोन से बाहर नहीं जाता।</span></b><span class="en">The card is made right here in your browser. It is not sent, not saved and gone when you close the page.</span><span class="hi">कार्ड यहीं आपके ब्राउज़र में बनता है। न कहीं भेजा जाता है, न सेव होता है; पेज बंद करते ही मिट जाता है।</span></p></div>
+  <p class="disclaimer" role="note"><span class="en">This is not medical advice. Please follow your doctor's prescription.</span><span class="hi">यह चिकित्सा सलाह नहीं है। कृपया अपने डॉक्टर के पर्चे के अनुसार ही दवा लें।</span></p>
+
+  <form id="ec-form" novalidate autocomplete="off">
+    <section class="card-f" aria-labelledby="h-person">
+      <h2 id="h-person"><span class="en">About the person</span><span class="hi">व्यक्ति के बारे में</span></h2>
+      <label class="field"><span><span class="en">Name</span><span class="hi">नाम</span></span>
+        <input type="text" name="name" maxlength="60" data-ph-en="e.g. Ramesh Kumar" data-ph-hi="जैसे: रमेश कुमार" /></label>
+      <div class="row2">
+        <label class="field"><span><span class="en">Age</span><span class="hi">उम्र</span></span>
+          <input type="number" name="age" min="0" max="120" inputmode="numeric" data-ph-en="e.g. 72" data-ph-hi="जैसे: 72" /></label>
+        <label class="field"><span><span class="en">Blood group</span><span class="hi">ब्लड ग्रुप</span></span>
+          <select name="blood">
+            <option value="" data-en="Not sure" data-hi="पता नहीं">Not sure</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select></label>
+      </div>
+      <label class="field"><span><span class="en">Allergies</span><span class="hi">एलर्जी</span></span>
+        <input type="text" name="allergies" maxlength="120" data-ph-en="e.g. Penicillin, peanuts (or: none known)" data-ph-hi="जैसे: पेनिसिलिन, मूंगफली (या: कोई नहीं)" />
+        <small><span class="en">Separate with commas.</span><span class="hi">कॉमा (,) लगाकर अलग करें।</span></small></label>
+      <label class="field"><span><span class="en">Health conditions</span><span class="hi">बीमारियाँ</span></span>
+        <input type="text" name="conditions" maxlength="120" data-ph-en="e.g. Type 2 diabetes, high BP" data-ph-hi="जैसे: शुगर (डायबिटीज़), हाई BP" /></label>
+      <label class="field"><span><span class="en">Current medicines (as on the prescription)</span><span class="hi">अभी चल रही दवाएँ (जैसा पर्चे पर लिखा है)</span></span>
+        <textarea name="meds" rows="4" maxlength="500" data-ph-en="One per line, name and dose as the doctor wrote" data-ph-hi="हर लाइन में एक दवा, नाम और खुराक जैसा डॉक्टर ने लिखा"></textarea></label>
+    </section>
+
+    <section class="card-f" aria-labelledby="h-contacts">
+      <h2 id="h-contacts"><span class="en">Who to call</span><span class="hi">किसे फ़ोन करें</span></h2>
+      <fieldset class="chips" style="display:block"><legend><span class="en">Emergency contact 1</span><span class="hi">आपातकालीन संपर्क 1</span></legend>
+        <div class="row2 stack">
+          <label class="field"><span><span class="en">Name</span><span class="hi">नाम</span></span><input type="text" name="c1name" maxlength="40" data-ph-en="e.g. Priya (daughter)" data-ph-hi="जैसे: प्रिया (बेटी)" /></label>
+          <label class="field"><span><span class="en">Phone</span><span class="hi">फ़ोन</span></span><input type="tel" name="c1phone" maxlength="20" inputmode="tel" placeholder="+91 99999 00001" /></label>
+        </div></fieldset>
+      <fieldset class="chips" style="display:block"><legend><span class="en">Emergency contact 2</span><span class="hi">आपातकालीन संपर्क 2</span></legend>
+        <div class="row2 stack">
+          <label class="field"><span><span class="en">Name</span><span class="hi">नाम</span></span><input type="text" name="c2name" maxlength="40" data-ph-en="e.g. Amit (son)" data-ph-hi="जैसे: अमित (बेटा)" /></label>
+          <label class="field"><span><span class="en">Phone</span><span class="hi">फ़ोन</span></span><input type="tel" name="c2phone" maxlength="20" inputmode="tel" placeholder="+91 99999 00002" /></label>
+        </div></fieldset>
+      <fieldset class="chips" style="display:block"><legend><span class="en">Doctor</span><span class="hi">डॉक्टर</span></legend>
+        <div class="row2 stack">
+          <label class="field"><span><span class="en">Doctor's name</span><span class="hi">डॉक्टर का नाम</span></span><input type="text" name="docname" maxlength="40" data-ph-en="e.g. Dr. Sunita Rao" data-ph-hi="जैसे: डॉ. सुनीता राव" /></label>
+          <label class="field"><span><span class="en">Doctor's phone</span><span class="hi">डॉक्टर का फ़ोन</span></span><input type="tel" name="docphone" maxlength="20" inputmode="tel" placeholder="+91 99999 00003" /></label>
+        </div></fieldset>
+    </section>
+
+    <section class="card-f" aria-labelledby="h-out">
+      <h2 id="h-out"><span class="en">Card</span><span class="hi">कार्ड</span></h2>
+      <fieldset class="chips">
+        <legend><span class="en">Size</span><span class="hi">साइज़</span></legend>
+        <label class="chip"><input type="radio" name="fmt" value="wallet" checked /><span><span class="en">Wallet card</span><span class="hi">बटुए का कार्ड</span></span></label>
+        <label class="chip"><input type="radio" name="fmt" value="a5" /><span><span class="en">Fridge sheet (A5)</span><span class="hi">फ़्रिज वाला पन्ना (A5)</span></span></label>
+      </fieldset>
+      <fieldset class="chips">
+        <legend><span class="en">Card language</span><span class="hi">कार्ड की भाषा</span></legend>
+        <label class="chip"><input type="radio" name="out-lang" value="en" /><span>English</span></label>
+        <label class="chip"><input type="radio" name="out-lang" value="hi" /><span lang="hi">हिंदी</span></label>
+      </fieldset>
+    </section>
+  </form>
+</main>
+
+<section class="print-area preview-wrap" aria-labelledby="h-prev">
+  <h2 id="h-prev" class="no-print"><span class="en">Your card</span><span class="hi">आपका कार्ड</span></h2>
+  <div class="actions no-print">
+    <button type="button" class="btn primary" id="do-print">🖨 <span class="en">Print</span><span class="hi">प्रिंट करें</span></button>
+    <button type="button" class="btn ghost" id="do-image">🖼 <span class="en">Save as image</span><span class="hi">फ़ोटो के रूप में सेव करें</span></button>
+  </div>
+  <p class="status no-print" id="ec-status" role="status" aria-live="polite"></p>
+  <p class="warn no-print" id="ec-warn" hidden><span class="en">Too much to fit on the wallet card. Shorten the lists, or choose the fridge sheet (A5).</span><span class="hi">बटुए के कार्ड पर इतना नहीं आएगा। लिस्ट छोटी करें, या फ़्रिज वाला पन्ना (A5) चुनें।</span></p>
+  <div class="preview"><div class="ec" id="ec-out" aria-label="Card preview"></div></div>
+  <p class="note no-print"><span class="en">Wallet card: print at 100% (actual size), cut along the dashed line, fold in the middle and laminate or put it in a plastic sleeve. Fridge sheet: print on A5, or on A4 and trim.</span><span class="hi">बटुए का कार्ड: 100% (असली साइज़) पर प्रिंट करें, डैश वाली लाइन पर काटें, बीच से मोड़ें और लैमिनेट करवा लें या प्लास्टिक कवर में रखें। फ़्रिज वाला पन्ना: A5 पर प्रिंट करें, या A4 पर छापकर काट लें।</span></p>
+</section>
+
+<section class="tool no-print" style="padding-top:0">
+  <div class="upgrade">
+    <h2><span class="en">A paper card goes out of date. The live one does not.</span><span class="hi">कागज़ का कार्ड पुराना हो जाता है। लाइव कार्ड नहीं।</span></h2>
+    <p><span class="en">In the Chhaon app, Papa's emergency card is a private link with a QR code. It is always up to date (a new medicine shows at once), opens on any phone without a login, and you can switch it off any time.</span><span class="hi">छाँव ऐप में पापा का इमरजेंसी कार्ड एक प्राइवेट लिंक है, QR कोड के साथ। यह हमेशा अपडेट रहता है (नई दवा तुरंत दिखती है), किसी भी फ़ोन पर बिना लॉगिन खुलता है, और आप इसे कभी भी बंद कर सकते हैं।</span></p>
+    <a class="btn ghost" href="/app"><span class="en">See the live emergency card</span><span class="hi">लाइव इमरजेंसी कार्ड देखें</span></a>
+  </div>
+</section>
+
+<section class="soft-cta no-print">
+  <a class="btn primary" href="/app"><span class="en">Get these as WhatsApp reminders for Papa — free</span><span class="hi">पापा को दवाएँ WhatsApp पर याद दिलाएँ, मुफ़्त</span></a>
+  <p><span class="en">Papa taps ✅ Taken on WhatsApp at medicine time, and you see it at once. Nothing for him to install.</span><span class="hi">दवा के समय पापा WhatsApp पर ✅ दबाते हैं, और आपको तुरंत पता चल जाता है। उन्हें कुछ इंस्टॉल नहीं करना।</span></p>
+</section>
+
+<footer class="t-foot no-print">
+  <span>© 2026 Chhaon</span>
+  <a href="/tools/"><span class="en">More free tools</span><span class="hi">और मुफ़्त टूल</span></a>
+  <a href="/tools/medicine-timetable"><span class="en">Medicine timetable</span><span class="hi">दवा की समय-सारणी</span></a>
+  <a href="/legal/privacy.html"><span class="en">Privacy</span><span class="hi">गोपनीयता</span></a>
+  <a href="/"><span class="en">Home</span><span class="hi">होम</span></a>
+</footer>
+
+<script src="/tools/tools-common.js"></script>
+<script src="/tools/emergency-card.js"></script>
+<script src="/ref-carry.js"></script>
+<script src="/count.js"></script>
+</body>
+</html>
