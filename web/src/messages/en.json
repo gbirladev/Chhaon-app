@@ -103,7 +103,7 @@
     "phoneLabel": "Phone number",
     "phoneNote": "Only for login. We never call you or share your number.",
     "emailLabel": "Email address",
-    "phonePlaceholder": "98765 43210",
+    "phonePlaceholder": "99999 99999",
     "emailPlaceholder": "you@example.com",
     "continue": "Continue with OTP",
     "sending": "Sending…",

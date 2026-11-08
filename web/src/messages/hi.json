@@ -103,7 +103,7 @@
     "phoneLabel": "फ़ोन नंबर",
     "phoneNote": "सिर्फ़ लॉगिन के लिए। हम आपको कभी कॉल नहीं करेंगे, न ही आपका नंबर किसी को देंगे।",
     "emailLabel": "ईमेल पता",
-    "phonePlaceholder": "98765 43210",
+    "phonePlaceholder": "99999 99999",
     "emailPlaceholder": "you@example.com",
     "continue": "OTP से आगे बढ़ें",
     "sending": "भेजा जा रहा है…",
