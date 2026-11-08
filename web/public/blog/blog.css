@@ -1,0 +1,42 @@
+/* Blog pages (/blog/, /blog/*.html, /blog/hi/*.html). Colours come from /site-theme.css (light / dark and every site colour). */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg, #faf8fc); color: var(--ink, #1d1928); font: 17px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif; }
+html[lang="hi"] body { line-height: 1.8; }
+.blog-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 720px; margin: 0 auto; padding: 14px 16px; }
+.blog-bar .brand { display: flex; align-items: center; gap: 9px; text-decoration: none; color: inherit; font-weight: 800; font-size: 1.1rem; }
+.blog-bar .brand img { width: 32px; height: 32px; border-radius: 8px; }
+.blog-bar nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.blog-bar nav a { color: var(--pt, #6943a5); font-weight: 700; text-decoration: none; font-size: .95rem; }
+main.post, main.blog-index { max-width: 720px; margin: 0 auto; padding: 8px 16px 48px; }
+.post h1, .blog-index h1 { font-size: 1.75rem; line-height: 1.25; margin: 12px 0 8px; }
+.post h2 { font-size: 1.25rem; line-height: 1.3; margin: 32px 0 6px; }
+.post p, .post li { margin: 10px 0; }
+.post a { color: var(--pt, #6943a5); }
+.post ul, .post ol { padding-left: 1.3rem; }
+.byline { color: var(--muted, #555061); font-size: .92rem; margin: 0 0 18px; }
+.byline a { color: var(--pt, #6943a5); }
+.note { background: var(--warm-tint, #fff0e6); color: var(--ink, #1d1928); border-left: 4px solid var(--accent, #a3461a); padding: 12px 14px; border-radius: 8px; margin: 18px 0; }
+.note p { margin: 0; }
+.post .checklist { list-style: none; padding: 8px 16px; background: var(--surface, #fff); border: 1px solid var(--line, #e5e2eb); border-radius: 14px; }
+.checklist li { position: relative; padding-left: 32px; }
+.checklist li:before { content: "✓"; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ok, #3a9d72); color: #fff; font-size: 13px; font-weight: 800; display: grid; place-items: center; }
+.post figure { margin: 24px 0; text-align: center; }
+.post video { display: block; width: min(300px, 100%); height: auto; aspect-ratio: 9 / 16; margin: 0 auto; border-radius: 20px; background: #15121c; box-shadow: 0 18px 40px rgba(29, 25, 40, .22); }
+.post figcaption { color: var(--muted, #555061); font-size: .9rem; margin-top: 10px; }
+.table-wrap { overflow-x: auto; }
+.post table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: .95rem; background: var(--surface, #fff); }
+.post th, .post td { border: 1px solid var(--line, #e5e2eb); padding: 8px 10px; text-align: left; vertical-align: top; }
+.post th { background: var(--mint, #f4f1fb); }
+.cta-box { margin: 36px 0 0; padding: 22px 18px; border-radius: 18px; background: var(--mint, #f4f1fb); border: 1px solid var(--line, #e5e2eb); text-align: center; }
+.cta-box p { margin: 0 0 14px; }
+.cta-box .btn { display: inline-block; padding: 14px 24px; border-radius: 999px; background: var(--primary, #6943a5); color: var(--on-primary, #fff); font-weight: 800; text-decoration: none; }
+.cta-box small { display: block; margin-top: 12px; color: var(--muted, #555061); }
+.lang-switch { margin: 28px 0 0; font-size: .95rem; }
+.blog-index .intro { color: var(--muted, #555061); margin: 0 0 8px; }
+.blog-index h2 { font-size: 1.2rem; margin: 30px 0 10px; }
+.post-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.post-list a { display: block; padding: 14px 16px; border-radius: 14px; background: var(--surface, #fff); border: 1px solid var(--line, #e5e2eb); text-decoration: none; color: inherit; }
+.post-list b { display: block; color: var(--pt, #6943a5); line-height: 1.35; }
+.post-list span { display: block; color: var(--muted, #555061); font-size: .93rem; margin-top: 4px; }
+.blog-foot { max-width: 720px; margin: 0 auto; padding: 18px 16px 40px; color: var(--muted, #555061); font-size: .9rem; border-top: 1px solid var(--line, #e5e2eb); }
+.blog-foot a { color: var(--pt, #6943a5); margin-right: 14px; text-decoration: none; font-weight: 600; display: inline-block; padding: 4px 0; }
