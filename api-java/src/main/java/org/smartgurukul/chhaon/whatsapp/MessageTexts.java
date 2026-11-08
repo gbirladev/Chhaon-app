@@ -3,6 +3,7 @@ package org.smartgurukul.chhaon.whatsapp;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.smartgurukul.chhaon.whatsapp.reply.ReplyTexts;
 
 /**
  * Messages WE start (dose reminder, daily check-in, consent request, alert opt-in). The self-hosted gateway has no
@@ -206,17 +207,23 @@ public final class MessageTexts {
         return ReminderTexts.checkinText(ReminderTexts.Reader.person(language, callName));
     }
 
-    /** The first message to a parent: asks for agreement (consent) before anything else is ever sent. */
+    /**
+     * The first message to a parent: asks for agreement (consent) before anything else is ever sent. It comes from a number
+     * the parent does not know, so it names the service and says up front what we never ask for (ReplyTexts.neverAsks);
+     * otherwise it reads like a scam. No link or website: fraud rule, Chhaon never sends links.
+     */
     public static String consentRequest(String language, String callName, String caregiverName) {
         String by = clean(caregiverName, 40);
         if (hi(language)) {
             return "नमस्ते" + who(callName) + " 🙏\n"
-                    + (by.isEmpty() ? "आपका परिवार चाहता है कि आपको WhatsApp पर दवा का समय याद दिलाया जाए।"
-                                    : by + " आपको WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।")
+                    + (by.isEmpty() ? "आपका परिवार चाहता है कि आपको छाँव के ज़रिए WhatsApp पर दवा का समय याद दिलाया जाए।"
+                                    : by + " आपको छाँव के ज़रिए WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।")
+                    + "\n\n" + ReplyTexts.neverAsks(language)
                     + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         return "Namaste" + who(callName) + " 🙏\n" + (by.isEmpty() ? "Your family" : by)
-                + " would like to send you gentle medicine reminders on WhatsApp."
+                + " would like to send you gentle medicine reminders on WhatsApp through Chhaon."
+                + "\n\n" + ReplyTexts.neverAsks(language)
                 + "\n\nReply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 

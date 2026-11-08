@@ -40,6 +40,7 @@ import { FeedbackScreen } from "./screens/Feedback";
 import { LoveCard, LoveLink, LoveScreen } from "./screens/Love";
 import { InstallBanner, InstallLink, PullIndicator } from "./screens/Install";
 import { EscalationProgress, SafetyNetLink, SafetyNetScreen } from "./screens/SafetyNet";
+import { formatSender, useFeatures } from "./lib/escalation";
 import { usePullToRefresh } from "./lib/pullToRefresh";
 import { WalletDetail, WalletScreen } from "./screens/Wallet";
 import { loadIsAdmin } from "./lib/stats";
@@ -1014,6 +1015,9 @@ function TrialBanner({ go }: { go: (screen: Screen) => void }) {
 
 function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string }) {
   const t = useTranslations("today");
+  const toast = useToast();
+  // The number our WhatsApp comes from (GET /features), so the family can tell the parent which message to trust.
+  const { sender } = useFeatures();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   // When the server says to wait, the button counts down to the moment it may be pressed again.
@@ -1043,7 +1047,14 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   const title = recipient.is_self ? t("consentPendingTitleSelf") : toMe ? t("consentPendingTitleMe") : toOther ? t("consentPendingTitleReceiver", { name: who }) : t("consentPendingTitle", { call });
   const body = stopped
     ? recipient.is_self ? t("consentStoppedSelf") : toMe ? t("consentStoppedMe", { call }) : toOther ? t("consentStoppedReceiver", { name: who, call }) : t("consentStopped", { call })
-    : recipient.is_self ? t("consentPendingSelf") : toMe ? t("consentPendingMe", { call }) : toOther ? t("consentPendingReceiver", { name: who, call }) : t("consentPending", { call });
+    : recipient.is_self ? t("consentPendingSelf") : toMe ? t("consentPendingMe", { call })
+    : toOther ? (sender ? t("consentPendingReceiverFrom", { name: who, call, number: formatSender(sender) }) : t("consentPendingReceiver", { name: who, call }))
+    : sender ? t("consentPendingFrom", { call, number: formatSender(sender) }) : t("consentPending", { call });
+  // Only when someone else must answer: they get a message from a number they do not know.
+  const showCopy = !stopped && !!sender && !recipient.is_self && !toMe;
+  const copySender = async () => {
+    try { await navigator.clipboard.writeText(sender as string); toast(t("consentNumberCopied")); } catch { toast(t("consentCopyFailed")); }
+  };
   const secondsLeft = waitUntil === null ? 0 : Math.max(0, Math.ceil((waitUntil - now) / 1000));
   const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const resend = async () => {
@@ -1079,7 +1090,12 @@ function ConsentBanner({ recipient, call }: { recipient: Recipient; call: string
   return (
     <SlimNotice tone={stopped ? "warn" : "info"} title={stopped ? t("consentStoppedTitle") : title}>
       <p>{body}</p>
-      {!stopped && <div className="sn-actions"><button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button></div>}
+      {!stopped && (
+        <div className="sn-actions">
+          <button onClick={resend} disabled={busy || secondsLeft > 0}>{t("consentResend")}</button>
+          {showCopy && <button onClick={copySender}>{t("consentCopyNumber")}</button>}
+        </div>
+      )}
       {secondsLeft > 0 && <p className="consent-note" aria-live="off">{t("consentWait", { time: clock })}</p>}
       {note && secondsLeft === 0 && <p className="consent-note">{note}</p>}
     </SlimNotice>

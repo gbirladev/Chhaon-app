@@ -1,6 +1,7 @@
 package org.smartgurukul.chhaon.whatsapp;
 
 import org.smartgurukul.chhaon.security.AuthenticatedUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,17 +26,26 @@ public class ConsentController {
     private static final Pattern E164 = Pattern.compile("^\\+[1-9][0-9]{7,14}$");
 
     private final ConsentService consent;
+    /** The number parents see our WhatsApp messages come from; null when not set (or not a valid E.164 number). */
+    private final String senderPhone;
 
-    public ConsentController(ConsentService consent) {
+    public ConsentController(ConsentService consent,
+                             @Value("${app.whatsapp.sender-phone:}") String senderPhone) {
         this.consent = consent;
+        String s = senderPhone == null ? "" : senderPhone.replaceAll("[\\s-]", "");
+        this.senderPhone = E164.matcher(s).matches() ? s : null;
     }
 
-    /** Which optional features this server has switched on. No login, no secrets. Both are off in the Java backend. */
+    /**
+     * Which optional features this server has switched on. No login, no secrets. Both are off in the Java backend. Also
+     * "sender": the WhatsApp number our messages come from (it writes to strangers anyway, so it is not a secret), when set.
+     */
     @GetMapping("/features")
-    public Map<String, Boolean> features() {
-        Map<String, Boolean> m = new LinkedHashMap<>();
+    public Map<String, Object> features() {
+        Map<String, Object> m = new LinkedHashMap<>();
         m.put("escalation", false);
         m.put("love", false);
+        if (senderPhone != null) m.put("sender", senderPhone);
         return m;
     }
 

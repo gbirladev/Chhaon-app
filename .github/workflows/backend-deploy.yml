@@ -72,6 +72,8 @@ jobs:
           WHATSAPP_GATEWAY_URL: ${{ secrets.WHATSAPP_GATEWAY_URL }}
           WHATSAPP_GATEWAY_TOKEN: ${{ secrets.WHATSAPP_GATEWAY_TOKEN }}
           WHATSAPP_SENDER_SESSION_NAME: ${{ secrets.WHATSAPP_SENDER_SESSION_NAME }}
+          # The number families see our messages come from (E.164, e.g. +91...), shown on the Today screen. Blank keeps the value on the box.
+          WHATSAPP_SENDER_PHONE: ${{ secrets.WHATSAPP_SENDER_PHONE }}
           # Signs the gateway's webhook calls (same value as in the gateway). Blank keeps the value already on the box.
           WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
           # Supabase "Send SMS" hook secret: delivers login OTP codes over WhatsApp. Blank keeps the value on the box.

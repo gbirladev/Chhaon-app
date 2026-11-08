@@ -50,7 +50,26 @@ class MessageTextsTest {
         assertThat(en).contains("Namaste Papa").contains("Ananya").contains("Reply *1* or 👍 to start ✅").contains("Reply *2* if you do not want this").endsWith("You can reply STOP any time.");
         String hi = MessageTexts.consentRequest("hi", "पापा", "Ananya");
         clean(hi);
-        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("Ananya आपको WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।").contains("*1* या 👍 भेजें ✅").contains("*2* लिखें").endsWith("STOP लिखकर रोक सकते हैं।");
+        assertThat(hi).contains("नमस्ते पापा").contains("Ananya").contains("Ananya आपको छाँव के ज़रिए WhatsApp पर दवा के रिमाइंडर भेजना चाहते हैं।").contains("*1* या 👍 भेजें ✅").contains("*2* लिखें").endsWith("STOP लिखकर रोक सकते हैं।");
+    }
+
+    @Test
+    void consentRequestNamesChhaonAndSaysWhatWeNeverAskBeforeTheAnswers() {
+        // It comes from a number the parent does not know: without the name and the anti-fraud line it reads like a scam.
+        // No link or website though (fraud rule: Chhaon never sends a link, so a message with one is not from us).
+        assertThat(MessageTexts.consentRequest("en", "Papa", "Ananya")).isEqualTo("Namaste Papa 🙏\n"
+                + "Ananya would like to send you gentle medicine reminders on WhatsApp through Chhaon.\n\n"
+                + ReplyTexts.neverAsks("en") + "\n\n"
+                + "Reply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.");
+        for (String lang : List.of("en", "hi")) {
+            for (String t : List.of(MessageTexts.consentRequest(lang, "Papa", "Ananya"), MessageTexts.consentRequest(lang, "", ""),
+                    ReceiverTexts.consentRequest(lang, "helper", "Sunita", "Papa", "Ananya"),
+                    ReceiverTexts.consentRequest(lang, "caregiver", "Ananya", "Papa", "Ananya"))) {
+                assertThat(t).contains(lang.equals("hi") ? "छाँव" : "Chhaon").doesNotContain(".site").doesNotContain("http")
+                        .contains("\n\n" + ReplyTexts.neverAsks(lang) + "\n\n");
+                assertThat(t.indexOf(ReplyTexts.neverAsks(lang))).isLessThan(t.indexOf("*1*"));
+            }
+        }
     }
 
     @Test
@@ -76,7 +95,7 @@ class MessageTextsTest {
             assertThat(MessageTexts.checkin("en", blank)).startsWith("Good morning ☀️🙏");
             assertThat(MessageTexts.checkin("hi", blank)).startsWith("सुप्रभात ☀️🙏");
             assertThat(MessageTexts.consentRequest("en", blank, blank)).startsWith("Namaste 🙏\nYour family would like");
-            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपका परिवार चाहता है कि आपको WhatsApp पर दवा का समय याद दिलाया जाए।").doesNotContain("आपके परिवार");
+            assertThat(MessageTexts.consentRequest("hi", blank, blank)).contains("आपका परिवार चाहता है कि आपको छाँव के ज़रिए WhatsApp पर दवा का समय याद दिलाया जाए।").doesNotContain("आपके परिवार");
         }
         assertThat(MessageTexts.doseReminder("en", "Papa", null)).doesNotContain("(").doesNotContain("null");
         assertThat(MessageTexts.doseReminder("en", "Papa", "  ")).doesNotContain("()");

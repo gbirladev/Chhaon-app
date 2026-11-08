@@ -38,6 +38,15 @@ class ConsentRouteTest extends DbTest {
     }
 
     @Test
+    void featuresTellsTheSendingNumberOnlyWhenItIsAValidNumber() {
+        // Fake numbers only. Spaces and dashes typed into the setting are fine; anything else is left out.
+        assertThat(new ConsentController(null, "+91 99999-00001").features()).containsEntry("sender", "+919999900001");
+        assertThat(new ConsentController(null, "").features()).doesNotContainKey("sender");
+        assertThat(new ConsentController(null, null).features()).doesNotContainKey("sender");
+        assertThat(new ConsentController(null, "call us").features()).doesNotContainKey("sender");
+    }
+
+    @Test
     void aMemberAsksOnce_theParentGetsTheTypedQuestion_andAnswering1GivesConsent() throws Exception {
         Family f = fx.family("en", false);
 

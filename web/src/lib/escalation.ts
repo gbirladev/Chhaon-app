@@ -46,8 +46,9 @@ export async function handleEscalation(id: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------- which features the server has switched on
-export type Features = { escalation: boolean; love: boolean };
-const NONE: Features = { escalation: false, love: false };
+/** sender: the WhatsApp number our messages come from (E.164), when the server says it; null otherwise. */
+export type Features = { escalation: boolean; love: boolean; sender: string | null };
+const NONE: Features = { escalation: false, love: false, sender: null };
 let known: Features | null = null;
 
 export async function loadFeatures(): Promise<Features> {
@@ -56,11 +57,18 @@ export async function loadFeatures(): Promise<Features> {
     const response = await fetch(`${resolveLocalUrl(import.meta.env.VITE_API_URL)}/features`);
     if (!response.ok) return NONE;
     const body = (await response.json()) as Partial<Features>;
-    known = { escalation: body.escalation === true, love: body.love === true };
+    const sender = typeof body.sender === "string" && /^\+[1-9]\d{7,14}$/.test(body.sender) ? body.sender : null;
+    known = { escalation: body.escalation === true, love: body.love === true, sender };
     return known;
   } catch {
     return NONE;   // server asleep or unreachable: show nothing rather than a screen that may not work
   }
+}
+
+/** "+919999900001" -> "+91 99999 00001" (Indian mobiles), others as given. Non-breaking spaces keep it on one line. */
+export function formatSender(e164: string): string {
+  const m = /^\+91(\d{5})(\d{5})$/.exec(e164);
+  return m ? `+91\u00a0${m[1]}\u00a0${m[2]}` : e164;
 }
 
 export function useFeatures(): Features {

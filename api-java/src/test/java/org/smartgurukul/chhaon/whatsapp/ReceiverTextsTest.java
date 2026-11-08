@@ -112,11 +112,11 @@ class ReceiverTextsTest {
             }
         }
         assertThat(ReceiverTexts.consentRequest("en", "helper", "Sunita", "Papa", "Ganesh"))
-                .contains("Ganesh would like to send you reminders for Papa's medicines here on WhatsApp.");
+                .contains("Ganesh would like to send you reminders for Papa's medicines here on WhatsApp through Chhaon.");
         assertThat(ReceiverTexts.consentRequest("en", "helper", "Sunita", "Papa", ""))
                 .contains("Papa's family would like to send you reminders");
         assertThat(ReceiverTexts.consentRequest("en", "caregiver", "Ganesh", "Papa", "Ganesh"))
-                .contains("You chose to get Papa's medicine reminders here on WhatsApp.");
+                .contains("You chose to get Papa's medicine reminders here on WhatsApp from Chhaon.");
     }
 
     @Test

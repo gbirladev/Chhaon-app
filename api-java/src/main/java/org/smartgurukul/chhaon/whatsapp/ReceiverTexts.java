@@ -93,22 +93,23 @@ public final class ReceiverTexts {
             String hello = "नमस्ते" + greet(language, reminderTo, receiverName) + " 🙏\n";
             String body;
             if (CAREGIVER.equals(reminderTo)) {
-                body = "आपने " + p + " की दवाओं के रिमाइंडर यहाँ WhatsApp पर मँगवाए हैं।";
+                body = "आपने " + p + " की दवाओं के रिमाइंडर छाँव से यहाँ WhatsApp पर मँगवाए हैं।";
             } else {
                 body = by.isEmpty()
-                        ? p + " का परिवार आपको यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहता है।"
-                        : by + " आपको यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहते हैं।";
+                        ? p + " का परिवार आपको छाँव के ज़रिए यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहता है।"
+                        : by + " आपको छाँव के ज़रिए यहाँ WhatsApp पर " + p + " की दवाओं के रिमाइंडर भेजना चाहते हैं।";
             }
-            return hello + body + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
+            return hello + body + "\n\n" + ReplyTexts.neverAsks(language) + "\n\nशुरू करने के लिए *1* या 👍 भेजें ✅\nनहीं चाहिए तो *2* लिखें\n\nकभी भी STOP लिखकर रोक सकते हैं।";
         }
         String body;
         if (CAREGIVER.equals(reminderTo)) {
-            body = "You chose to get " + possessive(p) + " medicine reminders here on WhatsApp.";
+            body = "You chose to get " + possessive(p) + " medicine reminders here on WhatsApp from Chhaon.";
         } else {
             body = (by.isEmpty() ? possessive(p) + " family" : by) + " would like to send you reminders for "
-                    + possessive(p) + " medicines here on WhatsApp.";
+                    + possessive(p) + " medicines here on WhatsApp through Chhaon.";
         }
         return "Namaste" + greet(language, reminderTo, receiverName) + " 🙏\n" + body
+                + "\n\n" + ReplyTexts.neverAsks(language)
                 + "\n\nReply *1* or 👍 to start ✅\nReply *2* if you do not want this\n\nYou can reply STOP any time.";
     }
 
