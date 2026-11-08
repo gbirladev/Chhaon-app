@@ -29,10 +29,13 @@ public class ConsentService {
 
     private static final Logger log = LoggerFactory.getLogger(ConsentService.class);
 
-    /** position: the place in the pilot line (status pilot_full only, docs/pilot-cap.md). */
-    public record Result(String status, Integer retryAfter, Integer position) {
+    /**
+     * position: the place in the pilot line; days: about how many days until their turn (0 = today, null = no estimate). Both for
+     * status pilot_full only (docs/pilot-cap.md).
+     */
+    public record Result(String status, Integer retryAfter, Integer position, Integer days) {
         public Result(String status, Integer retryAfter) {
-            this(status, retryAfter, null);
+            this(status, retryAfter, null, null);
         }
     }
 
@@ -73,7 +76,7 @@ public class ConsentService {
         if (r.get("consent_at") != null) return new Result("already_consented", null);
         // Pilot cap (docs/pilot-cap.md): the first message to a new number waits in line while the pilot is full.
         PilotService.Admission admission = pilot.admit(recipientId, userId);
-        if (!admission.ok()) return new Result("pilot_full", null, admission.position());
+        if (!admission.ok()) return new Result("pilot_full", null, admission.position(), pilot.waitDays(admission.position()));
 
         JsonNode claim = claim(phone, userId);
         String status = claim.path("status").asText();

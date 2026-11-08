@@ -149,6 +149,9 @@ public class AlertDelivery {
     }
 
     private String text(Map<String, Object> n, Map<String, Object> parent, String language, String caregiverZone) {
+        if ("pilot_admitted".equals(n.get("type")) && parent != null && Boolean.TRUE.equals(parent.get("is_self"))) {
+            return AlertTexts.pilotAdmittedSelf(language);   // "Me": the consent request went to their own number
+        }
         String parentName = null;
         String parentZone = null;
         if (parent != null) {

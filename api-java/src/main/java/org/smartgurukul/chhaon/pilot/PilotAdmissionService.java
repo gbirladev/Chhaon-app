@@ -87,18 +87,24 @@ public class PilotAdmissionService {
             if ("pilot_full".equals(result.status())) break;   // no room yet: everyone behind waits too
             if ("sent".equals(result.status())) {
                 sent++;
-                notifyAdmitted(userId, recipientId);
+                notifyAdmitted(recipientId);
             }
             // too_soon / too_many / already_consented / opted_out / no_phone: let in or not ours to send; go on
         }
         return sent;
     }
 
-    /** The caregiver's "It's your turn" (web: notif.pilot_admitted). The canary trigger drops it for the canary family. */
-    private void notifyAdmitted(UUID userId, UUID recipientId) {
+    /**
+     * "It's your turn" for everyone in the circle (web: notif.pilot_admitted). The bell rings in the app, and AlertDelivery (the
+     * scheduler's last step) also sends it on WhatsApp to each member who switched WhatsApp alerts on and confirmed it
+     * (AlertTexts pilot_admitted), so a family who closed the tab still hears. The canary trigger drops it for the canary family.
+     */
+    private void notifyAdmitted(UUID recipientId) {
         try {
-            jdbc.update("insert into notifications (user_id, type, payload) values (?, 'pilot_admitted', " +
-                    "jsonb_build_object('recipient_id', ?::text))", userId, recipientId);
+            jdbc.update("insert into notifications (user_id, type, payload) " +
+                    "select m.user_id, 'pilot_admitted', jsonb_build_object('recipient_id', ?::text) " +
+                    "from care_circle_members m join care_recipients r on r.circle_id = m.circle_id where r.id = ?",
+                    recipientId, recipientId);
         } catch (Exception e) {
             log.warn("pilot_admitted notification not stored ({})", e.getClass().getSimpleName());
         }

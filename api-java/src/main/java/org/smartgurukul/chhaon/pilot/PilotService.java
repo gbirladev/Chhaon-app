@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -53,6 +54,40 @@ public class PilotService {
             log.warn("pilot position unavailable ({})", e.getClass().getSimpleName());
             return null;
         }
+    }
+
+    /**
+     * An honest guess of how long someone at {@code position} still waits (docs/pilot-cap.md): 0 = today (there is room left in
+     * today's quota), N = about N days at max_new_per_day a day, null = no guess (every seat is taken, so it depends on someone
+     * stopping; or no daily room at all). "Today" is the rolling 24 hours pilot_admit counts. Never throws.
+     */
+    public Integer waitDays(Integer position) {
+        if (position == null || position < 1) return null;
+        try {
+            if (!installed()) return null;
+            Map<String, Object> s = jdbc.queryForList(
+                    "select s.enabled, s.max_active, s.max_new_per_day, public.pilot_seats_used() used, " +
+                    "(select count(*) from public.pilot_queue q where q.admitted_at > now() - interval '24 hours')::int new_24h " +
+                    "from public.pilot_settings s where s.id").stream().findFirst().orElse(null);
+            if (s == null || !Boolean.TRUE.equals(s.get("enabled"))) return null;
+            return waitDays(position, num(s.get("max_active")), num(s.get("used")), num(s.get("max_new_per_day")), num(s.get("new_24h")));
+        } catch (Exception e) {
+            log.warn("pilot wait estimate unavailable ({})", e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /** The arithmetic of {@link #waitDays(Integer)}, kept pure for tests. */
+    static Integer waitDays(int position, int maxActive, int seatsUsed, int maxNewPerDay, int new24h) {
+        if (position < 1 || maxNewPerDay <= 0) return null;
+        if (position > maxActive - seatsUsed) return null;   // all seats taken: depends on someone leaving, no date to promise
+        int leftToday = Math.max(0, maxNewPerDay - new24h);
+        if (position <= leftToday) return 0;
+        return (position - leftToday + maxNewPerDay - 1) / maxNewPerDay;
+    }
+
+    private static int num(Object o) {
+        return o instanceof Number n ? n.intValue() : 0;
     }
 
     /** The Monitor's Pilot card: numbers and the waiting line (names only, no phone numbers). Null when not installed. */

@@ -7,11 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.smartgurukul.chhaon.security.JwtService;
 import org.smartgurukul.chhaon.support.DbTest;
+import org.smartgurukul.chhaon.support.Fixtures;
 import org.smartgurukul.chhaon.support.Fixtures.Family;
+import org.smartgurukul.chhaon.whatsapp.AlertDelivery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -35,6 +38,9 @@ class PilotCapTest extends DbTest {
 
     @Autowired
     ObjectMapper json;
+
+    @Autowired
+    AlertDelivery alerts;
 
     /** Fake numbers only: +91 99999 xxxxx. */
     private String fakePhone() {
@@ -112,6 +118,51 @@ class PilotCapTest extends DbTest {
         assertThat(fx.notifications(second.userId(), "pilot_admitted")).isEqualTo(1);
         assertThat(admission.runOnce()).isZero();   // let in once: not asked again
         assertThat(wa.sentTo(second.phone())).hasSize(1);
+    }
+
+    @Test
+    void theAdmittedFamilyHearsOnWhatsApp_onlyThoseWithAlertsOn() throws Exception {
+        Family first = family();
+        Family second = family();
+        UUID sister = fx.member(second, "Priya");
+        UUID uncle = fx.member(second, "Vikram");   // never turned WhatsApp alerts on
+        String ownerAlerts = fx.track(Fixtures.randomPhone());
+        String sisterAlerts = fx.track(Fixtures.randomPhone());
+        fx.alertsOn(second.userId(), ownerAlerts);
+        fx.alertsOn(sister, sisterAlerts);
+        ask(first);
+        ask(second);
+        fx.jdbc().update("update care_recipients set opted_out_at = now() where id = ?", first.recipientId());
+        assertThat(admission.runOnce()).isEqualTo(1);
+
+        assertThat(fx.notifications(sister, "pilot_admitted")).isEqualTo(1);
+        assertThat(fx.notifications(uncle, "pilot_admitted")).isEqualTo(1);   // the bell rings for everyone in the circle
+        alerts.deliver(second.recipientId());
+        for (String phone : List.of(ownerAlerts, sisterAlerts)) {
+            assertThat(wa.sentTo(phone)).hasSize(1);
+            assertThat(wa.sentTo(phone).get(0).text()).contains("Good news 🎉 Papa's reminders on Chhaon can start now.")
+                    .contains("We've sent Papa a WhatsApp message").doesNotContain(second.phone()).doesNotContain("http");
+        }
+        assertThat(fx.outbox(uncle, "pilot_admitted").get(0).get("whatsapp_skipped_at")).isNotNull();
+        alerts.deliver(second.recipientId());   // never twice
+        assertThat(wa.sentTo(ownerAlerts)).hasSize(1);
+    }
+
+    @Test
+    void thePlaceInLineComesWithAnEstimate_aboutNDays_orNoneWhenEverySeatIsTaken() throws Exception {
+        limits(true, 10, 1);   // seats free, one new number a day
+        Family first = family();
+        Family second = family();
+        Family third = family();
+        assertThat(ask(first)).isEqualTo("{\"status\":\"sent\"}");   // today's one
+        assertThat(ask(second)).isEqualTo("{\"status\":\"pilot_full\",\"position\":1,\"days\":1}");
+        assertThat(ask(third)).isEqualTo("{\"status\":\"pilot_full\",\"position\":2,\"days\":2}");
+        String list = mvc.perform(get("/api/v1/recipients").header("Authorization", bearer(third.userId(), false)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(list).contains("\"pilotPosition\":2").contains("\"pilotDays\":2");
+
+        limits(true, 0, 1);   // every seat taken: no date to promise
+        assertThat(ask(second)).isEqualTo("{\"status\":\"pilot_full\",\"position\":1}");
     }
 
     @Test

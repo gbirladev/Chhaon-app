@@ -21,6 +21,7 @@ type RecipientDto = {
   optedOutAt: string | null; consentRequestedAt: string | null; createdAt: string; updatedAt: string;
   careType?: string | null; dueDate?: string | null;   // absent from a backend older than the care-type change (migration 0043)
   pilotPosition?: number | null;   // place in the pilot line (docs/pilot-cap.md); absent from an older backend
+  pilotDays?: number | null;       // about how many days until their turn: 0 = today, null = no estimate
 };
 const toRecipient = (d: RecipientDto): Recipient => ({
   id: d.id, circle_id: d.circleId, name: d.name, relation: d.relation ?? "other", call_name: d.callName,
@@ -33,12 +34,19 @@ const toRecipient = (d: RecipientDto): Recipient => ({
   care_type: d.careType === "pregnant" || d.careType === "child" ? d.careType : "older", due_date: d.dueDate ?? null,
   ...receiverRow(d),   // who gets the WhatsApp reminders (lib/reminderReceiver.ts)
   pilot_position: typeof d.pilotPosition === "number" ? d.pilotPosition : null,
+  pilot_days: typeof d.pilotDays === "number" ? d.pilotDays : null,
 } as unknown as Recipient);
 
 /** Place in the pilot line while the pilot is full (docs/pilot-cap.md), or null when not waiting. */
 export const pilotPositionOf = (r: Recipient): number | null => {
   const p = (r as unknown as { pilot_position?: unknown }).pilot_position;
   return typeof p === "number" ? p : null;
+};
+
+/** About how many days until their turn in the pilot line: 0 = today, null = no estimate (every seat taken). */
+export const pilotDaysOf = (r: Recipient): number | null => {
+  const d = (r as unknown as { pilot_days?: unknown }).pilot_days;
+  return typeof d === "number" ? d : null;
 };
 
 /** The caregiver's own profile from the Java API; shared by alerts/layout/privacy/admin reads. */
@@ -196,7 +204,7 @@ export const isLowStock = (m: Medicine) => m.stock !== null && m.threshold !== n
 export type ConsentResult = "sent" | "already_consented" | "opted_out" | "too_soon" | "too_many" | "no_phone" | "pilot_full" | "error";
 
 /** Asks the backend to send the parent a WhatsApp message requesting their agreement. Never throws. */
-export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number; position?: number }> {
+export async function requestConsent(recipientId: string): Promise<{ result: ConsentResult; retryAfter?: number; position?: number; days?: number }> {
   try {
     const token = authToken();
     if (!token) return { result: "error" };
@@ -205,8 +213,8 @@ export async function requestConsent(recipientId: string): Promise<{ result: Con
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok) return { result: "error" };
-    const body = (await response.json()) as { status: ConsentResult; retry_after?: number; position?: number };
-    return { result: body.status, retryAfter: body.retry_after, position: body.position };
+    const body = (await response.json()) as { status: ConsentResult; retry_after?: number; position?: number; days?: number };
+    return { result: body.status, retryAfter: body.retry_after, position: body.position, days: body.days };
   } catch {
     return { result: "error" };
   }

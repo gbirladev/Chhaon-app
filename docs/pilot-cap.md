@@ -12,6 +12,11 @@ waits. The app shows "Chhaon is in pilot... You're #N in line". Every 10 minutes
 first people in line in while there is room: it sends their consent request and the caregiver gets a notification
 ("Good news: it's Papa's turn").
 
+The app also gives an honest estimate under the place in line (`PilotService.waitDays`): "usually today" while today's quota
+has room for their position, else "usually in about N days" = ceil((position - room left today) / max_new_per_day); no date
+while every seat is taken (then it depends on someone stopping). The "It's your turn" notification goes to everyone in the
+circle, and on WhatsApp (`AlertTexts` type `pilot_admitted`) to each member who switched WhatsApp alerts on and confirmed it.
+
 ## What counts
 
 - A **seat** is a WhatsApp number (not the canary, not stopped) that agreed, or was let in during the last 7 days and has not
