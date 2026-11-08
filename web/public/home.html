@@ -158,6 +158,8 @@
 <link rel="stylesheet" href="/site-theme.css" />
 <!-- Appearance (shared with the app) before the first paint, and old-link forwarding. A file, not inline: the production CSP is script-src 'self'. -->
 <script src="/site-theme.js"></script>
+<!-- Ad visitors (?ref=AD…): sets class "ad" on <html> before the first paint, then wires the "Not for you?" card. -->
+<script src="/ad-hero.js"></script>
 <style>
   /* Colours come from /site-theme.css (the app's colour themes, light or dark). Only layout lives here. */
   :root { --shadow: 0 18px 50px rgba(var(--shadow-c), .14); --radius: 24px; }
@@ -219,6 +221,30 @@
   .proof { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 26px; color: var(--muted); font-size: .96rem; font-weight: 600; }
   .proof span { display: inline-flex; align-items: center; gap: 8px; }
   .proof i { width: 20px; height: 20px; border-radius: 50%; background: var(--tick-bg); color: var(--pt); display: grid; place-items: center; font-style: normal; font-size: .75rem; font-weight: 800; }
+
+  .cta-note { margin: -12px 0 16px; color: var(--muted); font-size: .96rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .cta-note i { width: 20px; height: 20px; border-radius: 50%; background: var(--tick-bg); color: var(--pt); display: grid; place-items: center; font-style: normal; font-size: .75rem; font-weight: 800; flex: 0 0 20px; }
+
+  /* Ad visitors (?ref=AD…): /ad-hero.js puts class "ad" on <html> in <head>, before the first paint, and the hero swaps to the
+     message of the ad they tapped. Without JS (or without an AD code) the ad block stays hidden and the normal hero shows. */
+  .ad-only { display: none !important; }
+  html.ad .ad-only { display: block !important; }
+  html.ad .gen-only { display: none !important; }
+  html.ad .hero .wrap { padding-top: 22px; }
+  .ad-hero h1 { font-size: clamp(1.75rem, 4.4vw, 3.2rem); }
+  .ad-hero .lead { margin: 12px 0 12px; font-size: 1.06rem; line-height: 1.5; }
+  .ad-ticks { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 6px; font-weight: 700; font-size: .98rem; }
+  .ad-ticks li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+  .ad-ticks li:before { content: "✓"; flex: 0 0 22px; height: 22px; border-radius: 50%; background: var(--tick-bg); color: var(--pt); display: grid; place-items: center; font-size: .75rem; font-weight: 800; }
+  .ad-hero .btn.primary { min-width: 220px; font-size: 1.1rem; }
+  .ad-steps { margin-top: 10px; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+  /* "Not for you?": a calm card under the ad hero, one tap sends an anonymous count (no names, no numbers). */
+  .why-not { margin-top: 26px; padding: 14px 14px 12px; border: 1px dashed var(--line); border-radius: 18px; background: var(--surface); max-width: 34em; }
+  .why-not p { font-size: .9rem; font-weight: 700; color: var(--muted); margin-bottom: 10px; }
+  .why-not .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .why-not button { font: inherit; font-size: .88rem; font-weight: 600; color: var(--ink); background: var(--bg); border: 1.5px solid var(--line); border-radius: 999px; min-height: 40px; padding: 6px 13px; cursor: pointer; text-align: left; line-height: 1.3; }
+  .why-not button:hover { border-color: var(--pt); }
+  .why-not .thanks { font-weight: 700; color: var(--pt); font-size: .98rem; margin: 0; }
 
   @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
@@ -429,22 +455,48 @@
 <div class="hero">
   <div class="wrap">
     <div>
-      <span class="eyebrow"><span class="en">FOR FAMILIES ACROSS INDIA</span><span class="hi">पूरे भारत के परिवारों के लिए</span></span>
-      <h1><span class="en">Medicine reminders on WhatsApp for <em>the people you care for</em></span><span class="hi">जिनकी आप देखभाल करते हैं, उनके लिए <em>WhatsApp पर दवा के रिमाइंडर</em></span></h1>
-      <p class="lead"><span class="en"><strong>For your parents. Nothing to install.</strong> The reminder goes to Papa, or to whoever gives him the medicine. One tap on ✅ confirms it, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>आपके माता-पिता के लिए। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर पापा को जाता है, या उसे जो उन्हें दवा देता है। ✅ पर एक टैप से पुष्टि हो जाती है, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
-      <ul class="care-links" aria-label="Who it is for">
+      <!-- Ad visitors only (?ref=AD001 …): the same promise as the ad they tapped, and one clear action. -->
+      <div class="ad-hero ad-only">
+        <h1><span class="en">Papa lives in another city? <em>Know he took his medicine.</em></span><span class="hi">पापा दूसरे शहर में रहते हैं? <em>जानिए, उन्होंने दवा ली या नहीं।</em></span></h1>
+        <p class="lead"><span class="en">Papa gets a WhatsApp at medicine time and taps ✅ Taken. You see it at once. If a dose isn't confirmed, you're told.</span><span class="hi">दवा के समय पापा को WhatsApp आता है और वे ✅ ले ली पर टैप करते हैं। आपको तुरंत दिख जाता है। दवा की पुष्टि न हो, तो आपको बता दिया जाता है।</span></p>
+        <ul class="ad-ticks">
+          <li><span class="en">Free during our pilot</span><span class="hi">पायलट के दौरान मुफ़्त</span></li>
+          <li><span class="en">Nothing to install for Papa, just WhatsApp</span><span class="hi">पापा को कुछ इंस्टॉल नहीं करना, बस WhatsApp</span></li>
+          <li><span class="en">Hindi or English</span><span class="hi">हिंदी या अंग्रेज़ी</span></li>
+        </ul>
+        <a class="btn primary" href="/app"><span class="en">Start free</span><span class="hi">मुफ़्त शुरू करें</span></a>
+        <p class="ad-steps"><span class="en">Takes 2 minutes: your number → add Papa → he gets one WhatsApp asking if it's okay.</span><span class="hi">बस 2 मिनट: आपका नंबर → पापा को जोड़ें → पापा को एक WhatsApp आता है, जिसमें पूछा जाता है कि क्या यह ठीक है।</span></p>
+        <div class="why-not" id="why-not">
+          <div class="why-ask">
+            <p><span class="en">Not for you? Tell us why, one tap:</span><span class="hi">आपके काम का नहीं? एक टैप में बताइए क्यों:</span></p>
+            <div class="opts">
+              <button type="button" data-why="wont-use-whatsapp"><span class="en">Papa won't use WhatsApp</span><span class="hi">पापा WhatsApp नहीं चलाएँगे</span></button>
+              <button type="button" data-why="already-call-daily"><span class="en">I already call him daily</span><span class="hi">मैं रोज़ फ़ोन पर बात कर लेता/लेती हूँ</span></button>
+              <button type="button" data-why="someone-at-home"><span class="en">Someone at home handles it</span><span class="hi">घर पर कोई और संभाल लेता है</span></button>
+              <button type="button" data-why="would-feel-watched"><span class="en">Papa would feel watched</span><span class="hi">पापा को लगेगा कि उन पर नज़र रखी जा रही है</span></button>
+              <button type="button" data-why="privacy"><span class="en">Worried about my number/privacy</span><span class="hi">मेरे नंबर/प्राइवेसी की चिंता है</span></button>
+              <button type="button" data-why="other"><span class="en">Other</span><span class="hi">कुछ और</span></button>
+            </div>
+          </div>
+          <p class="thanks" hidden><span class="en">Thank you 🙏</span><span class="hi">धन्यवाद 🙏</span></p>
+        </div>
+      </div>
+      <span class="eyebrow gen-only"><span class="en">FOR FAMILIES ACROSS INDIA</span><span class="hi">पूरे भारत के परिवारों के लिए</span></span>
+      <h1 class="gen-only"><span class="en">Medicine reminders on WhatsApp for <em>the people you care for</em></span><span class="hi">जिनकी आप देखभाल करते हैं, उनके लिए <em>WhatsApp पर दवा के रिमाइंडर</em></span></h1>
+      <p class="lead gen-only"><span class="en"><strong>For your parents. Nothing to install.</strong> The reminder goes to Papa, or to whoever gives him the medicine. One tap on ✅ confirms it, and the family is told if a dose is not confirmed.</span><span class="hi"><strong>आपके माता-पिता के लिए। कुछ भी इंस्टॉल नहीं करना।</strong> रिमाइंडर पापा को जाता है, या उसे जो उन्हें दवा देता है। ✅ पर एक टैप से पुष्टि हो जाती है, और पुष्टि न हो तो परिवार को पता चल जाता है।</span></p>
+      <ul class="care-links gen-only" aria-label="Who it is for">
         <li><a href="#who-older"><span aria-hidden="true">👴</span><span class="en">Older parents</span><span class="hi">बुज़ुर्ग माता-पिता</span></a></li>
         <li><a href="#helper"><span aria-hidden="true">🤝</span><span class="en">A helper at home</span><span class="hi">घर पर मदद करने वाले</span></a></li>
       </ul>
-      <div class="cta">
-        <a class="btn primary" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+      <p class="cta-note gen-only"><i aria-hidden="true">✓</i><span class="en">Free during our pilot</span><span class="hi">पायलट के दौरान मुफ़्त</span></p>
+      <div class="cta gen-only">
+        <a class="btn primary" href="/app"><span class="en">Start free</span><span class="hi">मुफ़्त शुरू करें</span></a>
         <a class="btn ghost" href="#how"><span class="en">See how it works</span><span class="hi">देखिए कैसे काम करता है</span></a>
       </div>
-      <p class="doc-note"><span class="en">Are you a doctor? <a href="/doctors">See how Chhaon helps your patients →</a></span><span class="hi">क्या आप डॉक्टर हैं? <a href="/doctors">देखिए छाँव आपके मरीज़ों की कैसे मदद करता है →</a></span></p>
-      <div class="proof">
+      <p class="doc-note gen-only"><span class="en">Are you a doctor? <a href="/doctors">See how Chhaon helps your patients →</a></span><span class="hi">क्या आप डॉक्टर हैं? <a href="/doctors">देखिए छाँव आपके मरीज़ों की कैसे मदद करता है →</a></span></p>
+      <div class="proof gen-only">
         <span><i>✓</i><span class="en">Only WhatsApp needed</span><span class="hi">सिर्फ़ WhatsApp चाहिए</span></span>
         <span><i>✓</i><span class="en">English and Hindi</span><span class="hi">हिंदी और अंग्रेज़ी</span></span>
-        <span><i>✓</i><span class="en">Free during the pilot</span><span class="hi">पायलट के दौरान मुफ़्त</span></span>
       </div>
     </div>
     <div class="phone-stage">
@@ -628,7 +680,7 @@
     <div class="final reveal">
       <h2><span class="en">Be their shade, near or far.</span><span class="hi">पास हों या दूर, बनिए उनकी छाँव।</span></h2>
       <p><span class="en">Add the first person in about two minutes. No cost during the pilot.</span><span class="hi">लगभग दो मिनट में पहला व्यक्ति जोड़िए। पायलट के दौरान कोई शुल्क नहीं।</span></p>
-      <a class="btn" href="/app"><span class="en">Open Chhaon</span><span class="hi">छाँव खोलें</span></a>
+      <a class="btn" href="/app"><span class="en">Start free</span><span class="hi">मुफ़्त शुरू करें</span></a>
     </div>
   </div>
 </section>
