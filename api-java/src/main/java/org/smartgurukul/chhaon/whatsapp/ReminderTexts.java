@@ -210,10 +210,18 @@ public final class ReminderTexts {
 
     /** The dose reminder as a poll (no formatting; at most {@value #POLL_QUESTION_MAX} characters). */
     public static Poll dosePoll(Reader r, List<Item> items, String slotTime) {
+        return dosePoll(r, items, slotTime, null);
+    }
+
+    /**
+     * The same poll with an extra first line (the sample label, {@link #sampleLabel}); the medicine list is shortened so the
+     * question with that line still fits in {@value #POLL_QUESTION_MAX} characters.
+     */
+    public static Poll dosePoll(Reader r, List<Item> items, String slotTime, String firstLine) {
         List<Item> list = items == null ? List.of() : items.stream().filter(Objects::nonNull).toList();
         boolean hi = r.hi();
         String p = r.p();
-        String head = head(r);
+        String head = (firstLine == null || firstLine.isBlank() ? "" : firstLine.strip() + "\n") + head(r);
         boolean many = list.size() > 1;
         String intro = "💊 " + (many ? listIntro(r, p, slotTime) : singleIntroPlain(r, p)) + ": ";
         String ask = pollAsk(r, p, many);
@@ -235,6 +243,33 @@ public final class ReminderTexts {
     public static String photoCaption(String medicine) {
         String med = MessageTexts.clean(medicine, 60);
         return med.isEmpty() ? "💊" : "💊 *" + med + "*";
+    }
+
+    // ---------------------------------------------------------------- the sample reminder (docs/sample-reminder.md)
+
+    /** First line of the "Send a sample reminder now" message; the normal reminder body follows it. */
+    public static String sampleLabel(String language) {
+        return "hi".equals(language)
+                ? "🔔 छाँव का नमूना रिमाइंडर (ताकि आप देख लें कि यह कैसा दिखेगा)"
+                : "🔔 Sample reminder from Chhaon (so you know what it looks like)";
+    }
+
+    /**
+     * The answer to a reply / tap / reaction on the sample: nothing was recorded, and when the real reminders start.
+     *
+     * @param when the next real reminder on the receiver's clock ("8:00 pm" / "रात 8:00", from {@link #slotTime}), or null
+     * @param tomorrow true when that time is tomorrow on the person's clock
+     */
+    public static String sampleAnswer(String language, String when, boolean tomorrow) {
+        boolean known = when != null && !when.isBlank();
+        if ("hi".equals(language)) {
+            return "👍 यह सिर्फ़ एक नमूना था, इसलिए कोई दवा दर्ज नहीं हुई। "
+                    + (known ? "असली रिमाइंडर " + (tomorrow ? "कल " : "") + when.strip() + " से आएँगे 🙏"
+                             : "असली रिमाइंडर दवा के समय पर आएँगे 🙏");
+        }
+        return "👍 That was only a sample, so no medicine was marked as taken. "
+                + (known ? "The real reminders start at " + when.strip() + (tomorrow ? " tomorrow" : "") + " 🙏"
+                         : "The real reminders will come at the medicine times 🙏");
     }
 
     // ---------------------------------------------------------------- pieces

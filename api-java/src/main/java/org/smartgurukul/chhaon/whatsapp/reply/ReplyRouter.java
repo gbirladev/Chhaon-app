@@ -3,6 +3,7 @@ package org.smartgurukul.chhaon.whatsapp.reply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartgurukul.chhaon.whatsapp.ReminderTexts;
+import org.smartgurukul.chhaon.whatsapp.SampleReminderService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -93,6 +94,12 @@ public class ReplyRouter {
     /** A poll vote "⏰ Later" on a dose reminder: nothing is recorded (the missed window still runs), a short friendly ack. */
     public record DoseLater(UUID doseId) implements Route {}
 
+    /**
+     * A reply, tap or reaction on the SAMPLE reminder (docs/sample-reminder.md): nothing is recorded, the receiver is told it was a
+     * sample and when the real reminders start.
+     */
+    public record Sample(UUID recipientId) implements Route {}
+
     /** We could not tell what this answers. Rate-limited reply. */
     public record Help(String language, boolean consentPending) implements Route {}
 
@@ -143,6 +150,10 @@ public class ReplyRouter {
         }
         if (intent == Intent.THANKS) return new Silent("thanks");
         String language = (String) active.get(0).get("language");
+
+        // (2b) an answer to the sample reminder: never a dose (docs/sample-reminder.md)
+        UUID sample = sampleAnswered(m, intent);
+        if (sample != null) return new Sample(sample);
 
         // (3) a swipe-reply to one of our messages
         if (m.quotedId() != null) {
@@ -254,6 +265,8 @@ public class ReplyRouter {
                         "and coalesce(de.sent_at, de.scheduled_at) > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE +
                         " limit 1", target, REACTION_HOURS, m.phone()));
         if (dose != null) return new Dose((UUID) dose.get("id"), true, "reaction");
+        UUID sample = sampleByMessage(m.phone(), target);
+        if (sample != null) return new Sample(sample);
         if (checkinMessageIdsAvailable()) {
             Map<String, Object> checkin = firstOrNull(jdbc.queryForList(
                     "select c.id from checkins c join care_recipients r on r.id = c.recipient_id " +
@@ -326,6 +339,10 @@ public class ReplyRouter {
                 return new Checkin((UUID) checkin.get("id"), choice == ReminderTexts.SECOND, "poll");
             }
         }
+        UUID sample = sampleByMessage(phone, pollKeyId);
+        if (sample != null) {
+            return ReminderTexts.doseVote(label, index) < 0 ? new Ignore("unknown poll option") : new Sample(sample);
+        }
         return new Ignore("vote on an unknown or old poll");
     }
 
@@ -350,15 +367,73 @@ public class ReplyRouter {
         Timestamp asked = (Timestamp) ask.get("alert_requested_at");
         if (pendingConsent != null && ((Timestamp) pendingConsent.get("consent_requested_at")).after(asked)) return null;
         if (m.quotedId() != null && routeQuoted(m, intent) != null) return null;
-        Timestamp lastParentQuestion = jdbc.queryForObject(
+        Timestamp lastParentQuestion = lastParentQuestion(m.phone());
+        if (lastParentQuestion != null && lastParentQuestion.after(asked)) return null;
+        return new AlertOptIn((UUID) ask.get("id"), intent != Intent.NO);
+    }
+
+    /** When a dose reminder or check-in still waiting (or missed) was last sent to this number in the last few hours; null = none. */
+    private Timestamp lastParentQuestion(String phone) {
+        return jdbc.queryForObject(
                 "select greatest(" +
                         "(select max(de.sent_at) from dose_events de " + DOSE_JOIN +
                         " where de.status in ('sent', 'missed') and de.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE + "), " +
                         "(select max(c.sent_at) from checkins c join care_recipients r on r.id = c.recipient_id " +
                         " where c.status in ('sent', 'missed') and c.sent_at > now() - make_interval(hours => ?) and " + ACTIVE_OF_PHONE + "))",
-                Timestamp.class, SENT_DOSE_HOURS, m.phone(), CHECKIN_HOURS, m.phone());
-        if (lastParentQuestion != null && lastParentQuestion.after(asked)) return null;
-        return new AlertOptIn((UUID) ask.get("id"), intent != Intent.NO);
+                Timestamp.class, SENT_DOSE_HOURS, phone, CHECKIN_HOURS, phone);
+    }
+
+    // ---------------------------------------------------------------- the sample reminder (docs/sample-reminder.md)
+
+    /** How long a typed answer can still be meant for the sample reminder. */
+    public static final int SAMPLE_HOURS = 3;
+
+    /**
+     * The person whose SAMPLE reminder a typed yes / taken / no answers, or null. A swipe-reply quoting the sample always does; a
+     * swipe-reply quoting a real reminder never does. Otherwise only when the sample went to this number in the last
+     * {@value #SAMPLE_HOURS} h AND after every real reminder / check-in still open there (a reply answers what we sent last).
+     */
+    private UUID sampleAnswered(InboundMessage m, Intent intent) {
+        if (intent != Intent.YES && intent != Intent.TAKEN && intent != Intent.TAKEN_ALL && intent != Intent.NO) return null;
+        if (m.quotedId() != null) {
+            UUID quoted = sampleByMessage(m.phone(), m.quotedId());
+            if (quoted != null) return quoted;
+            if (routeQuoted(m, intent) != null) return null;
+        }
+        // The once-a-day key of the person's local today / yesterday (SampleReminderService#dayKey) says when the sample went out.
+        // (Computed here, not in SQL: a bad time zone must never fail the reply's transaction.)
+        Map<String, UUID> keys = new java.util.HashMap<>();
+        for (Map<String, Object> r : jdbc.queryForList("select r.id, r.timezone from care_recipients r where " + ACTIVE_OF_PHONE, m.phone())) {
+            UUID id = (UUID) r.get("id");
+            java.time.LocalDate today = java.time.LocalDate.now(zoneOf((String) r.get("timezone")));
+            keys.put(SampleReminderService.dayKey(id, today), id);
+            keys.put(SampleReminderService.dayKey(id, today.minusDays(1)), id);
+        }
+        if (keys.isEmpty()) return null;
+        Map<String, Object> latest = firstOrNull(jdbc.queryForList(
+                "select id, received_at from whatsapp_events where id = any(cast(? as text[])) and received_at > now() - make_interval(hours => ?) " +
+                        "order by received_at desc limit 1", "{" + String.join(",", keys.keySet()) + "}", SAMPLE_HOURS));
+        if (latest == null) return null;
+        Timestamp last = lastParentQuestion(m.phone());
+        if (last != null && !((Timestamp) latest.get("received_at")).after(last)) return null;
+        return keys.get((String) latest.get("id"));
+    }
+
+    private static java.time.ZoneId zoneOf(String tz) {
+        try {
+            return java.time.ZoneId.of(tz == null || tz.isBlank() ? "Asia/Kolkata" : tz);
+        } catch (Exception e) {
+            return java.time.ZoneId.of("Asia/Kolkata");
+        }
+    }
+
+    /** The person whose sample reminder was the WhatsApp message {@code messageId} (to this number, recently), or null. */
+    private UUID sampleByMessage(String phone, String messageId) {
+        if (messageId == null || messageId.isBlank()) return null;
+        return jdbc.queryForList(
+                "select r.id from care_recipients r where " + ACTIVE_OF_PHONE + " and exists (select 1 from whatsapp_events e " +
+                        "where e.id = 'gw:out:sample:' || r.id::text || ':' || ? and e.received_at > now() - make_interval(hours => ?))",
+                UUID.class, phone, messageId, POLL_HOURS).stream().findFirst().orElse(null);
     }
 
     // ---------------------------------------------------------------- quote

@@ -596,8 +596,13 @@ public class SchedulerService {
 
     /** The same slot as a poll (✅ Taken / ⏰ Later; a helper: ✅ Given). */
     public static ReminderTexts.Poll slotPoll(List<Map<String, Object>> rows, Integer newWeek, Instant at) {
+        return slotPoll(rows, newWeek, at, null);
+    }
+
+    /** The slot poll with an extra first line (the sample reminder's label, SampleReminderService). */
+    public static ReminderTexts.Poll slotPoll(List<Map<String, Object>> rows, Integer newWeek, Instant at, String firstLine) {
         Map<String, Object> first = rows.get(0);
-        return ReminderTexts.dosePoll(reader(first, newWeek, at), items(rows), slotTime(first, at));
+        return ReminderTexts.dosePoll(reader(first, newWeek, at), items(rows), slotTime(first, at), firstLine);
     }
 
     /** The third-person reminder for a helper / the caregiver ("Time for Papa's medicine"), see docs/reminder-receiver.md. */

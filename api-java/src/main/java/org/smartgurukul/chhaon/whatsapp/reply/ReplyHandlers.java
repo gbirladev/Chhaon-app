@@ -71,6 +71,7 @@ public class ReplyHandlers {
             case ReplyRouter.DoseLater l -> doseLater(l, m, out);
             case Checkin c -> checkin(c, m, out);
             case Help h -> help(h, m, out);
+            case ReplyRouter.Sample s -> sample(s, m, out);
             case ReplyRouter.Silent s -> { }
             case ReplyRouter.Ignore i -> log.debug("reply ignored: {}", i.reason());
         }
@@ -381,6 +382,34 @@ public class ReplyHandlers {
     private boolean claimCallRequest(UUID checkinId) {
         return jdbc.update("insert into whatsapp_events (id) values (?) on conflict (id) do nothing",
                 "gw:checkin-call:" + checkinId) == 1;
+    }
+
+    // ---------------------------------------------------------------- the sample reminder (docs/sample-reminder.md)
+
+    /** Tells when the real reminders start (the next one); null in hand-built tests = "at the medicine times". */
+    private org.smartgurukul.chhaon.whatsapp.SampleReminderService samples;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setSampleReminders(org.smartgurukul.chhaon.whatsapp.SampleReminderService samples) {
+        this.samples = samples;
+    }
+
+    /**
+     * A reply / tap / reaction on the sample: NOTHING is recorded (no dose, no stock, no family alert); one friendly answer per
+     * person every {@value ReplyRouter#SAMPLE_HOURS} h ("That was only a sample ... real reminders start at 8:00 pm").
+     */
+    private void sample(ReplyRouter.Sample s, InboundMessage m, List<OutboundReply> out) {
+        int claimed = jdbc.update("insert into whatsapp_events (id, received_at) values (?, now()) " +
+                        "on conflict (id) do update set received_at = now() " +
+                        "where whatsapp_events.received_at < now() - make_interval(hours => ?)",
+                "gw:sample-reply:" + s.recipientId(), ReplyRouter.SAMPLE_HOURS);
+        if (claimed == 0) return;
+        org.smartgurukul.chhaon.whatsapp.SampleReminderService.NextTime next = samples == null ? null : samples.nextTime(s.recipientId());
+        String language = next != null ? next.language() : jdbc.queryForList(
+                "select " + ReceiverTexts.languageSql("r") + " from care_recipients r where r.id = ?", String.class, s.recipientId())
+                .stream().findFirst().orElse("en");
+        out.add(new OutboundReply(m.phone(), org.smartgurukul.chhaon.whatsapp.ReminderTexts.sampleAnswer(language,
+                next == null ? null : next.time(), next != null && next.tomorrow())));
     }
 
     // ---------------------------------------------------------------- help (rate limited)
