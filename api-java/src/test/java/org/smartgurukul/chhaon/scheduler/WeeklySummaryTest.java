@@ -112,7 +112,7 @@ class WeeklySummaryTest extends DbTest {
                 .contains("Refill soon: Metformin (6 left)")
                 .contains("Next visit: Dr Mehta, Tue ")
                 .contains("11:00 AM")
-                .contains("Full details: chhaon.site/app")
+                .contains("Full details in the Chhaon app.")
                 .contains("Reply STOP")
                 .doesNotContain("http").doesNotContain(f.phone()).doesNotContain(phone);
         assertThat(sendRow(f.userId())).containsEntry("status", "sent");
@@ -237,7 +237,7 @@ class WeeklySummaryTest extends DbTest {
         String text = wa.sentTo(phone).get(0).text();
         assertThat(text).startsWith("छाँव साप्ताहिक 🗓️ · पापा").contains("दवा की पुष्टि: 8 में से 6")
                 .contains("छूटी: Metformin मंगल रात, गुरु रात").contains("जल्द मँगाएँ: Metformin (6 बची)")
-                .contains("पूरी जानकारी: chhaon.site/app").doesNotContain("किसने दी");   // Papa confirms himself: no "given by"
+                .contains("पूरी जानकारी छाँव ऐप में।").doesNotContain("किसने दी");   // Papa confirms himself: no "given by"
     }
 
     @Test

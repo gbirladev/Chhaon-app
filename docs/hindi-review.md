@@ -423,7 +423,7 @@ Please check especially the short day and month names and "छूटी" / "क�
 | Next visit | अगली मुलाक़ात: Dr Mehta, मंगल 11 नव, सुबह 11:00 | Next visit: Dr Mehta, Tue 11 Nov, 11:00 AM | |
 | Next vaccine | अगला टीका: MMR (ख़ुराक 1), मंगल 11 नव / (बूस्टर 1) | Next vaccine: MMR (dose 1), Tue 11 Nov / (booster 1) | |
 | More people | +2 और, ऐप में देखें। | +2 more in the app. | |
-| Footer | पूरी जानकारी: chhaon.site/app / ये अलर्ट बंद करने के लिए STOP लिखें। | Full details: chhaon.site/app / Reply STOP to turn off these alerts. | |
+| Footer | पूरी जानकारी छाँव ऐप में। / ये अलर्ट बंद करने के लिए STOP लिखें। | Full details in the Chhaon app. / Reply STOP to turn off these alerts. | |
 | Days | सोम मंगल बुध गुरु शुक्र शनि रवि | Mon ... Sun | |
 | Months | जन फ़र मार्च अप्रैल मई जून जुलाई अग सित अक्टू नव दिस | Jan ... Dec | |
 | Parts of the day | सुबह / दोपहर / शाम / रात | morning / afternoon / evening / night | |

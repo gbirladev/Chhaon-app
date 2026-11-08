@@ -90,7 +90,7 @@ public final class WeeklySummaryTexts {
             int more = shown.size() - MAX_PEOPLE;
             if (more > 0) sb.append("\n\n").append(h ? "+" + more + " और, ऐप में देखें।" : "+" + more + " more in the app.");
         }
-        sb.append("\n\n").append(h ? "पूरी जानकारी: chhaon.site/app" : "Full details: chhaon.site/app");
+        sb.append("\n\n").append(h ? "पूरी जानकारी छाँव ऐप में।" : "Full details in the Chhaon app.");
         sb.append('\n').append(h ? "ये अलर्ट बंद करने के लिए STOP लिखें।" : "Reply STOP to turn off these alerts.");
         return sb.toString();
     }
